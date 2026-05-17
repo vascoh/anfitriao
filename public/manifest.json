@@ -1,0 +1,10 @@
+{
+  "name": "Anfitrião",
+  "short_name": "Anfitrião",
+  "description": "O teu assistente de Alojamento Local",
+  "start_url": "/hoje",
+  "display": "standalone",
+  "background_color": "#faf7f4",
+  "theme_color": "#faf7f4",
+  "orientation": "portrait"
+}

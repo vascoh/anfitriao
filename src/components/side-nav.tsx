@@ -1,0 +1,90 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import {
+  Home, CalendarCheck2, CalendarDays, Users,
+  Sparkles, FileText, Building2, Globe,
+} from 'lucide-react'
+import { useClerk } from '@clerk/nextjs'
+
+const primary = [
+  { href: '/hoje', label: 'Hoje', Icon: Home },
+  { href: '/reservas', label: 'Reservas', Icon: CalendarCheck2 },
+  { href: '/calendario', label: 'Calendário', Icon: CalendarDays },
+  { href: '/hospedes', label: 'Hóspedes', Icon: Users },
+]
+
+const secondary = [
+  { href: '/concierge', label: 'Concierge IA', Icon: Sparkles },
+  { href: '/propriedades', label: 'Propriedades', Icon: Building2 },
+  { href: '/website', label: 'Website', Icon: Globe },
+  { href: '/documentos', label: 'Documentos SIBA', Icon: FileText },
+]
+
+export function SideNav() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const { signOut } = useClerk()
+
+  function active(href: string) {
+    return pathname === href || pathname.startsWith(href + '/')
+  }
+
+  return (
+    <aside className="hidden lg:flex flex-col w-56 shrink-0 h-dvh border-r border-border bg-card">
+      {/* Brand */}
+      <div className="px-5 h-16 flex items-center gap-3 border-b border-border shrink-0">
+        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
+          </svg>
+        </div>
+        <span className="font-bold text-base tracking-tight">Anfitrião</span>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
+        {primary.map(({ href, label, Icon }) => (
+          <Link key={href} href={href}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              active(href)
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground/65 hover:bg-muted hover:text-foreground'
+            }`}>
+            <Icon className={`h-4 w-4 shrink-0 ${active(href) ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+            {label}
+          </Link>
+        ))}
+
+        <div className="my-2 h-px bg-border" />
+
+        {secondary.map(({ href, label, Icon }) => (
+          <Link key={href} href={href}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              active(href)
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground/65 hover:bg-muted hover:text-foreground'
+            }`}>
+            <Icon className={`h-4 w-4 shrink-0 ${active(href) ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Sign out */}
+      <div className="border-t border-border p-2 shrink-0">
+        <button
+          onClick={() => signOut(() => router.push('/sign-in'))}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-foreground/50 hover:text-destructive hover:bg-destructive/5 transition-colors"
+        >
+          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+          </svg>
+          Terminar sessão
+        </button>
+      </div>
+    </aside>
+  )
+}
