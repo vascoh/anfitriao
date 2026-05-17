@@ -35,6 +35,7 @@ export default function NovaPropriedadePage() {
   const [endereco, setEndereco] = useState('')
   const [cidade, setCidade] = useState('')
   const [descricao, setDescricao] = useState('')
+  const [imagemUrl, setImagemUrl] = useState('')
   const [quartos, setQuartos] = useState(1)
   const [casasBanho, setCasasBanho] = useState(1)
   const [capacidade, setCapacidade] = useState(2)
@@ -57,6 +58,7 @@ export default function NovaPropriedadePage() {
       endereco: endereco.trim(),
       cidade: cidade.trim(),
       descricao: descricao.trim() || undefined,
+      imagem_url: imagemUrl.trim() || undefined,
       quartos,
       casasBanho,
       capacidade,
@@ -122,6 +124,15 @@ export default function NovaPropriedadePage() {
             <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={3}
               placeholder="Breve descrição para o website de reservas..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Foto principal (URL)</label>
+            <input type="url" value={imagemUrl} onChange={e => setImagemUrl(e.target.value)}
+              placeholder="https://..."
+              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            {imagemUrl && (
+              <img src={imagemUrl} alt="Preview" className="rounded-lg h-32 w-full object-cover mt-1" />
+            )}
           </div>
         </div>
 

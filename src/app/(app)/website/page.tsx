@@ -268,6 +268,21 @@ export default function WebsitePage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Nome do anfitrião</label>
+              <input type="text" value={settings.host_nome ?? ''} onChange={e => update('host_nome', e.target.value)}
+                placeholder="Ex: Vasco Henriques"
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Frase do anfitrião</label>
+              <input type="text" value={settings.host_bio ?? ''} onChange={e => update('host_bio', e.target.value)}
+                placeholder="Superhost desde 2018..."
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground font-medium">Email de contacto</label>
               <input type="email" value={settings.email} onChange={e => update('email', e.target.value)}
                 placeholder="host@exemplo.com"

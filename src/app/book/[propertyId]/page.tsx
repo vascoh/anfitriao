@@ -3,10 +3,34 @@
 import { use, useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ChevronLeft, ChevronRight, BedDouble, Bath, Users, MapPin } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees } from 'lucide-react'
 import { store, uuid, fmtMoney, nights as calcNights } from '@/lib/store'
 import type { Property, WebsiteSettings } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+
+const AMENITY_ICON: Record<string, React.ReactNode> = {
+  wifi: <Wifi className="h-4 w-4" />,
+  ar_condicionado: <Wind className="h-4 w-4" />,
+  estacionamento: <Car className="h-4 w-4" />,
+  piscina: <Waves className="h-4 w-4" />,
+  cozinha: <UtensilsCrossed className="h-4 w-4" />,
+  maquina_lavar: <WashingMachine className="h-4 w-4" />,
+  tv: <Tv className="h-4 w-4" />,
+  jardim: <Trees className="h-4 w-4" />,
+}
+
+const AMENITY_LABEL: Record<string, string> = {
+  wifi: 'Wi-Fi',
+  ar_condicionado: 'Ar condicionado',
+  estacionamento: 'Estacionamento',
+  piscina: 'Piscina',
+  cozinha: 'Cozinha equipada',
+  maquina_lavar: 'Máquina de lavar',
+  secador: 'Secador',
+  tv: 'TV',
+  varanda: 'Varanda',
+  jardim: 'Jardim',
+}
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -49,7 +73,6 @@ function Calendar({ blocked, minDate, checkIn, checkOut, onSelect }: CalendarPro
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
-
   const grid = useMemo(() => buildGrid(year, month), [year, month])
 
   function prevMonth() {
@@ -82,7 +105,7 @@ function Calendar({ blocked, minDate, checkIn, checkOut, onSelect }: CalendarPro
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-0">
+      <div className="grid grid-cols-7">
         {WEEKDAYS.map(d => (
           <div key={d} className="text-center text-[10px] font-medium text-muted-foreground py-1">{d}</div>
         ))}
@@ -99,8 +122,8 @@ function Calendar({ blocked, minDate, checkIn, checkOut, onSelect }: CalendarPro
 
           return (
             <button key={date} disabled={disabled} onClick={() => onSelect(date)}
-              className={`h-9 w-full rounded-lg text-xs font-medium transition-colors relative
-                ${disabled ? 'text-muted-foreground/30 cursor-not-allowed' : 'hover:bg-primary/10 hover:text-primary cursor-pointer'}
+              className={`h-9 w-full rounded-lg text-xs font-medium transition-colors
+                ${disabled ? 'text-muted-foreground/30 cursor-not-allowed line-through' : 'hover:bg-primary/10 hover:text-primary cursor-pointer'}
                 ${isCheckIn || isCheckOut ? 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : ''}
                 ${inR ? 'bg-primary/15 text-primary rounded-none' : ''}
               `}>
@@ -142,7 +165,6 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
     setProp(p)
     const ws = store.getWebsiteSettings()
     setSettings(ws)
-
     const bookings = store.getBookings().filter(b =>
       b.propriedade_id === propertyId &&
       b.estado !== 'cancelada' && b.estado !== 'no_show'
@@ -168,24 +190,15 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
       setCheckIn(date)
       setCheckOut(null)
     } else {
-      if (date <= checkIn) {
-        setCheckIn(date)
-        setCheckOut(null)
-        return
-      }
-      // Check no blocked dates in range
+      if (date <= checkIn) { setCheckIn(date); setCheckOut(null); return }
       let cur = addDays(checkIn, 1)
       let hasBlocked = false
       while (cur < date) {
         if (blocked.has(cur)) { hasBlocked = true; break }
         cur = addDays(cur, 1)
       }
-      if (hasBlocked) {
-        setCheckIn(date)
-        setCheckOut(null)
-      } else {
-        setCheckOut(date)
-      }
+      if (hasBlocked) { setCheckIn(date); setCheckOut(null) }
+      else setCheckOut(date)
     }
   }
 
@@ -193,12 +206,9 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
     e.preventDefault()
     if (!prop || !checkIn || !checkOut || !nome.trim() || !email.trim()) return
     if (numNights < (settings?.min_noites ?? 1)) return
-
     setSubmitting(true)
-
     const guestId = uuid()
     const bookingId = uuid()
-
     store.saveGuest({
       id: guestId,
       nome: nome.trim(),
@@ -208,7 +218,6 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
       notas: notas.trim() || undefined,
       criado_em: new Date().toISOString(),
     })
-
     store.saveBooking({
       id: bookingId,
       propriedade_id: prop.id,
@@ -229,7 +238,6 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
         descricao: 'Reserva criada via website direto',
       }],
     })
-
     router.push(`/book/${propertyId}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
   }
 
@@ -246,66 +254,99 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
     )
   }
 
+  const waLink = settings.telefone
+    ? `https://wa.me/${settings.telefone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Gostaria de fazer uma reserva em ${prop.nome}.`)}`
+    : null
+
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
         <Link href="/book" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="font-semibold text-base truncate flex-1">{prop.nome}</h1>
+        <span className="font-semibold text-sm truncate flex-1">{prop.nome}</span>
+        {checkIn && checkOut && hasEnoughNights && (
+          <span className="text-sm font-bold text-primary shrink-0">{fmtMoney(total)}</span>
+        )}
       </header>
 
-      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 flex flex-col gap-6 pb-12">
-        {/* Property summary */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-          <div className="h-2" style={{ backgroundColor: prop.cor }} />
-          <div className="p-4 flex flex-col gap-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-base">{prop.nome}</p>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                  <MapPin className="h-3 w-3" />
-                  <span>{PROPERTY_TYPE_LABEL[prop.tipo]} · {prop.cidade}</span>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-xl font-bold text-primary">{fmtMoney(prop.preco_base)}</p>
-                <p className="text-xs text-muted-foreground">por noite</p>
+      {/* Photo hero */}
+      {prop.imagem_url ? (
+        <div className="relative h-64 lg:h-80 overflow-hidden bg-muted">
+          <img src={prop.imagem_url} alt={prop.nome} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        </div>
+      ) : (
+        <div className="h-2 w-full" style={{ backgroundColor: prop.cor }} />
+      )}
+
+      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-6 flex flex-col gap-6 pb-16">
+
+        {/* Property overview */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-2xl leading-tight">{prop.nome}</h1>
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span>{PROPERTY_TYPE_LABEL[prop.tipo]} · {prop.cidade}</span>
               </div>
             </div>
-            {prop.descricao && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{prop.descricao}</p>
-            )}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><BedDouble className="h-3.5 w-3.5" />{prop.quartos} quartos</span>
-              <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5" />{prop.casasBanho} casa{prop.casasBanho !== 1 ? 's' : ''} de banho</span>
-              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />Máx. {prop.capacidade}</span>
+            <div className="text-right shrink-0">
+              <p className="text-2xl font-bold text-primary">{fmtMoney(prop.preco_base)}</p>
+              <p className="text-xs text-muted-foreground">por noite</p>
             </div>
-            {prop.comodidades.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {prop.comodidades.map(a => (
-                  <span key={a} className="text-[11px] bg-muted/60 text-foreground/60 px-2 py-0.5 rounded-full">
-                    {a.replace(/_/g, ' ')}
-                  </span>
-                ))}
-              </div>
+          </div>
+
+          {prop.descricao && (
+            <p className="text-sm text-muted-foreground leading-relaxed">{prop.descricao}</p>
+          )}
+
+          {/* Specs */}
+          <div className="flex items-center gap-5 text-sm text-muted-foreground pt-1">
+            {prop.quartos > 0 && (
+              <span className="flex items-center gap-1.5">
+                <BedDouble className="h-4 w-4" />
+                {prop.quartos} quarto{prop.quartos !== 1 ? 's' : ''}
+              </span>
             )}
+            <span className="flex items-center gap-1.5">
+              <Bath className="h-4 w-4" />
+              {prop.casasBanho} WC
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              Máx. {prop.capacidade}
+            </span>
           </div>
         </div>
 
+        {/* Amenities */}
+        {prop.comodidades.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Comodidades</p>
+            <div className="grid grid-cols-2 gap-2">
+              {prop.comodidades.map(a => (
+                <div key={a} className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
+                  <span className="text-muted-foreground shrink-0">
+                    {AMENITY_ICON[a] ?? <span className="h-4 w-4 block" />}
+                  </span>
+                  <span>{AMENITY_LABEL[a] ?? a.replace(/_/g, ' ')}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="h-px bg-border" />
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {/* Calendar */}
+          {/* Date picker */}
           <div className="flex flex-col gap-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Datas</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Escolha as datas</p>
             <div className="rounded-xl border border-border bg-card p-4">
-              <Calendar
-                blocked={blocked}
-                minDate={minDate}
-                checkIn={checkIn}
-                checkOut={checkOut}
-                onSelect={handleDateSelect}
-              />
+              <Calendar blocked={blocked} minDate={minDate} checkIn={checkIn} checkOut={checkOut} onSelect={handleDateSelect} />
             </div>
             {checkIn && checkOut && !hasEnoughNights && (
               <p className="text-xs text-destructive text-center">
@@ -315,21 +356,21 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
           </div>
 
           {/* Guests */}
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Hóspedes</p>
-            <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
-              <span className="text-sm font-medium">Número de hóspedes</span>
-              <div className="flex items-center gap-4">
-                <button type="button" onClick={() => setNumHospedes(Math.max(1, numHospedes - 1))}
-                  className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
-                  −
-                </button>
-                <span className="text-sm font-semibold w-4 text-center">{numHospedes}</span>
-                <button type="button" onClick={() => setNumHospedes(Math.min(prop.capacidade, numHospedes + 1))}
-                  className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
-                  +
-                </button>
-              </div>
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">Hóspedes</p>
+              <p className="text-xs text-muted-foreground">Máx. {prop.capacidade} pessoas</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <button type="button" onClick={() => setNumHospedes(Math.max(1, numHospedes - 1))}
+                className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
+                −
+              </button>
+              <span className="text-sm font-semibold w-4 text-center">{numHospedes}</span>
+              <button type="button" onClick={() => setNumHospedes(Math.min(prop.capacidade, numHospedes + 1))}
+                className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
+                +
+              </button>
             </div>
           </div>
 
@@ -339,7 +380,7 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
             {[
               { label: 'Nome completo *', value: nome, set: setNome, type: 'text', placeholder: 'João Silva' },
               { label: 'Email *', value: email, set: setEmail, type: 'email', placeholder: 'joao@exemplo.com' },
-              { label: 'Telefone', value: telefone, set: setTelefone, type: 'tel', placeholder: '+351 912 345 678' },
+              { label: 'Telefone / WhatsApp', value: telefone, set: setTelefone, type: 'tel', placeholder: '+351 912 345 678' },
             ].map(f => (
               <div key={f.label} className="flex flex-col gap-1.5">
                 <label className="text-xs text-muted-foreground font-medium">{f.label}</label>
@@ -364,12 +405,12 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
                 <span className="font-medium">{fmtMoney(total)}</span>
               </div>
               <div className="h-px bg-border my-1" />
-              <div className="flex justify-between text-sm font-bold">
-                <span>Total estimado</span>
+              <div className="flex justify-between font-bold">
+                <span className="text-sm">Total estimado</span>
                 <span className="text-primary text-lg">{fmtMoney(total)}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                O pagamento será acordado diretamente com o anfitrião após confirmação.
+                Sem taxas de serviço · O pagamento é acordado diretamente com o anfitrião.
               </p>
             </div>
           )}
@@ -379,17 +420,22 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
             {submitting ? 'A enviar pedido...' : 'Enviar pedido de reserva'}
           </button>
 
-          {settings.telefone && (
-            <p className="text-center text-xs text-muted-foreground">
-              Prefere reservar por WhatsApp?{' '}
-              <a href={`https://wa.me/${settings.telefone.replace(/\D/g, '')}`}
-                target="_blank" rel="noopener noreferrer"
-                className="text-primary font-medium">
-                Fale connosco
-              </a>
-            </p>
+          {waLink && (
+            <a href={waLink} target="_blank" rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-sm border border-[#25D366] text-[#25D366] hover:bg-[#25D366]/5 transition-colors">
+              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Reservar via WhatsApp
+            </a>
           )}
         </form>
+
+        {/* House rules teaser */}
+        {prop.regras_casa && (
+          <div className="rounded-xl border border-border bg-muted/30 p-4 flex flex-col gap-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Regras da casa</p>
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{prop.regras_casa}</p>
+          </div>
+        )}
       </div>
     </div>
   )

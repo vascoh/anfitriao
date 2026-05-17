@@ -24,6 +24,7 @@ export interface Property {
   casasBanho: number
   comodidades: string[]
   descricao?: string
+  imagem_url?: string
   instrucoes_checkin: string
   regras_casa: string
   preco_base: number
@@ -58,6 +59,8 @@ export interface WebsiteSettings {
   nome: string
   descricao: string
   logo_texto?: string
+  host_nome?: string
+  host_bio?: string
   email: string
   telefone: string
   min_noites: number
