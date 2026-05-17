@@ -88,12 +88,12 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, onSelect }: Cale
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <button onClick={prevMonth}
+        <button type="button" onClick={prevMonth}
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-sm font-semibold">{MONTHS[month]} {year}</span>
-        <button onClick={nextMonth}
+        <button type="button" onClick={nextMonth}
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -115,7 +115,7 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, onSelect }: Cale
           const dayNum = parseInt(date.slice(8))
 
           return (
-            <button key={date} disabled={disabled} onClick={() => onSelect(date)}
+            <button type="button" key={date} disabled={disabled} onClick={() => onSelect(date)}
               className={[
                 'h-10 w-full text-xs font-medium transition-colors',
                 isCheckIn || isCheckOut
