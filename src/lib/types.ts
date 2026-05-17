@@ -3,6 +3,16 @@ export type BookingStatus = 'pendente' | 'confirmada' | 'checkin' | 'checkout' |
 export type BookingSource = 'airbnb' | 'booking' | 'direto' | 'expedia' | 'vrbo' | 'outro'
 export type GuestTag = 'vip' | 'problematico' | 'frequente' | 'novo'
 
+export interface IcalFeed {
+  id: string
+  url: string
+  source: BookingSource
+  nome: string
+  last_sync?: string
+  last_count?: number
+  error?: string
+}
+
 export interface Property {
   id: string
   nome: string
@@ -13,12 +23,14 @@ export interface Property {
   quartos: number
   casasBanho: number
   comodidades: string[]
+  descricao?: string
   instrucoes_checkin: string
   regras_casa: string
   preco_base: number
   cor: string
   ativo: boolean
   criado_em: string
+  ical_feeds?: IcalFeed[]
 }
 
 export interface Guest {
@@ -45,6 +57,7 @@ export interface WebsiteSettings {
   enabled: boolean
   nome: string
   descricao: string
+  logo_texto?: string
   email: string
   telefone: string
   min_noites: number

@@ -37,6 +37,7 @@ export default function EditarPropriedadePage({ params }: { params: Promise<{ id
   const [tipo, setTipo] = useState<PropertyType>('apartamento')
   const [endereco, setEndereco] = useState('')
   const [cidade, setCidade] = useState('')
+  const [descricao, setDescricao] = useState('')
   const [quartos, setQuartos] = useState(1)
   const [casasBanho, setCasasBanho] = useState(1)
   const [capacidade, setCapacidade] = useState(2)
@@ -60,6 +61,7 @@ export default function EditarPropriedadePage({ params }: { params: Promise<{ id
     setPrecoBase(p.preco_base)
     setCor(p.cor)
     setComodidades(p.comodidades)
+    setDescricao(p.descricao ?? '')
     setInstrucoesCheckin(p.instrucoes_checkin)
     setRegrasCasa(p.regras_casa)
   }, [id, router])
@@ -76,6 +78,7 @@ export default function EditarPropriedadePage({ params }: { params: Promise<{ id
       tipo,
       endereco: endereco.trim(),
       cidade: cidade.trim(),
+      descricao: descricao.trim() || undefined,
       quartos,
       casasBanho,
       capacidade,
@@ -136,6 +139,12 @@ export default function EditarPropriedadePage({ params }: { params: Promise<{ id
             <label className="text-xs text-muted-foreground font-medium">Cidade *</label>
             <input type="text" value={cidade} onChange={e => setCidade(e.target.value)}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Descrição pública</label>
+            <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={3}
+              placeholder="Breve descrição para o website de reservas..."
+              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
         </div>
 

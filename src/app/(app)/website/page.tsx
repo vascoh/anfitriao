@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight } from 'lucide-react'
-import { store, fmtMoney, fmtDate, nights } from '@/lib/store'
-import type { WebsiteSettings } from '@/lib/types'
+import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
+import { store, fmtMoney, fmtDate, nights, uuid } from '@/lib/store'
+import { parseIcal, generateIcal } from '@/lib/ical'
+import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
+import { SOURCE_LABEL } from '@/lib/labels'
 
 function useOrigin() {
   const [origin, setOrigin] = useState('')
@@ -12,14 +14,21 @@ function useOrigin() {
   return origin
 }
 
+type SyncState = 'idle' | 'loading' | 'ok' | 'error'
+
 export default function WebsitePage() {
   const origin = useOrigin()
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
+  const [props, setProps] = useState<Property[]>([])
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({})
+  const [newFeedUrl, setNewFeedUrl] = useState<Record<string, string>>({})
+  const [newFeedSource, setNewFeedSource] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setSettings(store.getWebsiteSettings())
+    setProps(store.getProperties())
   }, [])
 
   const publicUrl = `${origin}/book`
@@ -42,14 +51,140 @@ export default function WebsitePage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Stats from direct bookings
+  async function syncFeed(prop: Property, feed: IcalFeed) {
+    const key = `${prop.id}:${feed.id}`
+    setSyncStates(s => ({ ...s, [key]: 'loading' }))
+    try {
+      const res = await fetch(`/api/ical-proxy?url=${encodeURIComponent(feed.url)}`)
+      if (!res.ok) throw new Error('Fetch failed')
+      const text = await res.text()
+      const events = parseIcal(text)
+
+      const bookings = store.getBookings()
+      let added = 0
+
+      for (const ev of events) {
+        const exists = bookings.some(b =>
+          b.propriedade_id === prop.id &&
+          b.notas?.includes(ev.uid)
+        )
+        if (exists) continue
+
+        const guestId = uuid()
+        store.saveGuest({
+          id: guestId,
+          nome: ev.summary || `${SOURCE_LABEL[feed.source as keyof typeof SOURCE_LABEL]} Guest`,
+          tags: ['novo'],
+          criado_em: new Date().toISOString(),
+        })
+        store.saveBooking({
+          id: uuid(),
+          propriedade_id: prop.id,
+          hospede_id: guestId,
+          check_in: ev.start,
+          check_out: ev.end,
+          num_hospedes: 1,
+          estado: 'confirmada',
+          origem: feed.source as IcalFeed['source'],
+          preco_total: 0,
+          preco_pago: 0,
+          notas: `Importado via iCal — UID: ${ev.uid}`,
+          criado_em: new Date().toISOString(),
+          historico: [{
+            id: uuid(),
+            data: new Date().toISOString(),
+            tipo: 'criada',
+            descricao: `Importado via iCal de ${feed.nome}`,
+          }],
+        })
+        added++
+      }
+
+      const updatedFeed: IcalFeed = {
+        ...feed,
+        last_sync: new Date().toISOString(),
+        last_count: events.length,
+        error: undefined,
+      }
+      const updatedProp: Property = {
+        ...prop,
+        ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
+      }
+      store.saveProperty(updatedProp)
+      setProps(store.getProperties())
+      setSyncStates(s => ({ ...s, [key]: 'ok' }))
+      if (added > 0) {
+        setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
+      } else {
+        setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 2000)
+      }
+    } catch {
+      const updatedFeed: IcalFeed = { ...feed, error: 'Falha ao sincronizar', last_sync: new Date().toISOString() }
+      const updatedProp: Property = {
+        ...prop,
+        ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
+      }
+      store.saveProperty(updatedProp)
+      setProps(store.getProperties())
+      setSyncStates(s => ({ ...s, [key]: 'error' }))
+      setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
+    }
+  }
+
+  function addFeed(prop: Property) {
+    const url = newFeedUrl[prop.id]?.trim()
+    if (!url) return
+    const source = (newFeedSource[prop.id] || 'outro') as IcalFeed['source']
+    const feed: IcalFeed = {
+      id: uuid(),
+      url,
+      source,
+      nome: SOURCE_LABEL[source],
+    }
+    const updated: Property = { ...prop, ical_feeds: [...(prop.ical_feeds ?? []), feed] }
+    store.saveProperty(updated)
+    setProps(store.getProperties())
+    setNewFeedUrl(s => ({ ...s, [prop.id]: '' }))
+    setNewFeedSource(s => ({ ...s, [prop.id]: '' }))
+  }
+
+  function removeFeed(prop: Property, feedId: string) {
+    const updated: Property = { ...prop, ical_feeds: (prop.ical_feeds ?? []).filter(f => f.id !== feedId) }
+    store.saveProperty(updated)
+    setProps(store.getProperties())
+  }
+
+  function exportIcal(prop: Property) {
+    const bookings = store.getBookings().filter(b =>
+      b.propriedade_id === prop.id && b.estado !== 'cancelada' && b.estado !== 'no_show'
+    )
+    const guests = store.getGuests()
+    const events = bookings.map(b => {
+      const g = guests.find(x => x.id === b.hospede_id)
+      return { uid: `${b.id}@anfitriao`, summary: g?.nome ?? 'Reservado', start: b.check_in, end: b.check_out }
+    })
+    const ics = generateIcal(events, prop.nome)
+    const blob = new Blob([ics], { type: 'text/calendar' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `${prop.nome.replace(/\s+/g, '-').toLowerCase()}.ics`
+    a.click()
+  }
+
   const allBookings = store.getBookings()
   const directBookings = allBookings.filter(b => b.origem === 'direto' && b.estado !== 'cancelada')
   const totalRevenue = directBookings.reduce((s, b) => s + b.preco_total, 0)
-  const props = store.getProperties()
   const guests = store.getGuests()
 
   if (!settings) return null
+
+  const activeSources: Array<{ value: IcalFeed['source'], label: string }> = [
+    { value: 'airbnb', label: 'Airbnb' },
+    { value: 'booking', label: 'Booking.com' },
+    { value: 'expedia', label: 'Expedia' },
+    { value: 'vrbo', label: 'VRBO' },
+    { value: 'outro', label: 'Outro' },
+  ]
 
   return (
     <div className="flex flex-col min-h-full pb-8">
@@ -88,12 +223,10 @@ export default function WebsitePage() {
               {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
-          <div className="flex gap-2">
-            <a href={publicUrl} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-primary font-medium">
-              <ExternalLink className="h-3.5 w-3.5" /> Abrir website
-            </a>
-          </div>
+          <a href={publicUrl} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-primary font-medium w-fit">
+            <ExternalLink className="h-3.5 w-3.5" /> Abrir website
+          </a>
         </div>
 
         {/* Stats */}
@@ -110,12 +243,19 @@ export default function WebsitePage() {
 
         {/* Settings form */}
         <div className="flex flex-col gap-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Configurações</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Identidade</p>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Nome do website</label>
+            <label className="text-xs text-muted-foreground font-medium">Nome / Marca</label>
+            <input type="text" value={settings.logo_texto ?? ''} onChange={e => update('logo_texto', e.target.value)}
+              placeholder="Ex: Casa de Vasco"
+              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Título do website</label>
             <input type="text" value={settings.nome} onChange={e => update('nome', e.target.value)}
-              placeholder="Ex: Apartamentos Lisboa"
+              placeholder="Ex: Apartamentos Lisboa — Reserve Diretamente"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
 
@@ -165,6 +305,103 @@ export default function WebsitePage() {
           }`}>
           {saved ? '✓ Guardado' : 'Guardar configurações'}
         </button>
+
+        {/* Channel Manager — iCal */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Rss className="h-4 w-4 text-primary" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Gestão de canais (iCal)</p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Importa disponibilidade do Airbnb, Booking.com e outros canais. As reservas são sincronizadas e bloqueiam datas automaticamente.
+          </p>
+
+          {props.map(prop => (
+            <div key={prop.id} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+                <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: prop.cor }} />
+                <span className="text-sm font-semibold flex-1 truncate">{prop.nome}</span>
+                <button onClick={() => exportIcal(prop)}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors shrink-0">
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar .ics
+                </button>
+              </div>
+
+              {/* Existing feeds */}
+              {(prop.ical_feeds ?? []).length > 0 && (
+                <div className="divide-y divide-border">
+                  {(prop.ical_feeds ?? []).map(feed => {
+                    const key = `${prop.id}:${feed.id}`
+                    const state = syncStates[key] ?? 'idle'
+                    return (
+                      <div key={feed.id} className="px-4 py-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold">{feed.nome}</span>
+                            {feed.error ? (
+                              <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                            ) : feed.last_sync ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            ) : null}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">{feed.url}</p>
+                          {feed.last_sync && (
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              {feed.error
+                                ? `Erro: ${feed.error}`
+                                : `Sincronizado · ${feed.last_count ?? 0} eventos`}
+                            </p>
+                          )}
+                        </div>
+                        <button onClick={() => syncFeed(prop, feed)} disabled={state === 'loading'}
+                          className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+                            state === 'loading' ? 'text-muted-foreground' :
+                            state === 'ok' ? 'text-emerald-500' :
+                            state === 'error' ? 'text-destructive' :
+                            'text-muted-foreground hover:text-primary'
+                          }`}>
+                          <RefreshCw className={`h-4 w-4 ${state === 'loading' ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button onClick={() => removeFeed(prop, feed.id)}
+                          className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Add new feed */}
+              <div className="px-4 py-3 bg-muted/30 flex flex-col gap-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Adicionar canal</p>
+                <div className="flex gap-2">
+                  <select
+                    value={newFeedSource[prop.id] ?? ''}
+                    onChange={e => setNewFeedSource(s => ({ ...s, [prop.id]: e.target.value }))}
+                    className="rounded-lg border border-input bg-card px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring shrink-0">
+                    <option value="">Canal</option>
+                    {activeSources.map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="url"
+                    value={newFeedUrl[prop.id] ?? ''}
+                    onChange={e => setNewFeedUrl(s => ({ ...s, [prop.id]: e.target.value }))}
+                    placeholder="URL do iCal (https://...)"
+                    className="flex-1 rounded-lg border border-input bg-card px-3 py-2 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring min-w-0" />
+                  <button onClick={() => addFeed(prop)}
+                    disabled={!newFeedUrl[prop.id]?.trim()}
+                    className="shrink-0 p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity">
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Properties on the website */}
         {settings.enabled && (

@@ -262,8 +262,8 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
           <div className="h-2" style={{ backgroundColor: prop.cor }} />
           <div className="p-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-base">{prop.nome}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-base">{prop.nome}</p>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                   <MapPin className="h-3 w-3" />
                   <span>{PROPERTY_TYPE_LABEL[prop.tipo]} · {prop.cidade}</span>
@@ -274,6 +274,9 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
                 <p className="text-xs text-muted-foreground">por noite</p>
               </div>
             </div>
+            {prop.descricao && (
+              <p className="text-sm text-muted-foreground leading-relaxed">{prop.descricao}</p>
+            )}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><BedDouble className="h-3.5 w-3.5" />{prop.quartos} quartos</span>
               <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5" />{prop.casasBanho} casa{prop.casasBanho !== 1 ? 's' : ''} de banho</span>
