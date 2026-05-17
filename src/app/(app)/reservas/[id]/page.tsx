@@ -7,11 +7,10 @@ import {
   ArrowLeft, Users, Calendar, MapPin, Phone, Mail, Edit2,
   CheckCircle2, Circle, AlertTriangle, Trash2, Plus, ExternalLink
 } from 'lucide-react'
-import { store, fmtDate, fmtMoney, nights, today, uuid } from '@/lib/store'
-import type { Booking, Guest, Property } from '@/lib/types'
+import { store, fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
+import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
+import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
-
-const STATUS_ORDER = ['pendente', 'confirmada', 'checkin', 'checkout'] as const
 
 function Stepper({ estado }: { estado: string }) {
   const steps = [
@@ -94,29 +93,9 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => { load() }, [id])
 
-  function advance() {
-    if (!booking) return
-    const idx = STATUS_ORDER.indexOf(booking.estado as typeof STATUS_ORDER[number])
-    if (idx < 0 || idx >= STATUS_ORDER.length - 1) return
-    const next = STATUS_ORDER[idx + 1]
-    const tipo = next === 'checkin' ? 'checkin' : 'checkout'
-    const label = next === 'checkin' ? 'Check-in realizado' : 'Check-out realizado'
-    const updated: Booking = {
-      ...booking,
-      estado: next,
-      historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo, descricao: label }],
-    }
-    store.saveBooking(updated)
-    setBooking(updated)
-  }
-
-  function confirm() {
-    if (!booking || booking.estado !== 'pendente') return
-    const updated: Booking = {
-      ...booking,
-      estado: 'confirmada',
-      historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo: 'confirmada', descricao: 'Confirmada manualmente' }],
-    }
+  function applyTransition(to: BookingStatus, nota?: string) {
+    if (!booking || !canTransition(booking.estado, to)) return
+    const updated = transitionBooking(booking, to, nota)
     store.saveBooking(updated)
     setBooking(updated)
   }
@@ -152,11 +131,14 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
 
   const n = nights(booking.check_in, booking.check_out)
   const saldo = booking.preco_total - booking.preco_pago
-  const isActive = booking.estado === 'checkin'
-  const isPending = booking.estado === 'pendente'
-  const isConfirmed = booking.estado === 'confirmada'
-  const canAdvance = isActive || isConfirmed
-  const nextLabel = isActive ? 'Registar check-out' : isPending ? 'Confirmar reserva' : isConfirmed ? 'Registar check-in' : null
+  const actions = availableActions(booking.estado)
+
+  const PRIMARY_ACTION: Partial<Record<BookingStatus, { label: string; to: BookingStatus }>> = {
+    pendente:   { label: 'Confirmar reserva',   to: 'confirmada' },
+    confirmada: { label: 'Registar check-in',   to: 'checkin' },
+    checkin:    { label: 'Registar check-out',  to: 'checkout' },
+  }
+  const primaryAction = PRIMARY_ACTION[booking.estado]
 
   return (
     <div className="flex flex-col min-h-full pb-6">
@@ -189,14 +171,22 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Primary action */}
-        {nextLabel && (
-          <div className="px-4">
+        {primaryAction && (
+          <div className="px-4 flex flex-col gap-2">
             <button
-              onClick={isPending ? confirm : advance}
+              onClick={() => applyTransition(primaryAction.to)}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm active:opacity-80 transition-opacity"
             >
-              {nextLabel}
+              {primaryAction.label}
             </button>
+            {actions.includes('cancelada') && booking.estado !== 'checkout' && (
+              <button
+                onClick={() => applyTransition('cancelada')}
+                className="w-full border border-destructive/30 text-destructive rounded-xl py-2.5 text-sm font-medium hover:bg-destructive/5 transition-colors"
+              >
+                Cancelar reserva
+              </button>
+            )}
           </div>
         )}
 

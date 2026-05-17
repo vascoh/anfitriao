@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
 import { store, uuid, today } from '@/lib/store'
+import { detectConflict, calculatePrice } from '@/lib/reservations'
 import type { Property, Guest, Booking } from '@/lib/types'
 import type { BookingSource } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
@@ -48,6 +49,7 @@ export default function NovaReservaPage() {
   const [precoTotal, setPrecoTotal] = useState('')
   const [precoPago, setPrecoPago] = useState('')
   const [notas, setNotas] = useState('')
+  const [conflito, setConflito] = useState(false)
 
   useEffect(() => {
     setProperties(store.getProperties().filter(p => p.ativo))
@@ -209,8 +211,21 @@ export default function NovaReservaPage() {
                 </span>
               </div>
             )}
+            {conflito && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive font-medium">
+                Conflito de datas: já existe uma reserva neste período para esta propriedade.
+              </div>
+            )}
             <button
-              onClick={goNext}
+              onClick={() => {
+                if (!checkIn || !checkOut || checkIn >= checkOut) return
+                const conflict = propId
+                  ? detectConflict(store.getBookings(), propId, checkIn, checkOut)
+                  : null
+                if (conflict) { setConflito(true); return }
+                setConflito(false)
+                goNext()
+              }}
               disabled={!checkIn || !checkOut || checkIn >= checkOut}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity"
             >
