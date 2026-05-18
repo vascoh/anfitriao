@@ -42,6 +42,10 @@ export interface Guest {
   nacionalidade?: string
   numero_documento?: string
   data_nascimento?: string
+  tipo_documento?: string
+  sexo?: string
+  pais_emissao?: string
+  data_validade_doc?: string
   tags: GuestTag[]
   notas?: string
   criado_em: string

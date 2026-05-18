@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, Users, MapPin, Phone, Mail, Edit2,
   CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink,
-  MessageCircle, CreditCard, Check
+  MessageCircle, CreditCard, Check, Link2
 } from 'lucide-react'
 import { fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -86,6 +86,7 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
   const [showPayment, setShowPayment] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentSaved, setPaymentSaved] = useState(false)
+  const [checkinCopied, setCheckinCopied] = useState(false)
 
   async function load() {
     const [bookings, guestsAll, propsAll] = await Promise.all([
@@ -277,6 +278,24 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
               className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40 w-full text-left transition-colors hover:bg-muted/30">
               <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
               <span className="text-sm text-emerald-700 font-medium">Enviar mensagem WhatsApp</span>
+            </button>
+          )}
+          {booking.estado !== 'cancelada' && booking.estado !== 'checkout' && (
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(`${window.location.origin}/checkin/${booking.id}`)
+                setCheckinCopied(true)
+                setTimeout(() => setCheckinCopied(false), 2000)
+              }}
+              className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40 w-full text-left transition-colors hover:bg-muted/30"
+            >
+              {checkinCopied
+                ? <Check className="h-4 w-4 text-primary shrink-0" />
+                : <Link2 className="h-4 w-4 text-primary shrink-0" />
+              }
+              <span className="text-sm text-primary font-medium">
+                {checkinCopied ? 'Link copiado!' : 'Copiar link de check-in online'}
+              </span>
             </button>
           )}
         </Section>
