@@ -149,7 +149,8 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
     const n = nights(booking!.check_in, booking!.check_out)
     const checkinDate = fmtDate(booking!.check_in, { weekday: 'long', day: 'numeric', month: 'long' })
     const instrucoes = prop.instrucoes_checkin ? `\n\n${prop.instrucoes_checkin}` : ''
-    const msg = `Olá ${guest.nome}! A sua reserva em ${prop.nome} está confirmada para ${checkinDate} (${n} noite${n !== 1 ? 's' : ''}).${instrucoes}\n\nBem-vindo/a!`
+    const checkinLink = `${window.location.origin}/checkin/${booking!.id}`
+    const msg = `Olá ${guest.nome}! A sua reserva em ${prop.nome} está confirmada para ${checkinDate} (${n} noite${n !== 1 ? 's' : ''}).${instrucoes}\n\nPor favor, faça o seu check-in online antes da chegada (1 minuto): ${checkinLink}\n\nBem-vindo/a!`
     const phone = guest.telefone.replace(/[^0-9+]/g, '')
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
   }
