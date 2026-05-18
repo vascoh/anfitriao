@@ -238,6 +238,23 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
           descricao: 'Reserva criada via website direto',
         }],
       })
+      // Fire-and-forget — email failure must not block the booking confirmation
+      fetch('/api/notify-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          guestName: nome.trim(),
+          guestEmail: email.trim(),
+          guestPhone: telefone.trim() || null,
+          propertyName: prop.nome,
+          checkIn,
+          checkOut,
+          numHospedes,
+          total,
+          notas: notas.trim() || null,
+        }),
+      }).catch(() => {})
       router.push(`/book/${propertyId}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
     } catch {
       setSubmitting(false)
