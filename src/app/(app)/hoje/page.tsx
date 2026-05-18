@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock } from 'lucide-react'
+import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { today, fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Booking, Property, Guest } from '@/lib/types'
@@ -23,19 +23,29 @@ function propName(props: Property[], id: string) {
 function ArrivalCard({ b, guests, props }: { b: Booking; guests: Guest[]; props: Property[] }) {
   const n = nights(b.check_in, b.check_out)
   const prop = props.find(p => p.id === b.propriedade_id)
+  const guest = guests.find(g => g.id === b.hospede_id)
+  const sibaOk = !!(guest?.numero_documento && guest?.data_nascimento && guest?.tipo_documento)
   return (
     <Link href={`/reservas/${b.id}`}
       className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/50 transition-colors">
       <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{guestName(guests, b.hospede_id)}</p>
+        <p className="font-semibold text-sm truncate">{guest?.nome ?? '—'}</p>
         <p className="text-xs text-muted-foreground truncate">{prop?.nome} · {n} noite{n !== 1 ? 's' : ''}</p>
       </div>
-      <div className="flex flex-col items-end gap-0.5 shrink-0">
+      <div className="flex flex-col items-end gap-1 shrink-0">
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${SOURCE_BG[b.origem]}`}>
           {SOURCE_LABEL[b.origem]}
         </span>
-        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+        {sibaOk ? (
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+            <ShieldCheck className="h-3 w-3" /> SIBA
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-600">
+            <ShieldAlert className="h-3 w-3" /> SIBA
+          </span>
+        )}
       </div>
     </Link>
   )
