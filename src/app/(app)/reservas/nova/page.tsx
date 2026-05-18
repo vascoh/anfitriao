@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { store, uuid, today } from '@/lib/store'
+import { uuid, today } from '@/lib/store'
+import { db } from '@/lib/db'
 import { detectConflict, calculatePrice } from '@/lib/reservations'
 import type { Property, Guest, Booking } from '@/lib/types'
 import type { BookingSource } from '@/lib/types'
@@ -52,8 +53,8 @@ export default function NovaReservaPage() {
   const [conflito, setConflito] = useState(false)
 
   useEffect(() => {
-    setProperties(store.getProperties().filter(p => p.ativo))
-    setGuests(store.getGuests())
+    db.getProperties().then(all => setProperties(all.filter(p => p.ativo)))
+    db.getGuests().then(setGuests)
   }, [])
 
   const selectedProp = properties.find(p => p.id === propId)
@@ -81,7 +82,7 @@ export default function NovaReservaPage() {
     goNext()
   }
 
-  function handleCreateGuest() {
+  async function handleCreateGuest() {
     if (!newGuestNome.trim()) return
     const g: Guest = {
       id: uuid(),
@@ -89,24 +90,23 @@ export default function NovaReservaPage() {
       tags: ['novo'],
       criado_em: new Date().toISOString(),
     }
-    store.saveGuest(g)
-    setGuests(store.getGuests())
+    await db.saveGuest(g)
+    setGuests(await db.getGuests())
     setGuestId(g.id)
     setShowNewGuest(false)
     setNewGuestNome('')
     goNext()
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!propId || !guestId) return
-    const resolvedGuestId = guestId
     const total = parseFloat(precoTotal) || 0
     const pago = parseFloat(precoPago) || 0
 
     const booking: Booking = {
       id: uuid(),
       propriedade_id: propId,
-      hospede_id: resolvedGuestId,
+      hospede_id: guestId,
       check_in: checkIn,
       check_out: checkOut,
       num_hospedes: numHospedes,
@@ -121,7 +121,7 @@ export default function NovaReservaPage() {
         { id: uuid(), data: new Date().toISOString(), tipo: 'confirmada', descricao: 'Confirmada na criação' },
       ],
     }
-    store.saveBooking(booking)
+    await db.saveBooking(booking)
     router.push(`/reservas/${booking.id}`)
   }
 
@@ -217,12 +217,13 @@ export default function NovaReservaPage() {
               </div>
             )}
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (!checkIn || !checkOut || checkIn >= checkOut) return
-                const conflict = propId
-                  ? detectConflict(store.getBookings(), propId, checkIn, checkOut)
-                  : null
-                if (conflict) { setConflito(true); return }
+                if (propId) {
+                  const bookings = await db.getBookings()
+                  const conflict = detectConflict(bookings, propId, checkIn, checkOut)
+                  if (conflict) { setConflito(true); return }
+                }
                 setConflito(false)
                 goNext()
               }}

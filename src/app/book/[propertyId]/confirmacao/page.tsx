@@ -3,8 +3,9 @@
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, Mail, Phone, ArrowLeft } from 'lucide-react'
-import { store, fmtDate, fmtMoney, nights as calcNights } from '@/lib/store'
-import type { Booking, WebsiteSettings } from '@/lib/types'
+import { fmtDate, fmtMoney, nights as calcNights } from '@/lib/store'
+import { db } from '@/lib/db'
+import type { Booking, Property, WebsiteSettings } from '@/lib/types'
 
 export default function ConfirmacaoPage({
   params,
@@ -17,16 +18,23 @@ export default function ConfirmacaoPage({
   const { b: bookingId, nome } = use(searchParams)
   const [booking, setBooking] = useState<Booking | null>(null)
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
+  const [prop, setProp] = useState<Property | null>(null)
 
   useEffect(() => {
+    db.getWebsiteSettings().then(setSettings)
     if (bookingId) {
-      const b = store.getBookings().find(x => x.id === bookingId) ?? null
-      setBooking(b)
+      db.getBookings().then(bookings => {
+        const b = bookings.find(x => x.id === bookingId) ?? null
+        setBooking(b)
+        if (b) {
+          db.getProperties().then(props => {
+            setProp(props.find(p => p.id === b.propriedade_id) ?? null)
+          })
+        }
+      })
     }
-    setSettings(store.getWebsiteSettings())
   }, [bookingId])
 
-  const prop = booking ? store.getProperties().find(p => p.id === booking.propriedade_id) : null
   const numNights = booking ? calcNights(booking.check_in, booking.check_out) : 0
 
   const waLink = settings?.telefone

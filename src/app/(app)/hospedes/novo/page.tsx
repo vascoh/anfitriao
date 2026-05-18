@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { store, uuid } from '@/lib/store'
+import { uuid } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Guest } from '@/lib/types'
 
 export default function NovoHospedePage() {
@@ -15,7 +16,7 @@ export default function NovoHospedePage() {
   const [nacionalidade, setNacionalidade] = useState('')
   const [notas, setNotas] = useState('')
 
-  function handleSave() {
+  async function handleSave() {
     if (!nome.trim()) return
     const g: Guest = {
       id: uuid(),
@@ -27,7 +28,7 @@ export default function NovoHospedePage() {
       tags: ['novo'],
       criado_em: new Date().toISOString(),
     }
-    store.saveGuest(g)
+    await db.saveGuest(g)
     router.push(`/hospedes/${g.id}`)
   }
 

@@ -7,7 +7,8 @@ import {
   ArrowLeft, Users, Calendar, MapPin, Phone, Mail, Edit2,
   CheckCircle2, Circle, AlertTriangle, Trash2, Plus, ExternalLink
 } from 'lucide-react'
-import { store, fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
+import { fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
+import { db } from '@/lib/db'
 import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
@@ -82,41 +83,44 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
   const [note, setNote] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  function load() {
-    const b = store.getBookings().find(x => x.id === id) ?? null
+  async function load() {
+    const [bookings, guestsAll, propsAll] = await Promise.all([
+      db.getBookings(), db.getGuests(), db.getProperties()
+    ])
+    const b = bookings.find(x => x.id === id) ?? null
     setBooking(b)
     if (b) {
-      setGuest(store.getGuests().find(g => g.id === b.hospede_id) ?? null)
-      setProp(store.getProperties().find(p => p.id === b.propriedade_id) ?? null)
+      setGuest(guestsAll.find(g => g.id === b.hospede_id) ?? null)
+      setProp(propsAll.find(p => p.id === b.propriedade_id) ?? null)
     }
   }
 
   useEffect(() => { load() }, [id])
 
-  function applyTransition(to: BookingStatus, nota?: string) {
+  async function applyTransition(to: BookingStatus, nota?: string) {
     if (!booking || !canTransition(booking.estado, to)) return
     const updated = transitionBooking(booking, to, nota)
-    store.saveBooking(updated)
+    await db.saveBooking(updated)
     setBooking(updated)
   }
 
-  function addNote() {
+  async function addNote() {
     if (!booking || !note.trim()) return
     const updated: Booking = {
       ...booking,
       notas: note.trim(),
       historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: `Nota: ${note.trim()}` }],
     }
-    store.saveBooking(updated)
+    await db.saveBooking(updated)
     setBooking(updated)
     setNote('')
     setShowNote(false)
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); return }
     if (!booking) return
-    store.deleteBooking(booking.id)
+    await db.deleteBooking(booking.id)
     router.push('/reservas')
   }
 

@@ -4,7 +4,8 @@ import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { store, uuid } from '@/lib/store'
+import { uuid } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Booking, BookingSource, BookingStatus } from '@/lib/types'
 import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
 
@@ -27,20 +28,22 @@ export default function EditarReservaPage({ params }: { params: Promise<{ id: st
   const [notas, setNotas] = useState('')
 
   useEffect(() => {
-    const b = store.getBookings().find(x => x.id === id)
-    if (!b) return
-    setBooking(b)
-    setCheckIn(b.check_in)
-    setCheckOut(b.check_out)
-    setNumHospedes(b.num_hospedes)
-    setOrigem(b.origem)
-    setEstado(b.estado)
-    setPrecoTotal(String(b.preco_total))
-    setPrecoPago(String(b.preco_pago))
-    setNotas(b.notas ?? '')
+    db.getBookings().then(bookings => {
+      const b = bookings.find(x => x.id === id)
+      if (!b) return
+      setBooking(b)
+      setCheckIn(b.check_in)
+      setCheckOut(b.check_out)
+      setNumHospedes(b.num_hospedes)
+      setOrigem(b.origem)
+      setEstado(b.estado)
+      setPrecoTotal(String(b.preco_total))
+      setPrecoPago(String(b.preco_pago))
+      setNotas(b.notas ?? '')
+    })
   }, [id])
 
-  function handleSave() {
+  async function handleSave() {
     if (!booking) return
     const total = parseFloat(precoTotal) || 0
     const pago = Math.min(parseFloat(precoPago) || 0, total)
@@ -58,7 +61,7 @@ export default function EditarReservaPage({ params }: { params: Promise<{ id: st
         id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: 'Reserva editada manualmente'
       }],
     }
-    store.saveBooking(updated)
+    await db.saveBooking(updated)
     router.push(`/reservas/${id}`)
   }
 

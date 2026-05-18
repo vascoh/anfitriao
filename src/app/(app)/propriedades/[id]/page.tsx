@@ -4,8 +4,9 @@ import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
-import { store, fmtDate, fmtMoney, nights } from '@/lib/store'
-import type { Property, Booking } from '@/lib/types'
+import { fmtDate, fmtMoney, nights } from '@/lib/store'
+import { db } from '@/lib/db'
+import type { Property, Booking, Guest } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
 const AMENITY_ICONS: Record<string, string> = {
@@ -26,38 +27,40 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
   const router = useRouter()
   const [prop, setProp] = useState<Property | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [guests, setGuests] = useState<Guest[]>([])
   const [showCheckin, setShowCheckin] = useState(false)
   const [showRules, setShowRules] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [websiteEnabled, setWebsiteEnabled] = useState(false)
 
   useEffect(() => {
-    const p = store.getProperties().find(x => x.id === id) ?? null
-    setProp(p)
-    setWebsiteEnabled(store.getWebsiteSettings().enabled)
-    const all = store.getBookings()
-    setBookings(
-      all
-        .filter(b => b.propriedade_id === id)
-        .sort((a, b) => b.check_in.localeCompare(a.check_in))
-        .slice(0, 10)
+    Promise.all([db.getProperties(), db.getWebsiteSettings(), db.getBookings(), db.getGuests()]).then(
+      ([propsAll, ws, bookingsAll, guestsAll]) => {
+        setProp(propsAll.find(x => x.id === id) ?? null)
+        setWebsiteEnabled(ws.enabled)
+        setBookings(
+          bookingsAll
+            .filter(b => b.propriedade_id === id)
+            .sort((a, b) => b.check_in.localeCompare(a.check_in))
+            .slice(0, 10)
+        )
+        setGuests(guestsAll)
+      }
     )
   }, [id])
 
-  function toggleActive() {
+  async function toggleActive() {
     if (!prop) return
     const updated = { ...prop, ativo: !prop.ativo }
-    store.saveProperty(updated)
+    await db.saveProperty(updated)
     setProp(updated)
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); return }
-    store.deleteProperty(id)
+    await db.deleteProperty(id)
     router.push('/propriedades')
   }
-
-  const guests = store.getGuests()
 
   if (!prop) return null
 

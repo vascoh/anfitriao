@@ -4,7 +4,7 @@ import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { store } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Property, PropertyType } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -49,30 +49,32 @@ export default function EditarPropriedadePage({ params }: { params: Promise<{ id
   const [regrasCasa, setRegrasCasa] = useState('')
 
   useEffect(() => {
-    const p = store.getProperties().find(x => x.id === id)
-    if (!p) { router.push('/propriedades'); return }
-    setProp(p)
-    setNome(p.nome)
-    setTipo(p.tipo)
-    setEndereco(p.endereco)
-    setCidade(p.cidade)
-    setQuartos(p.quartos)
-    setCasasBanho(p.casasBanho)
-    setCapacidade(p.capacidade)
-    setPrecoBase(p.preco_base)
-    setCor(p.cor)
-    setComodidades(p.comodidades)
-    setDescricao(p.descricao ?? '')
-    setImagemUrl(p.imagem_url ?? '')
-    setInstrucoesCheckin(p.instrucoes_checkin)
-    setRegrasCasa(p.regras_casa)
+    db.getProperties().then(all => {
+      const p = all.find(x => x.id === id)
+      if (!p) { router.push('/propriedades'); return }
+      setProp(p)
+      setNome(p.nome)
+      setTipo(p.tipo)
+      setEndereco(p.endereco)
+      setCidade(p.cidade)
+      setQuartos(p.quartos)
+      setCasasBanho(p.casasBanho)
+      setCapacidade(p.capacidade)
+      setPrecoBase(p.preco_base)
+      setCor(p.cor)
+      setComodidades(p.comodidades)
+      setDescricao(p.descricao ?? '')
+      setImagemUrl(p.imagem_url ?? '')
+      setInstrucoesCheckin(p.instrucoes_checkin)
+      setRegrasCasa(p.regras_casa)
+    })
   }, [id, router])
 
   function toggleAmenity(aid: string) {
     setComodidades(prev => prev.includes(aid) ? prev.filter(x => x !== aid) : [...prev, aid])
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!prop || !nome.trim() || !cidade.trim()) return
     const updated: Property = {
       ...prop,
@@ -91,7 +93,7 @@ export default function EditarPropriedadePage({ params }: { params: Promise<{ id
       instrucoes_checkin: instrucoesCheckin.trim(),
       regras_casa: regrasCasa.trim(),
     }
-    store.saveProperty(updated)
+    await db.saveProperty(updated)
     router.push(`/propriedades/${id}`)
   }
 

@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { store, uuid } from '@/lib/store'
+import { uuid } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Property, PropertyType } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -49,7 +50,7 @@ export default function NovaPropriedadePage() {
     setComodidades(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!nome.trim() || !cidade.trim()) return
     const p: Property = {
       id: uuid(),
@@ -70,7 +71,7 @@ export default function NovaPropriedadePage() {
       ativo: true,
       criado_em: new Date().toISOString(),
     }
-    store.saveProperty(p)
+    await db.saveProperty(p)
     router.push(`/propriedades/${p.id}`)
   }
 

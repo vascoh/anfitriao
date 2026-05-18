@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock } from 'lucide-react'
-import { store, today, fmtDate, fmtMoney, nights } from '@/lib/store'
+import { today, fmtDate, fmtMoney, nights } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Booking, Property, Guest } from '@/lib/types'
 import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
 
@@ -67,9 +68,9 @@ export default function HojePage() {
   const [props, setProps] = useState<Property[]>([])
 
   useEffect(() => {
-    setBookings(store.getBookings())
-    setGuests(store.getGuests())
-    setProps(store.getProperties())
+    db.getBookings().then(setBookings)
+    db.getGuests().then(setGuests)
+    db.getProperties().then(setProps)
   }, [])
 
   const t = today()

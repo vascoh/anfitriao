@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Copy, Check, AlertCircle, ChevronDown } from 'lucide-react'
-import { store } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Property } from '@/lib/types'
 
 const LANGS = [
@@ -66,9 +66,11 @@ export default function ConciergePage() {
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    const props = store.getProperties().filter(p => p.ativo)
-    setProperties(props)
-    if (props.length > 0) setSelectedPropId(props[0].id)
+    db.getProperties().then(all => {
+      const props = all.filter(p => p.ativo)
+      setProperties(props)
+      if (props.length > 0) setSelectedPropId(props[0].id)
+    })
   }, [])
 
   const selectedProp = properties.find(p => p.id === selectedPropId)

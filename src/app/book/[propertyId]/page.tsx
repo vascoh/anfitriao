@@ -4,7 +4,8 @@ import { use, useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronLeft, ChevronRight, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, CheckCircle2 } from 'lucide-react'
-import { store, uuid, fmtMoney, nights as calcNights } from '@/lib/store'
+import { uuid, fmtMoney, nights as calcNights } from '@/lib/store'
+import { db } from '@/lib/db'
 import { blockedDates, addDays } from '@/lib/reservations'
 import type { Property, WebsiteSettings } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -159,15 +160,19 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
   const [telefone, setTelefone] = useState('')
   const [notas, setNotas] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
-    const p = store.getProperties().find(x => x.id === propertyId) ?? null
-    setProp(p)
-    const ws = store.getWebsiteSettings()
-    setSettings(ws)
-    if (p) {
-      setBlocked(blockedDates(store.getBookings(), p.id))
-    }
+    Promise.all([
+      db.getProperties(),
+      db.getWebsiteSettings(),
+      db.getBookings(),
+    ]).then(([props, ws, bookings]) => {
+      const p = props.find(x => x.id === propertyId) ?? null
+      setProp(p)
+      setSettings(ws)
+      if (p) setBlocked(blockedDates(bookings, p.id))
+    })
   }, [propertyId])
 
   const today = new Date().toISOString().slice(0, 10)
@@ -200,45 +205,61 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
     if (!prop || !checkIn || !checkOut || !nome.trim() || !email.trim()) return
     if (numNights < minNights) return
     setSubmitting(true)
-    const guestId = uuid()
-    const bookingId = uuid()
-    store.saveGuest({
-      id: guestId,
-      nome: nome.trim(),
-      email: email.trim(),
-      telefone: telefone.trim() || undefined,
-      tags: ['novo'],
-      notas: notas.trim() || undefined,
-      criado_em: new Date().toISOString(),
-    })
-    store.saveBooking({
-      id: bookingId,
-      propriedade_id: prop.id,
-      hospede_id: guestId,
-      check_in: checkIn,
-      check_out: checkOut,
-      num_hospedes: numHospedes,
-      estado: 'pendente',
-      origem: 'direto',
-      preco_total: total,
-      preco_pago: 0,
-      notas: notas.trim() || undefined,
-      criado_em: new Date().toISOString(),
-      historico: [{
-        id: uuid(),
-        data: new Date().toISOString(),
-        tipo: 'criada',
-        descricao: 'Reserva criada via website direto',
-      }],
-    })
-    router.push(`/book/${propertyId}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
+    setSubmitError(null)
+    try {
+      const guestId = uuid()
+      const bookingId = uuid()
+      await db.saveGuest({
+        id: guestId,
+        nome: nome.trim(),
+        email: email.trim(),
+        telefone: telefone.trim() || undefined,
+        tags: ['novo'],
+        notas: notas.trim() || undefined,
+        criado_em: new Date().toISOString(),
+      })
+      await db.saveBooking({
+        id: bookingId,
+        propriedade_id: prop.id,
+        hospede_id: guestId,
+        check_in: checkIn,
+        check_out: checkOut,
+        num_hospedes: numHospedes,
+        estado: 'pendente',
+        origem: 'direto',
+        preco_total: total,
+        preco_pago: 0,
+        notas: notas.trim() || undefined,
+        criado_em: new Date().toISOString(),
+        historico: [{
+          id: uuid(),
+          data: new Date().toISOString(),
+          tipo: 'criada',
+          descricao: 'Reserva criada via website direto',
+        }],
+      })
+      router.push(`/book/${propertyId}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
+    } catch {
+      setSubmitting(false)
+      setSubmitError('Ocorreu um erro ao enviar o pedido. Tenta novamente.')
+    }
   }
 
-  if (!prop || !settings) return null
+  if (!settings) return null
+
   if (!settings.enabled) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-8 text-center">
         <p className="text-muted-foreground">Website não disponível.</p>
+      </div>
+    )
+  }
+
+  if (!prop) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <p className="text-muted-foreground">Este alojamento não está disponível.</p>
+        <Link href="/book" className="text-sm text-primary hover:underline">← Ver todos os alojamentos</Link>
       </div>
     )
   }
@@ -417,11 +438,29 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
             </div>
           )}
 
+          {/* Validation checklist when not ready */}
+          {!canSubmit && (
+            <div className="rounded-lg bg-muted/60 border border-border px-4 py-3 flex flex-col gap-1.5">
+              <p className="text-xs font-semibold text-muted-foreground mb-0.5">Para continuar, precisa de:</p>
+              {!checkIn && <p className="text-xs text-muted-foreground">· Selecionar data de entrada no calendário</p>}
+              {checkIn && !checkOut && <p className="text-xs text-muted-foreground">· Selecionar data de saída no calendário</p>}
+              {checkIn && checkOut && !hasEnoughNights && (
+                <p className="text-xs text-muted-foreground">· Selecionar pelo menos {minNights} noite{minNights !== 1 ? 's' : ''}</p>
+              )}
+              {!nome.trim() && <p className="text-xs text-muted-foreground">· Preencher o nome</p>}
+              {!email.trim() && <p className="text-xs text-muted-foreground">· Preencher o email</p>}
+            </div>
+          )}
+
+          {submitError && (
+            <p className="text-xs text-destructive text-center">{submitError}</p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
             disabled={!canSubmit || submitting}
-            className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-bold text-sm disabled:opacity-35 active:opacity-80 transition-opacity flex items-center justify-center gap-2">
+            className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-bold text-sm disabled:opacity-40 active:opacity-80 transition-opacity flex items-center justify-center gap-2">
             {submitting ? (
               'A enviar pedido...'
             ) : canSubmit ? (

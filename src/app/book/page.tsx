@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees } from 'lucide-react'
-import { store, fmtMoney } from '@/lib/store'
+import { fmtMoney } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Property, WebsiteSettings } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -119,8 +120,8 @@ export default function BookPage() {
   const [props, setProps] = useState<Property[]>([])
 
   useEffect(() => {
-    setSettings(store.getWebsiteSettings())
-    setProps(store.getProperties().filter(p => p.ativo))
+    db.getWebsiteSettings().then(setSettings)
+    db.getProperties().then(all => setProps(all.filter(p => p.ativo)))
   }, [])
 
   if (!settings) return null

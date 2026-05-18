@@ -3,17 +3,20 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, ArrowRight, Wifi, BedDouble } from 'lucide-react'
-import { store, fmtMoney } from '@/lib/store'
-import type { Property } from '@/lib/types'
+import { fmtMoney } from '@/lib/store'
+import { db } from '@/lib/db'
+import type { Property, Booking, Guest } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
 export default function PropriedadesPage() {
   const [props, setProps] = useState<Property[]>([])
-  const [bookings, setBookings] = useState(store.getBookings())
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [guests, setGuests] = useState<Guest[]>([])
 
   useEffect(() => {
-    setProps(store.getProperties())
-    setBookings(store.getBookings())
+    db.getProperties().then(setProps)
+    db.getBookings().then(setBookings)
+    db.getGuests().then(setGuests)
   }, [])
 
   function activeBooking(propId: string) {
@@ -25,8 +28,6 @@ export default function PropriedadesPage() {
       .filter(b => b.propriedade_id === propId && b.estado === 'confirmada' && b.check_in >= t)
       .sort((a, b) => a.check_in.localeCompare(b.check_in))[0]
   }
-
-  const guests = store.getGuests()
 
   return (
     <div className="flex flex-col min-h-full">

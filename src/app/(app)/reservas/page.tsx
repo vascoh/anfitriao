@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
-import { store, fmtDate, fmtMoney, nights } from '@/lib/store'
+import { fmtDate, fmtMoney, nights } from '@/lib/store'
+import { db } from '@/lib/db'
 import type { Booking, Guest, Property, BookingStatus } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
 
@@ -82,9 +83,9 @@ export default function ReservasPage() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    setBookings(store.getBookings())
-    setGuests(store.getGuests())
-    setProps(store.getProperties())
+    db.getBookings().then(setBookings)
+    db.getGuests().then(setGuests)
+    db.getProperties().then(setProps)
   }, [])
 
   const filtered = useMemo(() => {

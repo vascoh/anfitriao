@@ -4,8 +4,9 @@ import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight } from 'lucide-react'
-import { store, fmtDate, fmtMoney, nights } from '@/lib/store'
-import type { Guest, Booking } from '@/lib/types'
+import { fmtDate, fmtMoney, nights } from '@/lib/store'
+import { db } from '@/lib/db'
+import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL } from '@/lib/labels'
 
 export default function HospedeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +14,7 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
   const router = useRouter()
   const [guest, setGuest] = useState<Guest | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [props, setProps] = useState<Property[]>([])
   const [editing, setEditing] = useState(false)
 
   // Edit state
@@ -23,28 +25,29 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
   const [notas, setNotas] = useState('')
 
   useEffect(() => {
-    const g = store.getGuests().find(x => x.id === id) ?? null
-    setGuest(g)
-    if (g) {
-      setNome(g.nome)
-      setEmail(g.email ?? '')
-      setTelefone(g.telefone ?? '')
-      setNacionalidade(g.nacionalidade ?? '')
-      setNotas(g.notas ?? '')
-    }
-    const all = store.getBookings()
-    setBookings(all.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
+    Promise.all([db.getGuests(), db.getBookings(), db.getProperties()]).then(([guestsAll, bookingsAll, propsAll]) => {
+      const g = guestsAll.find(x => x.id === id) ?? null
+      setGuest(g)
+      if (g) {
+        setNome(g.nome)
+        setEmail(g.email ?? '')
+        setTelefone(g.telefone ?? '')
+        setNacionalidade(g.nacionalidade ?? '')
+        setNotas(g.notas ?? '')
+      }
+      setBookings(bookingsAll.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
+      setProps(propsAll)
+    })
   }, [id])
 
-  function save() {
+  async function save() {
     if (!guest) return
     const updated: Guest = { ...guest, nome: nome.trim(), email: email.trim() || undefined, telefone: telefone.trim() || undefined, nacionalidade: nacionalidade.trim() || undefined, notas: notas.trim() || undefined }
-    store.saveGuest(updated)
+    await db.saveGuest(updated)
     setGuest(updated)
     setEditing(false)
   }
 
-  const props = store.getProperties()
   const totalGasto = bookings.filter(b => b.estado !== 'cancelada').reduce((acc, b) => acc + b.preco_total, 0)
   const numEstadias = bookings.filter(b => b.estado === 'checkout' || b.estado === 'checkin').length
 

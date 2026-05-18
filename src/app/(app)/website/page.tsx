@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
-import { store, fmtMoney, fmtDate, nights, uuid } from '@/lib/store'
+import { fmtMoney, fmtDate, nights, uuid } from '@/lib/store'
+import { db } from '@/lib/db'
 import { parseIcal, generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
@@ -20,6 +21,8 @@ export default function WebsitePage() {
   const origin = useOrigin()
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [props, setProps] = useState<Property[]>([])
+  const [allBookings, setAllBookings] = useState<import('@/lib/types').Booking[]>([])
+  const [allGuests, setAllGuests] = useState<import('@/lib/types').Guest[]>([])
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
   const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({})
@@ -27,8 +30,10 @@ export default function WebsitePage() {
   const [newFeedSource, setNewFeedSource] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    setSettings(store.getWebsiteSettings())
-    setProps(store.getProperties())
+    db.getWebsiteSettings().then(setSettings)
+    db.getProperties().then(setProps)
+    db.getBookings().then(setAllBookings)
+    db.getGuests().then(setAllGuests)
   }, [])
 
   const publicUrl = `${origin}/book`
@@ -38,9 +43,9 @@ export default function WebsitePage() {
     setSaved(false)
   }
 
-  function save() {
+  async function save() {
     if (!settings) return
-    store.saveWebsiteSettings(settings)
+    await db.saveWebsiteSettings(settings)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -60,7 +65,7 @@ export default function WebsitePage() {
       const text = await res.text()
       const events = parseIcal(text)
 
-      const bookings = store.getBookings()
+      const bookings = await db.getBookings()
       let added = 0
 
       for (const ev of events) {
@@ -71,13 +76,13 @@ export default function WebsitePage() {
         if (exists) continue
 
         const guestId = uuid()
-        store.saveGuest({
+        await db.saveGuest({
           id: guestId,
           nome: ev.summary || `${SOURCE_LABEL[feed.source as keyof typeof SOURCE_LABEL]} Guest`,
           tags: ['novo'],
           criado_em: new Date().toISOString(),
         })
-        store.saveBooking({
+        await db.saveBooking({
           id: uuid(),
           propriedade_id: prop.id,
           hospede_id: guestId,
@@ -110,8 +115,8 @@ export default function WebsitePage() {
         ...prop,
         ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
       }
-      store.saveProperty(updatedProp)
-      setProps(store.getProperties())
+      await db.saveProperty(updatedProp)
+      setProps(await db.getProperties())
       setSyncStates(s => ({ ...s, [key]: 'ok' }))
       if (added > 0) {
         setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
@@ -124,14 +129,14 @@ export default function WebsitePage() {
         ...prop,
         ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
       }
-      store.saveProperty(updatedProp)
-      setProps(store.getProperties())
+      await db.saveProperty(updatedProp)
+      setProps(await db.getProperties())
       setSyncStates(s => ({ ...s, [key]: 'error' }))
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
     }
   }
 
-  function addFeed(prop: Property) {
+  async function addFeed(prop: Property) {
     const url = newFeedUrl[prop.id]?.trim()
     if (!url) return
     const source = (newFeedSource[prop.id] || 'outro') as IcalFeed['source']
@@ -142,25 +147,24 @@ export default function WebsitePage() {
       nome: SOURCE_LABEL[source],
     }
     const updated: Property = { ...prop, ical_feeds: [...(prop.ical_feeds ?? []), feed] }
-    store.saveProperty(updated)
-    setProps(store.getProperties())
+    await db.saveProperty(updated)
+    setProps(await db.getProperties())
     setNewFeedUrl(s => ({ ...s, [prop.id]: '' }))
     setNewFeedSource(s => ({ ...s, [prop.id]: '' }))
   }
 
-  function removeFeed(prop: Property, feedId: string) {
+  async function removeFeed(prop: Property, feedId: string) {
     const updated: Property = { ...prop, ical_feeds: (prop.ical_feeds ?? []).filter(f => f.id !== feedId) }
-    store.saveProperty(updated)
-    setProps(store.getProperties())
+    await db.saveProperty(updated)
+    setProps(await db.getProperties())
   }
 
   function exportIcal(prop: Property) {
-    const bookings = store.getBookings().filter(b =>
+    const bookings = allBookings.filter(b =>
       b.propriedade_id === prop.id && b.estado !== 'cancelada' && b.estado !== 'no_show'
     )
-    const guests = store.getGuests()
     const events = bookings.map(b => {
-      const g = guests.find(x => x.id === b.hospede_id)
+      const g = allGuests.find(x => x.id === b.hospede_id)
       return { uid: `${b.id}@anfitriao`, summary: g?.nome ?? 'Reservado', start: b.check_in, end: b.check_out }
     })
     const ics = generateIcal(events, prop.nome)
@@ -171,10 +175,9 @@ export default function WebsitePage() {
     a.click()
   }
 
-  const allBookings = store.getBookings()
   const directBookings = allBookings.filter(b => b.origem === 'direto' && b.estado !== 'cancelada')
   const totalRevenue = directBookings.reduce((s, b) => s + b.preco_total, 0)
-  const guests = store.getGuests()
+  const guests = allGuests
 
   if (!settings) return null
 

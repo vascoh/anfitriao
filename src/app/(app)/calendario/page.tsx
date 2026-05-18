@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut } from 'lucide-react'
-import { store, fmtDate } from '@/lib/store'
+import { fmtDate } from '@/lib/store'
+import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Booking, Property } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/labels'
@@ -87,10 +88,12 @@ export default function CalendarioPage() {
   const [selected, setSelected] = useState<string | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
+  const [guests, setGuests] = useState<{ id: string; nome: string }[]>([])
 
   useEffect(() => {
-    setBookings(store.getBookings())
-    setProperties(store.getProperties())
+    db.getBookings().then(setBookings)
+    db.getProperties().then(setProperties)
+    db.getGuests().then(setGuests)
   }, [])
 
   const today = now.toISOString().slice(0, 10)
@@ -129,7 +132,7 @@ export default function CalendarioPage() {
   const selectedBookings = selected ? getBookingsForDay(bookings, selected) : []
 
   function guestName(hospede_id: string) {
-    return store.getGuests().find(g => g.id === hospede_id)?.nome ?? '—'
+    return guests.find(g => g.id === hospede_id)?.nome ?? '—'
   }
 
   return (

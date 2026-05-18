@@ -3,20 +3,20 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Search, Plus, ArrowRight } from 'lucide-react'
-import { store } from '@/lib/store'
-import type { Guest } from '@/lib/types'
+import { db } from '@/lib/db'
+import type { Guest, Booking } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
 export default function HospedesPage() {
   const [guests, setGuests] = useState<Guest[]>([])
-  const [bookings, setBookings] = useState(store.getBookings())
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    setGuests(store.getGuests())
-    setBookings(store.getBookings())
+    db.getGuests().then(setGuests)
+    db.getBookings().then(setBookings)
   }, [])
 
   const filtered = useMemo(() => {

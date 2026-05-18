@@ -10,12 +10,12 @@ const K = {
 }
 
 const DEFAULT_WEBSITE: WebsiteSettings = {
-  enabled: false,
+  enabled: true,
   nome: 'Reservas Diretas',
   descricao: 'Reserve diretamente connosco sem taxas de intermediários.',
   email: '',
   telefone: '',
-  min_noites: 2,
+  min_noites: 1,
   antecedencia_dias: 1,
 }
 
