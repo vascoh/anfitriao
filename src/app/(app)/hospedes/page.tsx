@@ -2,21 +2,55 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, Plus, ArrowRight } from 'lucide-react'
+import { Search, Plus, ArrowRight, Download } from 'lucide-react'
 import { db } from '@/lib/db'
-import type { Guest, Booking } from '@/lib/types'
+import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
+function buildSibaCsv(guests: Guest[], bookings: Booking[], props: Property[]) {
+  const cols = [
+    'Nome', 'Data Nascimento', 'Sexo', 'Nacionalidade',
+    'Tipo Documento', 'Nº Documento', 'Validade Documento', 'País Emissão',
+    'Check-in', 'Check-out', 'Nº Noites', 'Propriedade',
+  ]
+  const rows: string[][] = []
+  const activeBookings = bookings.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show')
+  for (const b of activeBookings) {
+    const g = guests.find(x => x.id === b.hospede_id)
+    if (!g) continue
+    const p = props.find(x => x.id === b.propriedade_id)
+    const noites = Math.round((new Date(b.check_out).getTime() - new Date(b.check_in).getTime()) / 86400000)
+    rows.push([
+      g.nome ?? '',
+      g.data_nascimento ?? '',
+      g.sexo ?? '',
+      g.nacionalidade ?? '',
+      g.tipo_documento ?? '',
+      g.numero_documento ?? '',
+      g.data_validade_doc ?? '',
+      g.pais_emissao ?? '',
+      b.check_in,
+      b.check_out,
+      String(noites),
+      p?.nome ?? '',
+    ])
+  }
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`
+  return [cols.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))].join('\n')
+}
+
 export default function HospedesPage() {
   const [guests, setGuests] = useState<Guest[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [props, setProps] = useState<Property[]>([])
   const [search, setSearch] = useState('')
 
   useEffect(() => {
     db.getGuests().then(setGuests)
     db.getBookings().then(setBookings)
+    db.getProperties().then(setProps)
   }, [])
 
   const filtered = useMemo(() => {
@@ -33,15 +67,34 @@ export default function HospedesPage() {
     return bookings.filter(b => b.hospede_id === guestId && (b.estado === 'checkout' || b.estado === 'checkin')).length
   }
 
+  function exportSiba() {
+    const csv = buildSibaCsv(guests, bookings, props)
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `siba-hospedes-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+  }
+
   return (
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
           <h1 className="text-2xl font-semibold tracking-tight">Hóspedes</h1>
-          <Link href="/hospedes/novo"
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-medium active:opacity-80 transition-opacity">
-            <Plus className="h-3.5 w-3.5" /> Novo
-          </Link>
+          <div className="flex items-center gap-2">
+            {guests.length > 0 && (
+              <button
+                onClick={exportSiba}
+                title="Exportar dados SIBA/SEF"
+                className="flex items-center gap-1.5 border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
+                <Download className="h-3.5 w-3.5" /> SIBA
+              </button>
+            )}
+            <Link href="/hospedes/novo"
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-medium active:opacity-80 transition-opacity">
+              <Plus className="h-3.5 w-3.5" /> Novo
+            </Link>
+          </div>
         </div>
         <div className="px-4 pb-3">
           <div className="flex items-center gap-2 rounded-lg border border-input bg-card px-3 py-2">
