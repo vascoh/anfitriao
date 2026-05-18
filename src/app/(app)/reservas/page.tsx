@@ -80,6 +80,7 @@ export default function ReservasPage() {
   const [guests, setGuests] = useState<Guest[]>([])
   const [props, setProps] = useState<Property[]>([])
   const [filter, setFilter] = useState<Filter>('todas')
+  const [propFilter, setPropFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function ReservasPage() {
 
   const filtered = useMemo(() => {
     let result = filterBookings(bookings, filter)
+    if (propFilter) result = result.filter(b => b.propriedade_id === propFilter)
     if (search.trim()) {
       const q = search.toLowerCase()
       result = result.filter(b => {
@@ -103,7 +105,7 @@ export default function ReservasPage() {
       if (b.estado === 'checkin' && a.estado !== 'checkin') return 1
       return a.check_in < b.check_in ? -1 : 1
     })
-  }, [bookings, guests, props, filter, search])
+  }, [bookings, guests, props, filter, propFilter, search])
 
   const counts = useMemo(() => ({
     ativas:    bookings.filter(b => b.estado === 'checkin').length,
@@ -136,8 +138,8 @@ export default function ReservasPage() {
           </div>
         </div>
 
-        {/* Filter chips */}
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {/* Status filter chips */}
+        <div className="flex gap-2 px-4 pb-2 overflow-x-auto no-scrollbar">
           {FILTERS.map(f => {
             const count = counts[f.key as keyof typeof counts]
             return (
@@ -160,6 +162,34 @@ export default function ReservasPage() {
             )
           })}
         </div>
+
+        {/* Property filter chips */}
+        {props.length > 1 && (
+          <div className="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setPropFilter(null)}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                propFilter === null ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Todas
+            </button>
+            {props.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setPropFilter(propFilter === p.id ? null : p.id)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  propFilter === p.id ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                style={propFilter === p.id ? { backgroundColor: p.cor + '22', color: p.cor } : {}}
+              >
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
+                {p.nome}
+              </button>
+            ))}
+          </div>
+        )}
+
       </header>
 
       <div className="flex-1">

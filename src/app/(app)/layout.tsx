@@ -1,5 +1,6 @@
 import { SideNav } from '@/components/side-nav'
 import { BottomNav } from '@/components/bottom-nav'
+import { GlobalSearch } from '@/components/global-search'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile bottom nav — hidden on lg+ */}
         <BottomNav />
       </div>
+
+      {/* Global search palette — Cmd+K or / */}
+      <GlobalSearch />
     </div>
   )
 }

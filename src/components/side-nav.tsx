@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, CalendarCheck2, CalendarDays, Users,
-  Sparkles, FileText, Building2, Globe, TrendingUp,
+  Sparkles, FileText, Building2, Globe, TrendingUp, Search,
 } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
 
@@ -43,6 +43,18 @@ export function SideNav() {
           </svg>
         </div>
         <span className="font-bold text-base tracking-tight">Anfitrião</span>
+      </div>
+
+      {/* Search trigger */}
+      <div className="px-2 py-2 border-b border-border">
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-muted-foreground hover:text-foreground text-xs transition-colors"
+        >
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1 text-left">Pesquisar...</span>
+          <span className="font-mono text-[10px] opacity-50">⌘K</span>
+        </button>
       </div>
 
       {/* Nav */}
