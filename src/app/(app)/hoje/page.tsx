@@ -12,7 +12,7 @@ function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 }
 
-function guestName(guests: Guest[], id: string) {
+function guestName(guests: Guest[], id: string | null) {
   return guests.find(g => g.id === id)?.nome ?? '—'
 }
 

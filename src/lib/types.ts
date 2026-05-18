@@ -70,7 +70,7 @@ export interface WebsiteSettings {
 export interface Booking {
   id: string
   propriedade_id: string
-  hospede_id: string
+  hospede_id: string | null
   check_in: string
   check_out: string
   num_hospedes: number
@@ -79,6 +79,7 @@ export interface Booking {
   preco_total: number
   preco_pago: number
   notas?: string
+  uid_externo?: string
   criado_em: string
   historico: BookingEvent[]
 }

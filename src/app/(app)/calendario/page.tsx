@@ -131,7 +131,7 @@ export default function CalendarioPage() {
 
   const selectedBookings = selected ? getBookingsForDay(bookings, selected) : []
 
-  function guestName(hospede_id: string) {
+  function guestName(hospede_id: string | null) {
     return guests.find(g => g.id === hospede_id)?.nome ?? '—'
   }
 
