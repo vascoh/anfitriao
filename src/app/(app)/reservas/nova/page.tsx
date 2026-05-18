@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
 import { uuid, today } from '@/lib/store'
@@ -30,7 +30,16 @@ function StepHeader({ step, total, label }: { step: number; total: number; label
 }
 
 export default function NovaReservaPage() {
+  return (
+    <Suspense>
+      <NovaReservaInner />
+    </Suspense>
+  )
+}
+
+function NovaReservaInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('propriedade')
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
@@ -38,9 +47,13 @@ export default function NovaReservaPage() {
   const [showNewGuest, setShowNewGuest] = useState(false)
 
   // Form state
-  const [propId, setPropId] = useState('')
-  const [checkIn, setCheckIn] = useState(today())
+  const [propId, setPropId] = useState(() => searchParams.get('propriedade') ?? '')
+  const [checkIn, setCheckIn] = useState(() => searchParams.get('checkin') ?? today())
   const [checkOut, setCheckOut] = useState(() => {
+    const ci = searchParams.get('checkin')
+    if (ci) {
+      const d = new Date(ci + 'T00:00:00'); d.setDate(d.getDate() + 2); return d.toISOString().slice(0, 10)
+    }
     const d = new Date(); d.setDate(d.getDate() + 2); return d.toISOString().slice(0, 10)
   })
   const [guestId, setGuestId] = useState('')
@@ -53,7 +66,14 @@ export default function NovaReservaPage() {
   const [conflito, setConflito] = useState(false)
 
   useEffect(() => {
-    db.getProperties().then(all => setProperties(all.filter(p => p.ativo)))
+    db.getProperties().then(all => {
+      const active = all.filter(p => p.ativo)
+      setProperties(active)
+      const preselected = searchParams.get('propriedade')
+      if (preselected && active.some(p => p.id === preselected)) {
+        setStep('datas')
+      }
+    })
     db.getGuests().then(setGuests)
   }, [])
 
@@ -125,8 +145,7 @@ export default function NovaReservaPage() {
     router.push(`/reservas/${booking.id}`)
   }
 
-  return (
-    <div className="flex flex-col min-h-full">
+  return (<div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center gap-3 px-4 py-4">
           <button onClick={goBack} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">

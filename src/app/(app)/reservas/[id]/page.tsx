@@ -4,8 +4,9 @@ import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft, Users, Calendar, MapPin, Phone, Mail, Edit2,
-  CheckCircle2, Circle, AlertTriangle, Trash2, Plus, ExternalLink
+  ArrowLeft, Users, MapPin, Phone, Mail, Edit2,
+  CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink,
+  MessageCircle, CreditCard, Check
 } from 'lucide-react'
 import { fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -82,6 +83,9 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
   const [showNote, setShowNote] = useState(false)
   const [note, setNote] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showPayment, setShowPayment] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentSaved, setPaymentSaved] = useState(false)
 
   async function load() {
     const [bookings, guestsAll, propsAll] = await Promise.all([
@@ -115,6 +119,38 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
     setBooking(updated)
     setNote('')
     setShowNote(false)
+  }
+
+  async function registerPayment() {
+    if (!booking) return
+    const amount = parseFloat(paymentAmount)
+    if (isNaN(amount) || amount <= 0) return
+    const newPago = Math.min(booking.preco_pago + amount, booking.preco_total)
+    const updated: Booking = {
+      ...booking,
+      preco_pago: newPago,
+      historico: [...booking.historico, {
+        id: uuid(),
+        data: new Date().toISOString(),
+        tipo: 'pagamento',
+        descricao: `Pagamento registado: ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)}`,
+      }],
+    }
+    await db.saveBooking(updated)
+    setBooking(updated)
+    setPaymentAmount('')
+    setPaymentSaved(true)
+    setTimeout(() => { setPaymentSaved(false); setShowPayment(false) }, 1500)
+  }
+
+  function openWhatsApp() {
+    if (!guest?.telefone || !prop) return
+    const n = nights(booking!.check_in, booking!.check_out)
+    const checkinDate = fmtDate(booking!.check_in, { weekday: 'long', day: 'numeric', month: 'long' })
+    const instrucoes = prop.instrucoes_checkin ? `\n\n${prop.instrucoes_checkin}` : ''
+    const msg = `Olá ${guest.nome}! A sua reserva em ${prop.nome} está confirmada para ${checkinDate} (${n} noite${n !== 1 ? 's' : ''}).${instrucoes}\n\nBem-vindo/a!`
+    const phone = guest.telefone.replace(/[^0-9+]/g, '')
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
   async function handleDelete() {
@@ -236,6 +272,13 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
               <span className="text-sm">{guest.telefone}</span>
             </a>
           )}
+          {guest?.telefone && (
+            <button onClick={openWhatsApp}
+              className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40 w-full text-left transition-colors hover:bg-muted/30">
+              <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span className="text-sm text-emerald-700 font-medium">Enviar mensagem WhatsApp</span>
+            </button>
+          )}
         </Section>
 
         {/* Booking details */}
@@ -256,6 +299,52 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
           <Row label="Total" value={<span className="font-bold">{fmtMoney(booking.preco_total)}</span>} />
           <Row label="Recebido" value={<span className={booking.preco_pago >= booking.preco_total ? 'text-emerald-600 font-semibold' : ''}>{fmtMoney(booking.preco_pago)}</span>} />
           {saldo > 0 && <Row label="Por receber" value={<span className="text-destructive font-semibold">{fmtMoney(saldo)}</span>} />}
+          {saldo > 0 && booking.estado !== 'cancelada' && (
+            <>
+              {!showPayment ? (
+                <button onClick={() => { setShowPayment(true); setPaymentAmount(String(saldo)) }}
+                  className="flex items-center gap-2 px-4 py-3 text-sm text-primary font-medium w-full text-left hover:bg-muted/30 transition-colors">
+                  <CreditCard className="h-4 w-4 shrink-0" />
+                  Registar pagamento
+                </button>
+              ) : (
+                <div className="px-4 py-3 flex flex-col gap-2 border-t border-border">
+                  <p className="text-xs text-muted-foreground font-medium">Montante recebido (€)</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={0.01}
+                      step={0.01}
+                      max={saldo}
+                      value={paymentAmount}
+                      onChange={e => setPaymentAmount(e.target.value)}
+                      className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      autoFocus
+                    />
+                    <button
+                      onClick={registerPayment}
+                      disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
+                      className={`flex items-center gap-1.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 ${
+                        paymentSaved ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground'
+                      }`}
+                    >
+                      {paymentSaved ? <Check className="h-4 w-4" /> : 'Guardar'}
+                    </button>
+                    <button onClick={() => setShowPayment(false)}
+                      className="px-3 rounded-lg border border-border text-sm text-muted-foreground">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {booking.preco_pago >= booking.preco_total && booking.preco_total > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span className="text-xs text-emerald-700 font-medium">Pagamento completo</span>
+            </div>
+          )}
         </Section>
 
         {/* Property */}

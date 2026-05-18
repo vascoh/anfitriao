@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Copy, Check } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Property, Booking, Guest } from '@/lib/types'
@@ -32,6 +32,7 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
   const [showRules, setShowRules] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [websiteEnabled, setWebsiteEnabled] = useState(false)
+  const [icalCopied, setIcalCopied] = useState(false)
 
   useEffect(() => {
     Promise.all([db.getProperties(), db.getWebsiteSettings(), db.getBookings(), db.getGuests()]).then(
@@ -301,6 +302,18 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
               Ver no website
             </a>
           </div>
+          <button
+            onClick={async () => {
+              const url = `${window.location.origin}/api/ical/${id}`
+              await navigator.clipboard.writeText(url)
+              setIcalCopied(true)
+              setTimeout(() => setIcalCopied(false), 2000)
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium border border-border text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
+          >
+            {icalCopied ? <Check className="h-4 w-4 text-primary" /> : <Rss className="h-4 w-4" />}
+            {icalCopied ? 'URL copiado!' : 'Copiar URL do calendário (iCal)'}
+          </button>
           <button
             onClick={handleDelete}
             className={`w-full rounded-xl py-3 text-sm font-medium border transition-colors ${

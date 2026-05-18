@@ -339,11 +339,23 @@ export default function WebsitePage() {
               <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                 <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: prop.cor }} />
                 <span className="text-sm font-semibold flex-1 truncate">{prop.nome}</span>
-                <button onClick={() => exportIcal(prop)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors shrink-0">
-                  <Download className="h-3.5 w-3.5" />
-                  Exportar .ics
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={async () => {
+                      const url = `${origin}/api/ical/${prop.id}`
+                      await navigator.clipboard.writeText(url)
+                    }}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    title="Copiar URL de subscrição">
+                    <Rss className="h-3.5 w-3.5" />
+                    Subscrever
+                  </button>
+                  <button onClick={() => exportIcal(prop)}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+                    <Download className="h-3.5 w-3.5" />
+                    .ics
+                  </button>
+                </div>
               </div>
 
               {/* Existing feeds */}
