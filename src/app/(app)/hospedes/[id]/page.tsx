@@ -148,6 +148,28 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
           </div>
         )}
 
+        {/* SIBA Document data */}
+        {(guest.numero_documento || guest.data_nascimento || guest.tipo_documento) && !editing && (
+          <div className="mx-4 rounded-xl border border-border bg-card overflow-hidden">
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Dados SIBA</p>
+            </div>
+            {[
+              { label: 'Tipo documento', value: guest.tipo_documento },
+              { label: 'Nº documento', value: guest.numero_documento },
+              { label: 'Validade', value: guest.data_validade_doc },
+              { label: 'Data de nascimento', value: guest.data_nascimento },
+              { label: 'Sexo', value: guest.sexo },
+              { label: 'País de emissão', value: guest.pais_emissao },
+            ].filter(f => f.value).map(f => (
+              <div key={f.label} className="flex items-center justify-between px-4 py-2.5 border-b border-border last:border-0">
+                <span className="text-xs text-muted-foreground w-36 shrink-0">{f.label}</span>
+                <span className="text-sm font-medium text-right">{f.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Notes */}
         {guest.notas && !editing && (
           <div className="mx-4 rounded-xl border border-border bg-card px-4 py-3.5">
