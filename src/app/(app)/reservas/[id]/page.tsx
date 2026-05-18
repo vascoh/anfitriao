@@ -107,6 +107,13 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
     const updated = transitionBooking(booking, to, nota)
     await db.saveBooking(updated)
     setBooking(updated)
+    if (to === 'confirmada') {
+      fetch('/api/notify-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id }),
+      }).catch(() => {})
+    }
   }
 
   async function addNote() {
