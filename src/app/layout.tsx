@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
+import { PwaRegister } from '@/components/pwa-register'
 import './globals.css'
 
 const geistSans = Geist({
@@ -22,13 +23,16 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Anfitrião',
   },
+  icons: {
+    apple: '/api/pwa-icon?size=180',
+  },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#faf7f4',
+  themeColor: '#C2714F',
 }
 
 export default function RootLayout({
@@ -44,6 +48,7 @@ export default function RootLayout({
       >
         <body className="h-full bg-background text-foreground">
           {children}
+          <PwaRegister />
         </body>
       </html>
     </ClerkProvider>
