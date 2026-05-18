@@ -1,17 +1,46 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { Download } from 'lucide-react'
 import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
-import { fmtMoney } from '@/lib/store'
+import { fmtMoney, fmtDate, nights } from '@/lib/store'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
-import type { Booking, Property, BookingSource } from '@/lib/types'
+import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
 
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 const CHART_H = 120
 
 function isActive(b: Booking) {
   return b.estado !== 'cancelada' && b.estado !== 'no_show'
+}
+
+function buildRevenueCsv(bookings: Booking[], properties: Property[], guests: Guest[], year: number): string {
+  const cols = ['Check-in', 'Check-out', 'Noites', 'Hóspedes', 'Nome', 'Propriedade', 'Origem', 'Total (€)', 'Pago (€)', 'Em falta (€)', 'Estado']
+  const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`
+  const rows = bookings
+    .filter(b => b.check_in.startsWith(String(year)))
+    .sort((a, b) => a.check_in.localeCompare(b.check_in))
+    .map(b => {
+      const prop = properties.find(p => p.id === b.propriedade_id)
+      const guest = guests.find(g => g.id === b.hospede_id)
+      const n = nights(b.check_in, b.check_out)
+      const saldo = b.preco_total - b.preco_pago
+      return [
+        b.check_in,
+        b.check_out,
+        String(n),
+        String(b.num_hospedes),
+        guest?.nome ?? '',
+        prop?.nome ?? '',
+        SOURCE_LABEL[b.origem] ?? b.origem,
+        b.preco_total.toFixed(2),
+        b.preco_pago.toFixed(2),
+        saldo.toFixed(2),
+        b.estado,
+      ].map(esc).join(',')
+    })
+  return [cols.map(esc).join(','), ...rows].join('\n')
 }
 
 function revenueByMonth(bookings: Booking[], year: number): number[] {
@@ -38,13 +67,24 @@ function statsBySource(bookings: Booking[], year: number): [BookingSource, { rev
 export default function RelatoriosPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
+  const [guests, setGuests] = useState<Guest[]>([])
   const now = useMemo(() => new Date(), [])
   const [year, setYear] = useState(now.getFullYear())
 
   useEffect(() => {
     db.getBookings().then(setBookings)
     db.getProperties().then(setProperties)
+    db.getGuests().then(setGuests)
   }, [])
+
+  function exportRevenue() {
+    const csv = buildRevenueCsv(bookings, properties, guests, year)
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `receitas-${year}.csv`
+    a.click()
+  }
 
   const availableYears = useMemo(() => {
     const years = new Set<number>([now.getFullYear()])
@@ -84,6 +124,15 @@ export default function RelatoriosPage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
           <h1 className="text-2xl font-semibold tracking-tight">Relatórios</h1>
+          <div className="flex items-center gap-2">
+            {totalBookings > 0 && (
+              <button
+                onClick={exportRevenue}
+                title={`Exportar receitas ${year} para CSV`}
+                className="flex items-center gap-1.5 border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
+                <Download className="h-3.5 w-3.5" /> CSV
+              </button>
+            )}
           {availableYears.length > 1 && (
             <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
               {availableYears.map(y => (
@@ -98,6 +147,7 @@ export default function RelatoriosPage() {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* Stats strip */}
