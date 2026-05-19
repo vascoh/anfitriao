@@ -118,6 +118,17 @@ export default function RelatoriosPage() {
 
   const currentMonth = now.getFullYear() === year ? now.getMonth() : -1
 
+  const forecastRevenue = useMemo(() => {
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const horizon = new Date(today)
+    horizon.setDate(horizon.getDate() + 28)
+    const todayStr = today.toISOString().slice(0, 10)
+    const horizonStr = horizon.toISOString().slice(0, 10)
+    return bookings
+      .filter(b => (b.estado === 'confirmada' || b.estado === 'pendente') && b.check_in >= todayStr && b.check_in < horizonStr)
+      .reduce((sum, b) => sum + b.preco_total, 0)
+  }, [bookings, now])
+
   return (
     <div className="flex flex-col min-h-full pb-8">
 
@@ -168,6 +179,12 @@ export default function RelatoriosPage() {
             <div className="px-4 py-2.5 shrink-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Valor médio</p>
               <p className="text-lg font-bold">{fmtMoney(Math.round(totalRevenue / totalBookings))}</p>
+            </div>
+          )}
+          {forecastRevenue > 0 && (
+            <div className="px-4 py-2.5 shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Previsto 28d</p>
+              <p className="text-lg font-bold text-primary">{fmtMoney(forecastRevenue)}</p>
             </div>
           )}
         </div>
