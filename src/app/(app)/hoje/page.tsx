@@ -130,6 +130,13 @@ export default function HojePage() {
     [chegadas]
   )
 
+  const receitaMes = useMemo(() => {
+    const month = new Date().toISOString().slice(0, 7)
+    return bookings
+      .filter(b => b.check_in.startsWith(month) && !['cancelada', 'no_show'].includes(b.estado))
+      .reduce((sum, b) => sum + b.preco_total, 0)
+  }, [bookings])
+
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0
 
@@ -170,6 +177,12 @@ export default function HojePage() {
             <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
               <span className="font-semibold text-emerald-600">{fmtMoney(receitaHoje)}</span>
               <span className="text-muted-foreground">a receber</span>
+            </div>
+          )}
+          {receitaMes > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
+              <span className="font-semibold">{fmtMoney(receitaMes)}</span>
+              <span className="text-muted-foreground">este mês</span>
             </div>
           )}
         </div>
