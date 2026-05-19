@@ -1,4 +1,8 @@
-import type { BookingStatus, BookingSource, GuestTag, PropertyType } from './types'
+import type { BookingStatus, BookingSource, GuestTag, PropertyType, Guest } from './types'
+
+export function sibaComplete(g: Pick<Guest, 'numero_documento' | 'data_nascimento' | 'tipo_documento' | 'sexo' | 'pais_emissao'>): boolean {
+  return !!(g.numero_documento && g.data_nascimento && g.tipo_documento && (g.sexo || g.pais_emissao))
+}
 
 export const STATUS_LABEL: Record<BookingStatus, string> = {
   pendente: 'Pendente',

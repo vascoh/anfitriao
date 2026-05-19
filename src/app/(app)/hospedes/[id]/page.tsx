@@ -8,6 +8,7 @@ import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL } from '@/lib/labels'
+import type { GuestTag } from '@/lib/types'
 
 export default function HospedeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -29,6 +30,8 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
   const [dataValidadeDoc, setDataValidadeDoc] = useState('')
   const [sexo, setSexo] = useState('')
   const [paisEmissao, setPaisEmissao] = useState('')
+  const [tags, setTags] = useState<GuestTag[]>([])
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     Promise.all([db.getGuests(), db.getBookings(), db.getProperties()]).then(([guestsAll, bookingsAll, propsAll]) => {
@@ -46,6 +49,7 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
         setDataValidadeDoc(g.data_validade_doc ?? '')
         setSexo(g.sexo ?? '')
         setPaisEmissao(g.pais_emissao ?? '')
+        setTags(g.tags)
       }
       setBookings(bookingsAll.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
       setProps(propsAll)
@@ -54,6 +58,7 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
 
   async function save() {
     if (!guest) return
+    setSaveError('')
     const updated: Guest = {
       ...guest,
       nome: nome.trim(),
@@ -67,10 +72,15 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
       data_validade_doc: dataValidadeDoc.trim() || undefined,
       sexo: sexo.trim() || undefined,
       pais_emissao: paisEmissao.trim() || undefined,
+      tags,
     }
-    await db.saveGuest(updated)
-    setGuest(updated)
-    setEditing(false)
+    try {
+      await db.saveGuest(updated)
+      setGuest(updated)
+      setEditing(false)
+    } catch {
+      setSaveError('Erro ao guardar. Tenta novamente.')
+    }
   }
 
   const totalGasto = bookings.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show').reduce((acc, b) => acc + b.preco_total, 0)
@@ -146,6 +156,23 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
               <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Preferências, observações..."
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm resize-none min-h-20 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs text-muted-foreground">Etiquetas</label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(TAG_LABEL) as GuestTag[]).map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                      tags.includes(tag) ? TAG_CLASS[tag] : 'border-border text-muted-foreground hover:border-foreground/30'
+                    }`}
+                  >
+                    {TAG_LABEL[tag]}
+                  </button>
+                ))}
+              </div>
+            </div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest pt-1">Dados SIBA</p>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground">Tipo de documento</label>
@@ -193,9 +220,14 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
               <input type="text" value={paisEmissao} onChange={e => setPaisEmissao(e.target.value)} placeholder="Ex: Portugal"
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
+            {saveError && (
+              <p className="text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
+                {saveError}
+              </p>
+            )}
             <div className="flex gap-2">
               <button onClick={save} className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium">Guardar</button>
-              <button onClick={() => setEditing(false)} className="flex-1 border border-border rounded-lg py-2.5 text-sm font-medium">Cancelar</button>
+              <button onClick={() => { setEditing(false); setSaveError('') }} className="flex-1 border border-border rounded-lg py-2.5 text-sm font-medium">Cancelar</button>
             </div>
           </div>
         ) : (

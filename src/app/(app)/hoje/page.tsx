@@ -6,7 +6,7 @@ import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, 
 import { today, fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Booking, Property, Guest } from '@/lib/types'
-import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
+import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
@@ -24,7 +24,7 @@ function ArrivalCard({ b, guests, props }: { b: Booking; guests: Guest[]; props:
   const n = nights(b.check_in, b.check_out)
   const prop = props.find(p => p.id === b.propriedade_id)
   const guest = guests.find(g => g.id === b.hospede_id)
-  const sibaOk = !!(guest?.numero_documento && guest?.data_nascimento && guest?.tipo_documento)
+  const sibaOk = guest ? sibaComplete(guest) : false
   return (
     <Link href={`/reservas/${b.id}`}
       className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/50 transition-colors">
@@ -105,9 +105,14 @@ export default function HojePage() {
     bookings.filter(b =>
       b.estado !== 'cancelada' && b.estado !== 'no_show' &&
       b.preco_pago < b.preco_total &&
-      new Date(b.check_in) <= new Date()
+      b.check_in <= t
     ),
-    [bookings]
+    [bookings, t]
+  )
+
+  const esquecidosCheckin = useMemo(() =>
+    bookings.filter(b => b.estado === 'confirmada' && b.check_in < t),
+    [bookings, t]
   )
 
   const proximasChegadas = useMemo(() => {
@@ -152,7 +157,7 @@ export default function HojePage() {
       .reduce((sum, b) => sum + b.preco_total, 0)
   }, [bookings, t])
 
-  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0
+  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
 
   return (
@@ -238,6 +243,19 @@ export default function HojePage() {
                   </p>
                 </div>
                 <ArrowRight className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+              </Link>
+            ))}
+            {esquecidosCheckin.map(b => (
+              <Link key={`late-${b.id}`} href={`/reservas/${b.id}`}
+                className="flex items-start gap-3 bg-orange-50 border-b border-orange-100 px-4 lg:px-8 py-3 active:bg-orange-100 transition-colors">
+                <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-orange-900">Check-in em atraso</p>
+                  <p className="text-xs text-orange-700 truncate">
+                    {guestName(guests, b.hospede_id)} · {propName(props, b.propriedade_id)} · entrou {fmtDate(b.check_in)}
+                  </p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-orange-600 mt-0.5 shrink-0" />
               </Link>
             ))}
           </div>

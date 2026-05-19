@@ -4,13 +4,8 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { db } from '@/lib/db'
-import type { Guest, Booking, Property } from '@/lib/types'
-import { TAG_LABEL, TAG_CLASS } from '@/lib/labels'
-
-function sibaStatus(g: Guest) {
-  const ok = !!(g.numero_documento && g.data_nascimento && g.tipo_documento && (g.sexo || g.pais_emissao))
-  return ok
-}
+import type { Guest, Booking, Property, GuestTag } from '@/lib/types'
+import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
@@ -67,14 +62,16 @@ export default function HospedesPage() {
 
   const filtered = useMemo(() => {
     let result = guests
-    if (tagFilter) result = result.filter(g => g.tags.includes(tagFilter as never))
-    if (!search.trim()) return result
-    const q = search.toLowerCase()
-    return result.filter(g =>
-      g.nome.toLowerCase().includes(q) ||
-      g.email?.toLowerCase().includes(q) ||
-      g.nacionalidade?.toLowerCase().includes(q)
-    )
+    if (tagFilter) result = result.filter(g => g.tags.includes(tagFilter as GuestTag))
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(g =>
+        g.nome.toLowerCase().includes(q) ||
+        g.email?.toLowerCase().includes(q) ||
+        g.nacionalidade?.toLowerCase().includes(q)
+      )
+    }
+    return result.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt'))
   }, [guests, search, tagFilter])
 
   function stayCount(guestId: string) {
@@ -155,7 +152,7 @@ export default function HospedesPage() {
           <div className="bg-card border-b border-border">
             {filtered.map(g => {
               const stays = stayCount(g.id)
-              const siba = sibaStatus(g)
+              const siba = sibaComplete(g)
               return (
                 <Link key={g.id} href={`/hospedes/${g.id}`}
                   className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-muted/40 transition-colors">

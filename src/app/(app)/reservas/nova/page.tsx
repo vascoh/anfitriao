@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { uuid, today } from '@/lib/store'
+import { uuid, today, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import { detectConflict, calculatePrice } from '@/lib/reservations'
 import type { Property, Guest, Booking } from '@/lib/types'
@@ -232,9 +232,9 @@ function NovaReservaInner() {
             </div>
             {selectedProp && checkIn && checkOut && checkIn < checkOut && (
               <div className="rounded-xl border border-border bg-card px-4 py-3.5 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Estimativa ({Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)} noites)</span>
+                <span className="text-sm text-muted-foreground">Estimativa ({nights(checkIn, checkOut)} noite{nights(checkIn, checkOut) !== 1 ? 's' : ''})</span>
                 <span className="font-bold text-base">
-                  €{Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000) * selectedProp.preco_base}
+                  €{nights(checkIn, checkOut) * selectedProp.preco_base}
                 </span>
               </div>
             )}
