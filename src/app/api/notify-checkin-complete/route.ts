@@ -1,0 +1,104 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
+import { db } from '@/lib/db'
+import { fmtDate } from '@/lib/store'
+
+export async function POST(req: NextRequest) {
+  if (!process.env.RESEND_API_KEY) {
+    return NextResponse.json({ ok: true, skipped: 'no_api_key' })
+  }
+
+  const { bookingId } = await req.json()
+  if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
+
+  const [bookings, guests, properties, settings] = await Promise.all([
+    db.getBookings(),
+    db.getGuests(),
+    db.getProperties(),
+    db.getWebsiteSettings(),
+  ])
+
+  const booking = bookings.find(b => b.id === bookingId)
+  if (!booking) return NextResponse.json({ ok: false, error: 'not found' }, { status: 404 })
+
+  const guest = booking.hospede_id ? guests.find(g => g.id === booking.hospede_id) : null
+  const prop = properties.find(p => p.id === booking.propriedade_id)
+  const hostEmail = settings.email
+  if (!hostEmail) return NextResponse.json({ ok: true, skipped: 'no_host_email' })
+
+  const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
+  const sibaComplete = !!(
+    guest?.numero_documento &&
+    guest?.data_nascimento &&
+    guest?.tipo_documento &&
+    (guest?.sexo || guest?.pais_emissao)
+  )
+
+  try {
+    await resend.emails.send({
+      from,
+      to: hostEmail,
+      subject: `✓ Check-in online concluído — ${guest?.nome ?? 'Hóspede'} · ${prop?.nome ?? 'Alojamento'}`,
+      html: `<!DOCTYPE html>
+<html lang="pt">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f5f0;padding:32px 16px;margin:0;">
+  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #ede8e0;">
+    <div style="height:4px;background:#10b981;"></div>
+    <div style="padding:28px 32px 24px;">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Check-in online</p>
+      <h1 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1a1209;">Hóspede registado com sucesso</h1>
+
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;">
+        <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#166534;">
+          ${guest?.nome ?? '—'}
+          ${sibaComplete ? ' <span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px;">SIBA ✓</span>' : ''}
+        </p>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <tr>
+            <td style="padding:3px 0;color:#6b5c4e;width:40%;">Propriedade</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${prop?.nome ?? '—'}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:#6b5c4e;">Check-in</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${fmtDate(booking.check_in)}</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 0;color:#6b5c4e;">Hóspedes</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${booking.num_hospedes}</td>
+          </tr>
+          ${guest?.numero_documento ? `
+          <tr>
+            <td style="padding:3px 0;color:#6b5c4e;">Documento</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${guest.tipo_documento ?? ''} ${guest.numero_documento}</td>
+          </tr>` : ''}
+          ${guest?.nacionalidade ? `
+          <tr>
+            <td style="padding:3px 0;color:#6b5c4e;">Nacionalidade</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${guest.nacionalidade}</td>
+          </tr>` : ''}
+        </table>
+      </div>
+
+      ${!sibaComplete ? `
+      <div style="background:#fffbf5;border:1px solid #fed7aa;border-radius:8px;padding:12px;margin-bottom:20px;">
+        <p style="margin:0;font-size:12px;color:#92400e;">
+          <strong>Atenção:</strong> Alguns dados SIBA estão em falta. Verifica o perfil do hóspede antes da chegada.
+        </p>
+      </div>` : ''}
+
+      <p style="margin:0;font-size:12px;color:#9a8070;text-align:center;">Anfitrião · Reservas Diretas</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    })
+  } catch (err) {
+    console.error('[notify-checkin-complete]', err)
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
+}

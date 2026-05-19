@@ -91,5 +91,13 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     }],
   }).eq('id', bookingId)
 
+  // Notify host — fire-and-forget, never block the guest
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+  fetch(`${baseUrl}/api/notify-checkin-complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ bookingId }),
+  }).catch(() => {})
+
   return NextResponse.json({ ok: true })
 }
