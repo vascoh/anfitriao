@@ -125,6 +125,11 @@ export default function HojePage() {
   const totalUnidades = props.filter(p => p.ativo).length
   const ocupacao = totalUnidades > 0 ? Math.round((emCasa.length / totalUnidades) * 100) : 0
 
+  const receitaHoje = useMemo(() =>
+    chegadas.reduce((sum, b) => sum + (b.preco_total - b.preco_pago), 0),
+    [chegadas]
+  )
+
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0
 
@@ -159,6 +164,12 @@ export default function HojePage() {
             <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
               <span className="font-semibold">{ocupacao}%</span>
               <span className="text-muted-foreground">ocupação</span>
+            </div>
+          )}
+          {receitaHoje > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
+              <span className="font-semibold text-emerald-600">{fmtMoney(receitaHoje)}</span>
+              <span className="text-muted-foreground">a receber</span>
             </div>
           )}
         </div>
