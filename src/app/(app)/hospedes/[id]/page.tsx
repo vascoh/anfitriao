@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Guest, Booking, Property } from '@/lib/types'
@@ -132,6 +132,17 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
               <a href={`tel:${guest.telefone}`} className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-muted/40">
                 <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="text-sm">{guest.telefone}</span>
+              </a>
+            )}
+            {guest.telefone && (
+              <a
+                href={`https://wa.me/${guest.telefone.replace(/[^0-9+]/g, '').replace(/^\+/, '')}?text=${encodeURIComponent(`Olá ${guest.nome.split(' ')[0]}!`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-muted/40 transition-colors hover:bg-muted/30"
+              >
+                <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="text-sm text-emerald-700 font-medium">WhatsApp</span>
               </a>
             )}
             {guest.nacionalidade && (
