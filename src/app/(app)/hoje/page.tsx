@@ -110,11 +110,23 @@ export default function HojePage() {
     [bookings]
   )
 
+  const proximasChegadas = useMemo(() => {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10)
+    const horizon = new Date()
+    horizon.setDate(horizon.getDate() + 7)
+    const horizonStr = horizon.toISOString().slice(0, 10)
+    return bookings
+      .filter(b => b.check_in >= tomorrowStr && b.check_in <= horizonStr && b.estado !== 'cancelada' && b.estado !== 'no_show')
+      .sort((a, b) => a.check_in.localeCompare(b.check_in))
+  }, [bookings])
+
   const totalUnidades = props.filter(p => p.ativo).length
   const ocupacao = totalUnidades > 0 ? Math.round((emCasa.length / totalUnidades) * 100) : 0
 
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0
-  const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas
+  const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0
 
   return (
     <div className="flex flex-col min-h-full pb-6">
@@ -221,6 +233,38 @@ export default function HojePage() {
             </div>
             <div className="divide-y divide-border">
               {emCasa.map(b => <InHouseRow key={b.id} b={b} guests={guests} props={props} />)}
+            </div>
+          </section>
+        )}
+
+        {/* Próximas chegadas */}
+        {proximasChegadas.length > 0 && (
+          <section className="border-b border-border">
+            <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Próximos 7 dias</h2>
+            </div>
+            <div className="divide-y divide-border">
+              {proximasChegadas.map(b => {
+                const prop = props.find(p => p.id === b.propriedade_id)
+                const guest = guests.find(g => g.id === b.hospede_id)
+                const n = nights(b.check_in, b.check_out)
+                const daysUntil = Math.round((new Date(b.check_in).getTime() - new Date(t).getTime()) / 86400000)
+                return (
+                  <Link key={b.id} href={`/reservas/${b.id}`}
+                    className="flex items-center gap-3 px-4 py-3 active:bg-muted/50 transition-colors">
+                    <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{guest?.nome ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{prop?.nome} · {n} noite{n !== 1 ? 's' : ''}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold text-primary">daqui a {daysUntil}d</p>
+                      <p className="text-[10px] text-muted-foreground">{fmtDate(b.check_in)}</p>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </section>
         )}
