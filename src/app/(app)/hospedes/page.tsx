@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, Plus, ArrowRight, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { db } from '@/lib/db'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS } from '@/lib/labels'
