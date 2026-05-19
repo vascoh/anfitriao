@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { db } from '@/lib/db'
+import type { Guest } from '@/lib/types'
 
 type ExtractedData = Record<string, string>
 
@@ -24,13 +26,27 @@ function formatForSIBA(data: ExtractedData): string {
     .join('\n')
 }
 
+function parseDatePt(ddmmyyyy: string): string {
+  const [d, m, y] = ddmmyyyy.split('/')
+  if (!d || !m || !y) return ddmmyyyy
+  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
+}
+
 export default function DocumentosPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [extracting, setExtracting] = useState(false)
   const [data, setData] = useState<ExtractedData | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [guests, setGuests] = useState<Guest[]>([])
+  const [selectedGuestId, setSelectedGuestId] = useState('')
+  const [applying, setApplying] = useState(false)
+  const [applied, setApplied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    db.getGuests().then(setGuests)
+  }, [])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -67,11 +83,37 @@ export default function DocumentosPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function applyToGuest() {
+    if (!data || !selectedGuestId) return
+    const guest = guests.find(g => g.id === selectedGuestId)
+    if (!guest) return
+    setApplying(true)
+    try {
+      const updated: Guest = {
+        ...guest,
+        nacionalidade: data.nacionalidade ?? guest.nacionalidade,
+        numero_documento: data.numero_documento ?? guest.numero_documento,
+        tipo_documento: data.tipo_documento ?? guest.tipo_documento,
+        data_nascimento: data.data_nascimento ? parseDatePt(data.data_nascimento) : guest.data_nascimento,
+        data_validade_doc: data.data_validade ? parseDatePt(data.data_validade) : guest.data_validade_doc,
+        sexo: data.sexo ?? guest.sexo,
+        pais_emissao: data.pais_emissao ?? guest.pais_emissao,
+      }
+      await db.saveGuest(updated)
+      setGuests(prev => prev.map(g => g.id === selectedGuestId ? updated : g))
+      setApplied(true)
+      setTimeout(() => setApplied(false), 3000)
+    } finally {
+      setApplying(false)
+    }
+  }
+
   function reset() {
     setPreview(null)
     setData(null)
     setError('')
     setCopied(false)
+    setApplied(false)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -173,6 +215,40 @@ export default function DocumentosPage() {
                 </div>
               ))}
             </div>
+
+            {guests.length > 0 && (
+              <div className="flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest">Aplicar a hóspede</p>
+                <div className="relative">
+                  <select
+                    value={selectedGuestId}
+                    onChange={e => setSelectedGuestId(e.target.value)}
+                    className="w-full appearance-none rounded-lg border border-input bg-card px-3 py-2.5 text-sm pr-8 focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Selecionar hóspede...</option>
+                    {guests.map(g => (
+                      <option key={g.id} value={g.id}>{g.nome}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+                <button
+                  onClick={applyToGuest}
+                  disabled={!selectedGuestId || applying || applied}
+                  className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors ${
+                    applied ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  }`}
+                >
+                  {applied
+                    ? <><Check className="h-4 w-4" /> Dados aplicados com sucesso!</>
+                    : applying
+                    ? 'A guardar...'
+                    : <><UserCheck className="h-4 w-4" /> Guardar dados SIBA no hóspede</>
+                  }
+                </button>
+                <p className="text-[10px] text-muted-foreground">Actualiza os campos SIBA sem alterar o nome do hóspede.</p>
+              </div>
+            )}
 
             <a
               href="https://siba.sef.pt"
