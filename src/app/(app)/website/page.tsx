@@ -177,6 +177,7 @@ export default function WebsitePage() {
 
   const directBookings = allBookings.filter(b => b.origem === 'direto' && b.estado !== 'cancelada')
   const totalRevenue = directBookings.reduce((s, b) => s + b.preco_total, 0)
+  const commissionSaved = Math.round(totalRevenue * 0.15)
   const guests = allGuests
 
   if (!settings) return null
@@ -233,7 +234,7 @@ export default function WebsitePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Reservas diretas</p>
             <p className="text-2xl font-bold mt-0.5">{directBookings.length}</p>
@@ -241,6 +242,11 @@ export default function WebsitePage() {
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Receita direta</p>
             <p className="text-2xl font-bold mt-0.5">{fmtMoney(totalRevenue)}</p>
+          </div>
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 col-span-2 sm:col-span-1">
+            <p className="text-xs text-muted-foreground">Poupado em comissões</p>
+            <p className="text-2xl font-bold mt-0.5 text-emerald-600">{fmtMoney(commissionSaved)}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">vs Airbnb 15%</p>
           </div>
         </div>
 

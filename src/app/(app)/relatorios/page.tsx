@@ -85,6 +85,18 @@ function topGuests(bookings: Booking[], guests: Guest[], year: number, limit = 5
     .slice(0, limit)
 }
 
+function occupancyByMonth(bookings: Booking[], properties: Property[], year: number): number[] {
+  const activeProps = properties.filter(p => p.ativo)
+  if (activeProps.length === 0) return Array(12).fill(0)
+  return Array.from({ length: 12 }, (_, m) => {
+    const total = activeProps.reduce((sum, p) => {
+      const { pct } = occupancyForMonth(bookings, p.id, year, m)
+      return sum + pct
+    }, 0)
+    return Math.round(total / activeProps.length)
+  })
+}
+
 function statsBySource(bookings: Booking[], year: number): [BookingSource, { revenue: number; count: number }][] {
   const map: Partial<Record<BookingSource, { revenue: number; count: number }>> = {}
   bookings
@@ -131,6 +143,7 @@ export default function RelatoriosPage() {
   const totalRevenue = monthly.reduce((a, v) => a + v, 0)
 
   const bySource = useMemo(() => statsBySource(bookings, year), [bookings, year])
+  const occupancyMonthly = useMemo(() => occupancyByMonth(bookings, properties, year), [bookings, properties, year])
   const maxSourceRevenue = Math.max(...bySource.map(([, s]) => s.revenue), 1)
 
   const byProperty = useMemo(() => revenueByProperty(bookings, properties, year), [bookings, properties, year])
@@ -288,6 +301,46 @@ export default function RelatoriosPage() {
             </div>
           )}
         </section>
+
+        {/* Occupancy by month chart */}
+        {activeProps.length > 0 && (
+          <section className="border-b border-border px-4 lg:px-8 py-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+              Ocupação mensal · {year}
+            </p>
+            <div className="flex items-end gap-px sm:gap-1">
+              {occupancyMonthly.map((pct, i) => {
+                const barH = pct > 0 ? Math.max(4, Math.round((pct / 100) * CHART_H)) : 0
+                const isCurrent = i === currentMonth
+                const isFuture = year === now.getFullYear() && i > now.getMonth()
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+                    <span className={`text-[9px] transition-opacity text-muted-foreground ${pct > 0 ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`}>
+                      {pct}%
+                    </span>
+                    <div className="w-full flex items-end justify-center" style={{ height: `${CHART_H}px` }}>
+                      {barH > 0 ? (
+                        <div
+                          className="w-full rounded-t transition-all"
+                          style={{
+                            height: `${barH}px`,
+                            backgroundColor: pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : 'hsl(var(--primary))',
+                            opacity: isFuture ? 0.25 : isCurrent ? 1 : 0.65,
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-0.5 rounded-full bg-border" />
+                      )}
+                    </div>
+                    <span className={`text-[10px] leading-none ${isCurrent ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                      {MONTHS_SHORT[i]}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Occupancy + Source grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-border border-b border-border">
