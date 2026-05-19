@@ -315,23 +315,51 @@ export default function CheckinPage({ params }: { params: Promise<{ bookingId: s
               </p>
             )}
 
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Os teus dados</p>
-              {(Object.keys(FIELD_LABELS) as Array<keyof GuestForm>).map(key => (
-                <div key={key} className="flex flex-col gap-1">
-                  <label className="text-xs text-muted-foreground font-medium">
-                    {FIELD_LABELS[key]}
-                    {REQUIRED.includes(key) && <span className="text-primary ml-0.5">*</span>}
-                  </label>
-                  <input
-                    type="text"
-                    value={form[key]}
-                    onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
-                    className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder={FIELD_LABELS[key]}
-                  />
-                </div>
-              ))}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Os teus dados</p>
+              {(Object.keys(FIELD_LABELS) as Array<keyof GuestForm>).map(key => {
+                const isDate = key === 'data_nascimento' || key === 'data_validade_doc'
+                const isSexo = key === 'sexo'
+                const isTipoDoc = key === 'tipo_documento'
+                const inputClass = "rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring w-full"
+                return (
+                  <div key={key} className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground font-medium">
+                      {FIELD_LABELS[key]}
+                      {REQUIRED.includes(key) && <span className="text-primary ml-0.5">*</span>}
+                    </label>
+                    {isTipoDoc ? (
+                      <select value={form[key]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} className={inputClass}>
+                        <option value="">Selecionar...</option>
+                        <option value="Passaporte">Passaporte</option>
+                        <option value="Cartão de Cidadão">Cartão de Cidadão</option>
+                        <option value="BI">BI</option>
+                        <option value="Título de Residência">Título de Residência</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    ) : isSexo ? (
+                      <div className="flex gap-3">
+                        {[{ val: 'M', label: 'Masculino' }, { val: 'F', label: 'Feminino' }].map(opt => (
+                          <label key={opt.val} className={`flex-1 flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm cursor-pointer transition-colors ${
+                            form[key] === opt.val ? 'border-primary bg-primary/10 text-primary font-semibold' : 'border-input bg-card text-muted-foreground hover:border-primary/40'
+                          }`}>
+                            <input type="radio" name="sexo" value={opt.val} checked={form[key] === opt.val} onChange={() => setForm(prev => ({ ...prev, [key]: opt.val }))} className="sr-only" />
+                            {opt.label}
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <input
+                        type={isDate ? 'date' : key === 'email' ? 'email' : key === 'telefone' ? 'tel' : 'text'}
+                        value={form[key]}
+                        onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
+                        className={inputClass}
+                        placeholder={isDate ? '' : FIELD_LABELS[key]}
+                      />
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
             <button
