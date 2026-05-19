@@ -250,6 +250,7 @@ export default function HojePage() {
                 const guest = guests.find(g => g.id === b.hospede_id)
                 const n = nights(b.check_in, b.check_out)
                 const daysUntil = Math.round((new Date(b.check_in).getTime() - new Date(t).getTime()) / 86400000)
+                const checkinDone = b.historico.some(e => e.tipo === 'nota' && e.descricao?.includes('Check-in online submetido'))
                 return (
                   <Link key={b.id} href={`/reservas/${b.id}`}
                     className="flex items-center gap-3 px-4 py-3 active:bg-muted/50 transition-colors">
@@ -258,9 +259,12 @@ export default function HojePage() {
                       <p className="text-sm font-medium truncate">{guest?.nome ?? '—'}</p>
                       <p className="text-xs text-muted-foreground truncate">{prop?.nome} · {n} noite{n !== 1 ? 's' : ''}</p>
                     </div>
-                    <div className="text-right shrink-0">
+                    <div className="flex flex-col items-end gap-1 shrink-0">
                       <p className="text-xs font-semibold text-primary">daqui a {daysUntil}d</p>
-                      <p className="text-[10px] text-muted-foreground">{fmtDate(b.check_in)}</p>
+                      {checkinDone
+                        ? <span className="flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600"><ShieldCheck className="h-3 w-3" /> Check-in</span>
+                        : <span className="text-[10px] text-amber-600 font-medium">Sem check-in</span>
+                      }
                     </div>
                   </Link>
                 )
