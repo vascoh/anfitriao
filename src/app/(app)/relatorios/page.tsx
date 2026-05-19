@@ -68,6 +68,23 @@ function revenueByProperty(bookings: Booking[], properties: Property[], year: nu
     .sort((a, b) => b.revenue - a.revenue)
 }
 
+function topGuests(bookings: Booking[], guests: Guest[], year: number, limit = 5): { id: string; nome: string; revenue: number; stays: number }[] {
+  const map: Record<string, { nome: string; revenue: number; stays: number }> = {}
+  bookings
+    .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
+    .forEach(b => {
+      const g = guests.find(x => x.id === b.hospede_id)
+      if (!g) return
+      if (!map[b.hospede_id]) map[b.hospede_id] = { nome: g.nome, revenue: 0, stays: 0 }
+      map[b.hospede_id].revenue += b.preco_total
+      map[b.hospede_id].stays++
+    })
+  return Object.entries(map)
+    .map(([id, v]) => ({ id, ...v }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit)
+}
+
 function statsBySource(bookings: Booking[], year: number): [BookingSource, { revenue: number; count: number }][] {
   const map: Partial<Record<BookingSource, { revenue: number; count: number }>> = {}
   bookings
@@ -118,6 +135,8 @@ export default function RelatoriosPage() {
 
   const byProperty = useMemo(() => revenueByProperty(bookings, properties, year), [bookings, properties, year])
   const maxPropertyRevenue = Math.max(...byProperty.map(p => p.revenue), 1)
+
+  const topGuestsList = useMemo(() => topGuests(bookings, guests, year), [bookings, guests, year])
 
   const totalBookings = useMemo(() =>
     bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year))).length,
@@ -370,6 +389,31 @@ export default function RelatoriosPage() {
                     />
                   </div>
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Top guests */}
+        {topGuestsList.length > 0 && (
+          <section className="border-b border-border px-4 lg:px-8 py-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+              Top hóspedes · {year}
+            </p>
+            <div className="flex flex-col gap-1">
+              {topGuestsList.map((g, i) => (
+                <Link key={g.id} href={`/hospedes/${g.id}`}
+                  className="flex items-center gap-3 -mx-2 px-2 py-2 rounded-lg hover:bg-muted/30 transition-colors">
+                  <span className="text-xs font-bold text-muted-foreground/40 w-4 shrink-0 tabular-nums">{i + 1}</span>
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-primary">{g.nome[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{g.nome}</p>
+                    <p className="text-xs text-muted-foreground">{g.stays} estadi{g.stays !== 1 ? 'as' : 'a'}</p>
+                  </div>
+                  <span className="text-sm font-bold tabular-nums shrink-0">{fmtMoney(g.revenue)}</span>
+                </Link>
               ))}
             </div>
           </section>
