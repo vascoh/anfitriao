@@ -83,6 +83,14 @@ function NovaReservaInner() {
     !guestSearch || g.nome.toLowerCase().includes(guestSearch.toLowerCase())
   )
 
+  // Auto-fill price when reaching details step
+  useEffect(() => {
+    if (step === 'detalhes' && selectedProp && checkIn && checkOut && checkIn < checkOut && !precoTotal) {
+      const { total } = calculatePrice(selectedProp, checkIn, checkOut)
+      setPrecoTotal(String(total))
+    }
+  }, [step])
+
   const STEPS: Step[] = ['propriedade', 'datas', 'hospede', 'detalhes']
   const stepIdx = STEPS.indexOf(step) + 1
 
