@@ -280,7 +280,7 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* Alert: saldo */}
-        {saldo > 0 && booking.estado !== 'cancelada' && (
+        {saldo > 0 && booking.estado !== 'cancelada' && booking.estado !== 'no_show' && (
           <div className="flex items-start gap-3 mx-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
@@ -372,7 +372,7 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
           )}
           <Row label="Recebido" value={<span className={booking.preco_pago >= booking.preco_total ? 'text-emerald-600 font-semibold' : ''}>{fmtMoney(booking.preco_pago)}</span>} />
           {saldo > 0 && <Row label="Por receber" value={<span className="text-destructive font-semibold">{fmtMoney(saldo)}</span>} />}
-          {saldo > 0 && booking.estado !== 'cancelada' && (
+          {saldo > 0 && booking.estado !== 'cancelada' && booking.estado !== 'no_show' && (
             <>
               {!showPayment ? (
                 <button onClick={() => { setShowPayment(true); setPaymentAmount(String(saldo)) }}
