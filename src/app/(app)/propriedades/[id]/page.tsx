@@ -3,13 +3,13 @@
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Copy, Check } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
-const AMENITY_ICONS: Record<string, string> = {
+const AMENITY_LABELS: Record<string, string> = {
   wifi: 'Wi-Fi',
   ar_condicionado: 'Ar condicionado',
   estacionamento: 'Estacionamento',
@@ -20,6 +20,19 @@ const AMENITY_ICONS: Record<string, string> = {
   tv: 'TV',
   varanda: 'Varanda',
   jardim: 'Jardim',
+}
+
+const AMENITY_ICONS: Record<string, React.ReactNode> = {
+  wifi:            <Wifi className="h-3 w-3" />,
+  ar_condicionado: <Wind className="h-3 w-3" />,
+  estacionamento:  <Car className="h-3 w-3" />,
+  piscina:         <Waves className="h-3 w-3" />,
+  cozinha:         <UtensilsCrossed className="h-3 w-3" />,
+  maquina_lavar:   <WashingMachine className="h-3 w-3" />,
+  secador:         <Wind className="h-3 w-3" />,
+  tv:              <Tv className="h-3 w-3" />,
+  varanda:         <Wifi className="h-3 w-3" />,
+  jardim:          <Trees className="h-3 w-3" />,
 }
 
 export default function PropriedadeDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -209,8 +222,8 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
             <div className="flex flex-wrap gap-2">
               {prop.comodidades.map(a => (
                 <span key={a} className="flex items-center gap-1 text-xs bg-muted/60 text-foreground/70 px-2.5 py-1 rounded-full">
-                  <Wifi className="h-3 w-3" />
-                  {AMENITY_ICONS[a] ?? a}
+                  {AMENITY_ICONS[a] ?? <Wifi className="h-3 w-3" />}
+                  {AMENITY_LABELS[a] ?? a.replace(/_/g, ' ')}
                 </span>
               ))}
             </div>
