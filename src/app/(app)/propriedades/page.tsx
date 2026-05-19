@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, ArrowRight, Wifi, BedDouble } from 'lucide-react'
 import { fmtMoney } from '@/lib/store'
 import { db } from '@/lib/db'
+import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -18,6 +19,10 @@ export default function PropriedadesPage() {
     db.getBookings().then(setBookings)
     db.getGuests().then(setGuests)
   }, [])
+
+  const now = new Date()
+  const thisYear = now.getFullYear()
+  const thisMonth = now.getMonth()
 
   function activeBooking(propId: string) {
     return bookings.find(b => b.propriedade_id === propId && b.estado === 'checkin')
@@ -60,6 +65,7 @@ export default function PropriedadesPage() {
             const nextGuest = next ? guests.find(g => g.id === next.hospede_id) : null
 
             const stats = propStats(p.id)
+            const occ = occupancyForMonth(bookings, p.id, thisYear, thisMonth)
             return (
               <Link key={p.id} href={`/propriedades/${p.id}`}
                 className="rounded-xl border border-border bg-card overflow-hidden active:bg-muted/40 transition-colors">
@@ -72,7 +78,14 @@ export default function PropriedadesPage() {
                       <p className="font-semibold text-base leading-tight">{p.nome}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">{PROPERTY_TYPE_LABEL[p.tipo]} · {p.cidade}</p>
                     </div>
-                    <div className={`shrink-0 h-3 w-3 rounded-full mt-1 ${p.ativo ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    <div className="flex items-center gap-2 shrink-0">
+                      {occ.pct > 0 && (
+                        <span className={`text-xs font-bold tabular-nums ${occ.pct >= 80 ? 'text-emerald-600' : occ.pct >= 50 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                          {occ.pct}%
+                        </span>
+                      )}
+                      <div className={`h-3 w-3 rounded-full ${p.ativo ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    </div>
                   </div>
 
                   {/* Specs */}
@@ -82,11 +95,24 @@ export default function PropriedadesPage() {
                     <span className="font-medium text-foreground">€{p.preco_base}/noite</span>
                   </div>
 
-                  {/* Revenue stats */}
+                  {/* Revenue stats + occupancy bar */}
                   {stats.count > 0 && (
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>{stats.count} reserva{stats.count !== 1 ? 's' : ''}</span>
-                      <span className="text-foreground font-medium">{fmtMoney(stats.revenue)} total</span>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{stats.count} reserva{stats.count !== 1 ? 's' : ''}</span>
+                        <span className="text-foreground font-medium">{fmtMoney(stats.revenue)} total</span>
+                      </div>
+                      {occ.pct > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${occ.pct >= 80 ? 'bg-emerald-500' : occ.pct >= 50 ? 'bg-amber-400' : 'bg-primary/50'}`}
+                              style={{ width: `${occ.pct}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground shrink-0">{occ.occupied}/{occ.total}d</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
