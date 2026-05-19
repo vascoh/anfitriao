@@ -51,6 +51,7 @@ export default function HospedesPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [props, setProps] = useState<Property[]>([])
   const [search, setSearch] = useState('')
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
 
   useEffect(() => {
     db.getGuests().then(setGuests)
@@ -58,15 +59,23 @@ export default function HospedesPage() {
     db.getProperties().then(setProps)
   }, [])
 
+  const allTags = useMemo(() => {
+    const tags = new Set<string>()
+    guests.forEach(g => g.tags.forEach(t => tags.add(t)))
+    return [...tags]
+  }, [guests])
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return guests
+    let result = guests
+    if (tagFilter) result = result.filter(g => g.tags.includes(tagFilter))
+    if (!search.trim()) return result
     const q = search.toLowerCase()
-    return guests.filter(g =>
+    return result.filter(g =>
       g.nome.toLowerCase().includes(q) ||
       g.email?.toLowerCase().includes(q) ||
       g.nacionalidade?.toLowerCase().includes(q)
     )
-  }, [guests, search])
+  }, [guests, search, tagFilter])
 
   function stayCount(guestId: string) {
     return bookings.filter(b => b.hospede_id === guestId && (b.estado === 'checkout' || b.estado === 'checkin')).length
@@ -109,6 +118,31 @@ export default function HospedesPage() {
               className="flex-1 text-sm bg-transparent placeholder:text-muted-foreground focus:outline-none" />
           </div>
         </div>
+        {allTags.length > 0 && (
+          <div className="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setTagFilter(null)}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                tagFilter === null ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Todos
+            </button>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                  tagFilter === tag
+                    ? TAG_CLASS[tag as keyof typeof TAG_CLASS] ?? 'bg-foreground/10 text-foreground border-foreground/20'
+                    : 'text-muted-foreground border-border hover:text-foreground'
+                }`}
+              >
+                {TAG_LABEL[tag as keyof typeof TAG_LABEL] ?? tag}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       <div className="flex-1">
