@@ -232,7 +232,7 @@ export default function CheckinPage({ params }: { params: Promise<{ bookingId: s
                 Fotografa o teu documento de identificação e os dados serão preenchidos automaticamente. Demora menos de 1 minuto.
               </p>
               <p className="text-xs text-muted-foreground">
-                Anfitirão: <span className="font-medium text-foreground">{data?.host_nome}</span>
+                Anfitrião: <span className="font-medium text-foreground">{data?.host_nome}</span>
               </p>
             </div>
 
