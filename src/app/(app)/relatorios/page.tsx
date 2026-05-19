@@ -51,6 +51,23 @@ function revenueByMonth(bookings: Booking[], year: number): number[] {
   return m
 }
 
+function revenueByProperty(bookings: Booking[], properties: Property[], year: number): { id: string; nome: string; cor: string; revenue: number; count: number }[] {
+  const map: Record<string, { nome: string; cor: string; revenue: number; count: number }> = {}
+  properties.forEach(p => { map[p.id] = { nome: p.nome, cor: p.cor, revenue: 0, count: 0 } })
+  bookings
+    .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
+    .forEach(b => {
+      if (map[b.propriedade_id]) {
+        map[b.propriedade_id].revenue += b.preco_total
+        map[b.propriedade_id].count++
+      }
+    })
+  return Object.entries(map)
+    .map(([id, v]) => ({ id, ...v }))
+    .filter(x => x.revenue > 0)
+    .sort((a, b) => b.revenue - a.revenue)
+}
+
 function statsBySource(bookings: Booking[], year: number): [BookingSource, { revenue: number; count: number }][] {
   const map: Partial<Record<BookingSource, { revenue: number; count: number }>> = {}
   bookings
@@ -98,6 +115,9 @@ export default function RelatoriosPage() {
 
   const bySource = useMemo(() => statsBySource(bookings, year), [bookings, year])
   const maxSourceRevenue = Math.max(...bySource.map(([, s]) => s.revenue), 1)
+
+  const byProperty = useMemo(() => revenueByProperty(bookings, properties, year), [bookings, properties, year])
+  const maxPropertyRevenue = Math.max(...byProperty.map(p => p.revenue), 1)
 
   const totalBookings = useMemo(() =>
     bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year))).length,
@@ -309,6 +329,38 @@ export default function RelatoriosPage() {
           </section>
 
         </div>
+
+        {/* Revenue by property */}
+        {byProperty.length > 1 && (
+          <section className="border-b border-border px-4 lg:px-8 py-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+              Receita por propriedade · {year}
+            </p>
+            <div className="flex flex-col gap-5">
+              {byProperty.map(p => (
+                <div key={p.id} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
+                      <span className="text-sm font-medium truncate">{p.nome}</span>
+                    </div>
+                    <div className="flex items-baseline gap-2 shrink-0">
+                      <span className="text-sm font-bold tabular-nums">{fmtMoney(p.revenue)}</span>
+                      <span className="text-[10px] text-muted-foreground">{p.count} res.</span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.round((p.revenue / maxPropertyRevenue) * 100)}%`, backgroundColor: p.cor }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
       </div>
     </div>
   )
