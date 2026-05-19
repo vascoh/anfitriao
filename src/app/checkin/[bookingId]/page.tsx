@@ -126,16 +126,21 @@ export default function CheckinPage({ params }: { params: Promise<{ bookingId: s
   async function submit() {
     setSubmitError('')
     setStep('submitting')
-    const res = await fetch(`/api/checkin/${bookingId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    if (res.ok) {
-      setStep('done')
-    } else {
-      const d = await res.json().catch(() => ({})) as { error?: string }
-      setSubmitError(d.error ?? 'Erro ao guardar. Tenta novamente.')
+    try {
+      const res = await fetch(`/api/checkin/${bookingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (res.ok) {
+        setStep('done')
+      } else {
+        const d = await res.json().catch(() => ({})) as { error?: string }
+        setSubmitError(d.error ?? 'Erro ao guardar. Tenta novamente.')
+        setStep('review')
+      }
+    } catch {
+      setSubmitError('Sem ligação. Verifica a internet e tenta novamente.')
       setStep('review')
     }
   }

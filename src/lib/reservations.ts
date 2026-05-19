@@ -128,19 +128,23 @@ export function occupancyForMonth(
 ): { occupied: number; total: number; pct: number } {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`
-  const monthEnd = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`
+  // Use the first day of the next month as the exclusive upper bound so that
+  // the last night of the month (e.g. May 31 → June 1) is counted correctly.
+  const nextMonthStart = month === 11
+    ? `${year + 1}-01-01`
+    : `${year}-${String(month + 2).padStart(2, '0')}-01`
 
   const occupied = bookings
     .filter(b =>
       b.propriedade_id === propertyId &&
       b.estado !== 'cancelada' &&
       b.estado !== 'no_show' &&
-      b.check_in <= monthEnd &&
+      b.check_in < nextMonthStart &&
       b.check_out > monthStart
     )
     .reduce((acc, b) => {
       const start = b.check_in > monthStart ? b.check_in : monthStart
-      const end = b.check_out <= monthEnd ? b.check_out : monthEnd
+      const end = b.check_out < nextMonthStart ? b.check_out : nextMonthStart
       return acc + Math.max(0, Math.round((new Date(end + 'T00:00:00').getTime() - new Date(start + 'T00:00:00').getTime()) / 86400000))
     }, 0)
 

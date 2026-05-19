@@ -84,14 +84,16 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
     .sort((a, b) => a.check_in.localeCompare(b.check_in))[0]
 
   const monthStart = t.slice(0, 8) + '01'
-  const daysInMonth = new Date(parseInt(t.slice(0, 4)), parseInt(t.slice(5, 7)), 0).getDate()
-  const monthEnd = t.slice(0, 8) + String(daysInMonth).padStart(2, '0')
+  const year = parseInt(t.slice(0, 4))
+  const month = parseInt(t.slice(5, 7)) // 1-based
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const nextMonthStart = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`
   const occupiedDays = bookings
-    .filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show' && b.check_in <= monthEnd && b.check_out > monthStart)
+    .filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show' && b.check_in < nextMonthStart && b.check_out > monthStart)
     .reduce((acc, b) => {
       const start = b.check_in > monthStart ? b.check_in : monthStart
-      const end = b.check_out <= monthEnd ? b.check_out : monthEnd
-      return acc + Math.max(0, Math.round((new Date(end).getTime() - new Date(start + 'T00:00:00').getTime()) / 86400000))
+      const end = b.check_out < nextMonthStart ? b.check_out : nextMonthStart
+      return acc + Math.max(0, Math.round((new Date(end + 'T00:00:00').getTime() - new Date(start + 'T00:00:00').getTime()) / 86400000))
     }, 0)
   const occupancyPct = Math.round((occupiedDays / daysInMonth) * 100)
 
