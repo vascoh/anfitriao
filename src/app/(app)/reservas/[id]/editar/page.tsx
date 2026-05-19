@@ -10,7 +10,7 @@ import type { Booking, BookingSource, BookingStatus } from '@/lib/types'
 import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
 
 const SOURCES: BookingSource[] = ['airbnb', 'booking', 'direto', 'expedia', 'vrbo', 'outro']
-const STATUSES: BookingStatus[] = ['pendente', 'confirmada', 'checkin', 'checkout', 'cancelada']
+const STATUSES: BookingStatus[] = ['pendente', 'confirmada', 'checkin', 'checkout', 'cancelada', 'no_show']
 
 export default function EditarReservaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
