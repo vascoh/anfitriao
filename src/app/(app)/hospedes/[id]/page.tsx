@@ -73,7 +73,7 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
     setEditing(false)
   }
 
-  const totalGasto = bookings.filter(b => b.estado !== 'cancelada').reduce((acc, b) => acc + b.preco_total, 0)
+  const totalGasto = bookings.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show').reduce((acc, b) => acc + b.preco_total, 0)
   const numEstadias = bookings.filter(b => b.estado === 'checkout' || b.estado === 'checkin').length
 
   if (!guest) return null
