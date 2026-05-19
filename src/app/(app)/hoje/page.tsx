@@ -142,6 +142,16 @@ export default function HojePage() {
       .reduce((sum, b) => sum + b.preco_total, 0)
   }, [bookings])
 
+  const receitaPrevista = useMemo(() => {
+    const todayStr = t
+    const horizon = new Date()
+    horizon.setDate(horizon.getDate() + 28)
+    const horizonStr = horizon.toISOString().slice(0, 10)
+    return bookings
+      .filter(b => (b.estado === 'confirmada' || b.estado === 'checkin') && b.check_in >= todayStr && b.check_in < horizonStr)
+      .reduce((sum, b) => sum + b.preco_total, 0)
+  }, [bookings, t])
+
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
 
@@ -188,6 +198,12 @@ export default function HojePage() {
             <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
               <span className="font-semibold">{fmtMoney(receitaMes)}</span>
               <span className="text-muted-foreground">este mês</span>
+            </div>
+          )}
+          {receitaPrevista > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
+              <span className="font-semibold text-primary">{fmtMoney(receitaPrevista)}</span>
+              <span className="text-muted-foreground">próx. 28d</span>
             </div>
           )}
         </div>
