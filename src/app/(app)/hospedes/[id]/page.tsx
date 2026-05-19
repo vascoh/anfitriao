@@ -108,7 +108,7 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-2.5 px-4">
+        <div className={`grid gap-2.5 px-4 ${numEstadias > 1 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Estadias</p>
             <p className="text-2xl font-bold mt-0.5">{numEstadias}</p>
@@ -117,6 +117,12 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
             <p className="text-xs text-muted-foreground">Total gasto</p>
             <p className="text-2xl font-bold mt-0.5">{fmtMoney(totalGasto)}</p>
           </div>
+          {numEstadias > 1 && (
+            <div className="rounded-xl border border-border bg-card px-4 py-3">
+              <p className="text-xs text-muted-foreground">Média/estadia</p>
+              <p className="text-2xl font-bold mt-0.5">{fmtMoney(Math.round(totalGasto / numEstadias))}</p>
+            </div>
+          )}
         </div>
 
         {/* Edit form or info */}
