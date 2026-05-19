@@ -83,6 +83,22 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
     }
   }
 
+  function resetForm(g: Guest) {
+    setNome(g.nome)
+    setEmail(g.email ?? '')
+    setTelefone(g.telefone ?? '')
+    setNacionalidade(g.nacionalidade ?? '')
+    setNotas(g.notas ?? '')
+    setTipoDocumento(g.tipo_documento ?? '')
+    setNumeroDocumento(g.numero_documento ?? '')
+    setDataNascimento(g.data_nascimento ?? '')
+    setDataValidadeDoc(g.data_validade_doc ?? '')
+    setSexo(g.sexo ?? '')
+    setPaisEmissao(g.pais_emissao ?? '')
+    setTags(g.tags)
+    setSaveError('')
+  }
+
   const totalGasto = bookings.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show').reduce((acc, b) => acc + b.preco_total, 0)
   const numEstadias = bookings.filter(b => b.estado === 'checkout' || b.estado === 'checkin').length
 
@@ -227,7 +243,7 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
             )}
             <div className="flex gap-2">
               <button onClick={save} className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium">Guardar</button>
-              <button onClick={() => { setEditing(false); setSaveError('') }} className="flex-1 border border-border rounded-lg py-2.5 text-sm font-medium">Cancelar</button>
+              <button onClick={() => { if (guest) resetForm(guest); setEditing(false) }} className="flex-1 border border-border rounded-lg py-2.5 text-sm font-medium">Cancelar</button>
             </div>
           </div>
         ) : (
