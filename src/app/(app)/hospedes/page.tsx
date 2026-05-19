@@ -67,7 +67,7 @@ export default function HospedesPage() {
 
   const filtered = useMemo(() => {
     let result = guests
-    if (tagFilter) result = result.filter(g => g.tags.includes(tagFilter))
+    if (tagFilter) result = result.filter(g => g.tags.includes(tagFilter as never))
     if (!search.trim()) return result
     const q = search.toLowerCase()
     return result.filter(g =>

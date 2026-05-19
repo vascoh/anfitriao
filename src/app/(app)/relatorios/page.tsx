@@ -75,7 +75,7 @@ function topGuests(bookings: Booking[], guests: Guest[], year: number, limit = 5
     .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
     .forEach(b => {
       const g = guests.find(x => x.id === b.hospede_id)
-      if (!g) return
+      if (!g || !b.hospede_id) return
       if (!map[b.hospede_id]) map[b.hospede_id] = { nome: g.nome, revenue: 0, stays: 0 }
       map[b.hospede_id].revenue += b.preco_total
       map[b.hospede_id].stays++

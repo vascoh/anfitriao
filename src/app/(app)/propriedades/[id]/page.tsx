@@ -31,7 +31,7 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   maquina_lavar:   <WashingMachine className="h-3 w-3" />,
   secador:         <Wind className="h-3 w-3" />,
   tv:              <Tv className="h-3 w-3" />,
-  varanda:         <Wifi className="h-3 w-3" />,
+  varanda:         <Trees className="h-3 w-3" />,
   jardim:          <Trees className="h-3 w-3" />,
 }
 
@@ -56,7 +56,6 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
           bookingsAll
             .filter(b => b.propriedade_id === id)
             .sort((a, b) => b.check_in.localeCompare(a.check_in))
-            .slice(0, 10)
         )
         setGuests(guestsAll)
       }

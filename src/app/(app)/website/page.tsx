@@ -26,6 +26,7 @@ export default function WebsitePage() {
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
   const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({})
+  const [subscribeCopied, setSubscribeCopied] = useState<Record<string, boolean>>({})
   const [newFeedUrl, setNewFeedUrl] = useState<Record<string, string>>({})
   const [newFeedSource, setNewFeedSource] = useState<Record<string, string>>({})
 
@@ -350,11 +351,13 @@ export default function WebsitePage() {
                     onClick={async () => {
                       const url = `${origin}/api/ical/${prop.id}`
                       await navigator.clipboard.writeText(url)
+                      setSubscribeCopied(s => ({ ...s, [prop.id]: true }))
+                      setTimeout(() => setSubscribeCopied(s => ({ ...s, [prop.id]: false })), 2000)
                     }}
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                    className={`flex items-center gap-1.5 text-xs transition-colors ${subscribeCopied[prop.id] ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
                     title="Copiar URL de subscrição">
-                    <Rss className="h-3.5 w-3.5" />
-                    Subscrever
+                    {subscribeCopied[prop.id] ? <Check className="h-3.5 w-3.5" /> : <Rss className="h-3.5 w-3.5" />}
+                    {subscribeCopied[prop.id] ? 'Copiado!' : 'Subscrever'}
                   </button>
                   <button onClick={() => exportIcal(prop)}
                     className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
