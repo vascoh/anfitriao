@@ -22,6 +22,11 @@ export default function PropriedadesPage() {
   function activeBooking(propId: string) {
     return bookings.find(b => b.propriedade_id === propId && b.estado === 'checkin')
   }
+  function propStats(propId: string) {
+    const pb = bookings.filter(b => b.propriedade_id === propId && ['confirmada', 'checkin', 'checkout'].includes(b.estado))
+    return { count: pb.length, revenue: pb.reduce((s, b) => s + (b.preco_total ?? 0), 0) }
+  }
+
   function nextBooking(propId: string) {
     const t = new Date().toISOString().slice(0, 10)
     return bookings
@@ -54,6 +59,7 @@ export default function PropriedadesPage() {
             const activeGuest = active ? guests.find(g => g.id === active.hospede_id) : null
             const nextGuest = next ? guests.find(g => g.id === next.hospede_id) : null
 
+            const stats = propStats(p.id)
             return (
               <Link key={p.id} href={`/propriedades/${p.id}`}
                 className="rounded-xl border border-border bg-card overflow-hidden active:bg-muted/40 transition-colors">
@@ -75,6 +81,14 @@ export default function PropriedadesPage() {
                     <span>max {p.capacidade} pax</span>
                     <span className="font-medium text-foreground">€{p.preco_base}/noite</span>
                   </div>
+
+                  {/* Revenue stats */}
+                  {stats.count > 0 && (
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{stats.count} reserva{stats.count !== 1 ? 's' : ''}</span>
+                      <span className="text-foreground font-medium">{fmtMoney(stats.revenue)} total</span>
+                    </div>
+                  )}
 
                   {/* Status */}
                   {active ? (
