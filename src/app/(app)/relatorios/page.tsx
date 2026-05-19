@@ -124,6 +124,14 @@ export default function RelatoriosPage() {
     [bookings, year]
   )
 
+  const totalNights = useMemo(() =>
+    bookings
+      .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
+      .reduce((sum, b) => sum + nights(b.check_in, b.check_out), 0),
+    [bookings, year]
+  )
+  const adr = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0
+
   const activeProps = useMemo(() => properties.filter(p => p.ativo), [properties])
   const occupancyMonth = year === now.getFullYear() ? now.getMonth() : 11
 
@@ -199,6 +207,12 @@ export default function RelatoriosPage() {
             <div className="px-4 py-2.5 shrink-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Valor médio</p>
               <p className="text-lg font-bold">{fmtMoney(Math.round(totalRevenue / totalBookings))}</p>
+            </div>
+          )}
+          {adr > 0 && (
+            <div className="px-4 py-2.5 shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">ADR / noite</p>
+              <p className="text-lg font-bold">{fmtMoney(adr)}</p>
             </div>
           )}
           {forecastRevenue > 0 && (
