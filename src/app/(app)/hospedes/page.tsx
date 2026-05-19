@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Search, Plus, ArrowRight, Download } from 'lucide-react'
+import { Search, Plus, ArrowRight, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { db } from '@/lib/db'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS } from '@/lib/labels'
+
+function sibaStatus(g: Guest) {
+  const ok = !!(g.numero_documento && g.data_nascimento && g.tipo_documento && (g.sexo || g.pais_emissao))
+  return ok
+}
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
@@ -116,6 +121,7 @@ export default function HospedesPage() {
           <div className="bg-card border-b border-border">
             {filtered.map(g => {
               const stays = stayCount(g.id)
+              const siba = sibaStatus(g)
               return (
                 <Link key={g.id} href={`/hospedes/${g.id}`}
                   className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-muted/40 transition-colors">
@@ -139,7 +145,10 @@ export default function HospedesPage() {
                     </div>
                     {g.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{g.email}</p>}
                   </div>
-                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  {siba
+                    ? <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+                    : <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0" />
+                  }
                 </Link>
               )
             })}
