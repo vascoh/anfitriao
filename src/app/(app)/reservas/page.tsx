@@ -112,6 +112,14 @@ export default function ReservasPage() {
     pendentes: bookings.filter(b => b.estado === 'pendente').length,
   }), [bookings])
 
+  const filteredStats = useMemo(() => {
+    const active = filtered.filter(b => !['cancelada', 'no_show'].includes(b.estado))
+    return {
+      total: active.reduce((s, b) => s + b.preco_total, 0),
+      pending: active.reduce((s, b) => s + Math.max(0, b.preco_total - b.preco_pago), 0),
+    }
+  }, [filtered])
+
   return (
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -191,6 +199,26 @@ export default function ReservasPage() {
         )}
 
       </header>
+
+      {filtered.length > 0 && (
+        <div className="flex items-center gap-0 divide-x divide-border border-b border-border bg-muted/20 text-sm px-0">
+          <div className="flex items-center gap-1.5 px-4 py-2 shrink-0">
+            <span className="text-xs text-muted-foreground">{filtered.length} reserva{filtered.length !== 1 ? 's' : ''}</span>
+          </div>
+          {filteredStats.total > 0 && (
+            <div className="flex items-center gap-1.5 px-4 py-2 shrink-0">
+              <span className="text-xs text-muted-foreground">Total</span>
+              <span className="text-sm font-semibold">{fmtMoney(filteredStats.total)}</span>
+            </div>
+          )}
+          {filteredStats.pending > 0 && (
+            <div className="flex items-center gap-1.5 px-4 py-2 shrink-0">
+              <span className="text-xs text-muted-foreground">Por receber</span>
+              <span className="text-sm font-semibold text-destructive">{fmtMoney(filteredStats.pending)}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex-1">
         {filtered.length === 0 ? (
