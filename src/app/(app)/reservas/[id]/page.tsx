@@ -268,6 +268,14 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
                 Cancelar reserva
               </button>
             )}
+            {actions.includes('no_show') && (
+              <button
+                onClick={() => applyTransition('no_show')}
+                className="w-full border border-amber-300/40 text-amber-600 rounded-xl py-2.5 text-sm font-medium hover:bg-amber-50 transition-colors"
+              >
+                Marcar como no-show
+              </button>
+            )}
           </div>
         )}
 
