@@ -14,6 +14,38 @@ import { transitionBooking, canTransition, availableActions } from '@/lib/reserv
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
+function ReminderButton({ bookingId }: { bookingId: string }) {
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+  async function send() {
+    setState('sending')
+    try {
+      const res = await fetch('/api/notify-payment-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      })
+      setState(res.ok ? 'sent' : 'error')
+      if (res.ok) setTimeout(() => setState('idle'), 3000)
+    } catch {
+      setState('error')
+    }
+  }
+  return (
+    <button
+      onClick={send}
+      disabled={state === 'sending' || state === 'sent'}
+      className={`shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${
+        state === 'sent' ? 'bg-emerald-100 text-emerald-700' :
+        state === 'error' ? 'bg-red-100 text-red-700' :
+        'bg-amber-100 text-amber-700 hover:bg-amber-200'
+      }`}
+    >
+      <Mail className="h-3 w-3" />
+      {state === 'sending' ? '...' : state === 'sent' ? 'Enviado' : state === 'error' ? 'Erro' : 'Lembrete'}
+    </button>
+  )
+}
+
 function Stepper({ estado }: { estado: string }) {
   const steps = [
     { key: 'pendente', label: 'Pendente' },
@@ -243,10 +275,13 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
         {saldo > 0 && booking.estado !== 'cancelada' && (
           <div className="flex items-start gap-3 mx-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-900">Pagamento pendente</p>
               <p className="text-xs text-amber-700">{fmtMoney(saldo)} por receber</p>
             </div>
+            {guest?.email && (
+              <ReminderButton bookingId={booking.id} />
+            )}
           </div>
         )}
 
