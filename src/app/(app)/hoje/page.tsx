@@ -122,8 +122,13 @@ export default function HojePage() {
       .sort((a, b) => a.check_in.localeCompare(b.check_in))
   }, [bookings])
 
-  const totalUnidades = props.filter(p => p.ativo).length
+  const activeProps = useMemo(() => props.filter(p => p.ativo), [props])
+  const totalUnidades = activeProps.length
   const ocupacao = totalUnidades > 0 ? Math.round((emCasa.length / totalUnidades) * 100) : 0
+  const vagas = useMemo(() =>
+    activeProps.filter(p => !emCasa.some(b => b.propriedade_id === p.id)),
+    [activeProps, emCasa]
+  )
 
   const receitaHoje = useMemo(() =>
     chegadas.reduce((sum, b) => sum + (b.preco_total - b.preco_pago), 0),
@@ -138,7 +143,7 @@ export default function HojePage() {
   }, [bookings])
 
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0
-  const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0
+  const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
 
   return (
     <div className="flex flex-col min-h-full pb-6">
@@ -289,6 +294,43 @@ export default function HojePage() {
                         ? <span className="flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600"><ShieldCheck className="h-3 w-3" /> Check-in</span>
                         : <span className="text-[10px] text-amber-600 font-medium">Sem check-in</span>
                       }
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Vagas agora */}
+        {vagas.length > 0 && emCasa.length < totalUnidades && totalUnidades > 0 && (
+          <section className="border-b border-border">
+            <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vagas agora</h2>
+            </div>
+            <div className="divide-y divide-border">
+              {vagas.map(p => {
+                const nextBooking = bookings
+                  .filter(b => b.propriedade_id === p.id && b.check_in > t && b.estado !== 'cancelada' && b.estado !== 'no_show')
+                  .sort((a, b) => a.check_in.localeCompare(b.check_in))[0]
+                return (
+                  <Link key={p.id} href={`/propriedades/${p.id}`}
+                    className="flex items-center gap-3 px-4 py-3 active:bg-muted/50 transition-colors">
+                    <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.nome}</p>
+                      <p className="text-xs text-muted-foreground">{p.cidade}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {nextBooking ? (
+                        <>
+                          <p className="text-xs text-muted-foreground">próxima entrada</p>
+                          <p className="text-xs font-semibold text-primary">{fmtDate(nextBooking.check_in)}</p>
+                        </>
+                      ) : (
+                        <p className="text-xs text-emerald-600 font-medium">sem reservas</p>
+                      )}
                     </div>
                   </Link>
                 )

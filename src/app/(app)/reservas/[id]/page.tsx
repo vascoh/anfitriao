@@ -359,6 +359,9 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
         {/* Payment */}
         <Section title="Pagamento">
           <Row label="Total" value={<span className="font-bold">{fmtMoney(booking.preco_total)}</span>} />
+          {n > 0 && booking.preco_total > 0 && (
+            <Row label="Por noite" value={<span className="text-muted-foreground">{fmtMoney(Math.round(booking.preco_total / n))}</span>} />
+          )}
           <Row label="Recebido" value={<span className={booking.preco_pago >= booking.preco_total ? 'text-emerald-600 font-semibold' : ''}>{fmtMoney(booking.preco_pago)}</span>} />
           {saldo > 0 && <Row label="Por receber" value={<span className="text-destructive font-semibold">{fmtMoney(saldo)}</span>} />}
           {saldo > 0 && booking.estado !== 'cancelada' && (

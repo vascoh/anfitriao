@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { Download } from 'lucide-react'
 import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
