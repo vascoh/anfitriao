@@ -23,6 +23,12 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
   const [telefone, setTelefone] = useState('')
   const [nacionalidade, setNacionalidade] = useState('')
   const [notas, setNotas] = useState('')
+  const [tipoDocumento, setTipoDocumento] = useState('')
+  const [numeroDocumento, setNumeroDocumento] = useState('')
+  const [dataNascimento, setDataNascimento] = useState('')
+  const [dataValidadeDoc, setDataValidadeDoc] = useState('')
+  const [sexo, setSexo] = useState('')
+  const [paisEmissao, setPaisEmissao] = useState('')
 
   useEffect(() => {
     Promise.all([db.getGuests(), db.getBookings(), db.getProperties()]).then(([guestsAll, bookingsAll, propsAll]) => {
@@ -34,6 +40,12 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
         setTelefone(g.telefone ?? '')
         setNacionalidade(g.nacionalidade ?? '')
         setNotas(g.notas ?? '')
+        setTipoDocumento(g.tipo_documento ?? '')
+        setNumeroDocumento(g.numero_documento ?? '')
+        setDataNascimento(g.data_nascimento ?? '')
+        setDataValidadeDoc(g.data_validade_doc ?? '')
+        setSexo(g.sexo ?? '')
+        setPaisEmissao(g.pais_emissao ?? '')
       }
       setBookings(bookingsAll.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
       setProps(propsAll)
@@ -42,7 +54,20 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
 
   async function save() {
     if (!guest) return
-    const updated: Guest = { ...guest, nome: nome.trim(), email: email.trim() || undefined, telefone: telefone.trim() || undefined, nacionalidade: nacionalidade.trim() || undefined, notas: notas.trim() || undefined }
+    const updated: Guest = {
+      ...guest,
+      nome: nome.trim(),
+      email: email.trim() || undefined,
+      telefone: telefone.trim() || undefined,
+      nacionalidade: nacionalidade.trim() || undefined,
+      notas: notas.trim() || undefined,
+      tipo_documento: tipoDocumento.trim() || undefined,
+      numero_documento: numeroDocumento.trim() || undefined,
+      data_nascimento: dataNascimento.trim() || undefined,
+      data_validade_doc: dataValidadeDoc.trim() || undefined,
+      sexo: sexo.trim() || undefined,
+      pais_emissao: paisEmissao.trim() || undefined,
+    }
     await db.saveGuest(updated)
     setGuest(updated)
     setEditing(false)
@@ -114,6 +139,53 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
               <label className="text-xs text-muted-foreground">Notas</label>
               <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Preferências, observações..."
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm resize-none min-h-20 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest pt-1">Dados SIBA</p>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Tipo de documento</label>
+              <select value={tipoDocumento} onChange={e => setTipoDocumento(e.target.value)}
+                className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="">Seleccionar</option>
+                <option value="Passaporte">Passaporte</option>
+                <option value="Cartão de Cidadão">Cartão de Cidadão</option>
+                <option value="BI">BI</option>
+                <option value="Título de Residência">Título de Residência</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Nº documento</label>
+              <input type="text" value={numeroDocumento} onChange={e => setNumeroDocumento(e.target.value)} placeholder="Ex: AB123456"
+                className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="text-xs text-muted-foreground">Data de nascimento</label>
+                <input type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)}
+                  className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <div className="flex flex-col gap-1 flex-1">
+                <label className="text-xs text-muted-foreground">Validade doc.</label>
+                <input type="date" value={dataValidadeDoc} onChange={e => setDataValidadeDoc(e.target.value)}
+                  className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">Sexo</label>
+              <div className="flex gap-4 pt-1">
+                {['Masculino', 'Feminino'].map(opt => (
+                  <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="sexo-edit" value={opt} checked={sexo === opt} onChange={() => setSexo(opt)}
+                      className="accent-primary" />
+                    <span className="text-sm">{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-muted-foreground">País de emissão</label>
+              <input type="text" value={paisEmissao} onChange={e => setPaisEmissao(e.target.value)} placeholder="Ex: Portugal"
+                className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             <div className="flex gap-2">
               <button onClick={save} className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium">Guardar</button>
