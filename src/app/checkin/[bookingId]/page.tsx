@@ -1,6 +1,7 @@
 'use client'
 
-import { use, useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useParams } from 'next/navigation'
 import { Camera, FileText, Check, AlertCircle, RotateCcw, ChevronRight, Loader2, Home } from 'lucide-react'
 
 type Step = 'loading' | 'info' | 'camera' | 'review' | 'submitting' | 'done' | 'error' | 'already'
@@ -53,8 +54,8 @@ function nights(a: string, b: string) {
   return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000)
 }
 
-export default function CheckinPage({ params }: { params: Promise<{ bookingId: string }> }) {
-  const { bookingId } = use(params)
+export default function CheckinPage() {
+  const { bookingId } = useParams<{ bookingId: string }>()
   const [step, setStep] = useState<Step>('loading')
   const [data, setData] = useState<CheckinData | null>(null)
   const [form, setForm] = useState<GuestForm>({

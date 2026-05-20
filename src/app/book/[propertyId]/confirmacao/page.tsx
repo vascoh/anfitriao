@@ -1,21 +1,18 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, Mail, Phone, ArrowLeft } from 'lucide-react'
 import { fmtDate, fmtMoney, nights as calcNights } from '@/lib/store'
 import { db } from '@/lib/db'
+import { useParams, useSearchParams } from 'next/navigation'
 import type { Booking, Property, WebsiteSettings } from '@/lib/types'
 
-export default function ConfirmacaoPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ propertyId: string }>
-  searchParams: Promise<{ b?: string; nome?: string }>
-}) {
-  const { propertyId } = use(params)
-  const { b: bookingId, nome } = use(searchParams)
+export default function ConfirmacaoPage() {
+  const { propertyId } = useParams<{ propertyId: string }>()
+  const searchParamsObj = useSearchParams()
+  const bookingId = searchParamsObj.get('b') ?? undefined
+  const nome = searchParamsObj.get('nome') ?? undefined
   const [booking, setBooking] = useState<Booking | null>(null)
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [prop, setProp] = useState<Property | null>(null)

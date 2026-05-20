@@ -1,7 +1,7 @@
 'use client'
 
-import { use, useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronLeft, ChevronRight, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, CheckCircle2 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights } from '@/lib/store'
@@ -145,8 +145,8 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, onSelect }: Cale
 }
 
 
-export default function BookPropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
-  const { propertyId } = use(params)
+export default function BookPropertyPage() {
+  const { propertyId } = useParams<{ propertyId: string }>()
   const router = useRouter()
   const [prop, setProp] = useState<Property | null>(null)
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
