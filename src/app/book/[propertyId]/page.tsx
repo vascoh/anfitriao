@@ -151,6 +151,8 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
   const [prop, setProp] = useState<Property | null>(null)
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [blocked, setBlocked] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
 
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
@@ -162,7 +164,9 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  useEffect(() => {
+  function loadData() {
+    setLoading(true)
+    setLoadError(false)
     Promise.all([
       db.getProperties(),
       db.getWebsiteSettings(),
@@ -172,8 +176,14 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
       setProp(p)
       setSettings(ws)
       if (p) setBlocked(blockedDates(bookings, p.id))
+    }).catch(() => {
+      setLoadError(true)
+    }).finally(() => {
+      setLoading(false)
     })
-  }, [propertyId])
+  }
+
+  useEffect(() => { loadData() }, [propertyId])
 
   const today = new Date().toISOString().slice(0, 10)
   const minDate = settings ? addDays(today, settings.antecedencia_dias) : today
@@ -262,9 +272,49 @@ export default function BookPropertyPage({ params }: { params: Promise<{ propert
     }
   }
 
-  if (!settings) return null
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-background flex flex-col">
+        <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
+          <Link href="/book" className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="h-4 w-40 bg-muted animate-pulse rounded" />
+        </header>
+        <div className="h-72 bg-muted animate-pulse" />
+        <div className="max-w-2xl mx-auto w-full px-4 py-8 flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <div className="h-8 w-64 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-full bg-muted animate-pulse rounded" />
+            <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+          </div>
+          <div className="h-px bg-border" />
+          <div className="h-72 bg-muted animate-pulse rounded-xl" />
+        </div>
+      </div>
+    )
+  }
 
-  if (!settings.enabled) {
+  if (loadError) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-5 px-6 text-center bg-background">
+        <div className="h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center">
+          <ArrowLeft className="h-6 w-6 text-destructive rotate-45 opacity-60" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <p className="font-semibold">Erro ao carregar</p>
+          <p className="text-sm text-muted-foreground">Não foi possível carregar os dados. Verifica a ligação e tenta novamente.</p>
+        </div>
+        <button onClick={loadData} className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+          Tentar novamente
+        </button>
+        <Link href="/book" className="text-sm text-muted-foreground hover:text-foreground">← Voltar aos alojamentos</Link>
+      </div>
+    )
+  }
+
+  if (!settings?.enabled) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-8 text-center">
         <p className="text-muted-foreground">Website não disponível.</p>

@@ -118,11 +118,45 @@ function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
 export default function BookPage() {
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [props, setProps] = useState<Property[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    db.getWebsiteSettings().then(setSettings)
-    db.getProperties().then(all => setProps(all.filter(p => p.ativo)))
+    Promise.all([
+      db.getWebsiteSettings(),
+      db.getProperties(),
+    ]).then(([ws, all]) => {
+      setSettings(ws)
+      setProps(all.filter(p => p.ativo))
+    }).finally(() => setLoading(false))
   }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-background flex flex-col">
+        <nav className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="h-4 w-28 bg-muted animate-pulse rounded" />
+          </div>
+        </nav>
+        <section className="max-w-3xl mx-auto w-full px-4 pt-16 pb-10 flex flex-col items-center gap-4">
+          <div className="h-6 w-48 bg-muted animate-pulse rounded-full" />
+          <div className="h-10 w-72 bg-muted animate-pulse rounded" />
+          <div className="h-4 w-64 bg-muted animate-pulse rounded" />
+        </section>
+        <main className="max-w-3xl mx-auto w-full px-4 pb-20 flex flex-col gap-5">
+          {[1, 2].map(i => (
+            <div key={i} className="rounded-2xl overflow-hidden border border-border">
+              <div className="h-60 bg-muted animate-pulse" />
+              <div className="px-5 py-4 flex gap-4 bg-card">
+                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+          ))}
+        </main>
+      </div>
+    )
+  }
 
   if (!settings) return null
 
