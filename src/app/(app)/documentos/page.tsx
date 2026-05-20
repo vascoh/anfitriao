@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { db } from '@/lib/db'
 import type { Guest } from '@/lib/types'
 

@@ -370,7 +370,7 @@ export default function CheckinPage({ params }: { params: Promise<{ bookingId: s
             <button
               type="button"
               onClick={submit}
-              disabled={!form.nome.trim()}
+              disabled={!REQUIRED.every(k => form[k as keyof GuestForm].trim())}
               className="w-full rounded-xl bg-primary text-primary-foreground py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2"
             >
               Confirmar check-in

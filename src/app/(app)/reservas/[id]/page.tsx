@@ -466,7 +466,7 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
           </button>
         )}
         {!showNote && booking.notas && (
-          <button onClick={() => setShowNote(true)} className="flex items-center gap-2 text-sm text-muted-foreground mx-4 py-1">
+          <button onClick={() => { setNote(booking.notas ?? ''); setShowNote(true) }} className="flex items-center gap-2 text-sm text-muted-foreground mx-4 py-1">
             <Edit2 className="h-3.5 w-3.5" /> Editar nota
           </button>
         )}
