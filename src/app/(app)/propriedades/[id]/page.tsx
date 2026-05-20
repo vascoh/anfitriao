@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Copy, Check } from 'lucide-react'
+import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
 import type { Property, Booking, Guest } from '@/lib/types'
@@ -221,6 +221,9 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
             <div className="rounded-xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground">Preço base</p>
               <p className="text-xl font-bold mt-0.5">{fmtMoney(prop.preco_base)}<span className="text-xs font-normal text-muted-foreground">/noite</span></p>
+              {prop.taxa_limpeza && prop.taxa_limpeza > 0 ? (
+                <p className="text-xs text-muted-foreground mt-0.5">+ {fmtMoney(prop.taxa_limpeza)} limpeza</p>
+              ) : null}
             </div>
             <div className="rounded-xl border border-border bg-card px-4 py-3">
               <p className="text-xs text-muted-foreground">Ocupação este mês</p>
@@ -320,18 +323,23 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
               className="bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm text-center active:opacity-80 transition-opacity">
               Nova reserva
             </Link>
-            <a href={`/book/${id}`} target="_blank" rel="noopener noreferrer"
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-3.5 font-semibold text-sm border transition-opacity active:opacity-80 ${
-                websiteEnabled
-                  ? 'border-primary text-primary hover:bg-primary/5'
-                  : 'border-border text-muted-foreground cursor-not-allowed opacity-50'
-              }`}
-              onClick={e => { if (!websiteEnabled) e.preventDefault() }}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Ver no website
-            </a>
+            <Link href={`/precos`}
+              className="flex items-center justify-center gap-1.5 rounded-xl py-3.5 font-semibold text-sm border border-primary text-primary hover:bg-primary/5 active:opacity-80 transition-opacity">
+              <Tag className="h-3.5 w-3.5" />
+              Gerir preços
+            </Link>
           </div>
+          <a href={`/book/${id}`} target="_blank" rel="noopener noreferrer"
+            className={`flex items-center justify-center gap-1.5 rounded-xl py-3.5 font-semibold text-sm border transition-opacity active:opacity-80 ${
+              websiteEnabled
+                ? 'border-primary text-primary hover:bg-primary/5'
+                : 'border-border text-muted-foreground cursor-not-allowed opacity-50'
+            }`}
+            onClick={e => { if (!websiteEnabled) e.preventDefault() }}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Ver no website
+          </a>
           <button
             onClick={async () => {
               const url = `${window.location.origin}/api/ical/${id}`

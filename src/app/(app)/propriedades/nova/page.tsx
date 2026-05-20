@@ -41,6 +41,7 @@ export default function NovaPropriedadePage() {
   const [casasBanho, setCasasBanho] = useState(1)
   const [capacidade, setCapacidade] = useState(2)
   const [precoBase, setPrecoBase] = useState(80)
+  const [taxaLimpeza, setTaxaLimpeza] = useState(0)
   const [cor, setCor] = useState(PRESET_COLORS[0])
   const [comodidades, setComodidades] = useState<string[]>(['wifi', 'cozinha'])
   const [instrucoesCheckin, setInstrucoesCheckin] = useState('')
@@ -64,6 +65,7 @@ export default function NovaPropriedadePage() {
       casasBanho,
       capacidade,
       preco_base: precoBase,
+      taxa_limpeza: taxaLimpeza || undefined,
       cor,
       comodidades,
       instrucoes_checkin: instrucoesCheckin.trim(),
@@ -165,10 +167,17 @@ export default function NovaPropriedadePage() {
         {/* Pricing */}
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Preço</p>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Preço base por noite (€)</label>
-            <input type="number" value={precoBase} onChange={e => setPrecoBase(Number(e.target.value))} min={1}
-              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Preço base por noite (€)</label>
+              <input type="number" value={precoBase} onChange={e => setPrecoBase(Number(e.target.value))} min={1}
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Taxa de limpeza (€)</label>
+              <input type="number" value={taxaLimpeza} onChange={e => setTaxaLimpeza(Number(e.target.value))} min={0}
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
           </div>
         </div>
 

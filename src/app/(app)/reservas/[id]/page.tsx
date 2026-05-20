@@ -8,6 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink,
   MessageCircle, CreditCard, Check, Link2
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
 import { db } from '@/lib/db'
 import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
@@ -139,6 +140,14 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
     const updated = transitionBooking(booking, to, nota)
     await db.saveBooking(updated)
     setBooking(updated)
+    const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
+      confirmada: 'Reserva confirmada',
+      checkin: 'Check-in registado',
+      checkout: 'Check-out registado',
+      cancelada: 'Reserva cancelada',
+      no_show: 'Marcado como no-show',
+    }
+    toast.success(TRANSITION_MSG[to] ?? 'Estado atualizado')
     if (to === 'confirmada') {
       fetch('/api/notify-confirmation', {
         method: 'POST',
@@ -159,6 +168,7 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
     setBooking(updated)
     setNote('')
     setShowNote(false)
+    toast.success('Nota guardada')
   }
 
   async function registerPayment() {
@@ -180,6 +190,7 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
     setBooking(updated)
     setPaymentAmount('')
     setPaymentSaved(true)
+    toast.success(`Pagamento de ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)} registado`)
     setTimeout(() => { setPaymentSaved(false); setShowPayment(false) }, 1500)
   }
 

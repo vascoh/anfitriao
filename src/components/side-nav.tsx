@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, CalendarCheck2, CalendarDays, Users,
-  Sparkles, FileText, Building2, Globe, TrendingUp, Search,
+  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag,
 } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
 
@@ -16,6 +16,7 @@ const primary = [
 ]
 
 const secondary = [
+  { href: '/precos', label: 'Preços', Icon: Tag },
   { href: '/relatorios', label: 'Relatórios', Icon: TrendingUp },
   { href: '/concierge', label: 'Concierge IA', Icon: Sparkles },
   { href: '/propriedades', label: 'Propriedades', Icon: Building2 },

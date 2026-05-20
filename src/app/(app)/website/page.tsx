@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
 import { fmtMoney, fmtDate, nights, uuid } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -48,12 +49,14 @@ export default function WebsitePage() {
     if (!settings) return
     await db.saveWebsiteSettings(settings)
     setSaved(true)
+    toast.success('Configurações guardadas')
     setTimeout(() => setSaved(false), 2000)
   }
 
   async function copyUrl() {
     await navigator.clipboard.writeText(publicUrl)
     setCopied(true)
+    toast.success('URL copiado')
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -119,11 +122,8 @@ export default function WebsitePage() {
       await db.saveProperty(updatedProp)
       setProps(await db.getProperties())
       setSyncStates(s => ({ ...s, [key]: 'ok' }))
-      if (added > 0) {
-        setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
-      } else {
-        setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 2000)
-      }
+      toast.success(added > 0 ? `${added} reserva${added !== 1 ? 's' : ''} importada${added !== 1 ? 's' : ''}` : 'Sincronizado — sem novidades')
+      setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 2000)
     } catch {
       const updatedFeed: IcalFeed = { ...feed, error: 'Falha ao sincronizar', last_sync: new Date().toISOString() }
       const updatedProp: Property = {
@@ -133,6 +133,7 @@ export default function WebsitePage() {
       await db.saveProperty(updatedProp)
       setProps(await db.getProperties())
       setSyncStates(s => ({ ...s, [key]: 'error' }))
+      toast.error('Falha ao sincronizar o feed iCal')
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
     }
   }

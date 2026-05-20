@@ -6,9 +6,8 @@ import Link from 'next/link'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
 import { uuid, today, nights } from '@/lib/store'
 import { db } from '@/lib/db'
-import { detectConflict, calculatePrice } from '@/lib/reservations'
-import type { Property, Guest, Booking } from '@/lib/types'
-import type { BookingSource } from '@/lib/types'
+import { detectConflict, calculatePriceWithRules } from '@/lib/reservations'
+import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 
 type Step = 'propriedade' | 'datas' | 'hospede' | 'detalhes'
@@ -64,6 +63,9 @@ function NovaReservaInner() {
   const [precoPago, setPrecoPago] = useState('')
   const [notas, setNotas] = useState('')
   const [conflito, setConflito] = useState(false)
+  const [priceRules, setPriceRules] = useState<PriceRule[]>([])
+  const [priceTarifas, setPriceTarifas] = useState<Tarifa[]>([])
+  const [platformRates, setPlatformRates] = useState<PlatformRate[]>([])
 
   useEffect(() => {
     db.getProperties().then(all => {
@@ -75,6 +77,9 @@ function NovaReservaInner() {
       }
     })
     db.getGuests().then(setGuests)
+    db.getPriceRules().then(setPriceRules)
+    db.getTarifas().then(setPriceTarifas)
+    db.getPlatformRates().then(setPlatformRates)
   }, [])
 
   const selectedProp = properties.find(p => p.id === propId)
@@ -83,11 +88,11 @@ function NovaReservaInner() {
     !guestSearch || g.nome.toLowerCase().includes(guestSearch.toLowerCase())
   )
 
-  // Auto-fill price when reaching details step
+  // Auto-fill price when reaching details step using rule-based pricing
   useEffect(() => {
     if (step === 'detalhes' && selectedProp && checkIn && checkOut && checkIn < checkOut && !precoTotal) {
-      const { total } = calculatePrice(selectedProp, checkIn, checkOut)
-      setPrecoTotal(String(total))
+      const breakdown = calculatePriceWithRules(selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem)
+      setPrecoTotal(String(breakdown.total))
     }
   }, [step])
 
@@ -230,14 +235,38 @@ function NovaReservaInner() {
                 />
               </div>
             </div>
-            {selectedProp && checkIn && checkOut && checkIn < checkOut && (
-              <div className="rounded-xl border border-border bg-card px-4 py-3.5 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Estimativa ({nights(checkIn, checkOut)} noite{nights(checkIn, checkOut) !== 1 ? 's' : ''})</span>
-                <span className="font-bold text-base">
-                  €{nights(checkIn, checkOut) * selectedProp.preco_base}
-                </span>
-              </div>
-            )}
+            {selectedProp && checkIn && checkOut && checkIn < checkOut && (() => {
+              const bd = calculatePriceWithRules(selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem)
+              return (
+                <div className="rounded-xl border border-border bg-card px-4 py-3.5 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">{bd.num_noites} noite{bd.num_noites !== 1 ? 's' : ''} × €{bd.preco_noite}</span>
+                    <span className="text-sm font-medium">€{bd.subtotal_noites}</span>
+                  </div>
+                  {bd.taxa_limpeza > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Taxa de limpeza</span>
+                      <span className="text-sm font-medium">€{bd.taxa_limpeza}</span>
+                    </div>
+                  )}
+                  {bd.ajuste_valor !== 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Ajuste {bd.tarifa_aplicada ?? ''}</span>
+                      <span className={`text-sm font-medium ${bd.ajuste_valor < 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                        {bd.ajuste_valor > 0 ? '+' : ''}€{bd.ajuste_valor}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-border pt-1.5">
+                    <span className="text-sm font-semibold">Total estimado</span>
+                    <span className="font-bold text-base">€{bd.total}</span>
+                  </div>
+                  {bd.regra_aplicada && (
+                    <p className="text-[10px] text-primary font-medium">Regra aplicada: {bd.regra_aplicada}</p>
+                  )}
+                </div>
+              )
+            })()}
             {conflito && (
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive font-medium">
                 Conflito de datas: já existe uma reserva neste período para esta propriedade.

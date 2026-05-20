@@ -55,7 +55,9 @@ function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
               </div>
               <div className="text-right shrink-0">
                 <p className="text-3xl font-bold text-white leading-none">{fmtMoney(p.preco_base)}</p>
-                <p className="text-white/60 text-xs mt-0.5">por noite</p>
+                <p className="text-white/60 text-xs mt-0.5">
+                  por noite{p.taxa_limpeza && p.taxa_limpeza > 0 ? ` · ${fmtMoney(p.taxa_limpeza)} limpeza` : ''}
+                </p>
               </div>
             </div>
           </div>

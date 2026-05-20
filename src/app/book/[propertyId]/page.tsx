@@ -6,8 +6,8 @@ import Link from 'next/link'
 import { ArrowLeft, ChevronLeft, ChevronRight, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, CheckCircle2 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights } from '@/lib/store'
 import { db } from '@/lib/db'
-import { blockedDates, addDays } from '@/lib/reservations'
-import type { Property, WebsiteSettings } from '@/lib/types'
+import { blockedDates, addDays, calculatePriceWithRules } from '@/lib/reservations'
+import type { Property, WebsiteSettings, PriceRule, Tarifa, PlatformRate, PricingBreakdown } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
@@ -151,6 +151,9 @@ export default function BookPropertyPage() {
   const [prop, setProp] = useState<Property | null>(null)
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [blocked, setBlocked] = useState<Set<string>>(new Set())
+  const [priceRules, setPriceRules] = useState<PriceRule[]>([])
+  const [tarifas, setTarifas] = useState<Tarifa[]>([])
+  const [platformRates, setPlatformRates] = useState<PlatformRate[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
 
@@ -171,10 +174,16 @@ export default function BookPropertyPage() {
       db.getProperties(),
       db.getWebsiteSettings(),
       db.getBookings(),
-    ]).then(([props, ws, bookings]) => {
+      db.getPriceRules(),
+      db.getTarifas(),
+      db.getPlatformRates(),
+    ]).then(([props, ws, bookings, rules, tars, rates]) => {
       const p = props.find(x => x.id === propertyId) ?? null
       setProp(p)
       setSettings(ws)
+      setPriceRules(rules)
+      setTarifas(tars)
+      setPlatformRates(rates)
       if (p) setBlocked(blockedDates(bookings, p.id))
     }).catch((err) => {
       console.error('[loadData error]', err)
@@ -189,9 +198,15 @@ export default function BookPropertyPage() {
   const today = new Date().toISOString().slice(0, 10)
   const minDate = settings ? addDays(today, settings.antecedencia_dias) : today
   const numNights = checkIn && checkOut ? calcNights(checkIn, checkOut) : 0
-  const total = prop ? numNights * prop.preco_base : 0
   const minNights = settings?.min_noites ?? 1
   const hasEnoughNights = numNights >= minNights
+
+  const pricing: PricingBreakdown | null = useMemo(() => {
+    if (!prop || !checkIn || !checkOut || numNights <= 0) return null
+    return calculatePriceWithRules(prop, checkIn, checkOut, priceRules, tarifas, platformRates, 'direto')
+  }, [prop, checkIn, checkOut, numNights, priceRules, tarifas, platformRates])
+
+  const total = pricing?.total ?? 0
   const canSubmit = checkIn && checkOut && hasEnoughNights && nome.trim() && email.trim()
 
   function handleDateSelect(date: string) {
@@ -373,7 +388,9 @@ export default function BookPropertyPage() {
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-3xl font-bold text-primary leading-none">{fmtMoney(prop.preco_base)}</p>
+              <p className="text-3xl font-bold text-primary leading-none">
+                {fmtMoney(pricing?.preco_noite ?? prop.preco_base)}
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">por noite</p>
             </div>
           </div>
@@ -490,12 +507,43 @@ export default function BookPropertyPage() {
           </div>
 
           {/* Price summary */}
-          {checkIn && checkOut && hasEnoughNights && (
+          {checkIn && checkOut && hasEnoughNights && pricing && (
             <div className="rounded-xl bg-muted/50 border border-border p-4 flex flex-col gap-2.5">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{fmtMoney(prop.preco_base)} × {numNights} noite{numNights !== 1 ? 's' : ''}</span>
-                <span className="font-medium">{fmtMoney(total)}</span>
+                <span className="text-muted-foreground">
+                  {fmtMoney(pricing.preco_noite)} × {numNights} noite{numNights !== 1 ? 's' : ''}
+                  {pricing.regra_aplicada && (
+                    <span className="ml-1.5 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                      {pricing.regra_aplicada}
+                    </span>
+                  )}
+                </span>
+                <span className="font-medium">{fmtMoney(pricing.subtotal_noites)}</span>
               </div>
+              {pricing.taxa_limpeza > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Taxa de limpeza</span>
+                  <span className="font-medium">{fmtMoney(pricing.taxa_limpeza)}</span>
+                </div>
+              )}
+              {pricing.ajuste_valor !== 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {pricing.tarifa_aplicada ?? 'Ajuste'}
+                    {pricing.ajuste_pct !== 0 && ` (${pricing.ajuste_pct > 0 ? '+' : ''}${pricing.ajuste_pct}%)`}
+                  </span>
+                  <span className={`font-medium ${pricing.ajuste_valor < 0 ? 'text-emerald-600' : ''}`}>
+                    {pricing.ajuste_valor < 0 ? '-' : '+'}{fmtMoney(Math.abs(pricing.ajuste_valor))}
+                  </span>
+                </div>
+              )}
+              {pricing.plataforma_ajuste !== 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Margem plataforma</span>
+                  <span className="font-medium">{fmtMoney(pricing.plataforma_ajuste)}</span>
+                </div>
+              )}
+              <div className="h-px bg-border/60 my-0.5" />
               <div className="flex justify-between items-baseline">
                 <span className="text-sm font-semibold">Total estimado</span>
                 <span className="text-primary text-xl font-bold">{fmtMoney(total)}</span>

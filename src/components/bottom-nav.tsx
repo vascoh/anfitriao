@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, CalendarCheck2, CalendarDays, Users, MoreHorizontal, Sparkles, FileText, Building2, Globe, TrendingUp, X } from 'lucide-react'
+import { Home, CalendarCheck2, CalendarDays, Users, MoreHorizontal, Sparkles, FileText, Building2, Globe, TrendingUp, X, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { useClerk } from '@clerk/nextjs'
 
@@ -14,6 +14,7 @@ const primary = [
 ]
 
 const secondary = [
+  { href: '/precos', label: 'Preços', Icon: Tag },
   { href: '/relatorios', label: 'Relatórios', Icon: TrendingUp },
   { href: '/concierge', label: 'Concierge IA', Icon: Sparkles },
   { href: '/propriedades', label: 'Propriedades', Icon: Building2 },
