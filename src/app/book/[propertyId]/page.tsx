@@ -176,7 +176,8 @@ export default function BookPropertyPage() {
       setProp(p)
       setSettings(ws)
       if (p) setBlocked(blockedDates(bookings, p.id))
-    }).catch(() => {
+    }).catch((err) => {
+      console.error('[loadData error]', err)
       setLoadError(true)
     }).finally(() => {
       setLoading(false)
