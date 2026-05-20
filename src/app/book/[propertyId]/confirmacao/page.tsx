@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { CheckCircle2, Mail, Phone, ArrowLeft } from 'lucide-react'
 import { fmtDate, fmtMoney, nights as calcNights } from '@/lib/store'
@@ -9,6 +9,14 @@ import { useParams, useSearchParams } from 'next/navigation'
 import type { Booking, Property, WebsiteSettings } from '@/lib/types'
 
 export default function ConfirmacaoPage() {
+  return (
+    <Suspense>
+      <ConfirmacaoInner />
+    </Suspense>
+  )
+}
+
+function ConfirmacaoInner() {
   const { propertyId } = useParams<{ propertyId: string }>()
   const searchParamsObj = useSearchParams()
   const bookingId = searchParamsObj.get('b') ?? undefined

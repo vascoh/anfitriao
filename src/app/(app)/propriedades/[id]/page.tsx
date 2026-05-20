@@ -70,12 +70,28 @@ export default function PropriedadeDetailPage({ params }: { params: Promise<{ id
   }
 
   async function handleDelete() {
-    if (!confirmDelete) { setConfirmDelete(true); return }
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      setTimeout(() => setConfirmDelete(false), 3000)
+      return
+    }
     await db.deleteProperty(id)
     router.push('/propriedades')
   }
 
-  if (!prop) return null
+  if (!prop) return (
+    <div className="flex flex-col min-h-full">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="h-1 w-full bg-muted" />
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Link href="/propriedades" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="h-4 w-36 bg-muted rounded animate-pulse" />
+        </div>
+      </header>
+    </div>
+  )
 
   const activeBooking = bookings.find(b => b.estado === 'checkin')
   const t = new Date().toISOString().slice(0, 10)

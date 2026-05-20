@@ -181,7 +181,16 @@ export default function WebsitePage() {
   const commissionSaved = Math.round(totalRevenue * 0.15)
   const guests = allGuests
 
-  if (!settings) return null
+  if (!settings) return (
+    <div className="flex flex-col min-h-full">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 lg:px-8 py-4 border-b border-border">
+        <div className="flex items-center gap-3 max-w-3xl">
+          <Globe className="h-5 w-5 text-primary shrink-0" />
+          <div className="h-5 w-48 bg-muted rounded animate-pulse" />
+        </div>
+      </header>
+    </div>
+  )
 
   const activeSources: Array<{ value: IcalFeed['source'], label: string }> = [
     { value: 'airbnb', label: 'Airbnb' },

@@ -295,23 +295,32 @@ export default function ReservaDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Guest */}
         <Section title="Hóspede">
-          <Link href={`/hospedes/${guest?.id}`} className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors border-b border-border last:border-0">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <span className="text-base font-bold text-primary">{guest?.nome?.[0] ?? '?'}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{guest?.nome}</p>
-              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                {guest?.nacionalidade && <span className="text-xs text-muted-foreground">{guest.nacionalidade}</span>}
-                {guest?.tags.map(tag => (
-                  <span key={tag} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${TAG_CLASS[tag]}`}>
-                    {TAG_LABEL[tag]}
-                  </span>
-                ))}
+          {guest?.id ? (
+            <Link href={`/hospedes/${guest.id}`} className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors border-b border-border last:border-0">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-base font-bold text-primary">{guest.nome?.[0] ?? '?'}</span>
               </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">{guest.nome}</p>
+                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  {guest.nacionalidade && <span className="text-xs text-muted-foreground">{guest.nacionalidade}</span>}
+                  {guest.tags.map(tag => (
+                    <span key={tag} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${TAG_CLASS[tag]}`}>
+                      {TAG_LABEL[tag]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0">
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <span className="text-base font-bold text-muted-foreground">?</span>
+              </div>
+              <p className="text-sm text-muted-foreground">Hóspede sem perfil</p>
             </div>
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          </Link>
+          )}
           {guest?.email && (
             <a href={`mailto:${guest.email}`} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40">
               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />

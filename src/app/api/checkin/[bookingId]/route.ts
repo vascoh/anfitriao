@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
   ])
 
   const historico: Array<{ tipo: string; descricao: string }> = Array.isArray(booking.historico) ? booking.historico : []
-  const jaSubmetido = historico.some(e => e.tipo === 'nota' && e.descricao?.includes('Check-in online submetido'))
+  const jaSubmetido = historico.some(e => e.tipo === 'checkin_online')
 
   return NextResponse.json({
     id: booking.id,
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     historico: [...historico, {
       id: crypto.randomUUID(),
       data: now,
-      tipo: 'nota',
+      tipo: 'checkin_online',
       descricao: `Check-in online submetido por ${guestData.nome}`,
     }],
   }).eq('id', bookingId)

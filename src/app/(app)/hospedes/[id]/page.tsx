@@ -102,7 +102,18 @@ export default function HospedeDetailPage({ params }: { params: Promise<{ id: st
   const totalGasto = bookings.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show').reduce((acc, b) => acc + b.preco_total, 0)
   const numEstadias = bookings.filter(b => b.estado === 'checkout' || b.estado === 'checkin').length
 
-  if (!guest) return null
+  if (!guest) return (
+    <div className="flex flex-col min-h-full">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <Link href="/hospedes" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="h-4 w-36 bg-muted rounded animate-pulse" />
+        </div>
+      </header>
+    </div>
+  )
 
   return (
     <div className="flex flex-col min-h-full pb-6">

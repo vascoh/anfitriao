@@ -55,6 +55,11 @@ export const db = {
     if (error) throw error
   },
 
+  deleteGuest: async (id: string): Promise<void> => {
+    const { error } = await supabase.from('guests').delete().eq('id', id)
+    if (error) throw error
+  },
+
   // Bookings
   getBookings: async (): Promise<Booking[]> => {
     const { data, error } = await supabase.from('bookings').select('*').order('criado_em', { ascending: false })

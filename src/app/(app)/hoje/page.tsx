@@ -313,7 +313,7 @@ export default function HojePage() {
                 const guest = guests.find(g => g.id === b.hospede_id)
                 const n = nights(b.check_in, b.check_out)
                 const daysUntil = Math.round((new Date(b.check_in).getTime() - new Date(t).getTime()) / 86400000)
-                const checkinDone = b.historico.some(e => e.tipo === 'nota' && e.descricao?.includes('Check-in online submetido'))
+                const checkinDone = b.historico.some(e => e.tipo === 'checkin_online')
                 return (
                   <Link key={b.id} href={`/reservas/${b.id}`}
                     className="flex items-center gap-3 px-4 py-3 active:bg-muted/50 transition-colors">
