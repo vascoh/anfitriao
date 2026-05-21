@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Home, CalendarCheck2, CalendarDays, Users, MoreHorizontal, Sparkles, FileText, Building2, Globe, TrendingUp, X, Tag } from 'lucide-react'
 import { useState } from 'react'
 import { useClerk } from '@clerk/nextjs'
+import { useAlertsCount } from '@/hooks/use-alerts-count'
 
 const primary = [
   { href: '/hoje', label: 'Hoje', Icon: Home },
@@ -27,6 +28,7 @@ export function BottomNav() {
   const router = useRouter()
   const { signOut } = useClerk()
   const [open, setOpen] = useState(false)
+  const alertsCount = useAlertsCount()
 
   const isSecondaryActive = secondary.some(s => pathname.startsWith(s.href))
 
@@ -75,9 +77,13 @@ export function BottomNav() {
         </>
       )}
 
-      <nav className="lg:hidden border-t border-border bg-card/95 backdrop-blur-sm h-16 flex items-stretch shrink-0">
+      <nav
+        className="lg:hidden border-t border-border bg-card/95 backdrop-blur-sm flex items-stretch shrink-0"
+        style={{ height: 'calc(4rem + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         {primary.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/')
+          const showBadge = href === '/hoje' && alertsCount > 0
           return (
             <Link
               key={href}
@@ -86,7 +92,14 @@ export function BottomNav() {
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Icon className={`h-5 w-5 transition-all ${active ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+              <div className="relative">
+                <Icon className={`h-5 w-5 transition-all ${active ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+                {showBadge && (
+                  <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center tabular-nums">
+                    {alertsCount > 9 ? '9+' : alertsCount}
+                  </span>
+                )}
+              </div>
               <span className={`text-[10px] ${active ? 'font-semibold' : 'font-normal'}`}>{label}</span>
             </Link>
           )

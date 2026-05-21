@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert } from 'lucide-react'
+import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
-import type { Booking, Property, Guest } from '@/lib/types'
+import type { Booking, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 
 function useTodayLabel() {
@@ -76,11 +76,12 @@ export default function HojePage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [props, setProps] = useState<Property[]>([])
+  const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([db.getBookings(), db.getGuests(), db.getProperties()])
-      .then(([b, g, p]) => { setBookings(b); setGuests(g); setProps(p) })
+    Promise.all([db.getBookings(), db.getGuests(), db.getProperties(), db.getWebsiteSettings()])
+      .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); setSettings(s) })
       .finally(() => setLoaded(true))
   }, [])
 
@@ -162,6 +163,22 @@ export default function HojePage() {
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
   const semPropriedades = loaded && props.length === 0
 
+  // Setup checklist — shown when properties exist but config is incomplete
+  const setupSteps = useMemo(() => {
+    if (!loaded || !settings || props.length === 0) return null
+    const hasIcal = props.some(p => p.ical_feeds && p.ical_feeds.length > 0)
+    const hasEmail = !!settings.email
+    const websiteReady = settings.enabled && hasEmail
+    const steps = [
+      { done: true, label: 'Propriedade criada', href: '/propriedades' },
+      { done: hasEmail, label: 'Email de notificações', href: '/website' },
+      { done: websiteReady, label: 'Website público ativo', href: '/website' },
+      { done: hasIcal, label: 'Sincronizar Airbnb/Booking (iCal)', href: '/propriedades' },
+    ]
+    const allDone = steps.every(s => s.done)
+    return allDone ? null : steps
+  }, [loaded, settings, props])
+
   return (
     <div className="flex flex-col min-h-full pb-6">
 
@@ -221,6 +238,17 @@ export default function HojePage() {
         {/* Alertas */}
         {temAlertas && (
           <div className="flex flex-col gap-0 border-b border-border">
+            <div className="flex items-center justify-between px-4 lg:px-8 pt-5 pb-2 bg-amber-50/40">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-900">
+                  Atenção
+                </p>
+              </div>
+              <span className="text-[11px] font-semibold text-amber-700 tabular-nums">
+                {pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length} item{pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length !== 1 ? 's' : ''}
+              </span>
+            </div>
             {pendentes.map(b => (
               <Link key={b.id} href={`/reservas/${b.id}`}
                 className="flex items-start gap-3 bg-amber-50 border-b border-amber-100 px-4 lg:px-8 py-3 active:bg-amber-100 transition-colors">
@@ -408,6 +436,41 @@ export default function HojePage() {
             <Clock className="h-8 w-8 text-muted-foreground/30 stroke-[1]" />
             <p className="text-base font-medium text-foreground/60">Dia tranquilo</p>
             <p className="text-sm text-muted-foreground">Sem chegadas, saídas ou alertas hoje.</p>
+          </div>
+        )}
+
+        {/* Setup checklist */}
+        {setupSteps && (
+          <div className="mx-4 lg:mx-8 my-6 rounded-2xl border border-border bg-card p-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <p className="text-sm font-semibold">Próximos passos</p>
+                <p className="text-xs text-muted-foreground">
+                  {setupSteps.filter(s => s.done).length} de {setupSteps.length} concluídos
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {setupSteps.map((s, i) => (
+                  <div key={i} className={`h-1.5 w-6 rounded-full transition-colors ${s.done ? 'bg-primary' : 'bg-muted'}`} />
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              {setupSteps.map((s, i) => (
+                <Link key={i} href={s.href}
+                  className={`flex items-center gap-3 -mx-2 px-2 py-2 rounded-lg active:bg-muted/40 transition-colors ${s.done ? 'opacity-50' : ''}`}>
+                  <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${
+                    s.done ? 'bg-primary text-primary-foreground' : 'border-2 border-border bg-card'
+                  }`}>
+                    {s.done ? <Check className="h-3 w-3 stroke-[3]" /> : <Circle className="h-2 w-2 opacity-0" />}
+                  </div>
+                  <span className={`text-sm flex-1 ${s.done ? 'line-through text-muted-foreground' : 'font-medium'}`}>
+                    {s.label}
+                  </span>
+                  {!s.done && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                </Link>
+              ))}
+            </div>
           </div>
         )}
 

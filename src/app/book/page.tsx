@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees } from 'lucide-react'
 import { fmtMoney } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -38,10 +39,12 @@ function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
 
       {p.imagem_url ? (
         <div className="relative h-60 lg:h-72 overflow-hidden bg-muted">
-          <img
+          <Image
             src={p.imagem_url}
             alt={p.nome}
-            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-5">

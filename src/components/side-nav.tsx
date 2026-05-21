@@ -7,6 +7,7 @@ import {
   Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag,
 } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
+import { useAlertsCount } from '@/hooks/use-alerts-count'
 
 const primary = [
   { href: '/hoje', label: 'Hoje', Icon: Home },
@@ -28,6 +29,7 @@ export function SideNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { signOut } = useClerk()
+  const alertsCount = useAlertsCount()
 
   function active(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
@@ -60,17 +62,25 @@ export function SideNav() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
-        {primary.map(({ href, label, Icon }) => (
-          <Link key={href} href={href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              active(href)
-                ? 'bg-primary/10 text-primary'
-                : 'text-foreground/65 hover:bg-muted hover:text-foreground'
-            }`}>
-            <Icon className={`h-4 w-4 shrink-0 ${active(href) ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
-            {label}
-          </Link>
-        ))}
+        {primary.map(({ href, label, Icon }) => {
+          const showBadge = href === '/hoje' && alertsCount > 0
+          return (
+            <Link key={href} href={href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active(href)
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-foreground/65 hover:bg-muted hover:text-foreground'
+              }`}>
+              <Icon className={`h-4 w-4 shrink-0 ${active(href) ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+              <span className="flex-1">{label}</span>
+              {showBadge && (
+                <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center tabular-nums">
+                  {alertsCount > 9 ? '9+' : alertsCount}
+                </span>
+              )}
+            </Link>
+          )
+        })}
 
         <div className="my-2 h-px bg-border" />
 

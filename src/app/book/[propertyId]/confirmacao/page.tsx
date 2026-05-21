@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { CheckCircle2, Mail, Phone, ArrowLeft } from 'lucide-react'
 import { fmtDate, fmtMoney, nights as calcNights } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -84,8 +85,8 @@ function ConfirmacaoInner() {
           {booking && prop && (
             <div className="w-full rounded-2xl border border-border bg-card overflow-hidden">
               {prop.imagem_url && (
-                <div className="h-32 overflow-hidden">
-                  <img src={prop.imagem_url} alt={prop.nome} className="w-full h-full object-cover" />
+                <div className="relative h-32 overflow-hidden">
+                  <Image src={prop.imagem_url} alt={prop.nome} fill sizes="(max-width: 640px) 100vw, 640px" className="object-cover" />
                 </div>
               )}
               {!prop.imagem_url && (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowLeft, ChevronLeft, ChevronRight, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, CheckCircle2 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -390,7 +391,7 @@ export default function BookPropertyPage() {
       {/* Cinematic hero */}
       {prop.imagem_url ? (
         <div className="relative h-72 lg:h-96 overflow-hidden bg-muted">
-          <img src={prop.imagem_url} alt={prop.nome} className="w-full h-full object-cover" />
+          <Image src={prop.imagem_url} alt={prop.nome} fill sizes="(max-width: 1024px) 100vw, 1024px" priority className="object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
       ) : (
@@ -482,12 +483,12 @@ export default function BookPropertyPage() {
             </div>
             <div className="flex items-center gap-4">
               <button type="button" onClick={() => setNumHospedes(Math.max(1, numHospedes - 1))}
-                className="h-9 w-9 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+                className="h-11 w-11 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/30 active:scale-95 transition-all">
                 −
               </button>
               <span className="text-sm font-bold w-4 text-center">{numHospedes}</span>
               <button type="button" onClick={() => setNumHospedes(Math.min(prop.capacidade, numHospedes + 1))}
-                className="h-9 w-9 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+                className="h-11 w-11 rounded-full border border-border flex items-center justify-center text-lg text-muted-foreground hover:text-foreground hover:border-foreground/30 active:scale-95 transition-all">
                 +
               </button>
             </div>
