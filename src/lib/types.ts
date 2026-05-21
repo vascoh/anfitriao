@@ -57,7 +57,7 @@ export interface Guest {
 export interface BookingEvent {
   id: string
   data: string
-  tipo: 'criada' | 'confirmada' | 'checkin' | 'checkout' | 'cancelada' | 'no_show' | 'pagamento' | 'nota' | 'checkin_online'
+  tipo: 'criada' | 'confirmada' | 'checkin' | 'checkout' | 'cancelada' | 'no_show' | 'pagamento' | 'nota' | 'checkin_online' | 'pagamento_lembrete'
   descricao: string
 }
 

@@ -41,23 +41,11 @@ function parseIcal(text: string): Array<{ uid: string; dtstart: string; dtend: s
   return events
 }
 
-export async function POST(req: NextRequest) {
-  const { propertyId } = await req.json()
-  if (!propertyId) return NextResponse.json({ error: 'propertyId required' }, { status: 400 })
-
-  // Get property with ical_feeds
-  const { data: propRow, error: propErr } = await supabase
-    .from('properties')
-    .select('id, ical_feeds')
-    .eq('id', propertyId)
-    .single()
-
-  if (propErr || !propRow) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
-
-  const feeds: IcalFeed[] = (propRow.ical_feeds as IcalFeed[] | null) ?? []
-  if (feeds.length === 0) return NextResponse.json({ synced: 0, message: 'No feeds configured' })
-
-  const origin = new URL(req.url).origin
+async function syncProperty(
+  propertyId: string,
+  feeds: IcalFeed[],
+  origin: string,
+): Promise<{ synced: number; results: Array<{ feed: string; imported: number; skipped: number; error?: string }>; updatedFeeds: IcalFeed[] }> {
   const results: Array<{ feed: string; imported: number; skipped: number; error?: string }> = []
   const updatedFeeds: IcalFeed[] = []
 
@@ -74,7 +62,6 @@ export async function POST(req: NextRequest) {
 
       for (const ev of events) {
         const uid = `${feed.id}::${ev.uid}`
-        // Check if already exists
         const { data: existing } = await supabase
           .from('bookings')
           .select('id')
@@ -84,7 +71,6 @@ export async function POST(req: NextRequest) {
 
         if (existing) { skipped++; continue }
 
-        // Create blocked booking
         const { error: insertErr } = await supabase.from('bookings').insert({
           id: crypto.randomUUID(),
           propriedade_id: propertyId,
@@ -115,9 +101,65 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Update feeds metadata
   await supabase.from('properties').update({ ical_feeds: updatedFeeds }).eq('id', propertyId)
 
-  const totalImported = results.reduce((s, r) => s + r.imported, 0)
-  return NextResponse.json({ synced: totalImported, results })
+  return { synced: results.reduce((s, r) => s + r.imported, 0), results, updatedFeeds }
+}
+
+// Manual sync for a single property (called from property edit page)
+export async function POST(req: NextRequest) {
+  const { propertyId } = await req.json()
+  if (!propertyId) return NextResponse.json({ error: 'propertyId required' }, { status: 400 })
+
+  const { data: propRow, error: propErr } = await supabase
+    .from('properties')
+    .select('id, ical_feeds')
+    .eq('id', propertyId)
+    .single()
+
+  if (propErr || !propRow) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
+
+  const feeds: IcalFeed[] = (propRow.ical_feeds as IcalFeed[] | null) ?? []
+  if (feeds.length === 0) return NextResponse.json({ synced: 0, message: 'No feeds configured' })
+
+  const origin = new URL(req.url).origin
+  const { synced, results } = await syncProperty(propertyId, feeds, origin)
+  return NextResponse.json({ synced, results })
+}
+
+// Cron: sync all properties with iCal feeds (called by Vercel cron every 4h)
+export async function GET(req: NextRequest) {
+  const secret = process.env.CRON_SECRET
+  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { data: props, error } = await supabase
+    .from('properties')
+    .select('id, ical_feeds')
+    .eq('ativo', true)
+
+  if (error || !props) return NextResponse.json({ error: 'Failed to load properties' }, { status: 500 })
+
+  const propsWithFeeds = props.filter(p => {
+    const feeds = p.ical_feeds as IcalFeed[] | null
+    return feeds && feeds.length > 0
+  })
+
+  if (propsWithFeeds.length === 0) {
+    return NextResponse.json({ synced: 0, properties: 0, message: 'No feeds configured' })
+  }
+
+  const origin = new URL(req.url).origin
+  let totalSynced = 0
+  const summary: Array<{ propertyId: string; synced: number }> = []
+
+  for (const prop of propsWithFeeds) {
+    const feeds = prop.ical_feeds as IcalFeed[]
+    const { synced } = await syncProperty(prop.id, feeds, origin)
+    totalSynced += synced
+    summary.push({ propertyId: prop.id, synced })
+  }
+
+  return NextResponse.json({ synced: totalSynced, properties: propsWithFeeds.length, summary })
 }
