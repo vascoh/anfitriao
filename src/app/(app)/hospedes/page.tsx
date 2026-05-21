@@ -144,9 +144,20 @@ export default function HospedesPage() {
 
       <div className="flex-1">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 text-center py-16 px-4">
-            <p className="text-base font-medium text-foreground/60">Sem hóspedes</p>
-            <p className="text-sm text-muted-foreground">Os hóspedes aparecem aqui quando crias reservas.</p>
+          <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
+            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Plus className="h-8 w-8 text-primary" />
+            </div>
+            <div className="flex flex-col gap-1.5 max-w-xs">
+              <p className="text-lg font-semibold">Sem hóspedes</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Os hóspedes aparecem aqui automaticamente quando crias reservas, ou podes adicioná-los manualmente.
+              </p>
+            </div>
+            <Link href="/hospedes/novo"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
+              <Plus className="h-4 w-4" /> Adicionar hóspede
+            </Link>
           </div>
         ) : (
           <div className="bg-card border-b border-border">

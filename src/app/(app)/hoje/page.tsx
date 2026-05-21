@@ -76,11 +76,12 @@ export default function HojePage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [props, setProps] = useState<Property[]>([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    db.getBookings().then(setBookings)
-    db.getGuests().then(setGuests)
-    db.getProperties().then(setProps)
+    Promise.all([db.getBookings(), db.getGuests(), db.getProperties()])
+      .then(([b, g, p]) => { setBookings(b); setGuests(g); setProps(p) })
+      .finally(() => setLoaded(true))
   }, [])
 
   const t = today()
@@ -159,6 +160,7 @@ export default function HojePage() {
 
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
+  const semPropriedades = loaded && props.length === 0
 
   return (
     <div className="flex flex-col min-h-full pb-6">
@@ -373,8 +375,35 @@ export default function HojePage() {
           </section>
         )}
 
-        {/* Empty state */}
-        {diaVazio && (
+        {/* First-time onboarding */}
+        {semPropriedades && (
+          <div className="mx-4 lg:mx-8 my-8 rounded-2xl border border-border bg-card p-6 lg:p-8 flex flex-col gap-5">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Home className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex flex-col gap-1 min-w-0">
+                <h2 className="text-lg font-bold tracking-tight">Bem-vindo ao Anfitrião</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Para começar a gerir reservas, cria a tua primeira propriedade.
+                  Demora menos de um minuto.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 pl-13">
+              <Link href="/propriedades/nova"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
+                <Plus className="h-4 w-4" /> Criar primeira propriedade
+              </Link>
+              <Link href="/website" className="text-xs text-muted-foreground hover:text-foreground text-center transition-colors">
+                Ou configura primeiro o website público →
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Empty day (tranquil — has properties but no activity) */}
+        {!semPropriedades && diaVazio && loaded && (
           <div className="flex flex-col items-center justify-center gap-2 text-center py-16 px-4">
             <Clock className="h-8 w-8 text-muted-foreground/30 stroke-[1]" />
             <p className="text-base font-medium text-foreground/60">Dia tranquilo</p>
@@ -382,23 +411,25 @@ export default function HojePage() {
           </div>
         )}
 
-        {/* Quick actions */}
-        <div className="px-4 lg:px-8 pt-6 pb-2 grid grid-cols-2 gap-2.5">
-          <Link href="/reservas/nova"
-            className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 active:bg-muted/40 transition-colors hover:border-border/80">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Plus className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium">Nova reserva</span>
-          </Link>
-          <Link href="/concierge"
-            className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 active:bg-muted/40 transition-colors hover:border-border/80">
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium">Concierge IA</span>
-          </Link>
-        </div>
+        {/* Quick actions (skip when onboarding) */}
+        {!semPropriedades && (
+          <div className="px-4 lg:px-8 pt-6 pb-2 grid grid-cols-2 gap-2.5">
+            <Link href="/reservas/nova"
+              className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 active:bg-muted/40 transition-colors hover:border-border/80">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Plus className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium">Nova reserva</span>
+            </Link>
+            <Link href="/concierge"
+              className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 active:bg-muted/40 transition-colors hover:border-border/80">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-medium">Concierge IA</span>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

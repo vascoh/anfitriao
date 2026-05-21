@@ -53,9 +53,20 @@ export default function PropriedadesPage() {
 
       <div className="flex flex-col gap-4 p-4">
         {props.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 text-center py-16">
-            <p className="text-base font-medium text-foreground/60">Sem propriedades</p>
-            <Link href="/propriedades/nova" className="text-primary text-sm font-medium">Adicionar primeira propriedade</Link>
+          <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
+            <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <BedDouble className="h-8 w-8 text-primary" />
+            </div>
+            <div className="flex flex-col gap-1.5 max-w-xs">
+              <p className="text-lg font-semibold">Nenhuma propriedade</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Cria a tua primeira propriedade para começar a receber reservas, gerir preços e organizar hóspedes.
+              </p>
+            </div>
+            <Link href="/propriedades/nova"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
+              <Plus className="h-4 w-4" /> Criar propriedade
+            </Link>
           </div>
         ) : (
           props.map(p => {

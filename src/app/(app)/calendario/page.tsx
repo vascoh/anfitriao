@@ -141,8 +141,11 @@ function TimelineView({
 
           {/* Property rows */}
           {activeProps.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              Sem propriedades ativas.
+            <div className="flex flex-col items-center justify-center gap-3 text-center py-16 px-4">
+              <p className="text-base font-medium text-foreground/60">Sem propriedades ativas</p>
+              <Link href="/propriedades" className="text-primary text-sm font-medium hover:underline">
+                Gerir propriedades →
+              </Link>
             </div>
           ) : (
             activeProps.map((prop) => {
