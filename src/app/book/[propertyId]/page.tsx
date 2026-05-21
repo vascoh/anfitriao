@@ -167,17 +167,32 @@ export default function BookPropertyPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  function loadData() {
+  async function loadData(signal?: AbortSignal) {
     setLoading(true)
     setLoadError(false)
-    Promise.all([
-      db.getProperties(),
-      db.getWebsiteSettings(),
-      db.getBookings(),
-      db.getPriceRules(),
-      db.getTarifas(),
-      db.getPlatformRates(),
-    ]).then(([props, ws, bookings, rules, tars, rates]) => {
+    try {
+      const results = await Promise.allSettled([
+        db.getProperties(),
+        db.getWebsiteSettings(),
+        db.getBookings(),
+        db.getPriceRules(),
+        db.getTarifas(),
+        db.getPlatformRates(),
+      ])
+      if (signal?.aborted) return
+
+      const [propsR, wsR, bookingsR, rulesR, tarsR, ratesR] = results
+      const props = propsR.status === 'fulfilled' ? propsR.value : []
+      const ws = wsR.status === 'fulfilled' ? wsR.value : null
+      const bookings = bookingsR.status === 'fulfilled' ? bookingsR.value : []
+      const rules = rulesR.status === 'fulfilled' ? rulesR.value : []
+      const tars = tarsR.status === 'fulfilled' ? tarsR.value : []
+      const rates = ratesR.status === 'fulfilled' ? ratesR.value : []
+
+      if (propsR.status === 'rejected' || wsR.status === 'rejected') {
+        throw new Error('Failed to load core data')
+      }
+
       const p = props.find(x => x.id === propertyId) ?? null
       setProp(p)
       setSettings(ws)
@@ -185,15 +200,22 @@ export default function BookPropertyPage() {
       setTarifas(tars)
       setPlatformRates(rates)
       if (p) setBlocked(blockedDates(bookings, p.id))
-    }).catch((err) => {
-      console.error('[loadData error]', err)
+    } catch (err) {
+      if (signal?.aborted) return
+      console.error('[BookPropertyPage loadData]', err)
       setLoadError(true)
-    }).finally(() => {
-      setLoading(false)
-    })
+    } finally {
+      if (!signal?.aborted) setLoading(false)
+    }
   }
 
-  useEffect(() => { loadData() }, [propertyId])
+  useEffect(() => {
+    if (!propertyId) return
+    const controller = new AbortController()
+    loadData(controller.signal)
+    return () => controller.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propertyId])
 
   const today = new Date().toISOString().slice(0, 10)
   const minDate = settings ? addDays(today, settings.antecedencia_dias) : today
@@ -322,7 +344,7 @@ export default function BookPropertyPage() {
           <p className="font-semibold">Erro ao carregar</p>
           <p className="text-sm text-muted-foreground">Não foi possível carregar os dados. Verifica a ligação e tenta novamente.</p>
         </div>
-        <button onClick={loadData} className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
+        <button onClick={() => loadData()} className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold">
           Tentar novamente
         </button>
         <Link href="/book" className="text-sm text-muted-foreground hover:text-foreground">← Voltar aos alojamentos</Link>
