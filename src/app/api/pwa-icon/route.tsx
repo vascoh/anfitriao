@@ -1,8 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { type NextRequest } from 'next/server'
 
-export const runtime = 'edge'
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const size = Math.min(512, Math.max(32, parseInt(searchParams.get('size') ?? '512')))
