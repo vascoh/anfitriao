@@ -1,7 +1,7 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Users, MapPin, Phone, Mail, Edit2,
@@ -107,8 +107,8 @@ function Row({ label, value, className }: { label: string; value: React.ReactNod
   )
 }
 
-export default function ReservaDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function ReservaDetailPage() {
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
   const [guest, setGuest] = useState<Guest | null>(null)

@@ -63,6 +63,8 @@ function NovaReservaInner() {
   const [precoPago, setPrecoPago] = useState('')
   const [notas, setNotas] = useState('')
   const [conflito, setConflito] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [priceRules, setPriceRules] = useState<PriceRule[]>([])
   const [priceTarifas, setPriceTarifas] = useState<Tarifa[]>([])
   const [platformRates, setPlatformRates] = useState<PlatformRate[]>([])
@@ -133,29 +135,35 @@ function NovaReservaInner() {
 
   async function handleSubmit() {
     if (!propId || !guestId) return
-    const total = parseFloat(precoTotal) || 0
-    const pago = parseFloat(precoPago) || 0
-
-    const booking: Booking = {
-      id: uuid(),
-      propriedade_id: propId,
-      hospede_id: guestId,
-      check_in: checkIn,
-      check_out: checkOut,
-      num_hospedes: numHospedes,
-      estado: 'confirmada',
-      origem,
-      preco_total: total,
-      preco_pago: Math.min(pago, total),
-      notas: notas.trim() || undefined,
-      criado_em: new Date().toISOString(),
-      historico: [
-        { id: uuid(), data: new Date().toISOString(), tipo: 'criada', descricao: 'Reserva criada manualmente' },
-        { id: uuid(), data: new Date().toISOString(), tipo: 'confirmada', descricao: 'Confirmada na criação' },
-      ],
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const total = parseFloat(precoTotal) || 0
+      const pago = parseFloat(precoPago) || 0
+      const booking: Booking = {
+        id: uuid(),
+        propriedade_id: propId,
+        hospede_id: guestId,
+        check_in: checkIn,
+        check_out: checkOut,
+        num_hospedes: numHospedes,
+        estado: 'confirmada',
+        origem,
+        preco_total: total,
+        preco_pago: Math.min(pago, total),
+        notas: notas.trim() || undefined,
+        criado_em: new Date().toISOString(),
+        historico: [
+          { id: uuid(), data: new Date().toISOString(), tipo: 'criada', descricao: 'Reserva criada manualmente' },
+          { id: uuid(), data: new Date().toISOString(), tipo: 'confirmada', descricao: 'Confirmada na criação' },
+        ],
+      }
+      await db.saveBooking(booking)
+      router.push(`/reservas/${booking.id}`)
+    } catch {
+      setSubmitting(false)
+      setSubmitError('Erro ao criar reserva. Tenta novamente.')
     }
-    await db.saveBooking(booking)
-    router.push(`/reservas/${booking.id}`)
   }
 
   return (<div className="flex flex-col min-h-full">
@@ -436,12 +444,15 @@ function NovaReservaInner() {
               </div>
             </div>
 
+            {submitError && (
+              <p className="text-xs text-destructive text-center">{submitError}</p>
+            )}
             <button
               onClick={handleSubmit}
-              disabled={!propId || !guestId || !checkIn || !checkOut}
+              disabled={!propId || !guestId || !checkIn || !checkOut || submitting}
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity"
             >
-              Criar reserva
+              {submitting ? 'A criar reserva...' : 'Criar reserva'}
             </button>
           </div>
         </div>

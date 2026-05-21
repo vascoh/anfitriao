@@ -1,7 +1,7 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { db } from '@/lib/db'
@@ -36,8 +36,8 @@ const AMENITIES = [
 
 const TYPES: PropertyType[] = ['apartamento', 'moradia', 'quarto', 'outro']
 
-export default function EditarPropriedadePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function EditarPropriedadePage() {
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [prop, setProp] = useState<Property | null>(null)
 

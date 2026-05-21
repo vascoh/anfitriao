@@ -1,7 +1,7 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { uuid } from '@/lib/store'
@@ -12,8 +12,8 @@ import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
 const SOURCES: BookingSource[] = ['airbnb', 'booking', 'direto', 'expedia', 'vrbo', 'outro']
 const STATUSES: BookingStatus[] = ['pendente', 'confirmada', 'checkin', 'checkout', 'cancelada', 'no_show']
 
-export default function EditarReservaPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function EditarReservaPage() {
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
 

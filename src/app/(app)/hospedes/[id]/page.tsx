@@ -1,8 +1,8 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -10,8 +10,8 @@ import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL } from '@/lib/labels'
 import type { GuestTag } from '@/lib/types'
 
-export default function HospedeDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function HospedeDetailPage() {
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [guest, setGuest] = useState<Guest | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])

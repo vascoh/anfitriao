@@ -1,8 +1,8 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/store'
 import { db } from '@/lib/db'
@@ -35,8 +35,8 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   jardim:          <Trees className="h-3 w-3" />,
 }
 
-export default function PropriedadeDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function PropriedadeDetailPage() {
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [prop, setProp] = useState<Property | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
