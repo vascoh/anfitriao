@@ -101,6 +101,7 @@ export default function ConciergePage() {
       amenities: selectedProp.comodidades,
     } : undefined
 
+    let statusCode = 0
     try {
       const res = await fetch('/api/concierge', {
         method: 'POST',
@@ -108,6 +109,7 @@ export default function ConciergePage() {
         body: JSON.stringify({ message, targetLang, tone, context }),
         signal: abort.signal,
       })
+      statusCode = res.status
 
       if (!res.ok) throw new Error('Erro ao gerar resposta')
 
@@ -122,7 +124,11 @@ export default function ConciergePage() {
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return
-      setError('Não foi possível gerar a resposta. Verifica a tua API key.')
+      if (statusCode === 429) {
+        setError('Demasiados pedidos. Aguarda um momento antes de tentar novamente.')
+      } else {
+        setError('Não foi possível gerar a resposta. Verifica a tua ligação e API key.')
+      }
     } finally {
       setLoading(false)
     }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { Download } from 'lucide-react'
+import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
 import { fmtMoney, fmtDate, nights } from '@/lib/store'
@@ -52,15 +52,20 @@ function revenueByMonth(bookings: Booking[], year: number): number[] {
   return m
 }
 
-function revenueByProperty(bookings: Booking[], properties: Property[], year: number): { id: string; nome: string; cor: string; revenue: number; count: number }[] {
-  const map: Record<string, { nome: string; cor: string; revenue: number; count: number }> = {}
-  properties.forEach(p => { map[p.id] = { nome: p.nome, cor: p.cor, revenue: 0, count: 0 } })
+function revenueByProperty(
+  bookings: Booking[],
+  properties: Property[],
+  year: number,
+): { id: string; nome: string; cor: string; revenue: number; count: number; nights: number }[] {
+  const map: Record<string, { nome: string; cor: string; revenue: number; count: number; nights: number }> = {}
+  properties.forEach(p => { map[p.id] = { nome: p.nome, cor: p.cor, revenue: 0, count: 0, nights: 0 } })
   bookings
     .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
     .forEach(b => {
       if (map[b.propriedade_id]) {
         map[b.propriedade_id].revenue += b.preco_total
         map[b.propriedade_id].count++
+        map[b.propriedade_id].nights += nights(b.check_in, b.check_out)
       }
     })
   return Object.entries(map)
@@ -69,7 +74,12 @@ function revenueByProperty(bookings: Booking[], properties: Property[], year: nu
     .sort((a, b) => b.revenue - a.revenue)
 }
 
-function topGuests(bookings: Booking[], guests: Guest[], year: number, limit = 5): { id: string; nome: string; revenue: number; stays: number }[] {
+function topGuests(
+  bookings: Booking[],
+  guests: Guest[],
+  year: number,
+  limit = 5,
+): { id: string; nome: string; revenue: number; stays: number }[] {
   const map: Record<string, { nome: string; revenue: number; stays: number }> = {}
   bookings
     .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
@@ -98,7 +108,10 @@ function occupancyByMonth(bookings: Booking[], properties: Property[], year: num
   })
 }
 
-function statsBySource(bookings: Booking[], year: number): [BookingSource, { revenue: number; count: number }][] {
+function statsBySource(
+  bookings: Booking[],
+  year: number,
+): [BookingSource, { revenue: number; count: number }][] {
   const map: Partial<Record<BookingSource, { revenue: number; count: number }>> = {}
   bookings
     .filter(b => isActive(b) && b.check_in.startsWith(String(year)))
@@ -111,6 +124,74 @@ function statsBySource(bookings: Booking[], year: number): [BookingSource, { rev
     .sort((a, b) => b[1].revenue - a[1].revenue)
 }
 
+// RevPAR = Revenue / Available Room Nights
+function calcRevPAR(
+  bookings: Booking[],
+  properties: Property[],
+  year: number,
+  month?: number, // undefined = full year
+): number {
+  const activeProps = properties.filter(p => p.ativo)
+  if (activeProps.length === 0) return 0
+
+  const isCurrentYear = year === new Date().getFullYear()
+  const daysInPeriod = month !== undefined
+    ? new Date(year, month + 1, 0).getDate()
+    : isCurrentYear
+      ? new Date().getDate() + (new Date().getMonth() > 0
+          ? Array.from({ length: new Date().getMonth() }, (_, m) => new Date(year, m + 1, 0).getDate()).reduce((a, b) => a + b, 0)
+          : 0)
+      : 365 + (year % 4 === 0 ? 1 : 0)
+
+  const availableNights = activeProps.length * daysInPeriod
+
+  const revenue = bookings
+    .filter(b => {
+      if (!isActive(b)) return false
+      if (month !== undefined) return b.check_in.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)
+      return b.check_in.startsWith(String(year))
+    })
+    .reduce((sum, b) => sum + b.preco_total, 0)
+
+  return availableNights > 0 ? Math.round(revenue / availableNights) : 0
+}
+
+// Average Length of Stay
+function calcAvgLOS(bookings: Booking[], year: number): number {
+  const activeBookings = bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year)))
+  if (activeBookings.length === 0) return 0
+  const totalNights = activeBookings.reduce((sum, b) => sum + nights(b.check_in, b.check_out), 0)
+  return Math.round((totalNights / activeBookings.length) * 10) / 10
+}
+
+// Cancellation rate
+function calcCancellationRate(bookings: Booking[], year: number): number {
+  const yearBookings = bookings.filter(b => b.check_in.startsWith(String(year)))
+  if (yearBookings.length === 0) return 0
+  const cancelled = yearBookings.filter(b => b.estado === 'cancelada' || b.estado === 'no_show').length
+  return Math.round((cancelled / yearBookings.length) * 100)
+}
+
+// Payment collection rate
+function calcCollectionRate(bookings: Booking[], year: number): number {
+  const activeBookings = bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year)) && b.preco_total > 0)
+  if (activeBookings.length === 0) return 100
+  const totalDue = activeBookings.reduce((sum, b) => sum + b.preco_total, 0)
+  const totalPaid = activeBookings.reduce((sum, b) => sum + b.preco_pago, 0)
+  return Math.round((totalPaid / totalDue) * 100)
+}
+
+function Trend({ value, suffix = '%', inverse = false }: { value: number; suffix?: string; inverse?: boolean }) {
+  if (value === 0) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+  const positive = inverse ? value < 0 : value > 0
+  return (
+    <span className={`flex items-center gap-0.5 text-xs font-medium ${positive ? 'text-emerald-600' : 'text-destructive'}`}>
+      {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+      {value > 0 ? '+' : ''}{value}{suffix}
+    </span>
+  )
+}
+
 export default function RelatoriosPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
@@ -119,9 +200,8 @@ export default function RelatoriosPage() {
   const [year, setYear] = useState(now.getFullYear())
 
   useEffect(() => {
-    db.getBookings().then(setBookings)
-    db.getProperties().then(setProperties)
-    db.getGuests().then(setGuests)
+    Promise.all([db.getBookings(), db.getProperties(), db.getGuests()])
+      .then(([b, p, g]) => { setBookings(b); setProperties(p); setGuests(g) })
   }, [])
 
   function exportRevenue() {
@@ -163,7 +243,12 @@ export default function RelatoriosPage() {
       .reduce((sum, b) => sum + nights(b.check_in, b.check_out), 0),
     [bookings, year]
   )
+
   const adr = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0
+  const revpar = useMemo(() => calcRevPAR(bookings, properties, year), [bookings, properties, year])
+  const avgLOS = useMemo(() => calcAvgLOS(bookings, year), [bookings, year])
+  const cancellationRate = useMemo(() => calcCancellationRate(bookings, year), [bookings, year])
+  const collectionRate = useMemo(() => calcCollectionRate(bookings, year), [bookings, year])
 
   const activeProps = useMemo(() => properties.filter(p => p.ativo), [properties])
   const occupancyMonth = year === now.getFullYear() ? now.getMonth() : 11
@@ -190,6 +275,16 @@ export default function RelatoriosPage() {
       .reduce((sum, b) => sum + b.preco_total, 0)
   }, [bookings, now])
 
+  // Year-over-year comparison
+  const prevYear = year - 1
+  const prevYearRevenue = useMemo(() =>
+    bookings.filter(b => isActive(b) && b.check_in.startsWith(String(prevYear))).reduce((s, b) => s + b.preco_total, 0),
+    [bookings, prevYear]
+  )
+  const yoyChange = prevYearRevenue > 0
+    ? Math.round(((totalRevenue - prevYearRevenue) / prevYearRevenue) * 100)
+    : 0
+
   return (
     <div className="flex flex-col min-h-full pb-8">
 
@@ -205,47 +300,56 @@ export default function RelatoriosPage() {
                 <Download className="h-3.5 w-3.5" /> CSV
               </button>
             )}
-          {availableYears.length > 1 && (
-            <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
-              {availableYears.map(y => (
-                <button key={y} onClick={() => setYear(y)}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                    y === year
-                      ? 'bg-card shadow-sm text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}>
-                  {y}
-                </button>
-              ))}
-            </div>
-          )}
+            {availableYears.length > 1 && (
+              <div className="flex items-center gap-0.5 bg-muted rounded-lg p-0.5">
+                {availableYears.map(y => (
+                  <button key={y} onClick={() => setYear(y)}
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                      y === year
+                        ? 'bg-card shadow-sm text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}>
+                    {y}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Stats strip */}
+        {/* KPI strip */}
         <div className="flex items-stretch border-t border-border divide-x divide-border overflow-x-auto">
           <div className="px-4 lg:px-6 py-2.5 shrink-0">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Receita {year}</p>
-            <p className="text-lg font-bold">{fmtMoney(totalRevenue)}</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-lg font-bold">{fmtMoney(totalRevenue)}</p>
+              {prevYearRevenue > 0 && <Trend value={yoyChange} />}
+            </div>
           </div>
           <div className="px-4 py-2.5 shrink-0">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Reservas</p>
             <p className="text-lg font-bold">{totalBookings}</p>
           </div>
           <div className="px-4 py-2.5 shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ocupação média</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Ocupação</p>
             <p className="text-lg font-bold">{avgOccupancy}%</p>
           </div>
-          {totalBookings > 0 && (
-            <div className="px-4 py-2.5 shrink-0">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Valor médio</p>
-              <p className="text-lg font-bold">{fmtMoney(Math.round(totalRevenue / totalBookings))}</p>
-            </div>
-          )}
           {adr > 0 && (
             <div className="px-4 py-2.5 shrink-0">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">ADR / noite</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">ADR</p>
               <p className="text-lg font-bold">{fmtMoney(adr)}</p>
+            </div>
+          )}
+          {revpar > 0 && (
+            <div className="px-4 py-2.5 shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">RevPAR</p>
+              <p className="text-lg font-bold text-primary">{fmtMoney(revpar)}</p>
+            </div>
+          )}
+          {avgLOS > 0 && (
+            <div className="px-4 py-2.5 shrink-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">LOS Médio</p>
+              <p className="text-lg font-bold">{avgLOS}n</p>
             </div>
           )}
           {forecastRevenue > 0 && (
@@ -259,7 +363,7 @@ export default function RelatoriosPage() {
 
       <div className="flex flex-col max-w-5xl w-full">
 
-        {/* Monthly bar chart */}
+        {/* Revenue bar chart */}
         <section className="border-b border-border px-4 lg:px-8 py-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
             Receita mensal · {year}
@@ -303,7 +407,7 @@ export default function RelatoriosPage() {
           )}
         </section>
 
-        {/* Occupancy by month chart */}
+        {/* Occupancy bar chart */}
         {activeProps.length > 0 && (
           <section className="border-b border-border px-4 lg:px-8 py-6">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
@@ -339,6 +443,55 @@ export default function RelatoriosPage() {
                   </div>
                 )
               })}
+            </div>
+          </section>
+        )}
+
+        {/* Advanced KPIs */}
+        {totalBookings > 0 && (
+          <section className="border-b border-border px-4 lg:px-8 py-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+              KPIs · {year}
+            </p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">RevPAR</p>
+                <p className="text-xl font-bold">{fmtMoney(revpar)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">receita por noite disponível</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">ADR</p>
+                <p className="text-xl font-bold">{fmtMoney(adr)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">preço médio por noite vendida</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">LOS</p>
+                <p className="text-xl font-bold">{avgLOS > 0 ? `${avgLOS}n` : '—'}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">estadia média</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Cobrança</p>
+                <p className={`text-xl font-bold ${collectionRate >= 90 ? 'text-emerald-600' : collectionRate >= 70 ? 'text-amber-600' : 'text-destructive'}`}>
+                  {collectionRate}%
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">pagamentos cobrados</p>
+              </div>
+              {cancellationRate > 0 && (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Cancelamentos</p>
+                  <p className={`text-xl font-bold ${cancellationRate <= 5 ? 'text-emerald-600' : cancellationRate <= 15 ? 'text-amber-600' : 'text-destructive'}`}>
+                    {cancellationRate}%
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-1">taxa de cancelamento</p>
+                </div>
+              )}
+              {totalNights > 0 && (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Noites vendidas</p>
+                  <p className="text-xl font-bold">{totalNights}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">em {totalBookings} reservas</p>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -388,29 +541,32 @@ export default function RelatoriosPage() {
               <p className="text-sm text-muted-foreground">Sem dados para {year}</p>
             ) : (
               <div className="flex flex-col gap-5">
-                {bySource.map(([origem, stats]) => (
-                  <div key={origem} className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: SOURCE_COLOR[origem] }} />
-                        <span className="text-sm font-medium">{SOURCE_LABEL[origem]}</span>
+                {bySource.map(([origem, stats]) => {
+                  const pct = totalRevenue > 0 ? Math.round((stats.revenue / totalRevenue) * 100) : 0
+                  return (
+                    <div key={origem} className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: SOURCE_COLOR[origem] }} />
+                          <span className="text-sm font-medium">{SOURCE_LABEL[origem]}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-sm font-bold tabular-nums">{fmtMoney(stats.revenue)}</span>
+                          <span className="text-[10px] text-muted-foreground">{pct}% · {stats.count}r</span>
+                        </div>
                       </div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm font-bold tabular-nums">{fmtMoney(stats.revenue)}</span>
-                        <span className="text-[10px] text-muted-foreground">{stats.count} res.</span>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.round((stats.revenue / maxSourceRevenue) * 100)}%`,
+                            backgroundColor: SOURCE_COLOR[origem],
+                          }}
+                        />
                       </div>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.round((stats.revenue / maxSourceRevenue) * 100)}%`,
-                          backgroundColor: SOURCE_COLOR[origem],
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </section>
@@ -424,26 +580,31 @@ export default function RelatoriosPage() {
               Receita por propriedade · {year}
             </p>
             <div className="flex flex-col gap-5">
-              {byProperty.map(p => (
-                <div key={p.id} className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
-                      <span className="text-sm font-medium truncate">{p.nome}</span>
+              {byProperty.map(p => {
+                const propAdr = p.nights > 0 ? Math.round(p.revenue / p.nights) : 0
+                return (
+                  <div key={p.id} className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
+                        <span className="text-sm font-medium truncate">{p.nome}</span>
+                      </div>
+                      <div className="flex items-baseline gap-2 shrink-0">
+                        <span className="text-sm font-bold tabular-nums">{fmtMoney(p.revenue)}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {p.count}r · {propAdr > 0 ? `ADR ${fmtMoney(propAdr)}` : ''}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-baseline gap-2 shrink-0">
-                      <span className="text-sm font-bold tabular-nums">{fmtMoney(p.revenue)}</span>
-                      <span className="text-[10px] text-muted-foreground">{p.count} res.</span>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.round((p.revenue / maxPropertyRevenue) * 100)}%`, backgroundColor: p.cor }}
+                      />
                     </div>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${Math.round((p.revenue / maxPropertyRevenue) * 100)}%`, backgroundColor: p.cor }}
-                    />
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
         )}

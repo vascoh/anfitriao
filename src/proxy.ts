@@ -1,32 +1,34 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-// Routes that REQUIRE auth — everything else is excluded from the matcher
-// to avoid the Clerk dev-handshake hang on non-localhost domains.
-const isProtectedRoute = createRouteMatcher([
-  '/hoje(.*)',
-  '/reservas(.*)',
-  '/calendario(.*)',
-  '/hospedes(.*)',
-  '/propriedades(.*)',
-  '/precos(.*)',
-  '/relatorios(.*)',
-  '/concierge(.*)',
-  '/website(.*)',
-  '/documentos(.*)',
-  '/api/concierge(.*)',
-  '/api/documentos(.*)',
+const isPublicRoute = createRouteMatcher([
+  // Public booking site
+  '/book(.*)',
+  // Guest online check-in flow
+  '/checkin(.*)',
+  // Auth pages
+  '/sign-in(.*)',
+  '/(auth)(.*)',
+  // Public APIs
+  '/api/ical/(.*)',
+  '/api/checkin/(.*)',
+  '/api/pwa-icon(.*)',
+  '/api/notify-booking(.*)',
+  '/api/notify-confirmation(.*)',
+  '/api/notify-checkin-complete(.*)',
+  // Cron jobs (protected by CRON_SECRET, not by Clerk)
+  '/api/ical-sync(.*)',
+  '/api/cron/(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  if (!isPublicRoute(req)) {
     await auth.protect()
   }
 })
 
 export const config = {
   matcher: [
-    // Run only on routes that need auth (protected app routes + sign-in flow)
-    '/(hoje|reservas|calendario|hospedes|propriedades|precos|relatorios|concierge|website|documentos|sign-in)(.*)',
-    '/api/(concierge|documentos)(.*)',
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
 }

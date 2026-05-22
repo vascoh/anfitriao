@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const client = new Anthropic()
 
@@ -19,7 +20,21 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
-  const { message, targetLang, tone, context } = await req.json()
+  // Rate limit: 20 requests per minute per IP
+  const ip = getClientIp(req)
+  const rl = checkRateLimit(`concierge:${ip}`, 20, 60_000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiados pedidos. Aguarda um momento.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      }
+    )
+  }
+
+  const body = await req.json()
+  const { message, targetLang, tone, context } = body
 
   if (!message?.trim()) {
     return new Response(JSON.stringify({ error: 'Mensagem em falta' }), { status: 400 })
