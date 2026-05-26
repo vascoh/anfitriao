@@ -74,6 +74,10 @@ export interface WebsiteSettings {
   telefone: string
   min_noites: number
   antecedencia_dias: number
+  /** Unique URL slug for the host's public booking site (e.g. "casadevasco") */
+  slug?: string
+  /** Clerk userId of the host who owns these settings */
+  owner_id?: string
 }
 
 export interface Booking {

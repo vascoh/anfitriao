@@ -37,7 +37,7 @@ export default function WebsitePage() {
     db.getGuests().then(setAllGuests)
   }, [])
 
-  const publicUrl = `${origin}/book`
+  const publicUrl = settings?.slug ? `${origin}/r/${settings.slug}` : `${origin}/book`
 
   function update<K extends keyof WebsiteSettings>(key: K, val: WebsiteSettings[K]) {
     setSettings(prev => prev ? { ...prev, [key]: val } : prev)

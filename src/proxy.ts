@@ -1,8 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isPublicRoute = createRouteMatcher([
-  // Public booking site
+  // Public booking site (legacy /book + tenant slug path /r/[slug])
   '/book(.*)',
+  '/r/(.*)',
   // Guest online check-in flow
   '/checkin(.*)',
   // Auth pages

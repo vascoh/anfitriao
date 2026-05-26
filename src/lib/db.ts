@@ -21,7 +21,7 @@ const DEFAULT_WEBSITE: WebsiteSettings = {
   email: '',
   telefone: '',
   min_noites: 1,
-  antecedencia_dias: 1,
+  antecedencia_dias: 0,
 }
 
 export const db = {
@@ -173,6 +173,37 @@ export const db = {
   saveWebsiteSettings: async (s: WebsiteSettings): Promise<void> => {
     const { error } = await supabase.from('website_settings').upsert({ id: 1, ...s })
     if (error) throw new Error(`[db.saveWebsiteSettings] ${error.message}`)
+  },
+
+  /** Public: look up a host's website settings by their URL slug */
+  getWebsiteSettingsBySlug: async (slug: string): Promise<WebsiteSettings | null> => {
+    const { data, error } = await supabase
+      .from('website_settings')
+      .select('*')
+      .eq('slug', slug)
+      .single()
+    if (error || !data) return null
+    const { id: _, ...settings } = data as WebsiteSettings & { id: number }
+    return settings
+  },
+
+  /** Public: fetch active top-level properties for a given owner (for the booking site) */
+  getPropertiesByOwner: async (ownerId: string): Promise<Property[]> => {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .eq('ativo', true)
+      .is('parent_id', null)
+      .order('criado_em', { ascending: true })
+    if (error) {
+      console.error('[db.getPropertiesByOwner]', error.message)
+      return []
+    }
+    return (data as (Property & { casas_banho: number })[]).map(row => {
+      const { casas_banho, ...rest } = row as never as { casas_banho: number } & Omit<Property, 'casasBanho'>
+      return { ...rest, casasBanho: casas_banho }
+    })
   },
 
   // ─── Price rules ───────────────────────────────────────────────────────────
