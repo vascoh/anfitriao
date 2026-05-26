@@ -35,6 +35,8 @@ export interface Property {
   ativo: boolean
   criado_em: string
   ical_feeds?: IcalFeed[]
+  /** If set, this property is a room inside the parent property */
+  parent_id?: string | null
 }
 
 export interface Guest {

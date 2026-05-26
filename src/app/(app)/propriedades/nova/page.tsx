@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
@@ -30,8 +30,10 @@ const AMENITIES = [
 
 const TYPES: PropertyType[] = ['apartamento', 'moradia', 'quarto', 'outro']
 
-export default function NovaPropriedadePage() {
+function NovaPropriedadeForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const parentId = searchParams.get('parent') ?? undefined
   const [nome, setNome] = useState('')
   const [tipo, setTipo] = useState<PropertyType>('apartamento')
   const [endereco, setEndereco] = useState('')
@@ -77,10 +79,11 @@ export default function NovaPropriedadePage() {
         regras_casa: regrasCasa.trim(),
         ativo: true,
         criado_em: new Date().toISOString(),
+        parent_id: parentId ?? null,
       }
       await db.saveProperty(p)
-      toast.success('Propriedade criada com sucesso')
-      router.push(`/propriedades/${p.id}`)
+      toast.success(parentId ? 'Quarto adicionado com sucesso' : 'Propriedade criada com sucesso')
+      router.push(parentId ? `/propriedades/${parentId}` : `/propriedades/${p.id}`)
     } catch {
       toast.error('Erro ao criar propriedade. Tenta novamente.')
       setSaving(false)
@@ -93,14 +96,19 @@ export default function NovaPropriedadePage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href="/propriedades" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href={parentId ? `/propriedades/${parentId}` : '/propriedades'} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-lg font-semibold">Nova propriedade</h1>
+          <h1 className="text-lg font-semibold">{parentId ? 'Novo quarto' : 'Nova propriedade'}</h1>
         </div>
       </header>
 
       <div className="flex flex-col gap-5 p-4 pb-8">
+        {parentId && (
+          <div className="rounded-lg bg-primary/8 border border-primary/20 px-4 py-3 text-sm text-primary font-medium">
+            Este quarto será agrupado sob a propriedade mãe.
+          </div>
+        )}
         {/* Basic info */}
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Informação básica</p>
@@ -239,9 +247,17 @@ export default function NovaPropriedadePage() {
 
         <button onClick={handleSave} disabled={!canSave || saving}
           className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2">
-          {saving ? 'A criar...' : 'Criar propriedade'}
+          {saving ? 'A criar...' : parentId ? 'Criar quarto' : 'Criar propriedade'}
         </button>
       </div>
     </div>
+  )
+}
+
+export default function NovaPropriedadePage() {
+  return (
+    <Suspense>
+      <NovaPropriedadeForm />
+    </Suspense>
   )
 }

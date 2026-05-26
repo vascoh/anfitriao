@@ -62,19 +62,23 @@ function fmtDateShort(iso: string) {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(new Date(iso + 'T00:00:00'))
 }
 
+// ─── Booking Calendar ─────────────────────────────────────────────────────────
+
 interface CalendarProps {
   blocked: Set<string>
   minDate: string
   checkIn: string | null
   checkOut: string | null
+  rangeError: boolean
   onSelect: (date: string) => void
 }
 
-function BookingCalendar({ blocked, minDate, checkIn, checkOut, onSelect }: CalendarProps) {
+function BookingCalendar({ blocked, minDate, checkIn, checkOut, rangeError, onSelect }: CalendarProps) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const grid = useMemo(() => buildGrid(year, month), [year, month])
+  const selectingCheckOut = !!(checkIn && !checkOut)
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) } else setMonth(m => m - 1)
@@ -88,12 +92,65 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, onSelect }: Cale
     return date > checkIn && date < checkOut
   }
 
-  function isDisabled(date: string) {
+  /**
+   * Context-aware disabled check:
+   * - Check-in mode: block past dates + advance restriction + already booked dates
+   * - Check-out mode: only block dates on/before check-in. Booked dates are shown
+   *   with a visual indicator but remain clickable (checking out on another guest's
+   *   check-in day is valid). handleDateSelect rejects ranges that cross booked stays.
+   */
+  function isDisabled(date: string): boolean {
+    if (selectingCheckOut) {
+      return date <= checkIn!
+    }
     return date < minDate || blocked.has(date)
   }
 
+  // Visual states for calendar cells
+  function getCellClass(date: string): string {
+    const disabled = isDisabled(date)
+    const isCI = date === checkIn
+    const isCO = date === checkOut
+    const inR = inRange(date)
+    const isBooked = blocked.has(date)
+
+    if (isCI || isCO) return 'bg-primary text-primary-foreground rounded-lg font-bold'
+    if (inR && isBooked) return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-none relative'
+    if (inR) return 'bg-primary/10 text-primary rounded-none'
+    if (disabled) {
+      if (isBooked) return 'text-muted-foreground/20 cursor-not-allowed line-through'
+      return 'text-muted-foreground/25 cursor-not-allowed'
+    }
+    if (isBooked && selectingCheckOut) {
+      // Booked dates are enabled as check-out but visually marked
+      return 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg cursor-pointer relative'
+    }
+    return 'hover:bg-muted rounded-lg cursor-pointer text-foreground'
+  }
+
+  const selectionPhaseLabel = !checkIn
+    ? '👆 Seleciona a data de entrada'
+    : !checkOut
+    ? '👆 Agora seleciona a data de saída'
+    : null
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Phase instruction */}
+      {selectionPhaseLabel && (
+        <div className="text-center text-sm font-semibold text-primary">
+          {selectionPhaseLabel}
+        </div>
+      )}
+
+      {/* Range error */}
+      {rangeError && (
+        <div className="rounded-lg bg-destructive/8 border border-destructive/20 px-3 py-2 text-xs text-destructive text-center">
+          Período parcialmente ocupado — escolhe outro intervalo de datas.
+        </div>
+      )}
+
+      {/* Month navigation */}
       <div className="flex items-center justify-between">
         <button type="button" onClick={prevMonth}
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
@@ -106,49 +163,56 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, onSelect }: Cale
         </button>
       </div>
 
+      {/* Weekday headers */}
       <div className="grid grid-cols-7">
         {WEEKDAYS.map(d => (
           <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1 uppercase tracking-wider">{d}</div>
         ))}
       </div>
 
+      {/* Day grid */}
       <div className="grid grid-cols-7 gap-0.5">
         {grid.map((date, i) => {
           if (!date) return <div key={i} />
           const disabled = isDisabled(date)
-          const isCheckIn = date === checkIn
-          const isCheckOut = date === checkOut
-          const inR = inRange(date)
           const dayNum = parseInt(date.slice(8))
+          const isBooked = blocked.has(date)
 
           return (
-            <button type="button" key={date} disabled={disabled} onClick={() => onSelect(date)}
+            <button
+              type="button"
+              key={date}
+              disabled={disabled}
+              onClick={() => onSelect(date)}
               className={[
                 'h-10 w-full text-xs font-medium transition-colors',
-                isCheckIn || isCheckOut
-                  ? 'bg-primary text-primary-foreground rounded-lg'
-                  : inR
-                  ? 'bg-primary/12 text-primary rounded-none'
-                  : disabled
-                  ? 'text-muted-foreground/30 cursor-not-allowed line-through'
-                  : 'hover:bg-muted rounded-lg cursor-pointer',
-              ].join(' ')}>
+                getCellClass(date),
+              ].join(' ')}
+              title={disabled && isBooked ? 'Data ocupada' : undefined}
+            >
               {dayNum}
+              {/* Dot indicator for booked check-out dates */}
+              {isBooked && !disabled && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500 dark:bg-amber-400" />
+              )}
             </button>
           )
         })}
       </div>
 
+      {/* Selected range summary */}
       {checkIn && (
         <p className="text-xs text-center text-muted-foreground">
           {checkOut
-            ? `${fmtDateShort(checkIn)} → ${fmtDateShort(checkOut)} · ${calcNights(checkIn, checkOut)} noites`
-            : `Entrada: ${fmtDateShort(checkIn)} — seleciona saída`}
+            ? `${fmtDateShort(checkIn)} → ${fmtDateShort(checkOut)} · ${calcNights(checkIn, checkOut)} noite${calcNights(checkIn, checkOut) !== 1 ? 's' : ''}`
+            : `Entrada: ${fmtDateShort(checkIn)} — seleciona a saída`}
         </p>
       )}
     </div>
   )
 }
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 interface Props {
   prop: Property
@@ -166,6 +230,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
 
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
+  const [rangeError, setRangeError] = useState(false)
   const [numHospedes, setNumHospedes] = useState(2)
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
@@ -175,7 +240,8 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const today = new Date().toISOString().slice(0, 10)
-  const minDate = addDays(today, settings.antecedencia_dias)
+  // antecedencia_dias = 0 → today is bookable; 1 → earliest is tomorrow
+  const minDate = addDays(today, settings.antecedencia_dias ?? 0)
   const numNights = checkIn && checkOut ? calcNights(checkIn, checkOut) : 0
   const minNights = settings.min_noites ?? 1
   const hasEnoughNights = numNights >= minNights
@@ -189,20 +255,38 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
   const canSubmit = checkIn && checkOut && hasEnoughNights && nome.trim() && email.trim()
 
   function handleDateSelect(date: string) {
+    setRangeError(false)
+
     if (!checkIn || (checkIn && checkOut)) {
+      // First click, or resetting: set as check-in
       setCheckIn(date)
       setCheckOut(null)
-    } else {
-      if (date <= checkIn) { setCheckIn(date); setCheckOut(null); return }
-      let cur = addDays(checkIn, 1)
-      let hasBlocked = false
-      while (cur < date) {
-        if (blockedSet.has(cur)) { hasBlocked = true; break }
-        cur = addDays(cur, 1)
-      }
-      if (hasBlocked) { setCheckIn(date); setCheckOut(null) }
-      else setCheckOut(date)
+      return
     }
+
+    // Second click: selecting check-out
+    if (date <= checkIn) {
+      // Clicked same or earlier date: restart check-in selection
+      setCheckIn(date)
+      setCheckOut(null)
+      return
+    }
+
+    // Scan for blocked dates between check-in and chosen check-out (exclusive)
+    let cur = addDays(checkIn, 1)
+    let hasBlocked = false
+    while (cur < date) {
+      if (blockedSet.has(cur)) { hasBlocked = true; break }
+      cur = addDays(cur, 1)
+    }
+
+    if (hasBlocked) {
+      // Keep the check-in selection; show an error so the user understands
+      setRangeError(true)
+      return
+    }
+
+    setCheckOut(date)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -274,7 +358,8 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     <div className="min-h-dvh bg-background flex flex-col">
 
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
-        <Link href="/book" className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+        <Link href={prop.parent_id ? `/book/${prop.parent_id}` : '/book'}
+          className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <span className="font-semibold text-sm truncate flex-1">{prop.nome}</span>
@@ -356,7 +441,14 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
           <div className="flex flex-col gap-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Escolha as datas</p>
             <div className="rounded-xl border border-border bg-card p-5">
-              <BookingCalendar blocked={blockedSet} minDate={minDate} checkIn={checkIn} checkOut={checkOut} onSelect={handleDateSelect} />
+              <BookingCalendar
+                blocked={blockedSet}
+                minDate={minDate}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                rangeError={rangeError}
+                onSelect={handleDateSelect}
+              />
             </div>
             {checkIn && checkOut && !hasEnoughNights && (
               <p className="text-xs text-destructive text-center">

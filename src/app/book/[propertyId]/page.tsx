@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { blockedDates } from '@/lib/reservations'
 import type { WebsiteSettings } from '@/lib/types'
 import BookingClient from './BookingClient'
+import RoomsClient from './RoomsClient'
 
 const DEFAULT_WEBSITE: WebsiteSettings = {
   enabled: true,
@@ -11,7 +12,7 @@ const DEFAULT_WEBSITE: WebsiteSettings = {
   email: '',
   telefone: '',
   min_noites: 1,
-  antecedencia_dias: 1,
+  antecedencia_dias: 0,
 }
 
 export default async function BookPropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
@@ -43,7 +44,7 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
 
   const prop = props.find(p => p.id === propertyId) ?? null
 
-  if (!prop) {
+  if (!prop || !prop.ativo) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-muted-foreground">Este alojamento não está disponível.</p>
@@ -52,6 +53,36 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
     )
   }
 
+  // ── Parent property (has rooms) → show room selection ─────────────────────
+  const rooms = props.filter(p => p.parent_id === propertyId && p.ativo)
+
+  if (rooms.length > 0) {
+    const today = new Date().toISOString().slice(0, 10)
+    const occupiedIds = new Set(
+      rooms
+        .filter(room =>
+          bookings.some(b =>
+            b.propriedade_id === room.id &&
+            b.estado !== 'cancelada' &&
+            b.estado !== 'no_show' &&
+            b.check_in <= today &&
+            b.check_out > today
+          )
+        )
+        .map(r => r.id)
+    )
+
+    return (
+      <RoomsClient
+        parent={prop}
+        rooms={rooms}
+        settings={ws}
+        occupiedIds={occupiedIds}
+      />
+    )
+  }
+
+  // ── Leaf property (room or standalone) → show booking calendar ────────────
   const blocked = blockedDates(bookings, propertyId)
 
   return (

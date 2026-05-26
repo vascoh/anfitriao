@@ -131,7 +131,8 @@ export default function BookPage() {
       db.getProperties(),
     ]).then(([ws, all]) => {
       setSettings(ws)
-      setProps(all.filter(p => p.ativo))
+      // Only show top-level properties (not rooms) in the listing
+      setProps(all.filter(p => p.ativo && !p.parent_id))
     }).finally(() => setLoading(false))
   }, [])
 
