@@ -1,6 +1,8 @@
 import path from 'path'
 import type { NextConfig } from 'next'
 
+const isDev = process.env.NODE_ENV === 'development'
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, '../../'),
 
@@ -13,6 +15,20 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    // In development, skip strict CSP so Clerk and hot reload work properly
+    if (isDev) {
+      return [
+        {
+          source: '/(.*)',
+          headers: [
+            { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+            { key: 'X-Content-Type-Options', value: 'nosniff' },
+          ],
+        },
+      ]
+    }
+
+    // Production CSP
     return [
       {
         source: '/(.*)',

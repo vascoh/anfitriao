@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { today, fmtDate, fmtMoney, nights } from '@/lib/store'
+import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { Resend } from 'resend'
 
 // Cron: sends payment reminders 3 days before check-in for bookings with outstanding balance

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { db } from '@/lib/db'
-import { today } from '@/lib/store'
+import { today } from '@/lib/utils'
 
 let cached = { count: 0, at: 0 }
 
@@ -12,7 +12,7 @@ export function useAlertsCount() {
   useEffect(() => {
     // 60s cache to avoid hammering the API on every nav re-render
     if (Date.now() - cached.at < 60_000) {
-      setCount(cached.count)
+      // cached value already set during initial state
       return
     }
 

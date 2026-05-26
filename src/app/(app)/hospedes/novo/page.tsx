@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { uuid } from '@/lib/store'
+import { toast } from 'sonner'
+import { uuid } from '@/lib/utils'
 import { db } from '@/lib/db'
 import type { Guest } from '@/lib/types'
 
@@ -15,21 +16,29 @@ export default function NovoHospedePage() {
   const [telefone, setTelefone] = useState('')
   const [nacionalidade, setNacionalidade] = useState('')
   const [notas, setNotas] = useState('')
+  const [saving, setSaving] = useState(false)
 
   async function handleSave() {
     if (!nome.trim()) return
-    const g: Guest = {
-      id: uuid(),
-      nome: nome.trim(),
-      email: email.trim() || undefined,
-      telefone: telefone.trim() || undefined,
-      nacionalidade: nacionalidade.trim() || undefined,
-      notas: notas.trim() || undefined,
-      tags: ['novo'],
-      criado_em: new Date().toISOString(),
+    setSaving(true)
+    try {
+      const g: Guest = {
+        id: uuid(),
+        nome: nome.trim(),
+        email: email.trim() || undefined,
+        telefone: telefone.trim() || undefined,
+        nacionalidade: nacionalidade.trim() || undefined,
+        notas: notas.trim() || undefined,
+        tags: ['novo'],
+        criado_em: new Date().toISOString(),
+      }
+      await db.saveGuest(g)
+      toast.success('Hóspede criado com sucesso')
+      router.push(`/hospedes/${g.id}`)
+    } catch {
+      toast.error('Erro ao criar hóspede. Tenta novamente.')
+      setSaving(false)
     }
-    await db.saveGuest(g)
-    router.push(`/hospedes/${g.id}`)
   }
 
   return (
@@ -61,9 +70,9 @@ export default function NovoHospedePage() {
           <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Preferências, observações..."
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none min-h-24 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
-        <button onClick={handleSave} disabled={!nome.trim()}
+        <button onClick={handleSave} disabled={!nome.trim() || saving}
           className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2">
-          Criar hóspede
+          {saving ? 'A criar...' : 'Criar hóspede'}
         </button>
       </div>
     </div>

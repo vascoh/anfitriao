@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { toast } from 'sonner'
 import { db } from '@/lib/db'
 import type { Property, PropertyType, IcalFeed, BookingSource } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -145,27 +146,32 @@ export default function EditarPropriedadePage() {
 
   async function handleSave() {
     if (!prop || !nome.trim() || !cidade.trim()) return
-    const updated: Property = {
-      ...prop,
-      nome: nome.trim(),
-      tipo,
-      endereco: endereco.trim(),
-      cidade: cidade.trim(),
-      descricao: descricao.trim() || undefined,
-      imagem_url: imagemUrl.trim() || undefined,
-      quartos,
-      casasBanho,
-      capacidade,
-      preco_base: precoBase,
-      taxa_limpeza: taxaLimpeza || undefined,
-      cor,
-      comodidades,
-      instrucoes_checkin: instrucoesCheckin.trim(),
-      regras_casa: regrasCasa.trim(),
-      ical_feeds: icalFeeds,
+    try {
+      const updated: Property = {
+        ...prop,
+        nome: nome.trim(),
+        tipo,
+        endereco: endereco.trim(),
+        cidade: cidade.trim(),
+        descricao: descricao.trim() || undefined,
+        imagem_url: imagemUrl.trim() || undefined,
+        quartos,
+        casasBanho,
+        capacidade,
+        preco_base: precoBase,
+        taxa_limpeza: taxaLimpeza || undefined,
+        cor,
+        comodidades,
+        instrucoes_checkin: instrucoesCheckin.trim(),
+        regras_casa: regrasCasa.trim(),
+        ical_feeds: icalFeeds,
+      }
+      await db.saveProperty(updated)
+      toast.success('Propriedade atualizada')
+      router.push(`/propriedades/${id}`)
+    } catch {
+      toast.error('Erro ao guardar. Tenta novamente.')
     }
-    await db.saveProperty(updated)
-    router.push(`/propriedades/${id}`)
   }
 
   if (!prop) return (

@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint --ext .ts,.tsx,.js,.jsx . --quiet",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky",
+    "dev:turbo": "next dev --turbopack"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.78",
@@ -36,6 +39,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.0.0"
   }
 }

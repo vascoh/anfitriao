@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, CalendarCheck2, Users, Building2, X } from 'lucide-react'
 import { db } from '@/lib/db'
-import { fmtDate } from '@/lib/store'
+import { fmtDate } from '@/lib/utils'
 import { STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
 import type { Booking, Guest, Property } from '@/lib/types'
 
@@ -90,10 +90,13 @@ export function GlobalSearch() {
   }, [])
 
   useEffect(() => {
-    if (open) { setTimeout(() => inputRef.current?.focus(), 50); setCursor(0) }
+    if (open) {
+      const t = setTimeout(() => { inputRef.current?.focus(); setCursor(0) }, 50)
+      return () => clearTimeout(t)
+    }
   }, [open])
 
-  useEffect(() => { setCursor(0) }, [q])
+  useEffect(() => { const t = setTimeout(() => setCursor(0), 0); return () => clearTimeout(t) }, [q])
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c + 1, results.length - 1)) }

@@ -10,7 +10,7 @@ import {
   Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees,
   CheckCircle2,
 } from 'lucide-react'
-import { uuid, fmtMoney, nights as calcNights } from '@/lib/store'
+import { uuid, fmtMoney, nights as calcNights } from '@/lib/utils'
 import { db } from '@/lib/db'
 import { addDays, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, WebsiteSettings, PriceRule, Tarifa, PlatformRate } from '@/lib/types'

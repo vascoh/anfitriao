@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
-import { today, fmtDate, fmtMoney, nights } from '@/lib/store'
+import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
 import type { Booking, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'

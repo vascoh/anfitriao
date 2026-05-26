@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { db } from '@/lib/db'
 import { getPriceForDay } from '@/lib/reservations'
-import { fmtMoney, uuid } from '@/lib/store'
+import { fmtMoney, uuid } from '@/lib/utils'
 import type {
   Property, PriceRule, PriceRuleTipo, Tarifa, TarifaTipo,
   PlatformRate, BookingSource,
@@ -85,7 +85,7 @@ export default function PrecosPage() {
     setLoading(false)
   }
 
-  useEffect(() => { reload() }, [])
+  useEffect(() => { const t = setTimeout(() => { reload() }, 0); return () => clearTimeout(t) }, [])
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'visao',       label: 'Visão geral',  icon: <BarChart3 className="h-3.5 w-3.5" /> },
@@ -1076,19 +1076,22 @@ function TabPlataformas({
 
   // Initialize local state from loaded data
   useEffect(() => {
-    const init: typeof localRates = {}
-    props.forEach(prop => {
-      PLATAFORMAS.forEach(plat => {
-        const key = `${prop.id}:${plat}`
-        const existing = platforms.find(r => r.property_id === prop.id && r.plataforma === plat)
-        init[key] = {
-          mult: existing ? String(((existing.multiplicador - 1) * 100).toFixed(1)) : '0',
-          comissao: existing ? String(existing.comissao_pct) : '0',
-          ativo: existing?.ativo ?? true,
-        }
+    const t = setTimeout(() => {
+      const init: typeof localRates = {}
+      props.forEach(prop => {
+        PLATAFORMAS.forEach(plat => {
+          const key = `${prop.id}:${plat}`
+          const existing = platforms.find(r => r.property_id === prop.id && r.plataforma === plat)
+          init[key] = {
+            mult: existing ? String(((existing.multiplicador - 1) * 100).toFixed(1)) : '0',
+            comissao: existing ? String(existing.comissao_pct) : '0',
+            ativo: existing?.ativo ?? true,
+          }
+        })
       })
-    })
-    setLocalRates(init)
+      setLocalRates(init)
+    }, 0)
+    return () => clearTimeout(t)
   }, [platforms, props])
 
   async function saveRate(prop: Property, plat: BookingSource) {
@@ -1265,8 +1268,13 @@ function TabMassa({
   }
 
   useEffect(() => {
-    if (selectedProps.length > 0 && valor !== '') generatePreview()
-    else setPreview([])
+    if (selectedProps.length > 0 && valor !== '') {
+      const t = setTimeout(() => generatePreview(), 0)
+      return () => clearTimeout(t)
+    } else {
+      const t = setTimeout(() => setPreview([]), 0)
+      return () => clearTimeout(t)
+    }
   }, [selectedProps, valor, operacao])
 
   async function applyMassa() {

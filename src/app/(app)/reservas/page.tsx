@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
-import { fmtDate, fmtMoney, nights } from '@/lib/store'
+import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
 import type { Booking, Guest, Property, BookingStatus } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'

@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Home, CalendarCheck2, CalendarDays, Users, MoreHorizontal, Sparkles, FileText, Building2, Globe, TrendingUp, X, Tag } from 'lucide-react'
+import { Home, CalendarCheck2, CalendarDays, Users, MoreHorizontal, Sparkles, FileText, Building2, Globe, TrendingUp, X, Tag, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { useClerk } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
+import { useTheme } from '@/hooks/use-theme'
 
 const primary = [
   { href: '/hoje', label: 'Hoje', Icon: Home },
@@ -29,6 +30,7 @@ export function BottomNav() {
   const { signOut } = useClerk()
   const [open, setOpen] = useState(false)
   const alertsCount = useAlertsCount()
+  const { isDark, setTheme } = useTheme()
 
   const isSecondaryActive = secondary.some(s => pathname.startsWith(s.href))
 
@@ -61,6 +63,16 @@ export function BottomNav() {
                   <span className="text-sm font-medium">{label}</span>
                 </Link>
               ))}
+              {/* Dark mode toggle */}
+              <button
+                onClick={() => { setTheme(isDark ? 'light' : 'dark'); setOpen(false) }}
+                className="flex items-center gap-3 px-4 py-3.5 w-full text-left hover:bg-muted/60 transition-colors border-b border-border"
+              >
+                <div className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  {isDark ? <Sun className="h-4.5 w-4.5 text-foreground/70" /> : <Moon className="h-4.5 w-4.5 text-foreground/70" />}
+                </div>
+                <span className="text-sm font-medium">{isDark ? 'Modo claro' : 'Modo escuro'}</span>
+              </button>
               <button
                 onClick={() => signOut(() => router.push('/sign-in'))}
                 className="flex items-center gap-3 px-4 py-3.5 w-full text-left text-destructive hover:bg-destructive/5 transition-colors"

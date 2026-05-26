@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { db } from '@/lib/db'
-import { fmtDate } from '@/lib/store'
+import { fmtDate } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {

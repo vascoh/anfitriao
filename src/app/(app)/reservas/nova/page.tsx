@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { uuid, today, nights } from '@/lib/store'
+import { uuid, today, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
 import { detectConflict, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
@@ -94,9 +94,10 @@ function NovaReservaInner() {
   useEffect(() => {
     if (step === 'detalhes' && selectedProp && checkIn && checkOut && checkIn < checkOut && !precoTotal) {
       const breakdown = calculatePriceWithRules(selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem)
-      setPrecoTotal(String(breakdown.total))
+      const t = setTimeout(() => setPrecoTotal(String(breakdown.total)), 0)
+      return () => clearTimeout(t)
     }
-  }, [step])
+  }, [step, selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem, precoTotal])
 
   const STEPS: Step[] = ['propriedade', 'datas', 'hospede', 'detalhes']
   const stepIdx = STEPS.indexOf(step) + 1

@@ -1,0 +1,46 @@
+export default function ReservasLoading() {
+  return (
+    <div className="flex flex-col min-h-full animate-pulse">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="px-4 lg:px-8 py-4 flex items-center justify-between max-w-5xl">
+          <div className="h-7 w-28 bg-muted rounded-lg" />
+          <div className="h-9 w-32 bg-muted rounded-lg" />
+        </div>
+        {/* Filter chips */}
+        <div className="flex gap-2 px-4 lg:px-8 pb-3 overflow-hidden">
+          {[60, 80, 72, 68, 56, 64].map((w, i) => (
+            <div key={i} className="h-7 bg-muted rounded-full shrink-0" style={{ width: `${w}px` }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div className="flex items-center gap-6 px-4 lg:px-8 py-3 border-b border-border max-w-5xl">
+        {[48, 36, 52].map((w, i) => (
+          <div key={i} className="flex flex-col gap-1">
+            <div className="h-3 bg-muted/60 rounded" style={{ width: `${w * 2}px` }} />
+            <div className="h-5 bg-muted rounded" style={{ width: `${w}px` }} />
+          </div>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className="flex flex-col gap-0 max-w-5xl w-full divide-y divide-border">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+            <div className="h-8 w-1 rounded-full bg-muted shrink-0" />
+            <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+              <div className="h-4 bg-muted rounded w-3/5" />
+              <div className="h-3 bg-muted/60 rounded w-2/5" />
+            </div>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <div className="h-5 w-16 bg-muted rounded-full" />
+              <div className="h-3 w-12 bg-muted/60 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

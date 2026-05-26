@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
-import { fmtMoney, fmtDate, nights } from '@/lib/store'
+import { fmtMoney, fmtDate, nights } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
 import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
 

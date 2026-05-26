@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { uuid } from '@/lib/store'
+import { toast } from 'sonner'
+import { uuid } from '@/lib/utils'
 import { db } from '@/lib/db'
 import type { Property, PropertyType } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -51,30 +52,39 @@ export default function NovaPropriedadePage() {
     setComodidades(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  const [saving, setSaving] = useState(false)
+
   async function handleSave() {
     if (!nome.trim() || !cidade.trim()) return
-    const p: Property = {
-      id: uuid(),
-      nome: nome.trim(),
-      tipo,
-      endereco: endereco.trim(),
-      cidade: cidade.trim(),
-      descricao: descricao.trim() || undefined,
-      imagem_url: imagemUrl.trim() || undefined,
-      quartos,
-      casasBanho,
-      capacidade,
-      preco_base: precoBase,
-      taxa_limpeza: taxaLimpeza || undefined,
-      cor,
-      comodidades,
-      instrucoes_checkin: instrucoesCheckin.trim(),
-      regras_casa: regrasCasa.trim(),
-      ativo: true,
-      criado_em: new Date().toISOString(),
+    setSaving(true)
+    try {
+      const p: Property = {
+        id: uuid(),
+        nome: nome.trim(),
+        tipo,
+        endereco: endereco.trim(),
+        cidade: cidade.trim(),
+        descricao: descricao.trim() || undefined,
+        imagem_url: imagemUrl.trim() || undefined,
+        quartos,
+        casasBanho,
+        capacidade,
+        preco_base: precoBase,
+        taxa_limpeza: taxaLimpeza || undefined,
+        cor,
+        comodidades,
+        instrucoes_checkin: instrucoesCheckin.trim(),
+        regras_casa: regrasCasa.trim(),
+        ativo: true,
+        criado_em: new Date().toISOString(),
+      }
+      await db.saveProperty(p)
+      toast.success('Propriedade criada com sucesso')
+      router.push(`/propriedades/${p.id}`)
+    } catch {
+      toast.error('Erro ao criar propriedade. Tenta novamente.')
+      setSaving(false)
     }
-    await db.saveProperty(p)
-    router.push(`/propriedades/${p.id}`)
   }
 
   const canSave = nome.trim() && cidade.trim()
@@ -227,9 +237,9 @@ export default function NovaPropriedadePage() {
           </div>
         </div>
 
-        <button onClick={handleSave} disabled={!canSave}
+        <button onClick={handleSave} disabled={!canSave || saving}
           className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2">
-          Criar propriedade
+          {saving ? 'A criar...' : 'Criar propriedade'}
         </button>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
-import { fmtDate } from '@/lib/store'
+import { fmtDate } from '@/lib/utils'
 import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Booking, Property } from '@/lib/types'

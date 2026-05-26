@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, CalendarCheck2, CalendarDays, Users,
-  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag,
+  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag, Moon, Sun,
 } from 'lucide-react'
 import { useClerk } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
+import { useTheme } from '@/hooks/use-theme'
 
 const primary = [
   { href: '/hoje', label: 'Hoje', Icon: Home },
@@ -30,6 +31,7 @@ export function SideNav() {
   const router = useRouter()
   const { signOut } = useClerk()
   const alertsCount = useAlertsCount()
+  const { isDark, setTheme } = useTheme()
 
   function active(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
@@ -97,8 +99,17 @@ export function SideNav() {
         ))}
       </nav>
 
-      {/* Sign out */}
-      <div className="border-t border-border p-2 shrink-0">
+      {/* Bottom actions */}
+      <div className="border-t border-border p-2 shrink-0 flex flex-col gap-0.5">
+        {/* Dark mode toggle */}
+        <button
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
+          title={isDark ? 'Modo claro' : 'Modo escuro'}
+        >
+          {isDark ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
+          {isDark ? 'Modo claro' : 'Modo escuro'}
+        </button>
         <button
           onClick={() => signOut(() => router.push('/sign-in'))}
           className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-sm font-medium text-foreground/50 hover:text-destructive hover:bg-destructive/5 transition-colors"

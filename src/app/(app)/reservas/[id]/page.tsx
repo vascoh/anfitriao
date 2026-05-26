@@ -9,7 +9,7 @@ import {
   MessageCircle, CreditCard, Check, Link2
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { fmtDate, fmtMoney, nights, uuid } from '@/lib/store'
+import { fmtDate, fmtMoney, nights, uuid } from '@/lib/utils'
 import { db } from '@/lib/db'
 import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
@@ -133,7 +133,7 @@ export default function ReservaDetailPage() {
     }
   }
 
-  useEffect(() => { load() }, [id])
+  useEffect(() => { const t = setTimeout(() => { load() }, 0); return () => clearTimeout(t) }, [id])
 
   async function applyTransition(to: BookingStatus, nota?: string) {
     if (!booking || !canTransition(booking.estado, to)) return

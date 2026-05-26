@@ -66,6 +66,37 @@
   --radius: 0.75rem;
 }
 
+.dark {
+  /* Deep warm charcoal — like Portuguese cobblestones at night */
+  --background: oklch(13% 0.008 65);
+  --foreground: oklch(93% 0.008 65);
+
+  --card: oklch(17% 0.010 65);
+  --card-foreground: oklch(93% 0.008 65);
+
+  --popover: oklch(17% 0.010 65);
+  --popover-foreground: oklch(93% 0.008 65);
+
+  /* Terracotta — slightly brighter so it reads well on dark */
+  --primary: oklch(64% 0.155 38);
+  --primary-foreground: oklch(98% 0.005 65);
+
+  --secondary: oklch(22% 0.012 65);
+  --secondary-foreground: oklch(85% 0.008 65);
+
+  --muted: oklch(21% 0.010 65);
+  --muted-foreground: oklch(56% 0.012 258);
+
+  --accent: oklch(22% 0.012 65);
+  --accent-foreground: oklch(85% 0.008 65);
+
+  --destructive: oklch(60% 0.245 27);
+
+  --border: oklch(25% 0.010 65);
+  --input: oklch(25% 0.010 65);
+  --ring: oklch(64% 0.155 38);
+}
+
 @layer utilities {
   .no-scrollbar {
     scrollbar-width: none;

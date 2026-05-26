@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, BedDouble } from 'lucide-react'
-import { fmtMoney } from '@/lib/store'
+import { fmtMoney } from '@/lib/utils'
 import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'

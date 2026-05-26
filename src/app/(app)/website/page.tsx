@@ -4,15 +4,14 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
-import { fmtMoney, fmtDate, nights, uuid } from '@/lib/store'
+import { fmtMoney, fmtDate, nights, uuid } from '@/lib/utils'
 import { db } from '@/lib/db'
 import { parseIcal, generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 
 function useOrigin() {
-  const [origin, setOrigin] = useState('')
-  useEffect(() => { setOrigin(window.location.origin) }, [])
+  const [origin, setOrigin] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''))
   return origin
 }
 
