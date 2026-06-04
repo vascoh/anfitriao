@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
+import { checkCronAuth } from '@/lib/cron-auth'
+const supabase = createAdminClient()
 
 function parseIcalDate(s: string): string {
   const clean = s.replace(/T.*$/, '').trim()
@@ -169,10 +171,8 @@ export async function POST(req: NextRequest) {
 
 // Cron: sync all active properties (GET called by Vercel cron)
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = checkCronAuth(req)
+  if (authError) return authError
 
   try {
     const { data: props, error } = await supabase

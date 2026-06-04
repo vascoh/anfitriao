@@ -27,11 +27,10 @@ const DEFAULT_WEBSITE: WebsiteSettings = {
 export const db = {
   // ─── Properties ────────────────────────────────────────────────────────────
 
-  getProperties: async (): Promise<Property[]> => {
-    const { data, error } = await supabase
-      .from('properties')
-      .select('*')
-      .order('criado_em', { ascending: false })
+  getProperties: async (ownerId?: string): Promise<Property[]> => {
+    let q = supabase.from('properties').select('*').order('criado_em', { ascending: false })
+    if (ownerId) q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) {
       console.error('[db.getProperties]', error.message)
       return []
@@ -62,11 +61,10 @@ export const db = {
 
   // ─── Guests ────────────────────────────────────────────────────────────────
 
-  getGuests: async (): Promise<Guest[]> => {
-    const { data, error } = await supabase
-      .from('guests')
-      .select('*')
-      .order('criado_em', { ascending: false })
+  getGuests: async (ownerId?: string): Promise<Guest[]> => {
+    let q = supabase.from('guests').select('*').order('criado_em', { ascending: false })
+    if (ownerId) q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) {
       console.error('[db.getGuests]', error.message)
       return []
@@ -96,11 +94,10 @@ export const db = {
 
   // ─── Bookings ──────────────────────────────────────────────────────────────
 
-  getBookings: async (): Promise<Booking[]> => {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('*')
-      .order('criado_em', { ascending: false })
+  getBookings: async (ownerId?: string): Promise<Booking[]> => {
+    let q = supabase.from('bookings').select('*').order('criado_em', { ascending: false })
+    if (ownerId) q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) {
       console.error('[db.getBookings]', error.message)
       return []
@@ -132,14 +129,16 @@ export const db = {
   },
 
   // Future bookings only — for availability checks (much lighter than getBookings)
-  getActiveBookings: async (): Promise<Booking[]> => {
+  getActiveBookings: async (ownerId?: string): Promise<Booking[]> => {
     const today = new Date().toISOString().slice(0, 10)
-    const { data, error } = await supabase
+    let q = supabase
       .from('bookings')
       .select('*')
       .gte('check_out', today)
       .not('estado', 'in', '("cancelada","no_show")')
       .order('check_in', { ascending: true })
+    if (ownerId) q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) {
       console.error('[db.getActiveBookings]', error.message)
       return []

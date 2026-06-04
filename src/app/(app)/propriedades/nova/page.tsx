@@ -81,7 +81,28 @@ function NovaPropriedadeForm() {
         criado_em: new Date().toISOString(),
         parent_id: parentId ?? null,
       }
-      await db.saveProperty(p)
+
+      // Usa a API server-side que verifica o limite do plano e adiciona owner_id
+      const res = await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p),
+      })
+
+      if (!res.ok) {
+        const err = await res.json() as { error?: string; code?: string }
+        if (err.code === 'LIMIT_REACHED') {
+          toast.error(err.error ?? 'Limite de propriedades atingido.', {
+            action: { label: 'Fazer upgrade', onClick: () => router.push('/conta/billing') },
+            duration: 6000,
+          })
+        } else {
+          toast.error(err.error ?? 'Erro ao criar propriedade. Tenta novamente.')
+        }
+        setSaving(false)
+        return
+      }
+
       toast.success(parentId ? 'Quarto adicionado com sucesso' : 'Propriedade criada com sucesso')
       router.push(parentId ? `/propriedades/${parentId}` : `/propriedades/${p.id}`)
     } catch {

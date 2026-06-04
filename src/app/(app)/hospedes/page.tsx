@@ -6,6 +6,7 @@ import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { db } from '@/lib/db'
 import type { Guest, Booking, Property, GuestTag } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
+import { useUser } from '@clerk/nextjs'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
@@ -42,6 +43,8 @@ function buildSibaCsv(guests: Guest[], bookings: Booking[], props: Property[]) {
 }
 
 export default function HospedesPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [guests, setGuests] = useState<Guest[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [props, setProps] = useState<Property[]>([])
@@ -49,10 +52,11 @@ export default function HospedesPage() {
   const [tagFilter, setTagFilter] = useState<string | null>(null)
 
   useEffect(() => {
-    db.getGuests().then(setGuests)
-    db.getBookings().then(setBookings)
-    db.getProperties().then(setProps)
-  }, [])
+    if (!ownerId) return
+    db.getGuests(ownerId).then(setGuests)
+    db.getBookings(ownerId).then(setBookings)
+    db.getProperties(ownerId).then(setProps)
+  }, [ownerId])
 
   const allTags = useMemo(() => {
     const tags = new Set<string>()

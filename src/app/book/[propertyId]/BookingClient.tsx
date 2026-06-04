@@ -80,6 +80,18 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, rangeError, onSe
   const grid = useMemo(() => buildGrid(year, month), [year, month])
   const selectingCheckOut = !!(checkIn && !checkOut)
 
+  // First blocked date strictly after checkIn — check-out is valid ON this date
+  // but NOT after it (would cross an existing booking)
+  const firstBlockedAfterCheckIn = useMemo(() => {
+    if (!checkIn) return null
+    let cur = addDays(checkIn, 1)
+    for (let i = 0; i < 365; i++) {
+      if (blocked.has(cur)) return cur
+      cur = addDays(cur, 1)
+    }
+    return null
+  }, [checkIn, blocked])
+
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) } else setMonth(m => m - 1)
   }
@@ -92,16 +104,13 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, rangeError, onSe
     return date > checkIn && date < checkOut
   }
 
-  /**
-   * Context-aware disabled check:
-   * - Check-in mode: block past dates + advance restriction + already booked dates
-   * - Check-out mode: only block dates on/before check-in. Booked dates are shown
-   *   with a visual indicator but remain clickable (checking out on another guest's
-   *   check-in day is valid). handleDateSelect rejects ranges that cross booked stays.
-   */
   function isDisabled(date: string): boolean {
     if (selectingCheckOut) {
-      return date <= checkIn!
+      if (date <= checkIn!) return true
+      // Disable dates beyond the first blocked date — user can check out ON
+      // the blocked date (another guest's check-in) but not past it
+      if (firstBlockedAfterCheckIn && date > firstBlockedAfterCheckIn) return true
+      return false
     }
     return date < minDate || blocked.has(date)
   }

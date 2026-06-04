@@ -9,6 +9,7 @@ import { db } from '@/lib/db'
 import { parseIcal, generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
+import { useUser } from '@clerk/nextjs'
 
 function useOrigin() {
   const [origin, setOrigin] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''))
@@ -18,6 +19,8 @@ function useOrigin() {
 type SyncState = 'idle' | 'loading' | 'ok' | 'error'
 
 export default function WebsitePage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const origin = useOrigin()
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [props, setProps] = useState<Property[]>([])
@@ -31,11 +34,12 @@ export default function WebsitePage() {
   const [newFeedSource, setNewFeedSource] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    if (!ownerId) return
     db.getWebsiteSettings().then(setSettings)
-    db.getProperties().then(setProps)
-    db.getBookings().then(setAllBookings)
-    db.getGuests().then(setAllGuests)
-  }, [])
+    db.getProperties(ownerId).then(setProps)
+    db.getBookings(ownerId).then(setAllBookings)
+    db.getGuests(ownerId).then(setAllGuests)
+  }, [ownerId])
 
   const publicUrl = settings?.slug ? `${origin}/r/${settings.slug}` : `${origin}/book`
 
@@ -68,7 +72,7 @@ export default function WebsitePage() {
       const text = await res.text()
       const events = parseIcal(text)
 
-      const bookings = await db.getBookings()
+      const bookings = await db.getBookings(ownerId)
       let added = 0
 
       for (const ev of events) {
@@ -119,7 +123,7 @@ export default function WebsitePage() {
         ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
       }
       await db.saveProperty(updatedProp)
-      setProps(await db.getProperties())
+      setProps(await db.getProperties(ownerId))
       setSyncStates(s => ({ ...s, [key]: 'ok' }))
       toast.success(added > 0 ? `${added} reserva${added !== 1 ? 's' : ''} importada${added !== 1 ? 's' : ''}` : 'Sincronizado — sem novidades')
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 2000)
@@ -130,7 +134,7 @@ export default function WebsitePage() {
         ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
       }
       await db.saveProperty(updatedProp)
-      setProps(await db.getProperties())
+      setProps(await db.getProperties(ownerId))
       setSyncStates(s => ({ ...s, [key]: 'error' }))
       toast.error('Falha ao sincronizar o feed iCal')
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
@@ -149,7 +153,7 @@ export default function WebsitePage() {
     }
     const updated: Property = { ...prop, ical_feeds: [...(prop.ical_feeds ?? []), feed] }
     await db.saveProperty(updated)
-    setProps(await db.getProperties())
+    setProps(await db.getProperties(ownerId))
     setNewFeedUrl(s => ({ ...s, [prop.id]: '' }))
     setNewFeedSource(s => ({ ...s, [prop.id]: '' }))
   }
@@ -157,7 +161,7 @@ export default function WebsitePage() {
   async function removeFeed(prop: Property, feedId: string) {
     const updated: Property = { ...prop, ical_feeds: (prop.ical_feeds ?? []).filter(f => f.id !== feedId) }
     await db.saveProperty(updated)
-    setProps(await db.getProperties())
+    setProps(await db.getProperties(ownerId))
   }
 
   function exportIcal(prop: Property) {

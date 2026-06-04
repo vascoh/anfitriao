@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { db } from '@/lib/db'
+import { useUser } from '@clerk/nextjs'
 import { occupancyForMonth } from '@/lib/reservations'
 import { fmtMoney, fmtDate, nights } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
@@ -193,6 +194,8 @@ function Trend({ value, suffix = '%', inverse = false }: { value: number; suffix
 }
 
 export default function RelatoriosPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
@@ -200,9 +203,10 @@ export default function RelatoriosPage() {
   const [year, setYear] = useState(now.getFullYear())
 
   useEffect(() => {
-    Promise.all([db.getBookings(), db.getProperties(), db.getGuests()])
+    if (!ownerId) return
+    Promise.all([db.getBookings(ownerId), db.getProperties(ownerId), db.getGuests(ownerId)])
       .then(([b, p, g]) => { setBookings(b); setProperties(p); setGuests(g) })
-  }, [])
+  }, [ownerId])
 
   function exportRevenue() {
     const csv = buildRevenueCsv(bookings, properties, guests, year)

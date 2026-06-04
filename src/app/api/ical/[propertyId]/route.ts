@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createAdminClient } from '@/lib/supabase'
 import { generateIcal } from '@/lib/ical'
+const supabase = createAdminClient()
 
 export const revalidate = 300
 

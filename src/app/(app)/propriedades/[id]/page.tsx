@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
@@ -38,6 +39,8 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
 export default function PropriedadeDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { user } = useUser()
+  const ownerId = user?.id
   const [prop, setProp] = useState<Property | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
@@ -48,7 +51,8 @@ export default function PropriedadeDetailPage() {
   const [icalCopied, setIcalCopied] = useState(false)
 
   useEffect(() => {
-    Promise.all([db.getProperties(), db.getWebsiteSettings(), db.getBookings(), db.getGuests()]).then(
+    if (!ownerId) return
+    Promise.all([db.getProperties(ownerId), db.getWebsiteSettings(), db.getBookings(ownerId), db.getGuests(ownerId)]).then(
       ([propsAll, ws, bookingsAll, guestsAll]) => {
         setProp(propsAll.find(x => x.id === id) ?? null)
         setWebsiteEnabled(ws.enabled)
@@ -60,7 +64,7 @@ export default function PropriedadeDetailPage() {
         setGuests(guestsAll)
       }
     )
-  }, [id])
+  }, [id, ownerId])
 
   async function toggleActive() {
     if (!prop) return

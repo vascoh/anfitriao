@@ -8,6 +8,7 @@ import { db } from '@/lib/db'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { useUser } from '@clerk/nextjs'
 
 function PropertyCard({ p, bookings, guests, isRoom = false }: {
   p: Property
@@ -207,15 +208,18 @@ function ParentPropertyGroup({ parent, rooms, bookings, guests }: {
 }
 
 export default function PropriedadesPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [allProps, setAllProps] = useState<Property[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
 
   useEffect(() => {
-    db.getProperties().then(setAllProps)
-    db.getBookings().then(setBookings)
-    db.getGuests().then(setGuests)
-  }, [])
+    if (!ownerId) return
+    db.getProperties(ownerId).then(setAllProps)
+    db.getBookings(ownerId).then(setBookings)
+    db.getGuests(ownerId).then(setGuests)
+  }, [ownerId])
 
   // Separate parents from rooms
   const parents = allProps.filter(p => !p.parent_id)

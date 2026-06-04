@@ -59,7 +59,7 @@ Use this context to give accurate, specific answers when relevant.
 
   const stream = await client.messages.stream({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 600,
+    max_tokens: 1500,
     messages: [
       {
         role: 'user',

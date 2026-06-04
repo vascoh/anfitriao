@@ -28,8 +28,7 @@ export default function EditarReservaPage() {
   const [notas, setNotas] = useState('')
 
   useEffect(() => {
-    db.getBookings().then(bookings => {
-      const b = bookings.find(x => x.id === id)
+    db.getBookingById(id).then(b => {
       if (!b) return
       setBooking(b)
       setCheckIn(b.check_in)

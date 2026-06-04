@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fmtDate } from '@/lib/utils'
 import { db } from '@/lib/db'
@@ -464,16 +465,19 @@ function GridView({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CalendarioPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<{ id: string; nome: string }[]>([])
   const [view, setView] = useState<'timeline' | 'grid'>('timeline')
 
   useEffect(() => {
-    db.getBookings().then(setBookings)
-    db.getProperties().then(setProperties)
-    db.getGuests().then(g => setGuests(g.map(x => ({ id: x.id, nome: x.nome }))))
-  }, [])
+    if (!ownerId) return
+    db.getBookings(ownerId).then(setBookings)
+    db.getProperties(ownerId).then(setProperties)
+    db.getGuests(ownerId).then(g => setGuests(g.map(x => ({ id: x.id, nome: x.nome }))))
+  }, [ownerId])
 
   return (
     <div className="flex flex-col min-h-full">

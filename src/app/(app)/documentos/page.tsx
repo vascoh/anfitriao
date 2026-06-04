@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown } from 'lucide-react'
 import { db } from '@/lib/db'
 import type { Guest } from '@/lib/types'
+import { useUser } from '@clerk/nextjs'
 
 type ExtractedData = Record<string, string>
 
@@ -32,6 +33,8 @@ function parseDatePt(ddmmyyyy: string): string {
 }
 
 export default function DocumentosPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [preview, setPreview] = useState<string | null>(null)
   const [extracting, setExtracting] = useState(false)
   const [data, setData] = useState<ExtractedData | null>(null)
@@ -44,8 +47,9 @@ export default function DocumentosPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    db.getGuests().then(setGuests)
-  }, [])
+    if (!ownerId) return
+    db.getGuests(ownerId).then(setGuests)
+  }, [ownerId])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]

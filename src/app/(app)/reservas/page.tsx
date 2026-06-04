@@ -7,6 +7,7 @@ import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
 import type { Booking, Guest, Property, BookingStatus } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
+import { useUser } from '@clerk/nextjs'
 
 type Filter = 'todas' | 'ativas' | 'proximas' | 'pendentes' | 'passadas'
 
@@ -76,6 +77,8 @@ function BookingRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
 }
 
 export default function ReservasPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [props, setProps] = useState<Property[]>([])
@@ -84,10 +87,11 @@ export default function ReservasPage() {
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    db.getBookings().then(setBookings)
-    db.getGuests().then(setGuests)
-    db.getProperties().then(setProps)
-  }, [])
+    if (!ownerId) return
+    db.getBookings(ownerId).then(setBookings)
+    db.getGuests(ownerId).then(setGuests)
+    db.getProperties(ownerId).then(setProps)
+  }, [ownerId])
 
   const filtered = useMemo(() => {
     let result = filterBookings(bookings, filter)

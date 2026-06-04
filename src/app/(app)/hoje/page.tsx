@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
@@ -72,6 +73,8 @@ function InHouseRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
 }
 
 export default function HojePage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const dateLabel = useTodayLabel()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
@@ -80,10 +83,11 @@ export default function HojePage() {
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([db.getBookings(), db.getGuests(), db.getProperties(), db.getWebsiteSettings()])
+    if (!ownerId) return
+    Promise.all([db.getBookings(ownerId), db.getGuests(ownerId), db.getProperties(ownerId), db.getWebsiteSettings()])
       .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); setSettings(s) })
       .finally(() => setLoaded(true))
-  }, [])
+  }, [ownerId])
 
   const t = today()
 

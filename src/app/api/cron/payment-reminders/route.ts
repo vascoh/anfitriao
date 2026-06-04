@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createAdminClient } from '@/lib/supabase'
 import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { Resend } from 'resend'
+import { checkCronAuth } from '@/lib/cron-auth'
+const supabase = createAdminClient()
 
 // Cron: sends payment reminders 3 days before check-in for bookings with outstanding balance
 // Schedule: daily at 09:00 (see vercel.json)
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET
-  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authError = checkCronAuth(req)
+  if (authError) return authError
 
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ ok: true, skipped: 'no_api_key', sent: 0 })

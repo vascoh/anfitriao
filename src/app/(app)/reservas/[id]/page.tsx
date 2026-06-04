@@ -122,14 +122,15 @@ export default function ReservaDetailPage() {
   const [checkinCopied, setCheckinCopied] = useState(false)
 
   async function load() {
-    const [bookings, guestsAll, propsAll] = await Promise.all([
-      db.getBookings(), db.getGuests(), db.getProperties()
-    ])
-    const b = bookings.find(x => x.id === id) ?? null
+    const b = await db.getBookingById(id)
     setBooking(b)
     if (b) {
-      setGuest(guestsAll.find(g => g.id === b.hospede_id) ?? null)
-      setProp(propsAll.find(p => p.id === b.propriedade_id) ?? null)
+      const [g, p] = await Promise.all([
+        b.hospede_id ? db.getGuestById(b.hospede_id) : Promise.resolve(null),
+        b.propriedade_id ? db.getPropertyById(b.propriedade_id) : Promise.resolve(null),
+      ])
+      setGuest(g)
+      setProp(p)
     }
   }
 

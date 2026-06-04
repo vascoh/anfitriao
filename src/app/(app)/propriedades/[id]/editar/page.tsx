@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { db } from '@/lib/db'
@@ -39,6 +40,8 @@ const TYPES: PropertyType[] = ['apartamento', 'moradia', 'quarto', 'outro']
 
 export default function EditarPropriedadePage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useUser()
+  const ownerId = user?.id
   const router = useRouter()
   const [prop, setProp] = useState<Property | null>(null)
 
@@ -64,7 +67,8 @@ export default function EditarPropriedadePage() {
   const [syncResult, setSyncResult] = useState<string | null>(null)
 
   useEffect(() => {
-    db.getProperties().then(all => {
+    if (!ownerId) return
+    db.getProperties(ownerId).then(all => {
       const p = all.find(x => x.id === id)
       if (!p) { router.push('/propriedades'); return }
       setProp(p)
@@ -85,7 +89,7 @@ export default function EditarPropriedadePage() {
       setRegrasCasa(p.regras_casa)
       setIcalFeeds(p.ical_feeds ?? [])
     })
-  }, [id, router])
+  }, [id, router, ownerId])
 
   function toggleAmenity(aid: string) {
     setComodidades(prev => prev.includes(aid) ? prev.filter(x => x !== aid) : [...prev, aid])
@@ -131,7 +135,7 @@ export default function EditarPropriedadePage() {
       if (data.synced !== undefined) {
         setSyncResult(`${data.synced} reservas importadas`)
         // Reload feeds to get updated last_sync
-        const propsAll = await db.getProperties()
+        const propsAll = await db.getProperties(ownerId)
         const fresh = propsAll.find(x => x.id === id)
         if (fresh) setIcalFeeds(fresh.ical_feeds ?? [])
       } else {

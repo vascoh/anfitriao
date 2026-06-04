@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, CalendarCheck2, CalendarDays, Users,
-  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag, Moon, Sun,
+  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag, Moon, Sun, ShieldCheck, CreditCard,
 } from 'lucide-react'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk, useUser } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
 import { useTheme } from '@/hooks/use-theme'
 
@@ -24,14 +24,17 @@ const secondary = [
   { href: '/propriedades', label: 'Propriedades', Icon: Building2 },
   { href: '/website', label: 'Website', Icon: Globe },
   { href: '/documentos', label: 'Documentos SIBA', Icon: FileText },
+  { href: '/conta/billing', label: 'Subscrição', Icon: CreditCard },
 ]
 
 export function SideNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { signOut } = useClerk()
+  const { user } = useUser()
   const alertsCount = useAlertsCount()
   const { isDark, setTheme } = useTheme()
+  const isAdmin = user?.id === process.env.NEXT_PUBLIC_ADMIN_USER_ID
 
   function active(href: string) {
     return pathname === href || pathname.startsWith(href + '/')
@@ -97,6 +100,18 @@ export function SideNav() {
             {label}
           </Link>
         ))}
+
+        {/* Admin link — só visível para o admin */}
+        {isAdmin && (
+          <>
+            <div className="my-2 h-px bg-border" />
+            <Link href="/admin/contas"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+              <ShieldCheck className="h-4 w-4 shrink-0 stroke-[1.5]" />
+              Admin
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* Bottom actions */}

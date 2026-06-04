@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
 import { uuid, today, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
@@ -39,6 +40,8 @@ export default function NovaReservaPage() {
 function NovaReservaInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user } = useUser()
+  const ownerId = user?.id
   const [step, setStep] = useState<Step>('propriedade')
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
@@ -70,7 +73,8 @@ function NovaReservaInner() {
   const [platformRates, setPlatformRates] = useState<PlatformRate[]>([])
 
   useEffect(() => {
-    db.getProperties().then(all => {
+    if (!ownerId) return
+    db.getProperties(ownerId).then(all => {
       const active = all.filter(p => p.ativo)
       setProperties(active)
       const preselected = searchParams.get('propriedade')
@@ -78,11 +82,11 @@ function NovaReservaInner() {
         setStep('datas')
       }
     })
-    db.getGuests().then(setGuests)
+    db.getGuests(ownerId).then(setGuests)
     db.getPriceRules().then(setPriceRules)
     db.getTarifas().then(setPriceTarifas)
     db.getPlatformRates().then(setPlatformRates)
-  }, [])
+  }, [ownerId])
 
   const selectedProp = properties.find(p => p.id === propId)
   const selectedGuest = guests.find(g => g.id === guestId)
@@ -127,7 +131,7 @@ function NovaReservaInner() {
       criado_em: new Date().toISOString(),
     }
     await db.saveGuest(g)
-    setGuests(await db.getGuests())
+    setGuests(await db.getGuests(ownerId))
     setGuestId(g.id)
     setShowNewGuest(false)
     setNewGuestNome('')
@@ -285,7 +289,7 @@ function NovaReservaInner() {
               onClick={async () => {
                 if (!checkIn || !checkOut || checkIn >= checkOut) return
                 if (propId) {
-                  const bookings = await db.getBookings()
+                  const bookings = await db.getBookings(ownerId)
                   const conflict = detectConflict(bookings, propId, checkIn, checkOut)
                   if (conflict) { setConflito(true); return }
                 }

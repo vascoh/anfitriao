@@ -15,6 +15,7 @@ import type {
   PlatformRate, BookingSource,
 } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
+import { useUser } from '@clerk/nextjs'
 
 // ─── label maps ────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,8 @@ type Tab = 'visao' | 'calendario' | 'regras' | 'tarifas' | 'plataformas' | 'mass
 // ─── main page ─────────────────────────────────────────────────────────────────
 
 export default function PrecosPage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [tab, setTab] = useState<Tab>('visao')
   const [props, setProps] = useState<Property[]>([])
   const [rules, setRules] = useState<PriceRule[]>([])
@@ -73,7 +76,7 @@ export default function PrecosPage() {
   async function reload() {
     setLoading(true)
     const [p, r, t, pl] = await Promise.all([
-      db.getProperties(),
+      db.getProperties(ownerId),
       db.getPriceRules(),
       db.getTarifas(),
       db.getPlatformRates(),
@@ -85,7 +88,11 @@ export default function PrecosPage() {
     setLoading(false)
   }
 
-  useEffect(() => { const t = setTimeout(() => { reload() }, 0); return () => clearTimeout(t) }, [])
+  useEffect(() => {
+    if (!ownerId) return
+    const t = setTimeout(() => { reload() }, 0)
+    return () => clearTimeout(t)
+  }, [ownerId])
 
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'visao',       label: 'Visão geral',  icon: <BarChart3 className="h-3.5 w-3.5" /> },

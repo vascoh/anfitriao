@@ -11,18 +11,16 @@ export async function POST(req: NextRequest) {
   const { bookingId } = await req.json()
   if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
 
-  const [bookings, guests, properties, settings] = await Promise.all([
-    db.getBookings(),
-    db.getGuests(),
-    db.getProperties(),
+  const [booking, settings] = await Promise.all([
+    db.getBookingById(bookingId),
     db.getWebsiteSettings(),
   ])
-
-  const booking = bookings.find(b => b.id === bookingId)
   if (!booking) return NextResponse.json({ ok: false, error: 'booking not found' }, { status: 404 })
 
-  const guest = booking.hospede_id ? guests.find(g => g.id === booking.hospede_id) : null
-  const prop = properties.find(p => p.id === booking.propriedade_id)
+  const [guest, prop] = await Promise.all([
+    booking.hospede_id ? db.getGuestById(booking.hospede_id) : Promise.resolve(null),
+    booking.propriedade_id ? db.getPropertyById(booking.propriedade_id) : Promise.resolve(null),
+  ])
 
   if (!guest?.email) {
     return NextResponse.json({ ok: true, skipped: 'no_guest_email' })

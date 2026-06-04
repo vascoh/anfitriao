@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Copy, Check, AlertCircle, ChevronDown } from 'lucide-react'
 import { db } from '@/lib/db'
 import type { Property } from '@/lib/types'
+import { useUser } from '@clerk/nextjs'
 
 const LANGS = [
   { code: 'pt', label: 'PT' },
@@ -54,6 +55,8 @@ const TEMPLATES = [
 ]
 
 export default function ConciergePage() {
+  const { user } = useUser()
+  const ownerId = user?.id
   const [message, setMessage] = useState('')
   const [targetLang, setTargetLang] = useState('en')
   const [tone, setTone] = useState('amigavel')
@@ -66,12 +69,13 @@ export default function ConciergePage() {
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    db.getProperties().then(all => {
+    if (!ownerId) return
+    db.getProperties(ownerId).then(all => {
       const props = all.filter(p => p.ativo)
       setProperties(props)
       if (props.length > 0) setSelectedPropId(props[0].id)
     })
-  }, [])
+  }, [ownerId])
 
   const selectedProp = properties.find(p => p.id === selectedPropId)
 

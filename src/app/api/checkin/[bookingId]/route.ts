@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createAdminClient } from '@/lib/supabase'
+const supabase = createAdminClient()
 
 type Params = Promise<{ bookingId: string }>
 

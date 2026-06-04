@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
@@ -12,6 +13,8 @@ import type { GuestTag } from '@/lib/types'
 
 export default function HospedeDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useUser()
+  const ownerId = user?.id
   const router = useRouter()
   const [guest, setGuest] = useState<Guest | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -34,7 +37,8 @@ export default function HospedeDetailPage() {
   const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
-    Promise.all([db.getGuests(), db.getBookings(), db.getProperties()]).then(([guestsAll, bookingsAll, propsAll]) => {
+    if (!ownerId) return
+    Promise.all([db.getGuests(ownerId), db.getBookings(ownerId), db.getProperties(ownerId)]).then(([guestsAll, bookingsAll, propsAll]) => {
       const g = guestsAll.find(x => x.id === id) ?? null
       setGuest(g)
       if (g) {
@@ -54,7 +58,7 @@ export default function HospedeDetailPage() {
       setBookings(bookingsAll.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
       setProps(propsAll)
     })
-  }, [id])
+  }, [id, ownerId])
 
   async function save() {
     if (!guest) return
