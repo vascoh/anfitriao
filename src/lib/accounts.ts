@@ -1,4 +1,4 @@
-import { createAdminClient } from './getClient()'
+import { createAdminClient } from './supabase'
 
 // All account operations run server-side (API routes, server components, layout.tsx).
 // Use admin client so service_role bypasses RLS — accounts are never exposed to the browser.
