@@ -14,9 +14,19 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+
 export const metadata: Metadata = {
-  title: 'Anfitrião',
-  description: 'O teu assistente de Alojamento Local',
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: 'Anfitrião — Gestão de Alojamento Local',
+    template: '%s · Anfitrião',
+  },
+  description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal, acompanha reservas e receitas. O assistente de Alojamento Local feito para Portugal.',
+  keywords: ['alojamento local', 'AL Portugal', 'gestão AL', 'airbnb gestão', 'booking gestão', 'SIBA SEF', 'check-in online', 'reservas diretas'],
+  authors: [{ name: 'Anfitrião' }],
+  creator: 'Anfitrião',
+  publisher: 'Anfitrião',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -25,6 +35,24 @@ export const metadata: Metadata = {
   },
   icons: {
     apple: '/api/pwa-icon?size=180',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'pt_PT',
+    url: APP_URL,
+    siteName: 'Anfitrião',
+    title: 'Anfitrião — Gestão de Alojamento Local sem stress',
+    description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal e acompanha reservas. Feito para anfitriões portugueses.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Anfitrião — Gestão de Alojamento Local sem stress',
+    description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal e acompanha reservas. Feito para anfitriões portugueses.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
   },
 }
 

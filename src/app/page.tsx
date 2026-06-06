@@ -182,10 +182,10 @@ export default async function Home() {
               Mais popular
             </div>
             <div className="text-sm font-semibold text-primary mb-4">Starter</div>
-            <div className="text-4xl font-bold mb-1">€15<span className="text-lg font-normal text-muted-foreground">/mês</span></div>
+            <div className="text-4xl font-bold mb-1">€19<span className="text-lg font-normal text-muted-foreground">/mês</span></div>
             <div className="text-sm text-muted-foreground mb-6">Faturado mensalmente</div>
             <ul className="space-y-2.5 text-sm text-muted-foreground mb-8">
-              {['Até 5 propriedades', 'Reservas ilimitadas', 'Relatórios avançados', 'Suporte prioritário', 'AI Concierge'].map(f => (
+              {['Até 3 propriedades', 'Reservas ilimitadas', 'AI Concierge ilimitado', 'Check-in online SIBA', 'Suporte por email'].map(f => (
                 <li key={f} className="flex items-center gap-2"><span className="text-primary">✓</span>{f}</li>
               ))}
             </ul>
@@ -197,10 +197,10 @@ export default async function Home() {
           {/* Pro */}
           <div className="rounded-2xl border border-border bg-card p-6">
             <div className="text-sm font-semibold text-muted-foreground mb-4">Pro</div>
-            <div className="text-4xl font-bold mb-1">€25<span className="text-lg font-normal text-muted-foreground">/mês</span></div>
+            <div className="text-4xl font-bold mb-1">€39<span className="text-lg font-normal text-muted-foreground">/mês</span></div>
             <div className="text-sm text-muted-foreground mb-6">Faturado mensalmente</div>
             <ul className="space-y-2.5 text-sm text-muted-foreground mb-8">
-              {['Propriedades ilimitadas', 'Multi-utilizador', 'API access', 'Custom domain', 'Suporte dedicado'].map(f => (
+              {['Até 10 propriedades', 'Tudo do Starter', 'Relatórios avançados', 'Suporte prioritário', 'Acesso antecipado a novas features'].map(f => (
                 <li key={f} className="flex items-center gap-2"><span className="text-primary">✓</span>{f}</li>
               ))}
             </ul>

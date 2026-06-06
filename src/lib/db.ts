@@ -158,18 +158,40 @@ export const db = {
 
   // ─── Website settings ──────────────────────────────────────────────────────
 
-  getWebsiteSettings: async (): Promise<WebsiteSettings> => {
-    const { data, error } = await supabase
-      .from('website_settings')
-      .select('*')
-      .eq('id', 1)
-      .single()
+  getWebsiteSettings: async (ownerId?: string): Promise<WebsiteSettings> => {
+    let q = supabase.from('website_settings').select('*')
+    // Multi-tenant: query by owner_id when available; fall back to legacy id=1 row
+    if (ownerId) {
+      q = q.eq('owner_id', ownerId)
+    } else {
+      q = q.eq('id', 1)
+    }
+    const { data, error } = await q.maybeSingle()
     if (error || !data) return DEFAULT_WEBSITE
     const { id: _, ...settings } = data as WebsiteSettings & { id: number }
     return settings
   },
 
-  saveWebsiteSettings: async (s: WebsiteSettings): Promise<void> => {
+  saveWebsiteSettings: async (s: WebsiteSettings, ownerId?: string): Promise<void> => {
+    // If we have an owner_id and the settings already have one, update by owner_id
+    if (ownerId || s.owner_id) {
+      const targetOwner = ownerId ?? s.owner_id
+      // Try to update existing row first
+      const { data: existing } = await supabase
+        .from('website_settings')
+        .select('id')
+        .eq('owner_id', targetOwner)
+        .maybeSingle()
+      if (existing) {
+        const { error } = await supabase
+          .from('website_settings')
+          .update({ ...s, owner_id: targetOwner })
+          .eq('owner_id', targetOwner)
+        if (error) throw new Error(`[db.saveWebsiteSettings] ${error.message}`)
+        return
+      }
+    }
+    // Legacy: upsert by id=1 (single-tenant fallback)
     const { error } = await supabase.from('website_settings').upsert({ id: 1, ...s })
     if (error) throw new Error(`[db.saveWebsiteSettings] ${error.message}`)
   },

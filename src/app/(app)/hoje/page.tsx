@@ -84,7 +84,7 @@ export default function HojePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([db.getBookings(ownerId), db.getGuests(ownerId), db.getProperties(ownerId), db.getWebsiteSettings()])
+    Promise.all([db.getBookings(ownerId), db.getGuests(ownerId), db.getProperties(ownerId), db.getWebsiteSettings(ownerId)])
       .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); setSettings(s) })
       .finally(() => setLoaded(true))
   }, [ownerId])

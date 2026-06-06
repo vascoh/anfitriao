@@ -35,7 +35,7 @@ export default function WebsitePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getWebsiteSettings().then(setSettings)
+    db.getWebsiteSettings(ownerId).then(setSettings)
     db.getProperties(ownerId).then(setProps)
     db.getBookings(ownerId).then(setAllBookings)
     db.getGuests(ownerId).then(setAllGuests)
@@ -50,7 +50,7 @@ export default function WebsitePage() {
 
   async function save() {
     if (!settings) return
-    await db.saveWebsiteSettings(settings)
+    await db.saveWebsiteSettings(settings, ownerId)
     setSaved(true)
     toast.success('Configurações guardadas')
     setTimeout(() => setSaved(false), 2000)
