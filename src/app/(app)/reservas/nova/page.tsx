@@ -129,8 +129,9 @@ function NovaReservaInner() {
       nome: newGuestNome.trim(),
       tags: ['novo'],
       criado_em: new Date().toISOString(),
+      owner_id: ownerId,
     }
-    await db.saveGuest(g)
+    await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(g) })
     setGuests(await db.getGuests(ownerId))
     setGuestId(g.id)
     setShowNewGuest(false)
@@ -162,8 +163,10 @@ function NovaReservaInner() {
           { id: uuid(), data: new Date().toISOString(), tipo: 'criada', descricao: 'Reserva criada manualmente' },
           { id: uuid(), data: new Date().toISOString(), tipo: 'confirmada', descricao: 'Confirmada na criação' },
         ],
+        owner_id: ownerId,
       }
-      await db.saveBooking(booking)
+      const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(booking) })
+      if (!res.ok) throw new Error('Erro ao guardar reserva')
       router.push(`/reservas/${booking.id}`)
     } catch {
       setSubmitting(false)

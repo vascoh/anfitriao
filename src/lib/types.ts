@@ -54,6 +54,7 @@ export interface Guest {
   tags: GuestTag[]
   notas?: string
   criado_em: string
+  owner_id?: string
 }
 
 export interface BookingEvent {
@@ -95,6 +96,7 @@ export interface Booking {
   uid_externo?: string
   criado_em: string
   historico: BookingEvent[]
+  owner_id?: string
 }
 
 // --- Sistema de preços ---
