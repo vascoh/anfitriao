@@ -37,6 +37,7 @@ export interface Property {
   ical_feeds?: IcalFeed[]
   /** If set, this property is a room inside the parent property */
   parent_id?: string | null
+  owner_id?: string | null
 }
 
 export interface Guest {

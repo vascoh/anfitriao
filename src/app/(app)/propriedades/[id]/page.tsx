@@ -6,8 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, Trash2, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
-import { db } from '@/lib/db'
-import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
+import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -53,10 +52,10 @@ export default function PropriedadeDetailPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchProperties(), db.getWebsiteSettings(), fetchBookings(), fetchGuests()]).then(
+    Promise.all([fetchProperties(), fetchSettings(), fetchBookings(), fetchGuests()]).then(
       ([propsAll, ws, bookingsAll, guestsAll]) => {
         setProp(propsAll.find(x => x.id === id) ?? null)
-        setWebsiteEnabled(ws.enabled)
+        setWebsiteEnabled(ws?.enabled ?? false)
         setBookings(
           bookingsAll
             .filter(b => b.propriedade_id === id)

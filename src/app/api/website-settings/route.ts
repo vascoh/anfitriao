@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import type { WebsiteSettings } from '@/lib/types'
 
 const supabase = createAdminClient()
+
+export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  const settings = await adminGetWebsiteSettings(userId)
+  return NextResponse.json(settings)
+}
 
 /**
  * POST /api/website-settings

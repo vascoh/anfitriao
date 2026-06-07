@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { db } from '@/lib/db'
+import { adminGetBookingById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
     propertyName, checkIn, checkOut, numHospedes, total, notas,
   } = await req.json()
 
-  const settings = await db.getWebsiteSettings()
+  const booking = bookingId ? await adminGetBookingById(bookingId) : null
+  const settings = await adminGetWebsiteSettings(booking?.owner_id)
   const hostTo = process.env.NOTIFY_EMAIL || settings.email
   const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'

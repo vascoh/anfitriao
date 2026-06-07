@@ -4,7 +4,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
-import { db } from '@/lib/db'
+import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import type { Property, WebsiteSettings } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -14,7 +14,7 @@ export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await params
-  const settings = await db.getWebsiteSettingsBySlug(slug)
+  const settings = await adminGetWebsiteSettingsBySlug(slug)
   if (!settings) return { title: 'Reservas' }
   return {
     title: settings.nome,
@@ -141,7 +141,7 @@ export default async function ReservasPage(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
-  const settings = await db.getWebsiteSettingsBySlug(slug)
+  const settings = await adminGetWebsiteSettingsBySlug(slug)
 
   if (!settings) notFound()
 
@@ -162,7 +162,7 @@ export default async function ReservasPage(
   }
 
   const props = settings.owner_id
-    ? await db.getPropertiesByOwner(settings.owner_id)
+    ? await adminGetProperties(settings.owner_id as string)
     : []
 
   const brandName = settings.logo_texto || settings.nome

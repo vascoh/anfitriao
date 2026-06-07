@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { db } from '@/lib/db'
+import { fetchSettings } from '@/lib/fetcher'
 import type { WebsiteSettings } from '@/lib/types'
 
 export default function PerfilPage() {
@@ -23,7 +23,8 @@ export default function PerfilPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getWebsiteSettings(ownerId).then((s: WebsiteSettings) => {
+    fetchSettings().then(s => {
+      if (!s) return
       setHostNome(s.host_nome ?? '')
       setHostBio(s.host_bio ?? '')
       setEmail(s.email ?? '')

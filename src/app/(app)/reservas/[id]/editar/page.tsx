@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { uuid } from '@/lib/utils'
-import { db } from '@/lib/db'
+import { fetchBookings } from '@/lib/fetcher'
 import type { Booking, BookingSource, BookingStatus } from '@/lib/types'
 import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
 
@@ -28,7 +28,7 @@ export default function EditarReservaPage() {
   const [notas, setNotas] = useState('')
 
   useEffect(() => {
-    db.getBookingById(id).then(b => {
+    fetchBookings().then(bs => { const b = bs.find(x => x.id === id) ?? null; return b }).then(b => {
       if (!b) return
       setBooking(b)
       setCheckIn(b.check_in)

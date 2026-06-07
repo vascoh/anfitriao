@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
 import { fmtMoney, fmtDate, nights, uuid } from '@/lib/utils'
-import { db } from '@/lib/db'
-import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
+import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import { parseIcal, generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
@@ -36,7 +35,7 @@ export default function WebsitePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getWebsiteSettings(ownerId).then(setSettings)
+    fetchSettings().then(s => { if (s) setSettings(s) })
     fetchProperties().then(setProps)
     fetchBookings().then(setAllBookings)
     fetchGuests().then(setAllGuests)

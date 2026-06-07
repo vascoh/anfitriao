@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { db } from '@/lib/db'
+import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { fmtDate } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
@@ -11,15 +11,13 @@ export async function POST(req: NextRequest) {
   const { bookingId } = await req.json()
   if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
 
-  const [booking, settings] = await Promise.all([
-    db.getBookingById(bookingId),
-    db.getWebsiteSettings(),
-  ])
+  const booking = await adminGetBookingById(bookingId)
   if (!booking) return NextResponse.json({ ok: false, error: 'not found' }, { status: 404 })
 
-  const [guest, prop] = await Promise.all([
-    booking.hospede_id ? db.getGuestById(booking.hospede_id) : Promise.resolve(null),
-    booking.propriedade_id ? db.getPropertyById(booking.propriedade_id) : Promise.resolve(null),
+  const [guest, prop, settings] = await Promise.all([
+    booking.hospede_id ? adminGetGuestById(booking.hospede_id) : Promise.resolve(null),
+    booking.propriedade_id ? adminGetPropertyById(booking.propriedade_id) : Promise.resolve(null),
+    adminGetWebsiteSettings(booking.owner_id),
   ])
   const hostEmail = settings.email
   if (!hostEmail) return NextResponse.json({ ok: true, skipped: 'no_host_email' })
