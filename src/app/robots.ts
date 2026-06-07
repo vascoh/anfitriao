@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
 
 export default function robots(): MetadataRoute.Robots {
   return {

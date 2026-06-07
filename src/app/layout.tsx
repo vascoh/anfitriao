@@ -14,7 +14,9 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
+
+const OG_IMAGE = `${APP_URL}/api/og`
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -23,7 +25,11 @@ export const metadata: Metadata = {
     template: '%s · Anfitrião',
   },
   description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal, acompanha reservas e receitas. O assistente de Alojamento Local feito para Portugal.',
-  keywords: ['alojamento local', 'AL Portugal', 'gestão AL', 'airbnb gestão', 'booking gestão', 'SIBA SEF', 'check-in online', 'reservas diretas'],
+  keywords: [
+    'alojamento local', 'AL Portugal', 'gestão AL', 'airbnb gestão',
+    'booking gestão', 'SIBA SEF', 'check-in online', 'reservas diretas',
+    'gestão alojamento local portugal', 'software alojamento local',
+  ],
   authors: [{ name: 'Anfitrião' }],
   creator: 'Anfitrião',
   publisher: 'Anfitrião',
@@ -43,16 +49,21 @@ export const metadata: Metadata = {
     siteName: 'Anfitrião',
     title: 'Anfitrião — Gestão de Alojamento Local sem stress',
     description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal e acompanha reservas. Feito para anfitriões portugueses.',
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Anfitrião — Gestão de Alojamento Local' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Anfitrião — Gestão de Alojamento Local sem stress',
     description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal e acompanha reservas. Feito para anfitriões portugueses.',
+    images: [OG_IMAGE],
   },
   robots: {
     index: true,
     follow: true,
     googleBot: { index: true, follow: true },
+  },
+  alternates: {
+    canonical: APP_URL,
   },
 }
 
@@ -62,6 +73,28 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: 'cover',
   themeColor: '#C2714F',
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Anfitrião',
+  url: APP_URL,
+  description: 'Gestão de Alojamento Local para anfitriões portugueses. Sincroniza Airbnb e Booking.com, check-in online SIBA, relatórios e IA Concierge.',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'pt-PT',
+  offers: [
+    { '@type': 'Offer', name: 'Trial', price: '0', priceCurrency: 'EUR', description: '14 dias grátis, sem cartão de crédito' },
+    { '@type': 'Offer', name: 'Starter', price: '19', priceCurrency: 'EUR', description: 'Até 3 propriedades, reservas ilimitadas' },
+    { '@type': 'Offer', name: 'Pro', price: '39', priceCurrency: 'EUR', description: 'Até 10 propriedades, relatórios avançados' },
+  ],
+  provider: {
+    '@type': 'Organization',
+    name: 'Anfitrião',
+    url: APP_URL,
+    contactPoint: { '@type': 'ContactPoint', email: 'suporte@anfitrioes.pt', contactType: 'customer support', availableLanguage: 'Portuguese' },
+  },
 }
 
 // Inline script to apply theme before first paint (prevents flash)
@@ -88,7 +121,14 @@ export default function RootLayout({
       >
         {/* eslint-disable-next-line react/no-danger */}
         <head>
+          <link rel="preconnect" href="https://clerk.anfitrioes.pt" />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="dns-prefetch" href="https://nnbqfrszukkzoqwssjvg.supabase.co" />
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
         </head>
         <body className="h-full bg-background text-foreground">
           {children}
