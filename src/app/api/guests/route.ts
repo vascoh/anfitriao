@@ -5,6 +5,20 @@ import type { Guest } from '@/lib/types'
 
 const supabase = createAdminClient()
 
+export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('guests')
+    .select('*')
+    .eq('owner_id', userId)
+    .order('criado_em', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 /**
  * POST /api/guests
  * Guarda um hóspede com owner_id do utilizador autenticado.

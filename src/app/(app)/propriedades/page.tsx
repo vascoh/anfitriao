@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, BedDouble, ChevronDown, ChevronRight as ChevronRightIcon, Home } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import { db } from '@/lib/db'
+import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -216,9 +217,9 @@ export default function PropriedadesPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getProperties(ownerId).then(setAllProps)
-    db.getBookings(ownerId).then(setBookings)
-    db.getGuests(ownerId).then(setGuests)
+    fetchProperties().then(setAllProps)
+    fetchBookings().then(setBookings)
+    fetchGuests().then(setGuests)
   }, [ownerId])
 
   // Separate parents from rooms

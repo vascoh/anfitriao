@@ -7,6 +7,7 @@ import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
+import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL } from '@/lib/labels'
 import type { GuestTag } from '@/lib/types'
@@ -38,7 +39,7 @@ export default function HospedeDetailPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([db.getGuests(ownerId), db.getBookings(ownerId), db.getProperties(ownerId)]).then(([guestsAll, bookingsAll, propsAll]) => {
+    Promise.all([fetchGuests(), fetchBookings(), fetchProperties()]).then(([guestsAll, bookingsAll, propsAll]) => {
       const g = guestsAll.find(x => x.id === id) ?? null
       setGuest(g)
       if (g) {

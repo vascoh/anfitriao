@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Copy, Check, AlertCircle, ChevronDown } from 'lucide-react'
 import { db } from '@/lib/db'
+import { fetchProperties } from '@/lib/fetcher'
 import type { Property } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
 
@@ -70,7 +71,7 @@ export default function ConciergePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getProperties(ownerId).then(all => {
+    fetchProperties().then(all => {
       const props = all.filter(p => p.ativo)
       setProperties(props)
       if (props.length > 0) setSelectedPropId(props[0].id)

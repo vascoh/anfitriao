@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown, Download } from 'lucide-react'
 import { db } from '@/lib/db'
+import { fetchGuests } from '@/lib/fetcher'
 import type { Guest } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
 
@@ -75,7 +76,7 @@ export default function DocumentosPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getGuests(ownerId).then(setGuests)
+    fetchGuests().then(setGuests)
   }, [ownerId])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {

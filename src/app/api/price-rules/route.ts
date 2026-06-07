@@ -5,6 +5,21 @@ import type { PriceRule } from '@/lib/types'
 
 const supabase = createAdminClient()
 
+export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('price_rules')
+    .select('*')
+    .eq('owner_id', userId)
+    .order('prioridade', { ascending: false })
+    .order('criado_em', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })

@@ -8,6 +8,7 @@ import {
   TrendingUp, TrendingDown, BarChart3, Settings2, RefreshCw,
 } from 'lucide-react'
 import { db } from '@/lib/db'
+import { fetchProperties } from '@/lib/fetcher'
 import { getPriceForDay } from '@/lib/reservations'
 import { fmtMoney, uuid } from '@/lib/utils'
 import type {
@@ -75,12 +76,13 @@ export default function PrecosPage() {
 
   async function reload() {
     setLoading(true)
-    const [p, r, t, pl] = await Promise.all([
-      db.getProperties(ownerId),
-      db.getPriceRules(),
-      db.getTarifas(),
-      db.getPlatformRates(),
+    const [p, rRes, tRes, plRes] = await Promise.all([
+      fetchProperties(),
+      fetch('/api/price-rules').then(r => r.json()),
+      fetch('/api/tarifas').then(r => r.json()),
+      fetch('/api/platform-rates').then(r => r.json()),
     ])
+    const [r, t, pl] = [rRes, tRes, plRes].map(x => Array.isArray(x) ? x : [])
     setProps(p)
     setRules(r)
     setTarifas(t)

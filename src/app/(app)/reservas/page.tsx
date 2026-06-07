@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { db } from '@/lib/db'
+import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Booking, Guest, Property, BookingStatus } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
@@ -88,9 +89,9 @@ export default function ReservasPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getBookings(ownerId).then(setBookings)
-    db.getGuests(ownerId).then(setGuests)
-    db.getProperties(ownerId).then(setProps)
+    fetchBookings().then(setBookings)
+    fetchGuests().then(setGuests)
+    fetchProperties().then(setProps)
   }, [ownerId])
 
   const filtered = useMemo(() => {

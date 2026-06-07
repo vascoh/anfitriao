@@ -5,6 +5,20 @@ import type { Booking } from '@/lib/types'
 
 const supabase = createAdminClient()
 
+export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('owner_id', userId)
+    .order('check_in', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 /**
  * POST /api/bookings
  * Guarda uma reserva com owner_id do utilizador autenticado.

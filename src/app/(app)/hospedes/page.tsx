@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { db } from '@/lib/db'
+import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Guest, Booking, Property, GuestTag } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
@@ -53,9 +54,9 @@ export default function HospedesPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getGuests(ownerId).then(setGuests)
-    db.getBookings(ownerId).then(setBookings)
-    db.getProperties(ownerId).then(setProps)
+    fetchGuests().then(setGuests)
+    fetchBookings().then(setBookings)
+    fetchProperties().then(setProps)
   }, [ownerId])
 
   const allTags = useMemo(() => {

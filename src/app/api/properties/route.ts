@@ -5,6 +5,26 @@ import { getAccountByClerkId } from '@/lib/accounts'
 import type { Property } from '@/lib/types'
 const supabase = createAdminClient()
 
+export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('owner_id', userId)
+    .order('criado_em', { ascending: true })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Map casas_banho → casasBanho (property row format)
+  const mapped = (data ?? []).map((row: Record<string, unknown>) => {
+    const { casas_banho, ...rest } = row
+    return { ...rest, casasBanho: casas_banho }
+  })
+  return NextResponse.json(mapped)
+}
+
 /**
  * POST /api/properties
  * Guarda uma propriedade com verificação de limite do plano.

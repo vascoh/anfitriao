@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
 import { fmtMoney, fmtDate, nights, uuid } from '@/lib/utils'
 import { db } from '@/lib/db'
+import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
 import { parseIcal, generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
@@ -36,9 +37,9 @@ export default function WebsitePage() {
   useEffect(() => {
     if (!ownerId) return
     db.getWebsiteSettings(ownerId).then(setSettings)
-    db.getProperties(ownerId).then(setProps)
-    db.getBookings(ownerId).then(setAllBookings)
-    db.getGuests(ownerId).then(setAllGuests)
+    fetchProperties().then(setProps)
+    fetchBookings().then(setAllBookings)
+    fetchGuests().then(setAllGuests)
   }, [ownerId])
 
   const publicUrl = settings?.slug ? `${origin}/r/${settings.slug}` : `${origin}/book`
@@ -72,7 +73,7 @@ export default function WebsitePage() {
       const text = await res.text()
       const events = parseIcal(text)
 
-      const bookings = await db.getBookings(ownerId)
+      const bookings = await fetchBookings()
       let added = 0
 
       for (const ev of events) {
@@ -123,7 +124,7 @@ export default function WebsitePage() {
         ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
       }
       await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedProp) })
-      setProps(await db.getProperties(ownerId))
+      setProps(await fetchProperties())
       setSyncStates(s => ({ ...s, [key]: 'ok' }))
       toast.success(added > 0 ? `${added} reserva${added !== 1 ? 's' : ''} importada${added !== 1 ? 's' : ''}` : 'Sincronizado — sem novidades')
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 2000)
@@ -134,7 +135,7 @@ export default function WebsitePage() {
         ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
       }
       await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedProp) })
-      setProps(await db.getProperties(ownerId))
+      setProps(await fetchProperties())
       setSyncStates(s => ({ ...s, [key]: 'error' }))
       toast.error('Falha ao sincronizar o feed iCal')
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 3000)
@@ -153,7 +154,7 @@ export default function WebsitePage() {
     }
     const updated: Property = { ...prop, ical_feeds: [...(prop.ical_feeds ?? []), feed] }
     await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-    setProps(await db.getProperties(ownerId))
+    setProps(await fetchProperties())
     setNewFeedUrl(s => ({ ...s, [prop.id]: '' }))
     setNewFeedSource(s => ({ ...s, [prop.id]: '' }))
   }
@@ -161,7 +162,7 @@ export default function WebsitePage() {
   async function removeFeed(prop: Property, feedId: string) {
     const updated: Property = { ...prop, ical_feeds: (prop.ical_feeds ?? []).filter(f => f.id !== feedId) }
     await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-    setProps(await db.getProperties(ownerId))
+    setProps(await fetchProperties())
   }
 
   function exportIcal(prop: Property) {

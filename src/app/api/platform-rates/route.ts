@@ -5,6 +5,20 @@ import type { PlatformRate } from '@/lib/types'
 
 const supabase = createAdminClient()
 
+export async function GET() {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('platform_rates')
+    .select('*')
+    .eq('owner_id', userId)
+    .order('plataforma')
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
