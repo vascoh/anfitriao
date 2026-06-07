@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { auth } from '@clerk/nextjs/server'
+import { MaintenanceSignOut } from './MaintenanceSignOut'
 
 export const metadata: Metadata = {
   title: 'Em breve — Anfitrião',
@@ -7,7 +9,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function EmConstrucaoPage() {
+export default async function EmConstrucaoPage() {
+  const { userId } = await auth()
+  const isLoggedIn = !!userId
+  const maintenanceMode = process.env.MAINTENANCE_MODE === 'true'
+
   return (
     <div className="min-h-dvh bg-background flex flex-col items-center justify-center px-6 text-center">
 
@@ -24,49 +30,79 @@ export default function EmConstrucaoPage() {
 
       {/* Badge */}
       <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5 text-xs font-semibold text-primary">
-        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-        A preparar o lançamento
+        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+        {maintenanceMode ? 'Em manutenção' : 'A preparar o lançamento'}
       </div>
 
       {/* Headline */}
       <h1 className="text-3xl font-bold tracking-tight md:text-4xl max-w-md leading-tight mb-4">
-        Gestão de Alojamento Local,{' '}
-        <span className="text-primary">sem stress</span>
+        {maintenanceMode
+          ? <>Site temporariamente <span className="text-primary">em manutenção</span></>
+          : <>Gestão de Alojamento Local, <span className="text-primary">sem stress</span></>
+        }
       </h1>
 
       <p className="text-muted-foreground text-base max-w-sm leading-relaxed mb-10">
-        Estamos a afinar os últimos detalhes. Em breve podes sincronizar o Airbnb e Booking.com,
-        fazer check-in online e gerir todas as tuas reservas num só lugar.
+        {maintenanceMode
+          ? 'Estamos a actualizar o Anfitrião. Voltamos em breve com melhorias. Obrigado pela paciência.'
+          : 'Estamos a afinar os últimos detalhes. Em breve podes sincronizar o Airbnb e Booking.com, fazer check-in online e gerir todas as tuas reservas num só lugar.'
+        }
       </p>
 
       {/* Features preview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl w-full mb-10 text-left">
-        {[
-          { icon: '🔄', label: 'Sync Airbnb & Booking', desc: 'Calendários ligados automaticamente' },
-          { icon: '📱', label: 'Check-in online', desc: 'SIBA pronto antes da chegada' },
-          { icon: '🤖', label: 'Concierge com IA', desc: 'Respostas em 6 idiomas' },
-        ].map(f => (
-          <div key={f.label} className="rounded-xl border border-border bg-card p-4">
-            <div className="text-2xl mb-2">{f.icon}</div>
-            <p className="text-sm font-semibold leading-tight">{f.label}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
-          </div>
-        ))}
-      </div>
+      {!maintenanceMode && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl w-full mb-10 text-left">
+          {[
+            { icon: '🔄', label: 'Sync Airbnb & Booking', desc: 'Calendários ligados automaticamente' },
+            { icon: '📱', label: 'Check-in online', desc: 'SIBA pronto antes da chegada' },
+            { icon: '🤖', label: 'Concierge com IA', desc: 'Respostas em 6 idiomas' },
+          ].map(f => (
+            <div key={f.label} className="rounded-xl border border-border bg-card p-4">
+              <div className="text-2xl mb-2" aria-hidden="true">{f.icon}</div>
+              <p className="text-sm font-semibold leading-tight">{f.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Maintenance mode: show estimated return */}
+      {maintenanceMode && (
+        <div className="mb-8 rounded-xl border border-border bg-card px-6 py-5 max-w-xs w-full">
+          <p className="text-sm font-semibold mb-1">O que está a acontecer?</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Estamos a implementar melhorias de segurança e novas funcionalidades. O serviço volta ao normal em breve.
+          </p>
+        </div>
+      )}
 
       {/* CTA */}
       <div className="flex flex-col items-center gap-3">
-        <p className="text-xs text-muted-foreground">
-          Já tens conta?{' '}
-          <Link href="/sign-in" className="text-primary font-semibold hover:underline">
-            Entrar →
-          </Link>
-        </p>
+        {isLoggedIn ? (
+          maintenanceMode ? (
+            <p className="text-xs text-muted-foreground">
+              Sessão iniciada.{' '}
+              <MaintenanceSignOut />
+            </p>
+          ) : (
+            <Link href="/hoje" className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">
+              Ir para o painel →
+            </Link>
+          )
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Já tens conta?{' '}
+            <Link href="/sign-in" className="text-primary font-semibold hover:underline">
+              Entrar →
+            </Link>
+          </p>
+        )}
       </div>
 
       {/* Footer */}
       <div className="absolute bottom-6 text-xs text-muted-foreground/50">
-        © {new Date().getFullYear()} Anfitrião · Feito em Portugal 🇵🇹
+        © {new Date().getFullYear()} Anfitrião · Feito em Portugal{' '}
+        <span aria-label="bandeira de Portugal">🇵🇹</span>
       </div>
     </div>
   )

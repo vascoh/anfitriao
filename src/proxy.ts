@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server'
 const isPublicRoute = createRouteMatcher([
   // Landing page de marketing
   '/',
+  // Página de manutenção — acessível a todos (não cria loop de redirect)
+  '/em-construcao',
   // Website público de reservas
   '/book(.*)',
   '/r/(.*)',
@@ -15,6 +17,7 @@ const isPublicRoute = createRouteMatcher([
   '/(auth)(.*)',
   // APIs públicas
   '/api/book',
+  '/api/og(.*)',
   '/api/ical(.*)',
   '/api/ical-proxy(.*)',
   '/api/checkin/(.*)',
@@ -52,7 +55,14 @@ export default clerkMiddleware(async (auth, req) => {
   // 3. Admin bypassa todo o enforcement
   if (userId === process.env.ADMIN_USER_ID) return
 
-  // 4. Rotas de conta/billing/stripe passam sempre
+  // 4. Maintenance mode — só o admin pode aceder ao app
+  if (process.env.MAINTENANCE_MODE === 'true') {
+    // Conta/billing/stripe ficam acessíveis (utilizador pode gerir subscrição)
+    if (isAccountRoute(req)) return
+    return NextResponse.redirect(new URL('/em-construcao', req.url))
+  }
+
+  // 5. Rotas de conta/billing/stripe passam sempre
   if (isAccountRoute(req)) return
 
   // 5. Enforcement de estado — lê do JWT (sem DB call)
