@@ -35,6 +35,7 @@ const isPublicRoute = createRouteMatcher([
 const isAccountRoute = createRouteMatcher([
   '/conta/(.*)',
   '/api/stripe/(.*)',
+  '/api/og(.*)',
 ])
 
 export default clerkMiddleware(async (auth, req) => {

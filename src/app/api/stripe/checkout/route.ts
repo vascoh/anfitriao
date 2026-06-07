@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { stripe } from '@/lib/stripe'
+import { stripe, priceToPlano } from '@/lib/stripe'
 import { getAccountByClerkId, updateAccount } from '@/lib/accounts'
 
 export async function POST(req: NextRequest) {
@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
   const account = await getAccountByClerkId(userId)
   if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
+  const plano = priceToPlano(priceId)
 
   // Criar ou reutilizar cliente Stripe
   let customerId = account.stripe_customer_id
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${baseUrl}/conta/billing?success=1`,
+    success_url: `${baseUrl}/conta/bem-vindo?plano=${plano}`,
     cancel_url:  `${baseUrl}/conta/billing?cancelled=1`,
     allow_promotion_codes: true,
     metadata: { account_id: account.id },
