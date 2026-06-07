@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { Resend } from 'resend'
 import { checkCronAuth } from '@/lib/cron-auth'
+import { escHtml } from '@/lib/utils'
 const supabase = createAdminClient()
 
 // Cron: envia emails de aviso de trial a expirar
@@ -127,7 +128,7 @@ function buildTrialEmail({ firstName, daysLeft, trialDate, baseUrl }: {
     <div style="height:4px;background:#C2714F;"></div>
     <div style="padding:32px 32px 24px;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Trial a expirar</p>
-      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">Olá ${firstName}!</h1>
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">Olá ${escHtml(firstName)}!</h1>
       <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">${urgency} Escolhe um plano para continuares a gerir as tuas propriedades sem interrupções.</p>
 
       <div style="background:#f9f5f0;border-radius:8px;padding:20px;margin-bottom:24px;">
@@ -167,7 +168,7 @@ function buildExpiredEmail({ firstName, baseUrl }: { firstName: string; baseUrl:
     <div style="height:4px;background:#C2714F;"></div>
     <div style="padding:32px 32px 24px;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Trial expirado</p>
-      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">O teu trial terminou, ${firstName}</h1>
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">O teu trial terminou, ${escHtml(firstName)}</h1>
       <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">
         O teu período de trial gratuito chegou ao fim. Para continuares a aceder ao Anfitrião, escolhe um plano.
         Os teus dados estão guardados e não vai perder nada.

@@ -8,7 +8,10 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { priceId } = await req.json() as { priceId: string }
-  if (!priceId) return NextResponse.json({ error: 'priceId obrigatório' }, { status: 400 })
+  const allowedPriceIds = [process.env.STRIPE_STARTER_PRICE_ID, process.env.STRIPE_PRO_PRICE_ID].filter(Boolean)
+  if (!priceId || !allowedPriceIds.includes(priceId)) {
+    return NextResponse.json({ error: 'priceId inválido' }, { status: 400 })
+  }
 
   const account = await getAccountByClerkId(userId)
   if (!account) return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })

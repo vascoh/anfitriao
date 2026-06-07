@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
@@ -49,6 +50,7 @@ async function syncProperty(
   propertyId: string,
   feeds: IcalFeed[],
   origin: string,
+  ownerId: string,
 ): Promise<{ synced: number; results: Array<{ feed: string; imported: number; skipped: number; error?: string }>; updatedFeeds: IcalFeed[] }> {
   const results: Array<{ feed: string; imported: number; skipped: number; error?: string }> = []
   const updatedFeeds: IcalFeed[] = []
@@ -83,6 +85,7 @@ async function syncProperty(
         newBookings.push({
           id: crypto.randomUUID(),
           propriedade_id: propertyId,
+          owner_id: ownerId,
           hospede_id: null,
           check_in: ev.dtstart,
           check_out: ev.dtend,
@@ -137,6 +140,9 @@ async function syncProperty(
 
 // Manual sync for a single property (POST from property edit page)
 export async function POST(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
   try {
     const body = await req.json()
     const { propertyId } = body
@@ -147,8 +153,9 @@ export async function POST(req: NextRequest) {
 
     const { data: propRow, error: propErr } = await supabase
       .from('properties')
-      .select('id, ical_feeds')
+      .select('id, owner_id, ical_feeds')
       .eq('id', propertyId)
+      .eq('owner_id', userId)
       .single()
 
     if (propErr || !propRow) {
@@ -161,7 +168,7 @@ export async function POST(req: NextRequest) {
     }
 
     const origin = new URL(req.url).origin
-    const { synced, results } = await syncProperty(propertyId, feeds, origin)
+    const { synced, results } = await syncProperty(propertyId, feeds, origin, propRow.owner_id as string)
     return NextResponse.json({ synced, results })
   } catch (err) {
     console.error('[ical-sync] POST error:', err)
@@ -177,7 +184,7 @@ export async function GET(req: NextRequest) {
   try {
     const { data: props, error } = await supabase
       .from('properties')
-      .select('id, ical_feeds')
+      .select('id, owner_id, ical_feeds')
       .eq('ativo', true)
 
     if (error || !props) {
@@ -199,7 +206,7 @@ export async function GET(req: NextRequest) {
 
     for (const prop of propsWithFeeds) {
       const feeds = prop.ical_feeds as IcalFeed[]
-      const { synced } = await syncProperty(prop.id, feeds, origin)
+      const { synced } = await syncProperty(prop.id, feeds, origin, (prop as { owner_id: string }).owner_id)
       totalSynced += synced
       summary.push({ propertyId: prop.id, synced })
     }

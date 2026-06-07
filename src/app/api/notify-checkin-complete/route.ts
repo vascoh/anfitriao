@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
-import { fmtDate } from '@/lib/utils'
+import { fmtDate, escHtml } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {
@@ -49,13 +49,13 @@ export async function POST(req: NextRequest) {
 
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;">
         <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#166534;">
-          ${guest?.nome ?? '—'}
+          ${escHtml(guest?.nome ?? '—')}
           ${sibaComplete ? ' <span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px;">SIBA ✓</span>' : ''}
         </p>
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;width:40%;">Propriedade</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${prop?.nome ?? '—'}</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(prop?.nome ?? '—')}</td>
           </tr>
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;">Check-in</td>
@@ -68,12 +68,12 @@ export async function POST(req: NextRequest) {
           ${guest?.numero_documento ? `
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;">Documento</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${guest.tipo_documento ?? ''} ${guest.numero_documento}</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(guest.tipo_documento ?? '')} ${escHtml(guest.numero_documento)}</td>
           </tr>` : ''}
           ${guest?.nacionalidade ? `
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;">Nacionalidade</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${guest.nacionalidade}</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(guest.nacionalidade)}</td>
           </tr>` : ''}
         </table>
       </div>
