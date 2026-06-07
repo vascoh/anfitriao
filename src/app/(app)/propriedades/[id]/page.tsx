@@ -69,7 +69,7 @@ export default function PropriedadeDetailPage() {
   async function toggleActive() {
     if (!prop) return
     const updated = { ...prop, ativo: !prop.ativo }
-    await db.saveProperty(updated)
+    await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setProp(updated)
   }
 

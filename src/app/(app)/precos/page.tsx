@@ -172,7 +172,7 @@ function TabVisao({
       taxa_limpeza: parseFloat(newLimpeza) || 0,
     }
     try {
-      await db.saveProperty(updated)
+      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
       await db.logPriceChange(p.id, 'base_price_changed', `Preço base alterado de €${p.preco_base} para €${updated.preco_base}`, prev, { preco_base: updated.preco_base, taxa_limpeza: updated.taxa_limpeza })
       showToast('Preço atualizado')
       onReload()
@@ -650,7 +650,7 @@ function TabRegras({
 
   async function handleSave(r: PriceRule) {
     try {
-      await db.savePriceRule(r)
+      await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) })
       showToast('Regra guardada')
       onReload()
     } catch {
@@ -672,7 +672,7 @@ function TabRegras({
 
   async function toggleActive(r: PriceRule) {
     try {
-      await db.savePriceRule({ ...r, ativo: !r.ativo })
+      await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...r, ativo: !r.ativo }) })
       showToast(r.ativo ? 'Regra desativada' : 'Regra ativada')
       onReload()
     } catch {
@@ -949,7 +949,7 @@ function TabTarifas({
 
   async function handleSave(t: Tarifa) {
     try {
-      await db.saveTarifa(t)
+      await fetch('/api/tarifas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(t) })
       showToast('Tarifa guardada')
       onReload()
     } catch { showToast('Erro ao guardar', false) }
@@ -966,7 +966,7 @@ function TabTarifas({
 
   async function toggleActive(t: Tarifa) {
     try {
-      await db.saveTarifa({ ...t, ativo: !t.ativo })
+      await fetch('/api/tarifas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...t, ativo: !t.ativo }) })
       showToast(t.ativo ? 'Tarifa desativada' : 'Tarifa ativada')
       onReload()
     } catch { showToast('Erro', false) }
@@ -1117,7 +1117,7 @@ function TabPlataformas({
       criado_em: existing?.criado_em ?? new Date().toISOString(),
     }
     try {
-      await db.savePlatformRate(rate)
+      await fetch('/api/platform-rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rate) })
       showToast(`${SOURCE_LABEL[plat]} atualizado`)
       onReload()
     } catch { showToast('Erro ao guardar', false) }
@@ -1309,7 +1309,7 @@ function TabMassa({
           const prop = props.find(p => p.id === pid)!
           rule.preco_noite = prop.preco_base + v
         }
-        await db.savePriceRule(rule)
+        await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
         await db.logPriceChange(pid, 'bulk_update', `Atualização em massa: ${nome.trim()}`, undefined, { rule })
       }
       showToast(`${selectedProps.length} propriedade(s) atualizadas`)

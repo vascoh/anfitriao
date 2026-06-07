@@ -129,7 +129,8 @@ export default function DocumentosPage() {
         sexo: data.sexo ?? guest.sexo,
         pais_emissao: data.pais_emissao ?? guest.pais_emissao,
       }
-      await db.saveGuest(updated)
+      const res = await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      if (!res.ok) throw new Error('Erro ao guardar')
       setGuests(prev => prev.map(g => g.id === selectedGuestId ? updated : g))
       setApplied(true)
       setTimeout(() => setApplied(false), 3000)

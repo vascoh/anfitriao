@@ -60,7 +60,8 @@ export default function EditarReservaPage() {
         id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: 'Reserva editada manualmente'
       }],
     }
-    await db.saveBooking(updated)
+    const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    if (!res.ok) throw new Error('Erro ao guardar reserva')
     router.push(`/reservas/${id}`)
   }
 

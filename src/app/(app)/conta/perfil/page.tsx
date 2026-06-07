@@ -52,7 +52,8 @@ export default function PerfilPage() {
         slug: slug.trim() || undefined,
         owner_id: ownerId,
       }
-      await db.saveWebsiteSettings(settings, ownerId)
+      const res = await fetch('/api/website-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+      if (!res.ok) throw new Error()
       toast.success('Perfil guardado')
     } catch {
       toast.error('Erro ao guardar perfil')

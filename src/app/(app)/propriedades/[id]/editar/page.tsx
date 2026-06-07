@@ -125,7 +125,7 @@ export default function EditarPropriedadePage() {
         instrucoes_checkin: instrucoesCheckin.trim(), regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
       }
-      await db.saveProperty(updated)
+      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
       const res = await fetch('/api/ical-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -170,7 +170,8 @@ export default function EditarPropriedadePage() {
         regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
       }
-      await db.saveProperty(updated)
+      const saveRes = await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      if (!saveRes.ok) throw new Error()
       toast.success('Propriedade atualizada')
       router.push(`/propriedades/${id}`)
     } catch {

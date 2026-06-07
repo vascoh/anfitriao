@@ -79,7 +79,8 @@ export default function HospedeDetailPage() {
       tags,
     }
     try {
-      await db.saveGuest(updated)
+      const res = await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      if (!res.ok) throw new Error()
       setGuest(updated)
       setEditing(false)
     } catch {

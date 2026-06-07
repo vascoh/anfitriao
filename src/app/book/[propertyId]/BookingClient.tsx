@@ -11,7 +11,6 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights } from '@/lib/utils'
-import { db } from '@/lib/db'
 import { addDays, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, WebsiteSettings, PriceRule, Tarifa, PlatformRate } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -307,35 +306,42 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     try {
       const guestId = uuid()
       const bookingId = uuid()
-      await db.saveGuest({
-        id: guestId,
-        nome: nome.trim(),
-        email: email.trim(),
-        telefone: telefone.trim() || undefined,
-        tags: ['novo'],
-        notas: notas.trim() || undefined,
-        criado_em: new Date().toISOString(),
+      const bookRes = await fetch('/api/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest: {
+            id: guestId,
+            nome: nome.trim(),
+            email: email.trim(),
+            telefone: telefone.trim() || undefined,
+            tags: ['novo'],
+            notas: notas.trim() || undefined,
+            criado_em: new Date().toISOString(),
+          },
+          booking: {
+            id: bookingId,
+            propriedade_id: prop.id,
+            hospede_id: guestId,
+            check_in: checkIn,
+            check_out: checkOut,
+            num_hospedes: numHospedes,
+            estado: 'pendente',
+            origem: 'direto',
+            preco_total: total,
+            preco_pago: 0,
+            notas: notas.trim() || undefined,
+            criado_em: new Date().toISOString(),
+            historico: [{
+              id: uuid(),
+              data: new Date().toISOString(),
+              tipo: 'criada',
+              descricao: 'Reserva criada via website direto',
+            }],
+          },
+        }),
       })
-      await db.saveBooking({
-        id: bookingId,
-        propriedade_id: prop.id,
-        hospede_id: guestId,
-        check_in: checkIn,
-        check_out: checkOut,
-        num_hospedes: numHospedes,
-        estado: 'pendente',
-        origem: 'direto',
-        preco_total: total,
-        preco_pago: 0,
-        notas: notas.trim() || undefined,
-        criado_em: new Date().toISOString(),
-        historico: [{
-          id: uuid(),
-          data: new Date().toISOString(),
-          tipo: 'criada',
-          descricao: 'Reserva criada via website direto',
-        }],
-      })
+      if (!bookRes.ok) throw new Error('Erro ao criar reserva')
       fetch('/api/notify-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

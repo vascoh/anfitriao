@@ -139,7 +139,7 @@ export default function ReservaDetailPage() {
   async function applyTransition(to: BookingStatus, nota?: string) {
     if (!booking || !canTransition(booking.estado, to)) return
     const updated = transitionBooking(booking, to, nota)
-    await db.saveBooking(updated)
+    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setBooking(updated)
     const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
       confirmada: 'Reserva confirmada',
@@ -165,7 +165,7 @@ export default function ReservaDetailPage() {
       notas: note.trim(),
       historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: `Nota: ${note.trim()}` }],
     }
-    await db.saveBooking(updated)
+    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setBooking(updated)
     setNote('')
     setShowNote(false)
@@ -187,7 +187,7 @@ export default function ReservaDetailPage() {
         descricao: `Pagamento registado: ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)}`,
       }],
     }
-    await db.saveBooking(updated)
+    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setBooking(updated)
     setPaymentAmount('')
     setPaymentSaved(true)

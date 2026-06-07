@@ -6,11 +6,11 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
-import { db } from '@/lib/db'
 import type { Guest } from '@/lib/types'
 
 export default function NovoHospedePage() {
   const router = useRouter()
+  // useUser not imported to keep this light — owner_id added server-side via /api/guests
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -32,7 +32,8 @@ export default function NovoHospedePage() {
         tags: ['novo'],
         criado_em: new Date().toISOString(),
       }
-      await db.saveGuest(g)
+      const res = await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(g) })
+      if (!res.ok) throw new Error()
       toast.success('Hóspede criado com sucesso')
       router.push(`/hospedes/${g.id}`)
     } catch {
