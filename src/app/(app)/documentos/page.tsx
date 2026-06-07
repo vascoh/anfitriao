@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown, Download } from 'lucide-react'
-import { db } from '@/lib/db'
 import { fetchGuests } from '@/lib/fetcher'
 import type { Guest } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'

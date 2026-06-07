@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { db } from '@/lib/db'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
 import { occupancyForMonth } from '@/lib/reservations'

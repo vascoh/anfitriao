@@ -7,7 +7,6 @@ import {
   Globe, Percent, Euro, Calendar, Check, X,
   TrendingUp, TrendingDown, BarChart3, Settings2, RefreshCw,
 } from 'lucide-react'
-import { db } from '@/lib/db'
 import { fetchProperties } from '@/lib/fetcher'
 import { getPriceForDay } from '@/lib/reservations'
 import { fmtMoney, uuid } from '@/lib/utils'

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Copy, Check, AlertCircle, ChevronDown } from 'lucide-react'
-import { db } from '@/lib/db'
 import { fetchProperties } from '@/lib/fetcher'
 import type { Property } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'

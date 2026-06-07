@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { db } from '@/lib/db'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Guest, Booking, Property, GuestTag } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
