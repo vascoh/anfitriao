@@ -173,7 +173,7 @@ function TabVisao({
     }
     try {
       await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-      await db.logPriceChange(p.id, 'base_price_changed', `Preço base alterado de €${p.preco_base} para €${updated.preco_base}`, prev, { preco_base: updated.preco_base, taxa_limpeza: updated.taxa_limpeza })
+      fetch('/api/price-change-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ propertyId: p.id, tipo: 'base_price_changed', descricao: `Preço base alterado de €${p.preco_base} para €${updated.preco_base}`, dadosAnteriores: prev, dadosNovos: { preco_base: updated.preco_base, taxa_limpeza: updated.taxa_limpeza } }) }).catch(() => {})
       showToast('Preço atualizado')
       onReload()
     } catch {
@@ -662,7 +662,7 @@ function TabRegras({
 
   async function handleDelete(r: PriceRule) {
     try {
-      await db.deletePriceRule(r.id)
+      await fetch(`/api/price-rules?id=${r.id}`, { method: 'DELETE' })
       showToast('Regra eliminada')
       onReload()
     } catch {
@@ -958,7 +958,7 @@ function TabTarifas({
 
   async function handleDelete(t: Tarifa) {
     try {
-      await db.deleteTarifa(t.id)
+      await fetch(`/api/tarifas?id=${t.id}`, { method: 'DELETE' })
       showToast('Tarifa eliminada')
       onReload()
     } catch { showToast('Erro ao eliminar', false) }
@@ -1310,7 +1310,7 @@ function TabMassa({
           rule.preco_noite = prop.preco_base + v
         }
         await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
-        await db.logPriceChange(pid, 'bulk_update', `Atualização em massa: ${nome.trim()}`, undefined, { rule })
+        fetch('/api/price-change-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ propertyId: pid, tipo: 'bulk_update', descricao: `Atualização em massa: ${nome.trim()}`, dadosNovos: { rule } }) }).catch(() => {})
       }
       showToast(`${selectedProps.length} propriedade(s) atualizadas`)
       setApplied(true)

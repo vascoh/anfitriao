@@ -209,7 +209,7 @@ export default function ReservaDetailPage() {
   async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); return }
     if (!booking) return
-    await db.deleteBooking(booking.id)
+    await fetch(`/api/bookings?id=${booking.id}`, { method: 'DELETE' })
     router.push('/reservas')
   }
 

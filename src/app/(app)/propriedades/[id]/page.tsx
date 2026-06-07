@@ -79,7 +79,7 @@ export default function PropriedadeDetailPage() {
       setTimeout(() => setConfirmDelete(false), 3000)
       return
     }
-    await db.deleteProperty(id)
+    await fetch(`/api/properties?id=${id}`, { method: 'DELETE' })
     router.push('/propriedades')
   }
 
