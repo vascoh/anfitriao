@@ -1,5 +1,8 @@
 import Link from 'next/link'
-import { db } from '@/lib/db'
+import {
+  adminGetProperties, adminGetWebsiteSettings, adminGetBookings,
+  adminGetPriceRules, adminGetTarifas, adminGetPlatformRates, adminGetPropertyById,
+} from '@/lib/db-admin'
 import { blockedDates } from '@/lib/reservations'
 import type { WebsiteSettings } from '@/lib/types'
 import BookingClient from './BookingClient'
@@ -18,21 +21,18 @@ const DEFAULT_WEBSITE: WebsiteSettings = {
 export default async function BookPropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params
 
-  const [propsR, wsR, bookingsR, rulesR, tarsR, ratesR] = await Promise.allSettled([
-    db.getProperties(),
-    db.getWebsiteSettings(),
-    db.getBookings(),
-    db.getPriceRules(),
-    db.getTarifas(),
-    db.getPlatformRates(),
-  ])
+  // Resolve the property first to scope all subsequent queries by owner_id
+  const prop = await adminGetPropertyById(propertyId)
+  const ownerId = prop?.owner_id as string | undefined
 
-  const props = propsR.status === 'fulfilled' ? propsR.value : []
-  const ws = wsR.status === 'fulfilled' ? wsR.value : DEFAULT_WEBSITE
-  const bookings = bookingsR.status === 'fulfilled' ? bookingsR.value : []
-  const rules = rulesR.status === 'fulfilled' ? rulesR.value : []
-  const tars = tarsR.status === 'fulfilled' ? tarsR.value : []
-  const rates = ratesR.status === 'fulfilled' ? ratesR.value : []
+  const [props, ws, bookings, rules, tars, rates] = await Promise.all([
+    adminGetProperties(ownerId),
+    adminGetWebsiteSettings(ownerId),
+    adminGetBookings(ownerId),
+    adminGetPriceRules(ownerId),
+    adminGetTarifas(ownerId),
+    adminGetPlatformRates(ownerId),
+  ])
 
   if (!ws.enabled) {
     return (
@@ -41,8 +41,6 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
       </div>
     )
   }
-
-  const prop = props.find(p => p.id === propertyId) ?? null
 
   if (!prop || !prop.ativo) {
     return (

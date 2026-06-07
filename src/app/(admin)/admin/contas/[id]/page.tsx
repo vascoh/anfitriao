@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getAccountById } from '@/lib/accounts'
-import { supabase } from '@/lib/supabase'
+import { createAdminClient } from '@/lib/supabase'
 import { EditAccountForm } from './EditAccountForm'
 import type { AccountEstado, AccountPlano } from '@/lib/accounts'
+
+const supabase = createAdminClient()
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

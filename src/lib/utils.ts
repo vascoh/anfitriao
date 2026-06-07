@@ -42,3 +42,12 @@ export function addDays(iso: string, n: number): string {
   d.setDate(d.getDate() + n)
   return d.toISOString().slice(0, 10)
 }
+
+export function escHtml(s: string | null | undefined): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}

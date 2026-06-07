@@ -14,6 +14,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/(auth)(.*)',
   // APIs públicas
+  '/api/book',
   '/api/ical(.*)',
   '/api/ical-proxy(.*)',
   '/api/checkin/(.*)',

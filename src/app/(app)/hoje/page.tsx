@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
-import { db } from '@/lib/db'
+import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
 import type { Booking, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 
@@ -84,8 +84,8 @@ export default function HojePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([db.getBookings(ownerId), db.getGuests(ownerId), db.getProperties(ownerId), db.getWebsiteSettings(ownerId)])
-      .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); setSettings(s) })
+    Promise.all([fetchBookings(), fetchGuests(), fetchProperties(), fetchSettings()])
+      .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); if (s) setSettings(s) })
       .finally(() => setLoaded(true))
   }, [ownerId])
 

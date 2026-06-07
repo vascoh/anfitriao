@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { db } from '@/lib/db'
-import { fmtDate } from '@/lib/utils'
+import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { fmtDate, escHtml } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {
@@ -11,15 +11,13 @@ export async function POST(req: NextRequest) {
   const { bookingId } = await req.json()
   if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
 
-  const [booking, settings] = await Promise.all([
-    db.getBookingById(bookingId),
-    db.getWebsiteSettings(),
-  ])
+  const booking = await adminGetBookingById(bookingId)
   if (!booking) return NextResponse.json({ ok: false, error: 'not found' }, { status: 404 })
 
-  const [guest, prop] = await Promise.all([
-    booking.hospede_id ? db.getGuestById(booking.hospede_id) : Promise.resolve(null),
-    booking.propriedade_id ? db.getPropertyById(booking.propriedade_id) : Promise.resolve(null),
+  const [guest, prop, settings] = await Promise.all([
+    booking.hospede_id ? adminGetGuestById(booking.hospede_id) : Promise.resolve(null),
+    booking.propriedade_id ? adminGetPropertyById(booking.propriedade_id) : Promise.resolve(null),
+    adminGetWebsiteSettings(booking.owner_id),
   ])
   const hostEmail = settings.email
   if (!hostEmail) return NextResponse.json({ ok: true, skipped: 'no_host_email' })
@@ -51,13 +49,13 @@ export async function POST(req: NextRequest) {
 
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;">
         <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#166534;">
-          ${guest?.nome ?? '—'}
+          ${escHtml(guest?.nome ?? '—')}
           ${sibaComplete ? ' <span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px;">SIBA ✓</span>' : ''}
         </p>
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;width:40%;">Propriedade</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${prop?.nome ?? '—'}</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(prop?.nome ?? '—')}</td>
           </tr>
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;">Check-in</td>
@@ -70,12 +68,12 @@ export async function POST(req: NextRequest) {
           ${guest?.numero_documento ? `
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;">Documento</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${guest.tipo_documento ?? ''} ${guest.numero_documento}</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(guest.tipo_documento ?? '')} ${escHtml(guest.numero_documento)}</td>
           </tr>` : ''}
           ${guest?.nacionalidade ? `
           <tr>
             <td style="padding:3px 0;color:#6b5c4e;">Nacionalidade</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${guest.nacionalidade}</td>
+            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(guest.nacionalidade)}</td>
           </tr>` : ''}
         </table>
       </div>

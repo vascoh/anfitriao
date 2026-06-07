@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { db } from '@/lib/db'
-import { fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { adminGetBookingById, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {
@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
     propertyName, checkIn, checkOut, numHospedes, total, notas,
   } = await req.json()
 
-  const settings = await db.getWebsiteSettings()
+  const booking = bookingId ? await adminGetBookingById(bookingId) : null
+  const settings = await adminGetWebsiteSettings(booking?.owner_id)
   const hostTo = process.env.NOTIFY_EMAIL || settings.email
   const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
@@ -92,7 +93,7 @@ function buildHostEmail(p: HostEmailProps): string {
     <div style="height:4px;background:#C2714F;"></div>
     <div style="padding:32px 32px 24px;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Nova reserva pendente</p>
-      <h1 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">${p.propertyName}</h1>
+      <h1 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">${escHtml(p.propertyName)}</h1>
 
       <div style="background:#f9f5f0;border-radius:8px;padding:20px;margin-bottom:24px;">
         <table style="width:100%;border-collapse:collapse;">
@@ -121,15 +122,15 @@ function buildHostEmail(p: HostEmailProps): string {
 
       <div style="margin-bottom:${p.notas ? '20px' : '24px'};">
         <p style="margin:0 0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Hóspede</p>
-        <p style="margin:0 0 3px;font-size:15px;font-weight:600;color:#1a1209;">${p.guestName}</p>
-        <p style="margin:0 0 3px;font-size:13px;color:#6b5c4e;">${p.guestEmail}</p>
-        ${p.guestPhone ? `<p style="margin:0;font-size:13px;color:#6b5c4e;">${p.guestPhone}</p>` : ''}
+        <p style="margin:0 0 3px;font-size:15px;font-weight:600;color:#1a1209;">${escHtml(p.guestName)}</p>
+        <p style="margin:0 0 3px;font-size:13px;color:#6b5c4e;">${escHtml(p.guestEmail)}</p>
+        ${p.guestPhone ? `<p style="margin:0;font-size:13px;color:#6b5c4e;">${escHtml(p.guestPhone)}</p>` : ''}
       </div>
 
       ${p.notas ? `
       <div style="margin-bottom:24px;background:#fffbf5;border:1px solid #ede8e0;border-radius:8px;padding:14px 16px;">
         <p style="margin:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Notas do hóspede</p>
-        <p style="margin:0;font-size:13px;color:#6b5c4e;line-height:1.55;">${p.notas}</p>
+        <p style="margin:0;font-size:13px;color:#6b5c4e;line-height:1.55;">${escHtml(p.notas)}</p>
       </div>` : ''}
 
       <a href="${p.baseUrl}/reservas/${p.bookingId}"
@@ -156,10 +157,10 @@ function buildGuestEmail(p: GuestEmailProps): string {
     <div style="padding:32px 32px 24px;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Pedido de reserva</p>
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">Recebemos o teu pedido!</h1>
-      <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">Olá ${firstName}, o teu pedido de reserva em <strong>${p.propertyName}</strong> foi recebido com sucesso. O anfitrião irá confirmar em breve.</p>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">Olá ${escHtml(firstName)}, o teu pedido de reserva em <strong>${escHtml(p.propertyName)}</strong> foi recebido com sucesso. O anfitrião irá confirmar em breve.</p>
 
       <div style="background:#f9f5f0;border-radius:8px;padding:20px;margin-bottom:24px;">
-        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1209;">${p.propertyName}</p>
+        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1209;">${escHtml(p.propertyName)}</p>
         <table style="width:100%;border-collapse:collapse;">
           <tr>
             <td style="padding:5px 0;font-size:12px;color:#9a8070;width:42%;">Check-in</td>
@@ -187,18 +188,18 @@ function buildGuestEmail(p: GuestEmailProps): string {
       ${p.notas ? `
       <div style="margin-bottom:24px;background:#fffbf5;border:1px solid #ede8e0;border-radius:8px;padding:14px 16px;">
         <p style="margin:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">As tuas notas</p>
-        <p style="margin:0;font-size:13px;color:#6b5c4e;line-height:1.55;">${p.notas}</p>
+        <p style="margin:0;font-size:13px;color:#6b5c4e;line-height:1.55;">${escHtml(p.notas)}</p>
       </div>` : ''}
 
       <div style="background:#f0f7ff;border:1px solid #cce0f5;border-radius:8px;padding:16px;margin-bottom:24px;">
         <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#1a5a8a;">Próximos passos</p>
         <p style="margin:0 0 4px;font-size:13px;color:#2c6da4;line-height:1.5;">O anfitrião irá confirmar a reserva e combinar o pagamento diretamente contigo.</p>
-        ${p.hostContact ? `<p style="margin:4px 0 0;font-size:13px;color:#2c6da4;">Contacto: <strong>${p.hostContact}</strong></p>` : ''}
+        ${p.hostContact ? `<p style="margin:4px 0 0;font-size:13px;color:#2c6da4;">Contacto: <strong>${escHtml(p.hostContact)}</strong></p>` : ''}
       </div>
 
       <div style="border-top:1px solid #ede8e0;padding-top:18px;">
         <p style="margin:0;font-size:12px;color:#9a8070;line-height:1.6;">
-          Este pedido foi feito diretamente com <strong>${p.hostName}</strong>, sem taxas de intermediários.
+          Este pedido foi feito diretamente com <strong>${escHtml(p.hostName)}</strong>, sem taxas de intermediários.
           Ao reservar diretamente, garantes o melhor preço e contacto direto com o anfitrião.
         </p>
       </div>

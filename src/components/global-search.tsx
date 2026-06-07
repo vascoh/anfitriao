@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search, CalendarCheck2, Users, Building2, X } from 'lucide-react'
-import { db } from '@/lib/db'
+import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { fmtDate } from '@/lib/utils'
 import { STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
 import type { Booking, Guest, Property } from '@/lib/types'
@@ -67,9 +67,9 @@ export function GlobalSearch() {
 
   // Load data once on mount
   useEffect(() => {
-    db.getBookings().then(setBookings)
-    db.getGuests().then(setGuests)
-    db.getProperties().then(setProps)
+    fetchBookings().then(setBookings)
+    fetchGuests().then(setGuests)
+    fetchProperties().then(setProps)
   }, [])
 
   const results = search(q, bookings, guests, props)

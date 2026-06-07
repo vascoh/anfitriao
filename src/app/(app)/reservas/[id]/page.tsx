@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fmtDate, fmtMoney, nights, uuid } from '@/lib/utils'
-import { db } from '@/lib/db'
+import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
@@ -122,15 +122,12 @@ export default function ReservaDetailPage() {
   const [checkinCopied, setCheckinCopied] = useState(false)
 
   async function load() {
-    const b = await db.getBookingById(id)
+    const [bookings, guests, props] = await Promise.all([fetchBookings(), fetchGuests(), fetchProperties()])
+    const b = bookings.find(x => x.id === id) ?? null
     setBooking(b)
     if (b) {
-      const [g, p] = await Promise.all([
-        b.hospede_id ? db.getGuestById(b.hospede_id) : Promise.resolve(null),
-        b.propriedade_id ? db.getPropertyById(b.propriedade_id) : Promise.resolve(null),
-      ])
-      setGuest(g)
-      setProp(p)
+      setGuest(b.hospede_id ? (guests.find(g => g.id === b.hospede_id) ?? null) : null)
+      setProp(b.propriedade_id ? (props.find(p => p.id === b.propriedade_id) ?? null) : null)
     }
   }
 
@@ -139,7 +136,7 @@ export default function ReservaDetailPage() {
   async function applyTransition(to: BookingStatus, nota?: string) {
     if (!booking || !canTransition(booking.estado, to)) return
     const updated = transitionBooking(booking, to, nota)
-    await db.saveBooking(updated)
+    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setBooking(updated)
     const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
       confirmada: 'Reserva confirmada',
@@ -165,7 +162,7 @@ export default function ReservaDetailPage() {
       notas: note.trim(),
       historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: `Nota: ${note.trim()}` }],
     }
-    await db.saveBooking(updated)
+    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setBooking(updated)
     setNote('')
     setShowNote(false)
@@ -187,7 +184,7 @@ export default function ReservaDetailPage() {
         descricao: `Pagamento registado: ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)}`,
       }],
     }
-    await db.saveBooking(updated)
+    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
     setBooking(updated)
     setPaymentAmount('')
     setPaymentSaved(true)
@@ -209,7 +206,7 @@ export default function ReservaDetailPage() {
   async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); return }
     if (!booking) return
-    await db.deleteBooking(booking.id)
+    await fetch(`/api/bookings?id=${booking.id}`, { method: 'DELETE' })
     router.push('/reservas')
   }
 

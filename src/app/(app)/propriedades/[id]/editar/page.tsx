@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Plus, Trash2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { db } from '@/lib/db'
+import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType, IcalFeed, BookingSource } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -68,7 +68,7 @@ export default function EditarPropriedadePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getProperties(ownerId).then(all => {
+    fetchProperties().then(all => {
       const p = all.find(x => x.id === id)
       if (!p) { router.push('/propriedades'); return }
       setProp(p)
@@ -125,7 +125,7 @@ export default function EditarPropriedadePage() {
         instrucoes_checkin: instrucoesCheckin.trim(), regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
       }
-      await db.saveProperty(updated)
+      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
       const res = await fetch('/api/ical-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,7 +135,7 @@ export default function EditarPropriedadePage() {
       if (data.synced !== undefined) {
         setSyncResult(`${data.synced} reservas importadas`)
         // Reload feeds to get updated last_sync
-        const propsAll = await db.getProperties(ownerId)
+        const propsAll = await fetchProperties()
         const fresh = propsAll.find(x => x.id === id)
         if (fresh) setIcalFeeds(fresh.ical_feeds ?? [])
       } else {
@@ -170,7 +170,8 @@ export default function EditarPropriedadePage() {
         regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
       }
-      await db.saveProperty(updated)
+      const saveRes = await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      if (!saveRes.ok) throw new Error()
       toast.success('Propriedade atualizada')
       router.push(`/propriedades/${id}`)
     } catch {

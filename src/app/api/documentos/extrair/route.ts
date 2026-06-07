@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req)
+  const rl = checkRateLimit(`documentos:${ip}`, 5, 3_600_000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiados pedidos. Tenta mais tarde.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } },
+    )
+  }
+
   try {
     const form = await req.formData()
     const file = form.get('file') as File | null

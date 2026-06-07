@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { db } from '@/lib/db'
+import { fetchBookings } from '@/lib/fetcher'
 import { today } from '@/lib/utils'
 
 let cached = { count: 0, at: 0 }
@@ -17,7 +17,7 @@ export function useAlertsCount() {
     }
 
     let cancelled = false
-    db.getBookings().then(bookings => {
+    fetchBookings().then(bookings => {
       if (cancelled) return
       const t = today()
       const pendentes = bookings.filter(b => b.estado === 'pendente').length

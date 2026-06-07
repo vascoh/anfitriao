@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown } from 'lucide-react'
-import { db } from '@/lib/db'
+import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown, Download } from 'lucide-react'
+import { fetchGuests } from '@/lib/fetcher'
 import type { Guest } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
 
@@ -46,9 +46,36 @@ export default function DocumentosPage() {
   const [applied, setApplied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // SIBA export state
+  const currentYear = new Date().getFullYear()
+  const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0')
+  const [sibaFrom, setSibaFrom] = useState(`${currentYear}-${currentMonth}-01`)
+  const [sibaTo, setSibaTo] = useState(new Date().toISOString().slice(0, 10))
+  const [sibaExporting, setSibaExporting] = useState(false)
+
+  async function exportSIBA() {
+    setSibaExporting(true)
+    try {
+      const url = `/api/siba-export?from=${sibaFrom}&to=${sibaTo}`
+      const res = await fetch(url)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string }
+        alert(err.error ?? 'Erro ao exportar SIBA')
+        return
+      }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `siba-${sibaFrom}-${sibaTo}.csv`
+      a.click()
+    } finally {
+      setSibaExporting(false)
+    }
+  }
+
   useEffect(() => {
     if (!ownerId) return
-    db.getGuests(ownerId).then(setGuests)
+    fetchGuests().then(setGuests)
   }, [ownerId])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -102,7 +129,8 @@ export default function DocumentosPage() {
         sexo: data.sexo ?? guest.sexo,
         pais_emissao: data.pais_emissao ?? guest.pais_emissao,
       }
-      await db.saveGuest(updated)
+      const res = await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      if (!res.ok) throw new Error('Erro ao guardar')
       setGuests(prev => prev.map(g => g.id === selectedGuestId ? updated : g))
       setApplied(true)
       setTimeout(() => setApplied(false), 3000)
@@ -127,6 +155,32 @@ export default function DocumentosPage() {
       </header>
 
       <div className="flex flex-col gap-4 p-4">
+
+        {/* SIBA export */}
+        <div className="rounded-2xl border border-border bg-card p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Download className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm font-semibold">Export SIBA</p>
+          </div>
+          <p className="text-xs text-muted-foreground">Exporta os dados dos hóspedes no formato CSV para submissão ao portal SEF.</p>
+          <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-col gap-1 flex-1 min-w-28">
+              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">De</label>
+              <input type="date" value={sibaFrom} onChange={e => setSibaFrom(e.target.value)}
+                className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div className="flex flex-col gap-1 flex-1 min-w-28">
+              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Até</label>
+              <input type="date" value={sibaTo} onChange={e => setSibaTo(e.target.value)}
+                className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+          </div>
+          <button onClick={exportSIBA} disabled={sibaExporting || !sibaFrom || !sibaTo}
+            className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold disabled:opacity-40 active:opacity-80 transition-opacity">
+            <Download className="h-4 w-4" />
+            {sibaExporting ? 'A exportar...' : 'Exportar CSV'}
+          </button>
+        </div>
         <input
           ref={fileRef}
           type="file"

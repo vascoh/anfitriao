@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { db } from '@/lib/db'
-import { fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   if (!process.env.RESEND_API_KEY) {
@@ -11,15 +11,13 @@ export async function POST(req: NextRequest) {
   const { bookingId } = await req.json()
   if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
 
-  const [booking, settings] = await Promise.all([
-    db.getBookingById(bookingId),
-    db.getWebsiteSettings(),
-  ])
+  const booking = await adminGetBookingById(bookingId)
   if (!booking) return NextResponse.json({ ok: false, error: 'booking not found' }, { status: 404 })
 
-  const [guest, prop] = await Promise.all([
-    booking.hospede_id ? db.getGuestById(booking.hospede_id) : Promise.resolve(null),
-    booking.propriedade_id ? db.getPropertyById(booking.propriedade_id) : Promise.resolve(null),
+  const [guest, prop, settings] = await Promise.all([
+    booking.hospede_id ? adminGetGuestById(booking.hospede_id) : Promise.resolve(null),
+    booking.propriedade_id ? adminGetPropertyById(booking.propriedade_id) : Promise.resolve(null),
+    adminGetWebsiteSettings(booking.owner_id),
   ])
 
   if (!guest?.email) {
@@ -85,10 +83,10 @@ function buildConfirmationEmail(p: {
     <div style="padding:32px 32px 24px;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Reserva confirmada ✓</p>
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">A tua estadia está confirmada!</h1>
-      <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">Olá ${firstName}, a tua reserva em <strong>${p.propertyName}</strong> foi confirmada. Estamos a aguardar a tua chegada!</p>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">Olá ${escHtml(firstName)}, a tua reserva em <strong>${escHtml(p.propertyName)}</strong> foi confirmada. Estamos a aguardar a tua chegada!</p>
 
       <div style="background:#f9f5f0;border-radius:8px;padding:20px;margin-bottom:24px;">
-        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1209;">${p.propertyName}</p>
+        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1209;">${escHtml(p.propertyName)}</p>
         <table style="width:100%;border-collapse:collapse;">
           <tr>
             <td style="padding:5px 0;font-size:12px;color:#9a8070;width:42%;">Check-in</td>
@@ -116,7 +114,7 @@ function buildConfirmationEmail(p: {
       ${p.instrucoes ? `
       <div style="margin-bottom:24px;background:#fffbf5;border:1px solid #ede8e0;border-radius:8px;padding:16px;">
         <p style="margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Instruções de check-in</p>
-        <p style="margin:0;font-size:13px;color:#6b5c4e;line-height:1.6;">${p.instrucoes}</p>
+        <p style="margin:0;font-size:13px;color:#6b5c4e;line-height:1.6;">${escHtml(p.instrucoes)}</p>
       </div>` : ''}
 
       <a href="${p.checkinLink}"
@@ -126,8 +124,8 @@ function buildConfirmationEmail(p: {
       <p style="margin:0 0 24px;font-size:12px;color:#9a8070;text-align:center;">Demora menos de 1 minuto. Obrigatório por lei (SIBA/SEF).</p>
 
       <div style="border-top:1px solid #ede8e0;padding-top:18px;">
-        <p style="margin:0 0 4px;font-size:12px;color:#9a8070;">Anfitrião: <strong style="color:#1a1209;">${p.hostName}</strong></p>
-        ${p.hostContact ? `<p style="margin:0;font-size:12px;color:#9a8070;">Contacto: <strong style="color:#1a1209;">${p.hostContact}</strong></p>` : ''}
+        <p style="margin:0 0 4px;font-size:12px;color:#9a8070;">Anfitrião: <strong style="color:#1a1209;">${escHtml(p.hostName)}</strong></p>
+        ${p.hostContact ? `<p style="margin:0;font-size:12px;color:#9a8070;">Contacto: <strong style="color:#1a1209;">${escHtml(p.hostContact)}</strong></p>` : ''}
       </div>
     </div>
     <div style="padding:14px 32px;border-top:1px solid #ede8e0;background:#f9f5f0;">

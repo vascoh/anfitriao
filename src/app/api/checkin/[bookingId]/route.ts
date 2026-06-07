@@ -21,13 +21,16 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
     return NextResponse.json({ error: 'Esta reserva foi cancelada' }, { status: 410 })
   }
 
-  const [propRes, settingsRes, guestRes] = await Promise.all([
-    supabase.from('properties').select('nome, cidade, imagem_url').eq('id', booking.propriedade_id).single(),
-    supabase.from('website_settings').select('host_nome, logo_texto').eq('id', 1).single(),
+  const [propRes, guestRes] = await Promise.all([
+    supabase.from('properties').select('nome, cidade, imagem_url, owner_id').eq('id', booking.propriedade_id).single(),
     booking.hospede_id
       ? supabase.from('guests').select('nome, email, telefone, nacionalidade, numero_documento, data_nascimento, tipo_documento, sexo, pais_emissao, data_validade_doc').eq('id', booking.hospede_id).single()
       : Promise.resolve({ data: null }),
   ])
+
+  const settingsRes = propRes.data?.owner_id
+    ? await supabase.from('website_settings').select('host_nome, logo_texto').eq('owner_id', propRes.data.owner_id).maybeSingle()
+    : { data: null }
 
   const historico: Array<{ tipo: string; descricao: string }> = Array.isArray(booking.historico) ? booking.historico : []
   const jaSubmetido = historico.some(e => e.tipo === 'checkin_online')

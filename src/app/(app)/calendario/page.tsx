@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fmtDate } from '@/lib/utils'
-import { db } from '@/lib/db'
+import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Booking, Property } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/labels'
@@ -474,9 +474,9 @@ export default function CalendarioPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    db.getBookings(ownerId).then(setBookings)
-    db.getProperties(ownerId).then(setProperties)
-    db.getGuests(ownerId).then(g => setGuests(g.map(x => ({ id: x.id, nome: x.nome }))))
+    fetchBookings().then(setBookings)
+    fetchProperties().then(setProperties)
+    fetchGuests().then(g => setGuests(g.map(x => ({ id: x.id, nome: x.nome }))))
   }, [ownerId])
 
   return (

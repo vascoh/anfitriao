@@ -37,6 +37,7 @@ export interface Property {
   ical_feeds?: IcalFeed[]
   /** If set, this property is a room inside the parent property */
   parent_id?: string | null
+  owner_id?: string | null
 }
 
 export interface Guest {
@@ -54,6 +55,7 @@ export interface Guest {
   tags: GuestTag[]
   notas?: string
   criado_em: string
+  owner_id?: string
 }
 
 export interface BookingEvent {
@@ -95,6 +97,7 @@ export interface Booking {
   uid_externo?: string
   criado_em: string
   historico: BookingEvent[]
+  owner_id?: string
 }
 
 // --- Sistema de preços ---

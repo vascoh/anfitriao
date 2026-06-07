@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
-import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { today, fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 import { Resend } from 'resend'
 import { checkCronAuth } from '@/lib/cron-auth'
 const supabase = createAdminClient()
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   // Bookings with check-in in the next 3 days, confirmed/pendente, with balance
   const { data: bookings, error } = await supabase
     .from('bookings')
-    .select('id, hospede_id, propriedade_id, check_in, check_out, preco_total, preco_pago, historico')
+    .select('id, owner_id, hospede_id, propriedade_id, check_in, check_out, preco_total, preco_pago, historico')
     .in('estado', ['confirmada', 'pendente'])
     .gte('check_in', t)
     .lte('check_in', cutoffStr)
@@ -35,21 +35,17 @@ export async function GET(req: NextRequest) {
   const due = bookings.filter(b => b.preco_total > 0 && b.preco_pago < b.preco_total && b.hospede_id)
   if (due.length === 0) return NextResponse.json({ ok: true, sent: 0 })
 
-  const [{ data: guests }, { data: properties }, { data: settings }] = await Promise.all([
+  const ownerIds = [...new Set(due.map(b => b.owner_id).filter(Boolean))]
+  const [{ data: guests }, { data: properties }, { data: allSettings }] = await Promise.all([
     supabase.from('guests').select('id, nome, email').in('id', due.map(b => b.hospede_id)),
     supabase.from('properties').select('id, nome').in('id', [...new Set(due.map(b => b.propriedade_id))]),
-    supabase.from('website_settings').select('*').eq('id', 1).single(),
+    supabase.from('website_settings').select('owner_id, host_nome, nome, telefone, email').in('owner_id', ownerIds),
   ])
 
   const guestMap = new Map((guests ?? []).map(g => [g.id, g]))
   const propMap = new Map((properties ?? []).map(p => [p.id, p]))
+  const settingsMap = new Map((allSettings ?? []).map((s: Record<string, string>) => [s.owner_id, s]))
 
-  const hostName = (settings as { host_nome?: string; nome?: string } | null)?.host_nome
-    || (settings as { nome?: string } | null)?.nome
-    || 'O seu anfitrião'
-  const hostContact = (settings as { telefone?: string; email?: string } | null)?.telefone
-    || (settings as { email?: string } | null)?.email
-    || ''
   const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
   const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -65,6 +61,9 @@ export async function GET(req: NextRequest) {
     if (alreadySentToday) continue
 
     const prop = propMap.get(booking.propriedade_id)
+    const ownerSettings = settingsMap.get(booking.owner_id)
+    const hostName = ownerSettings?.host_nome || ownerSettings?.nome || 'O seu anfitrião'
+    const hostContact = ownerSettings?.telefone || ownerSettings?.email || ''
     const saldo = booking.preco_total - booking.preco_pago
     const numNights = nights(booking.check_in, booking.check_out)
     const firstName = guest.nome.split(' ')[0]
@@ -83,10 +82,10 @@ export async function GET(req: NextRequest) {
     <div style="padding:32px 32px 24px;">
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Lembrete automático</p>
       <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#1a1209;line-height:1.2;">Pagamento pendente</h1>
-      <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">Olá ${firstName}, o teu check-in em <strong>${prop?.nome ?? 'Alojamento'}</strong> é daqui a poucos dias. Existe ainda um valor em aberto.</p>
+      <p style="margin:0 0 24px;font-size:14px;color:#6b5c4e;line-height:1.55;">Olá ${escHtml(firstName)}, o teu check-in em <strong>${escHtml(prop?.nome ?? 'Alojamento')}</strong> é daqui a poucos dias. Existe ainda um valor em aberto.</p>
 
       <div style="background:#f9f5f0;border-radius:8px;padding:20px;margin-bottom:24px;">
-        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1209;">${prop?.nome ?? 'Alojamento'}</p>
+        <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1a1209;">${escHtml(prop?.nome ?? 'Alojamento')}</p>
         <table style="width:100%;border-collapse:collapse;">
           <tr><td style="padding:5px 0;font-size:12px;color:#9a8070;width:42%;">Check-in</td><td style="padding:5px 0;font-size:14px;font-weight:600;color:#1a1209;">${fmtDate(booking.check_in)}</td></tr>
           <tr><td style="padding:5px 0;font-size:12px;color:#9a8070;">Check-out</td><td style="padding:5px 0;font-size:14px;font-weight:600;color:#1a1209;">${fmtDate(booking.check_out)}</td></tr>
@@ -103,8 +102,8 @@ export async function GET(req: NextRequest) {
       <p style="margin:0 0 24px;font-size:13px;color:#6b5c4e;line-height:1.6;">Por favor entra em contacto para combinar o pagamento antes da chegada. Podes responder a este email ou contactar diretamente.</p>
 
       <div style="border-top:1px solid #ede8e0;padding-top:18px;">
-        <p style="margin:0 0 4px;font-size:12px;color:#9a8070;">Anfitrião: <strong style="color:#1a1209;">${hostName}</strong></p>
-        ${hostContact ? `<p style="margin:0;font-size:12px;color:#9a8070;">Contacto: <strong style="color:#1a1209;">${hostContact}</strong></p>` : ''}
+        <p style="margin:0 0 4px;font-size:12px;color:#9a8070;">Anfitrião: <strong style="color:#1a1209;">${escHtml(hostName)}</strong></p>
+        ${hostContact ? `<p style="margin:0;font-size:12px;color:#9a8070;">Contacto: <strong style="color:#1a1209;">${escHtml(hostContact)}</strong></p>` : ''}
       </div>
     </div>
     <div style="padding:14px 32px;border-top:1px solid #ede8e0;background:#f9f5f0;">
