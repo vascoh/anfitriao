@@ -33,28 +33,64 @@ _Iniciado: 2026-06-06_
 ### [2026-06-06] Documentação
 - ✅ `docs/HANDOFF.md` criado — estado completo, env vars, o que falta, passos de lançamento
 
+### [2026-06-09] SEO, segurança e infraestrutura Clerk JWT
+- ✅ `og:image` dinâmico em `/r/[slug]` — título do site do anfitrião, OG + Twitter cards
+- ✅ `/r/[slug]` `robots: noindex` (site público de reservas não deve aparecer em resultados gerais)
+- ✅ `createUserClient(token)` em `lib/supabase.ts` — cliente Supabase com Clerk JWT para RLS
+- ✅ `lib/supabase-server.ts` — `getSupabaseForRequest()` helper server-only; usa JWT quando disponível, fallback para admin client + filtro manual
+- ⚠️ Tabelas `fs_deals`, `fs_alerts`, `fs_price_history` sem RLS — ver secção Segurança abaixo
+
 ---
 
 ## Backlog (por prioridade)
 
 ### 🔴 Crítico (bloqueia lançamento público)
 - [ ] Configurar Clerk JWT template no Supabase Dashboard → o RLS por owner_id só actua em chamadas client-side com JWT Clerk válido
+  - Clerk Dashboard → Configure → JWT Templates → New → "Supabase"
+  - Supabase Dashboard → Authentication → JWT Secret → copiar e colar no Clerk template
 - [ ] Testar fluxo completo onboarding (novo user → propriedade → reserva → check-in)
 - [ ] `MAINTENANCE_MODE=false` em Vercel → redeploy
+- [ ] Resolver RLS das tabelas `fs_*` (ver secção Segurança)
 
 ### 🟡 Importante
-- [ ] Onboarding wizard para novos anfitriões
-- [ ] Perfil do anfitrião editável (`/conta/perfil`)
-- [ ] Export SIBA (XML/CSV para portal SEF) — obrigação legal
+- [ ] Onboarding wizard para novos anfitriões (melhorar `/conta/bem-vindo` com estado real)
+- [x] Perfil do anfitrião editável (`/conta/perfil`) ✅
+- [x] Export SIBA (CSV para portal SEF) ✅
 
 ### 🔵 UX/UI
-- [ ] Página 404 melhorada
-- [ ] og:image dinâmico para landing page
+- [ ] Página 404 melhorada (já existe, funcional)
+- [x] og:image dinâmico ✅
 
 ### ⚪ Funcionalidades futuras
 - [ ] Subdomain routing (`*.anfitrioes.pt`)
 - [ ] Push notifications (PWA)
 - [ ] Notificações email (nova reserva, check-in, pagamento)
+
+---
+
+## ⚠️ Segurança — Tabelas `fs_*` sem RLS
+
+As tabelas `fs_deals`, `fs_alerts`, `fs_price_history` (provavelmente de outro projecto no mesmo Supabase) têm RLS **desactivado**. Qualquer pessoa com a anon key pode ler e modificar todos os dados.
+
+**SQL para activar RLS (ATENÇÃO: activa RLS mas bloqueia todo o acesso sem políticas definidas):**
+
+```sql
+-- Só executar depois de definir políticas adequadas!
+ALTER TABLE public.fs_deals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fs_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fs_price_history ENABLE ROW LEVEL SECURITY;
+```
+
+**Opção mais segura** — activar RLS com política de bloqueio total (se estas tabelas não são usadas pelo anfitriao):
+```sql
+ALTER TABLE public.fs_deals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fs_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fs_price_history ENABLE ROW LEVEL SECURITY;
+-- Sem políticas = acesso bloqueado para anon e authenticated
+-- service_role ainda tem acesso
+```
+
+Se estas tabelas são do projecto `luxe_radar`, adicionar políticas adequadas antes de activar RLS.
 
 ---
 

@@ -21,3 +21,22 @@ export function createAdminClient() {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 }
+
+/**
+ * Creates a Supabase client authenticated with a Clerk JWT.
+ * The JWT must come from `getToken({ template: 'supabase' })` in Clerk.
+ * Enables RLS policies that use requesting_owner_id() to filter by owner.
+ *
+ * Requires: Clerk Dashboard → JWT Templates → "supabase" template configured,
+ * and Supabase Dashboard → Authentication → JWT Secret set to match Clerk's key.
+ */
+export function createUserClient(clerkToken: string) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      global: { headers: { Authorization: `Bearer ${clerkToken}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  )
+}

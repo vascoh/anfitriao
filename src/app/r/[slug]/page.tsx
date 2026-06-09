@@ -10,15 +10,36 @@ import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
+
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   if (!settings) return { title: 'Reservas' }
+
+  const title = settings.nome
+  const description = settings.descricao || `Reserve diretamente em ${settings.nome}. Sem comissões.`
+  const ogImage = `${APP_URL}/api/og?title=${encodeURIComponent(title)}`
+
   return {
-    title: settings.nome,
-    description: settings.descricao || `Reserve diretamente em ${settings.nome}`,
+    title,
+    description,
+    openGraph: {
+      type: 'website',
+      locale: 'pt_PT',
+      title,
+      description,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
+    robots: { index: false, follow: false },
   }
 }
 
