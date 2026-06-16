@@ -213,12 +213,13 @@ export default function PropriedadesPage() {
   const [allProps, setAllProps] = useState<Property[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
-    fetchProperties().then(setAllProps)
-    fetchBookings().then(setBookings)
-    fetchGuests().then(setGuests)
+    Promise.all([fetchProperties(), fetchBookings(), fetchGuests()])
+      .then(([p, b, g]) => { setAllProps(p); setBookings(b); setGuests(g) })
+      .finally(() => setLoaded(true))
   }, [ownerId])
 
   // Separate parents from rooms
@@ -247,7 +248,29 @@ export default function PropriedadesPage() {
       </header>
 
       <div className="flex flex-col gap-4 p-4">
-        {allProps.length === 0 ? (
+        {!loaded ? (
+          <div className="flex flex-col gap-4 animate-pulse">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="h-1.5 w-full bg-muted" />
+                <div className="p-4 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-2 flex-1">
+                      <div className="h-4 w-40 rounded bg-muted" />
+                      <div className="h-3 w-28 rounded bg-muted" />
+                    </div>
+                    <div className="h-3 w-3 rounded-full bg-muted" />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="h-3 w-20 rounded bg-muted" />
+                    <div className="h-3 w-16 rounded bg-muted" />
+                  </div>
+                  <div className="h-9 w-full rounded-lg bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : allProps.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
             <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
               <BedDouble className="h-8 w-8 text-primary" />

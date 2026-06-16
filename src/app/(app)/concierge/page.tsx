@@ -186,7 +186,7 @@ export default function ConciergePage() {
                 key={t.id}
                 type="button"
                 onClick={() => applyTemplate(t.text)}
-                className="px-2.5 py-1 rounded-lg text-xs font-medium bg-muted/60 text-foreground/70 hover:bg-muted hover:text-foreground transition-colors border border-border"
+                className="relative px-2.5 py-1.5 rounded-lg text-xs font-medium bg-muted/60 text-foreground/70 hover:bg-muted hover:text-foreground transition-colors border border-border after:absolute after:-inset-y-2 after:inset-x-0"
               >
                 {t.label}
               </button>

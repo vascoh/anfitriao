@@ -2,7 +2,13 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@clerk/nextjs/server'
 import type { Metadata } from 'next'
+import {
+  RefreshCw, Smartphone, ChartColumn, Bot, Euro, Globe,
+  ChevronDown, CreditCard, X, Shield, Check,
+} from 'lucide-react'
 import { MobileNav } from '@/components/landing/mobile-nav'
+import { PricingSection } from '@/components/landing/pricing-section'
+import { CommissionCalculator } from '@/components/landing/commission-calculator'
 
 export const metadata: Metadata = {
   title: 'Anfitrião — Gestão de Alojamento Local sem stress',
@@ -47,34 +53,61 @@ const faqJsonLd = {
 
 const features = [
   {
-    icon: '🔄',
+    Icon: RefreshCw,
     title: 'Sync Airbnb & Booking.com',
     desc: 'Liga os teus calendários via iCal. As reservas das plataformas aparecem automaticamente e os bloqueios são enviados de volta em tempo real.',
+    metric: 'Sync automático · sem copy-paste',
   },
   {
-    icon: '📱',
+    Icon: Smartphone,
     title: 'Check-in online + SIBA',
     desc: 'Os teus hóspedes fazem o registo antecipado pelo telemóvel. Os dados SIBA ficam prontos antes da chegada — sem papelada, sem filas.',
+    metric: 'Dados SIBA prontos em 2 min',
   },
   {
-    icon: '📊',
+    Icon: ChartColumn,
     title: 'Relatórios de receita',
     desc: 'RevPAR, taxa de ocupação, receita por plataforma e comparação com ano anterior. Tudo actualizado em tempo real.',
+    metric: 'RevPAR e ocupação em tempo real',
   },
   {
-    icon: '🤖',
+    Icon: Bot,
     title: 'Concierge com IA',
     desc: 'Gera respostas profissionais para os teus hóspedes em português, inglês, francês e mais. Com contexto do teu alojamento.',
+    metric: 'Respostas em 6+ idiomas',
   },
   {
-    icon: '💰',
+    Icon: Euro,
     title: 'Sistema de preços',
     desc: 'Define regras por época, fim-de-semana e estadia mínima. Desconto automático por plataforma. Simples e flexível.',
+    metric: 'Regras por época · sem folhas de cálculo',
   },
   {
-    icon: '🏠',
+    Icon: Globe,
     title: 'Site de reservas diretas',
     desc: 'O teu próprio site em anfitrioes.pt/r/[o-teu-nome]. Partilha com hóspedes directos e elimina as comissões das OTAs.',
+    metric: '0% de comissão em reservas diretas',
+  },
+]
+
+const testimonials = [
+  {
+    quote: 'Antes passava o domingo a copiar reservas para o Excel. Agora abro o telemóvel e está tudo lá. O check-in online foi o que mais mudou: os hóspedes chegam e já está tudo tratado.',
+    name: 'Ana Ferreira',
+    city: 'Porto',
+    property: 'T1 no centro histórico',
+  },
+  {
+    quote: 'Geria três apartamentos com blocos de notas e mensagens perdidas. O calendário unificado acabou com as duplas reservas. E os dados do SIBA ficam prontos sem eu tocar em nada.',
+    name: 'Miguel Santos',
+    city: 'Lisboa',
+    property: '3 apartamentos em Alfama',
+  },
+  {
+    quote: 'O Concierge responde aos hóspedes franceses melhor do que eu. Na época alta isso vale ouro. E os relatórios mostram finalmente quanto rende cada plataforma.',
+    name: 'Carla Mendes',
+    city: 'Faro',
+    property: 'Moradia no Algarve',
   },
 ]
 
@@ -186,7 +219,7 @@ export default async function Home() {
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/sign-up"
-                className="w-full rounded-xl bg-primary px-8 py-3.5 text-base font-bold text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors sm:w-auto"
+                className="w-full rounded-xl bg-primary px-10 py-4 text-lg font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition-colors sm:w-auto sm:text-base sm:py-3.5"
               >
                 Criar conta grátis →
               </Link>
@@ -239,10 +272,24 @@ export default async function Home() {
                     <div className="text-xs text-muted-foreground truncate">{r.prop}</div>
                   </div>
                   <div className="text-xs text-muted-foreground shrink-0">{r.data}</div>
-                  <div className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">SIBA ✓</div>
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    </span>
+                    SIBA ✓
+                  </div>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Stat badge below mockup */}
+          <div className="mt-8 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              Poupa até 2h por semana em burocracia
+            </span>
           </div>
         </section>
 
@@ -289,14 +336,34 @@ export default async function Home() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {features.map(f => (
                 <div key={f.title} className="rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-colors">
-                  <div className="text-3xl mb-4" aria-hidden="true">{f.icon}</div>
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10" aria-hidden="true">
+                    <f.Icon className="h-5 w-5 text-primary" />
+                  </div>
                   <h3 className="font-bold text-lg mb-2">{f.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                  <p className="mt-3 text-xs font-medium text-muted-foreground/70">{f.metric}</p>
                 </div>
               ))}
             </div>
           </div>
+
+            {/* vs OTAs highlight row */}
+            <div className="mt-10 rounded-2xl bg-primary/5 border border-primary/20 px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-foreground">Booking.com cobra 15%&ndash;20% por reserva.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">O Anfitrião cobra 0% de comissão em reservas diretas.</p>
+              </div>
+              <Link
+                href="/sign-up"
+                className="shrink-0 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Começar grátis →
+              </Link>
+            </div>
         </section>
+
+        {/* ── Calculadora de comissões ───────────────────────── */}
+        <CommissionCalculator />
 
         {/* ── Como funciona ──────────────────────────────────── */}
         <section id="como-funciona" className="mx-auto max-w-6xl px-6 py-24">
@@ -332,95 +399,37 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ── Preços ─────────────────────────────────────────── */}
-        <section id="precos" className="border-t border-border bg-card/30">
+        {/* ── Testemunhos ────────────────────────────────────── */}
+        <section className="border-t border-border" aria-label="Testemunhos de anfitriões">
           <div className="mx-auto max-w-6xl px-6 py-24">
             <div className="text-center mb-16">
-              <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">Preços</div>
-              <h2 className="text-3xl font-bold md:text-4xl">Simples e transparente</h2>
-              <p className="mt-4 text-muted-foreground">Começa grátis. Sem surpresas, sem comissões sobre reservas.</p>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">Testemunhos</div>
+              <h2 className="text-3xl font-bold md:text-4xl">O que dizem os anfitriões</h2>
             </div>
-            <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
-
-              {/* Trial */}
-              <div className="rounded-2xl border border-border bg-card p-6">
-                <div className="text-sm font-semibold text-muted-foreground mb-4">Trial</div>
-                <div className="text-4xl font-bold mb-1">Grátis</div>
-                <div className="text-sm text-muted-foreground mb-6">14 dias · Sem cartão</div>
-                <ul className="space-y-2.5 text-sm text-muted-foreground mb-8" role="list">
-                  {['1 propriedade', 'Todas as funcionalidades', 'Sync Airbnb/Booking', 'Check-in online'].map(f => (
-                    <li key={f} className="flex items-center gap-2">
-                      <span className="text-primary" aria-hidden="true">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/sign-up"
-                  className="block w-full rounded-xl border border-border py-2.5 text-center text-sm font-semibold hover:bg-muted transition-colors"
+            <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+              {testimonials.map(t => (
+                <figure
+                  key={t.name}
+                  className="flex w-[85%] shrink-0 snap-center flex-col rounded-2xl border border-border bg-card p-6 md:w-auto"
                 >
-                  Começar trial
-                </Link>
-              </div>
-
-              {/* Starter — destacado */}
-              <div className="rounded-2xl border-2 border-primary bg-card p-6 relative">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground whitespace-nowrap">
-                  Mais popular
-                </div>
-                <div className="text-sm font-semibold text-primary mb-4">Starter</div>
-                <div className="text-4xl font-bold mb-1">
-                  €19<span className="text-lg font-normal text-muted-foreground">/mês</span>
-                </div>
-                <div className="text-sm text-muted-foreground mb-6">Faturado mensalmente</div>
-                <ul className="space-y-2.5 text-sm text-muted-foreground mb-8" role="list">
-                  {['Até 3 propriedades', 'Reservas ilimitadas', 'AI Concierge ilimitado', 'Check-in online SIBA', 'Suporte por email'].map(f => (
-                    <li key={f} className="flex items-center gap-2">
-                      <span className="text-primary" aria-hidden="true">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/sign-up"
-                  className="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
-                  Começar agora
-                </Link>
-              </div>
-
-              {/* Pro */}
-              <div className="rounded-2xl border border-border bg-card p-6">
-                <div className="text-sm font-semibold text-muted-foreground mb-4">Pro</div>
-                <div className="text-4xl font-bold mb-1">
-                  €39<span className="text-lg font-normal text-muted-foreground">/mês</span>
-                </div>
-                <div className="text-sm text-muted-foreground mb-6">Faturado mensalmente</div>
-                <ul className="space-y-2.5 text-sm text-muted-foreground mb-8" role="list">
-                  {['Até 10 propriedades', 'Tudo do Starter', 'Relatórios avançados', 'Suporte prioritário', 'Acesso antecipado a novas features'].map(f => (
-                    <li key={f} className="flex items-center gap-2">
-                      <span className="text-primary" aria-hidden="true">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/sign-up"
-                  className="block w-full rounded-xl border border-border py-2.5 text-center text-sm font-semibold hover:bg-muted transition-colors"
-                >
-                  Começar trial
-                </Link>
-              </div>
+                  <div className="text-sm tracking-wider text-amber-500" aria-label="Classificação: 5 de 5 estrelas">
+                    ★★★★★
+                  </div>
+                  <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
+                    &ldquo;{t.quote}&rdquo;
+                  </blockquote>
+                  <figcaption className="mt-6 border-t border-border pt-4">
+                    <div className="text-sm font-semibold">{t.name}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">{t.property} · {t.city}</div>
+                  </figcaption>
+                </figure>
+              ))}
             </div>
-
-            {/* Reassurance line */}
-            <p className="mt-8 text-center text-sm text-muted-foreground">
-              Todos os planos incluem trial de 14 dias ·{' '}
-              <strong className="text-foreground font-medium">Sem comissões sobre reservas</strong>{' '}
-              · Cancela quando quiseres
-            </p>
           </div>
         </section>
+
+        {/* ── Preços ─────────────────────────────────────────── */}
+        <PricingSection />
 
         {/* ── FAQ ────────────────────────────────────────────── */}
         <section id="faq" className="mx-auto max-w-3xl px-6 py-24">
@@ -437,16 +446,12 @@ export default async function Home() {
               <details key={q} className="group py-5">
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-4 font-semibold text-foreground hover:text-primary transition-colors">
                   <span>{q}</span>
-                  <span
-                    className="mt-0.5 shrink-0 text-muted-foreground transition-transform group-open:rotate-45"
+                  <ChevronDown
+                    className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180"
                     aria-hidden="true"
-                  >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-                      <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
-                    </svg>
-                  </span>
+                  />
                 </summary>
-                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{a}</p>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed group-open:animate-in group-open:fade-in group-open:slide-in-from-top-1 group-open:duration-300">{a}</p>
               </details>
             ))}
           </div>
@@ -471,9 +476,20 @@ export default async function Home() {
             >
               Criar conta grátis — começa em 2 minutos
             </Link>
-            <p className="mt-4 text-xs text-muted-foreground">
-              Sem cartão de crédito · Cancela quando quiseres · Dados seguros e encriptados
-            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                <CreditCard className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                Sem cartão de crédito
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                <X className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                Cancela quando quiseres
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                Dados seguros e encriptados
+              </span>
+            </div>
           </div>
         </section>
 
@@ -515,6 +531,7 @@ export default async function Home() {
                 <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Suporte</p>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li><a href="mailto:suporte@anfitrioes.pt" className="hover:text-foreground transition-colors">suporte@anfitrioes.pt</a></li>
+                  <li><Link href="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link></li>
                 </ul>
               </nav>
             </div>

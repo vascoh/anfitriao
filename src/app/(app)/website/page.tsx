@@ -50,7 +50,16 @@ export default function WebsitePage() {
 
   async function save() {
     if (!settings) return
-    await fetch('/api/website-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+    if (settings.slug && settings.slug.length < 3) {
+      toast.error('O slug deve ter pelo menos 3 caracteres')
+      return
+    }
+    const res = await fetch('/api/website-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error ?? 'Erro ao guardar configurações')
+      return
+    }
     setSaved(true)
     toast.success('Configurações guardadas')
     setTimeout(() => setSaved(false), 2000)
@@ -266,6 +275,30 @@ export default function WebsitePage() {
 
         {/* Settings form */}
         <div className="flex flex-col gap-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">URL personalizado</p>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Slug do website</label>
+            <div className="flex items-center rounded-lg border border-input bg-muted/40 overflow-hidden focus-within:ring-2 focus-within:ring-ring">
+              <span className="px-3 py-2.5 text-sm text-muted-foreground shrink-0 border-r border-input">{origin}/r/</span>
+              <input
+                type="text"
+                value={settings.slug ?? ''}
+                onChange={e => {
+                  const v = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40)
+                  update('slug', v)
+                }}
+                placeholder="o-teu-nome"
+                className="flex-1 bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none min-w-0"
+              />
+            </div>
+            {settings.slug && settings.slug.length >= 3 ? (
+              <p className="text-[11px] text-emerald-600 font-medium">✓ {origin}/r/{settings.slug}</p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">Mínimo 3 caracteres · só letras, números e hífens</p>
+            )}
+          </div>
+
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Identidade</p>
 
           <div className="flex flex-col gap-1.5">

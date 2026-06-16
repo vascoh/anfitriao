@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
       .eq('owner_id', userId)
     if (error) {
       console.error('[POST /api/website-settings]', error.message)
-      return NextResponse.json({ error: 'Erro ao guardar.' }, { status: 500 })
+      const msg = error.code === '23505' ? 'Este URL já está a ser usado. Escolhe outro.' : 'Erro ao guardar.'
+      return NextResponse.json({ error: msg }, { status: 500 })
     }
   } else {
     const { error } = await supabase
@@ -46,7 +47,8 @@ export async function POST(req: NextRequest) {
       .insert({ ...body, owner_id: userId })
     if (error) {
       console.error('[POST /api/website-settings]', error.message)
-      return NextResponse.json({ error: 'Erro ao guardar.' }, { status: 500 })
+      const msg = error.code === '23505' ? 'Este URL já está a ser usado. Escolhe outro.' : 'Erro ao guardar.'
+      return NextResponse.json({ error: msg }, { status: 500 })
     }
   }
 

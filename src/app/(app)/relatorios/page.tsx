@@ -199,6 +199,7 @@ export default function RelatoriosPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
+  const [loaded, setLoaded] = useState(false)
   const now = useMemo(() => new Date(), [])
   const [year, setYear] = useState(now.getFullYear())
 
@@ -206,6 +207,7 @@ export default function RelatoriosPage() {
     if (!ownerId) return
     Promise.all([fetchBookings(), fetchProperties(), fetchGuests()])
       .then(([b, p, g]) => { setBookings(b); setProperties(p); setGuests(g) })
+      .finally(() => setLoaded(true))
   }, [ownerId])
 
   function exportRevenue() {
@@ -288,6 +290,79 @@ export default function RelatoriosPage() {
   const yoyChange = prevYearRevenue > 0
     ? Math.round(((totalRevenue - prevYearRevenue) / prevYearRevenue) * 100)
     : 0
+
+  if (!loaded) {
+    return (
+      <div className="flex flex-col min-h-full pb-8 animate-pulse">
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="flex items-center justify-between px-4 py-4">
+            <div className="h-7 w-28 rounded-lg bg-muted" />
+            <div className="h-8 w-16 rounded-lg bg-muted" />
+          </div>
+          <div className="flex items-stretch border-t border-border divide-x divide-border overflow-x-auto">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="px-4 py-2.5 shrink-0 flex flex-col gap-1.5">
+                <div className="h-2.5 w-16 rounded bg-muted" />
+                <div className="h-6 w-20 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </header>
+        <div className="flex flex-col max-w-5xl w-full">
+          <div className="border-b border-border px-4 lg:px-8 py-6">
+            <div className="h-3 w-32 rounded bg-muted mb-5" />
+            <div className="flex items-end gap-px sm:gap-1" style={{ height: '120px' }}>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full rounded-t bg-muted" style={{ height: `${[50, 70, 45, 80, 60, 90, 55, 75, 40, 65, 85, 50][i]}px` }} />
+                  <div className="h-2 w-4 rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 lg:px-8 py-6 border-b border-border">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border p-4 flex flex-col gap-2">
+                <div className="h-2.5 w-20 rounded bg-muted" />
+                <div className="h-6 w-24 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Empty state — sem dados para mostrar
+  if (bookings.length === 0) {
+    return (
+      <div className="flex flex-col min-h-full pb-8">
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="flex items-center justify-between px-4 py-4">
+            <h1 className="text-2xl font-semibold tracking-tight">Relatórios</h1>
+          </div>
+        </header>
+        <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="h-8 w-8 text-primary" />
+          </div>
+          <div className="flex flex-col gap-1.5 max-w-xs">
+            <p className="text-lg font-semibold">Ainda sem dados</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Os relatórios de receita e ocupação aparecem aqui assim que tiveres reservas. Cria uma manualmente ou sincroniza com Airbnb/Booking.
+            </p>
+          </div>
+          <Link href="/reservas/nova"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
+            Criar reserva
+          </Link>
+          <Link href="/propriedades" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Configurar sync iCal →
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-full pb-8">

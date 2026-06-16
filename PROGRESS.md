@@ -6,6 +6,18 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-06-16] Segurança, UX e CRO (sessão atual)
+- ✅ **Supabase RLS**: ativado em `fs_deals`, `fs_alerts`, `fs_price_history` (3 ERRORs → 0 ERRORs)
+- ✅ **Supabase functions**: `SET search_path = ''` em `update_atualizado_em_accounts`, `accounts_set_atualizado_em`, `requesting_owner_id`
+- ✅ **Website page**: campo slug adicionado ao formulário (preview live da URL, validação, sanitização)
+- ✅ **Website settings API**: tratamento de erro de slug duplicado (`23505` → mensagem em PT)
+- ✅ **Landing page**: `CommissionCalculator` component adicionado entre Features e Como Funciona
+- ✅ **Deploy**: produção em `anfitrioes.pt` (dpl_ETHGjHvYaDVe2zXUfy5yEfL3muYp)
+
+### [2026-06-16] Pendente (ação humana obrigatória)
+- ⚠️ **MAINTENANCE_MODE=false** no Vercel Dashboard → Settings → Environment Variables → redeploy
+- ⚠️ **Clerk JWT template** no Supabase: Clerk Dashboard → Configure → JWT Templates → "Supabase" → copiar JWT Secret do Supabase Auth
+
 ### [2026-06-06] Análise completa do projecto
 - Lidos todos os ficheiros fonte (~100 ficheiros)
 - Identificados bugs, riscos de segurança e oportunidades de melhoria

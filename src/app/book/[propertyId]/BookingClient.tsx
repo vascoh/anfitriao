@@ -65,6 +65,7 @@ function fmtDateShort(iso: string) {
 
 interface CalendarProps {
   blocked: Set<string>
+  sortedBlocked: string[]
   minDate: string
   checkIn: string | null
   checkOut: string | null
@@ -72,7 +73,7 @@ interface CalendarProps {
   onSelect: (date: string) => void
 }
 
-function BookingCalendar({ blocked, minDate, checkIn, checkOut, rangeError, onSelect }: CalendarProps) {
+function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, rangeError, onSelect }: CalendarProps) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -83,13 +84,8 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, rangeError, onSe
   // but NOT after it (would cross an existing booking)
   const firstBlockedAfterCheckIn = useMemo(() => {
     if (!checkIn) return null
-    let cur = addDays(checkIn, 1)
-    for (let i = 0; i < 365; i++) {
-      if (blocked.has(cur)) return cur
-      cur = addDays(cur, 1)
-    }
-    return null
-  }, [checkIn, blocked])
+    return sortedBlocked.find(d => d > checkIn) ?? null
+  }, [checkIn, sortedBlocked])
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) } else setMonth(m => m - 1)
@@ -193,7 +189,7 @@ function BookingCalendar({ blocked, minDate, checkIn, checkOut, rangeError, onSe
               disabled={disabled}
               onClick={() => onSelect(date)}
               className={[
-                'h-10 w-full text-xs font-medium transition-colors',
+                'relative h-10 w-full text-xs font-medium transition-colors',
                 getCellClass(date),
               ].join(' ')}
               title={disabled && isBooked ? 'Data ocupada' : undefined}
@@ -235,6 +231,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
   const router = useRouter()
 
   const blockedSet = useMemo(() => new Set(blockedArr), [blockedArr])
+  const sortedBlocked = useMemo(() => [...blockedArr].sort(), [blockedArr])
 
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
@@ -281,12 +278,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     }
 
     // Scan for blocked dates between check-in and chosen check-out (exclusive)
-    let cur = addDays(checkIn, 1)
-    let hasBlocked = false
-    while (cur < date) {
-      if (blockedSet.has(cur)) { hasBlocked = true; break }
-      cur = addDays(cur, 1)
-    }
+    const hasBlocked = sortedBlocked.some(d => d > checkIn && d < date)
 
     if (hasBlocked) {
       // Keep the check-in selection; show an error so the user understands
@@ -458,6 +450,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
             <div className="rounded-xl border border-border bg-card p-5">
               <BookingCalendar
                 blocked={blockedSet}
+                sortedBlocked={sortedBlocked}
                 minDate={minDate}
                 checkIn={checkIn}
                 checkOut={checkOut}

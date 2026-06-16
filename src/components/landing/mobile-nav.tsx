@@ -24,7 +24,7 @@ export function MobileNav() {
     <>
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative z-50 flex flex-col items-center justify-center gap-[5px] p-2 md:hidden"
+        className="relative z-50 flex min-h-11 min-w-11 flex-col items-center justify-center gap-[5px] p-2 md:hidden"
         aria-label={open ? 'Fechar menu' : 'Abrir menu'}
         aria-expanded={open}
         aria-controls="mobile-nav-menu"

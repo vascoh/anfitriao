@@ -142,10 +142,22 @@ function TimelineView({
 
           {/* Property rows */}
           {activeProps.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 text-center py-16 px-4">
-              <p className="text-base font-medium text-foreground/60">Sem propriedades ativas</p>
-              <Link href="/propriedades" className="text-primary text-sm font-medium hover:underline">
-                Gerir propriedades →
+            <div className="flex flex-col items-center justify-center gap-5 text-center py-16 px-4">
+              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <LayoutGrid className="h-8 w-8 text-primary" />
+              </div>
+              <div className="flex flex-col gap-1.5 max-w-xs">
+                <p className="text-lg font-semibold">Sem propriedades ativas</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Cria ou ativa uma propriedade para veres as reservas no calendário.
+                </p>
+              </div>
+              <Link href="/propriedades/nova"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
+                <Plus className="h-4 w-4" /> Criar propriedade
+              </Link>
+              <Link href="/propriedades" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Gerir propriedades existentes →
               </Link>
             </div>
           ) : (

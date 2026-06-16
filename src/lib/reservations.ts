@@ -2,8 +2,8 @@ import type { Booking, BookingStatus, BookingEvent, Property, PriceRule, Tarifa,
 import { nights } from './utils'
 
 export function addDays(date: string, n: number): string {
-  const d = new Date(date + 'T00:00:00')
-  d.setDate(d.getDate() + n)
+  const d = new Date(date + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + n)
   return d.toISOString().slice(0, 10)
 }
 

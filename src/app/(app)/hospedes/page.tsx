@@ -50,12 +50,13 @@ export default function HospedesPage() {
   const [props, setProps] = useState<Property[]>([])
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
-    fetchGuests().then(setGuests)
-    fetchBookings().then(setBookings)
-    fetchProperties().then(setProps)
+    Promise.all([fetchGuests(), fetchBookings(), fetchProperties()])
+      .then(([g, b, p]) => { setGuests(g); setBookings(b); setProps(p) })
+      .finally(() => setLoaded(true))
   }, [ownerId])
 
   const allTags = useMemo(() => {
@@ -123,7 +124,7 @@ export default function HospedesPage() {
           <div className="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setTagFilter(null)}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              className={`relative shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors after:absolute after:-inset-y-2.5 after:inset-x-0 ${
                 tagFilter === null ? 'bg-foreground/10 text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -133,7 +134,7 @@ export default function HospedesPage() {
               <button
                 key={tag}
                 onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-                className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                className={`relative shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors border after:absolute after:-inset-y-2.5 after:inset-x-0 ${
                   tagFilter === tag
                     ? TAG_CLASS[tag as keyof typeof TAG_CLASS] ?? 'bg-foreground/10 text-foreground border-foreground/20'
                     : 'text-muted-foreground border-border hover:text-foreground'
@@ -147,7 +148,20 @@ export default function HospedesPage() {
       </header>
 
       <div className="flex-1">
-        {filtered.length === 0 ? (
+        {!loaded ? (
+          <div className="flex flex-col animate-pulse">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
+                <div className="h-10 w-10 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="h-4 w-36 rounded bg-muted" />
+                  <div className="h-3 w-24 rounded bg-muted" />
+                </div>
+                <div className="h-4 w-4 rounded bg-muted shrink-0" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
             <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
               <Plus className="h-8 w-8 text-primary" />

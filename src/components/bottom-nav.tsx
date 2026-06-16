@@ -48,7 +48,11 @@ export function BottomNav() {
             <div className="mx-2 mb-1 rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mais</span>
-                <button onClick={() => setOpen(false)} className="p-1 rounded-lg text-muted-foreground hover:text-foreground">
+                <button
+                  onClick={() => setOpen(false)}
+                  aria-label="Fechar menu"
+                  className="-m-2 grid h-11 w-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
