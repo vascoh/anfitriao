@@ -6,7 +6,19 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
-### [2026-06-16] Segurança, UX e CRO (sessão atual)
+### [2026-06-30] Hardening RLS + teste de reserva em produção
+Limpeza completa do RLS no projeto Supabase `anfitriao` (`nnbqfrszukkzoqwssjvg`). Advisor de segurança: **21 lints → 5** (1 WARN intencional + 4 INFO benignos).
+
+- ✅ **`fs_*` verificadas** — RLS ativo, 0 políticas (anon/authenticated bloqueados, só `service_role`). Já resolvido; backlog estava desatualizado. Ver secção Segurança.
+- ✅ **Cross-tenant fechado** — removidas 9 policies `authenticated_full_*` (`USING(true)`, role `authenticated`) que anulavam o isolamento owner-scoped (`requesting_owner_id`). Migration `009_rls_drop_authenticated_full.sql`. Incluía `accounts` (faturação) exposta a qualquer autenticado.
+- ✅ **UPDATE anon mortos removidos** — `public_update_booking_historico` + `guests_checkin_update` (`USING(true)`). Check-in usa `service_role` via `/api/checkin`, não anon. Migration `010_rls_drop_unused_anon_checkin_update.sql`.
+- ✅ **INSERT anon consolidados** — 4 → 2 policies. Removidas `bookings_public_insert` (superset de `public_insert_bookings` `origem='direto'`) e `guests_checkin_insert` (duplicado de `public_insert_guests`). Migration `011_rls_consolidate_anon_insert.sql`.
+- ✅ **Teste de reserva em produção** — `POST https://anfitrioes.pt/api/book` (`prop-1`, `origem='direto'`) → **HTTP 200 `{"ok":true}`**. Verificado na BD: hóspede + reserva criados com `owner_id` derivado da propriedade; encadeamento guest→booking OK. Dados de teste (`TEST-RLS-*`) removidos após verificação. Funciona com ou sem `SUPABASE_SERVICE_ROLE_KEY` definida (a policy anon `origem='direto'` cobre o fallback). Sem emails enviados (`/api/book` não dispara `notify-booking`).
+- ✅ **Documentação** — `CLAUDE.md` raiz do workspace atualizado (adicionado `robertaccakes`); removida pasta lixo `C:/` (árvore de paths Windows vazada para o WSL, 0 ficheiros).
+
+> **Resíduo aceitável:** 1 WARN `public_insert_guests` (submissão pública insert-only, não estreitável por `owner_id` nulo) + 4 INFO `rls_enabled_no_policy` (`accounts` só `service_role`; `fs_*` bloqueadas). Pendente humano: configurar Clerk JWT template no Supabase (ativa o owner-scoped para multi-tenant).
+
+### [2026-06-16] Segurança, UX e CRO (sessão anterior)
 - ✅ **Supabase RLS**: ativado em `fs_deals`, `fs_alerts`, `fs_price_history` (3 ERRORs → 0 ERRORs)
 - ✅ **Supabase functions**: `SET search_path = ''` em `update_atualizado_em_accounts`, `accounts_set_atualizado_em`, `requesting_owner_id`
 - ✅ **Website page**: campo slug adicionado ao formulário (preview live da URL, validação, sanitização)
@@ -62,7 +74,8 @@ _Iniciado: 2026-06-06_
   - Supabase Dashboard → Authentication → JWT Secret → copiar e colar no Clerk template
 - [ ] Testar fluxo completo onboarding (novo user → propriedade → reserva → check-in)
 - [ ] `MAINTENANCE_MODE=false` em Vercel → redeploy
-- [ ] Resolver RLS das tabelas `fs_*` (ver secção Segurança)
+- [x] Resolver RLS das tabelas `fs_*` ✅ (verificado 2026-06-30: RLS ativo, 0 políticas → anon/authenticated bloqueados; advisor só reporta INFO)
+- [x] 🔴 **Cross-tenant**: removidas policies `authenticated_full_*` das 9 tabelas core ✅ (2026-06-30, migration `drop_authenticated_full_blanket_rls_policies`) — ver secção Segurança
 
 ### 🟡 Importante
 - [ ] Onboarding wizard para novos anfitriões (melhorar `/conta/bem-vindo` com estado real)
@@ -80,9 +93,27 @@ _Iniciado: 2026-06-06_
 
 ---
 
-## ⚠️ Segurança — Tabelas `fs_*` sem RLS
+## ✅ Segurança — Tabelas `fs_*` (RESOLVIDO)
 
-As tabelas `fs_deals`, `fs_alerts`, `fs_price_history` (provavelmente de outro projecto no mesmo Supabase) têm RLS **desactivado**. Qualquer pessoa com a anon key pode ler e modificar todos os dados.
+Verificado 2026-06-30 via advisor: `fs_deals`, `fs_alerts`, `fs_price_history` têm RLS **ativado** com **0 políticas** → acesso anon/authenticated bloqueado (só `service_role`). Advisor reporta apenas `INFO` (`rls_enabled_no_policy`), nenhum ERROR. Não pertencem a nenhum projeto Supabase ativo desta org (resíduo). Nada a fazer.
+
+## ✅ Segurança — Cross-tenant nas tabelas core (RESOLVIDO 2026-06-30)
+
+As tabelas `properties`, `bookings`, `guests`, `tarifas`, `price_rules`, `platform_rates`, `price_change_log`, `website_settings`, `accounts` tinham policies `authenticated_full_*` para `ALL` com `USING (true) WITH CHECK (true)` no role `authenticated`. Como o RLS é permissivo (OR), anulavam o isolamento owner-scoped via `requesting_owner_id()` (migration 008): qualquer utilizador autenticado lia/escrevia dados de todos os anfitriões (incl. `accounts` = dados de faturação).
+
+**Verificação no código antes de remover:** o client `anon` (`lib/db.ts`) só é usado pelas páginas públicas `/book` (role `anon`); todo o acesso autenticado passa por API routes (`createAdminClient` → `service_role`, bypassa RLS) ou pelo user-client owner-scoped (`getSupabaseForRequest`). Nenhuma leitura autenticada client-side dependia das blanket policies.
+
+**Correção:** migration `drop_authenticated_full_blanket_rls_policies` removeu as 9 policies. Mantêm-se as owner-scoped (`authenticated`) e as públicas (`anon`). Advisor confirma 0 WARN `authenticated_full_*`. `accounts` ficou só com `service_role` (alinhado com `accounts.ts`).
+
+### UPDATE anon removidos (2026-06-30, migration `drop_unused_anon_checkin_update_policies`)
+As policies anon `public_update_booking_historico` (bookings) e `guests_checkin_update` (guests) usavam `USING(true)` e permitiam a qualquer anónimo reescrever qualquer reserva/hóspede. Verificado no código que o check-in atualiza estas linhas **exclusivamente via `/api/checkin/[bookingId]` com `service_role`** (a página cliente só faz `fetch` à rota) — não há UPDATE anon na app. Como não existe coluna de token de check-in (o `bookings.id` é o identificador da URL) e o RLS não restringe colunas, "restringir por token" seria no-op ou exigiria degradar o fluxo `service_role` para anon. Por isso as policies foram **removidas** (correção máxima), em vez de estreitadas. Check-in inalterado (continua via `service_role`).
+
+### INSERT anon consolidados (2026-06-30, migration `consolidate_redundant_anon_insert_policies`)
+Os inserts públicos passam por `/api/book` (`createAdminClient`: `service_role`, ou fallback anon-key). 4 policies anon de INSERT reduzidas a 2 (uma por tabela), seguras em ambos os cenários:
+- **bookings:** removida `bookings_public_insert` (`WITH CHECK true`) — superset redundante de `public_insert_bookings` (`origem='direto'`), que cobre todo o insert do `/book` (payload traz sempre `origem='direto'`). WARN eliminado.
+- **guests:** removida `guests_checkin_insert` (duplicado exato de `public_insert_guests`; o check-in não faz insert anon, usa `service_role`). Mantida `public_insert_guests`.
+
+**Estado final do advisor:** 1 WARN (`public_insert_guests`, anon INSERT `WITH CHECK true`) — irredutível: submissão pública de hóspede insert-only; não é estreitável por `owner_id` porque `/api/book` pode inserir com `owner_id` nulo (propriedade sem owner). Padrão legítimo (igual a orders/newsletter). Restantes lints: 4 `INFO` `rls_enabled_no_policy` (`accounts` = só service_role; `fs_*` = bloqueadas) — benignos.
 
 **SQL para activar RLS (ATENÇÃO: activa RLS mas bloqueia todo o acesso sem políticas definidas):**
 
