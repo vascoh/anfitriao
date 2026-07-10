@@ -172,6 +172,7 @@ function NovaPropriedadeForm() {
               placeholder="https://..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             {imagemUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- URL arbitrário/preview local, fora do next/image
               <img src={imagemUrl} alt="Preview" className="rounded-lg h-32 w-full object-cover mt-1" />
             )}
           </div>

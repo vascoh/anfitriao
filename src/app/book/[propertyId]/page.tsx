@@ -4,19 +4,8 @@ import {
   adminGetPriceRules, adminGetTarifas, adminGetPlatformRates, adminGetPropertyById,
 } from '@/lib/db-admin'
 import { blockedDates } from '@/lib/reservations'
-import type { WebsiteSettings } from '@/lib/types'
 import BookingClient from './BookingClient'
 import RoomsClient from './RoomsClient'
-
-const DEFAULT_WEBSITE: WebsiteSettings = {
-  enabled: true,
-  nome: 'Reservas Diretas',
-  descricao: 'Reserve diretamente connosco sem taxas de intermediários.',
-  email: '',
-  telefone: '',
-  min_noites: 1,
-  antecedencia_dias: 0,
-}
 
 export default async function BookPropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params

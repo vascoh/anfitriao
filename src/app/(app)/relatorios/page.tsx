@@ -6,7 +6,7 @@ import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
 import { occupancyForMonth } from '@/lib/reservations'
-import { fmtMoney, fmtDate, nights } from '@/lib/utils'
+import { fmtMoney, nights } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
 import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
 

@@ -297,6 +297,7 @@ export default function CheckinPage() {
 
             {preview && !extracting && (
               <div className="flex flex-col gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element -- preview local (data URL), fora do next/image */}
                 <img src={preview} alt="Documento" className="w-full rounded-xl object-cover max-h-40" />
                 <button
                   type="button"

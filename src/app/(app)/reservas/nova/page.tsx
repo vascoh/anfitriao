@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { uuid, today, nights } from '@/lib/utils'
+import { uuid, today } from '@/lib/utils'
 import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
 import { detectConflict, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
@@ -86,6 +86,7 @@ function NovaReservaInner() {
     fetch('/api/price-rules').then(r => r.json()).then(d => setPriceRules(Array.isArray(d) ? d : []))
     fetch('/api/tarifas').then(r => r.json()).then(d => setPriceTarifas(Array.isArray(d) ? d : []))
     fetch('/api/platform-rates').then(r => r.json()).then(d => setPlatformRates(Array.isArray(d) ? d : []))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch inicial por owner; searchParams só lido no arranque
   }, [ownerId])
 
   const selectedProp = properties.find(p => p.id === propId)
@@ -104,7 +105,6 @@ function NovaReservaInner() {
   }, [step, selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem, precoTotal])
 
   const STEPS: Step[] = ['propriedade', 'datas', 'hospede', 'detalhes']
-  const stepIdx = STEPS.indexOf(step) + 1
 
   function goNext() {
     const idx = STEPS.indexOf(step)

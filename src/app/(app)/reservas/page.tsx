@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
-import type { Booking, Guest, Property, BookingStatus } from '@/lib/types'
+import type { Booking, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
 

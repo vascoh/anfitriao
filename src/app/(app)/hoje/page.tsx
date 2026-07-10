@@ -7,7 +7,7 @@ import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, 
 import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
 import type { Booking, Property, Guest, WebsiteSettings } from '@/lib/types'
-import { STATUS_LABEL, SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
+import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())

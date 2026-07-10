@@ -138,7 +138,7 @@ export default function PrecosPage() {
         {tab === 'regras'      && <TabRegras props={props} rules={rules} onReload={reload} showToast={showToast} />}
         {tab === 'tarifas'     && <TabTarifas props={props} tarifas={tarifas} onReload={reload} showToast={showToast} />}
         {tab === 'plataformas' && <TabPlataformas props={props} platforms={platforms} onReload={reload} showToast={showToast} />}
-        {tab === 'massa'       && <TabMassa props={props} rules={rules} onReload={reload} showToast={showToast} />}
+        {tab === 'massa'       && <TabMassa props={props} onReload={reload} showToast={showToast} />}
       </div>
 
     </div>
@@ -1236,9 +1236,9 @@ function TabPlataformas({
 // ─── Tab: Atualização em Massa ─────────────────────────────────────────────────
 
 function TabMassa({
-  props, rules, onReload, showToast,
+  props, onReload, showToast,
 }: {
-  props: Property[]; rules: PriceRule[];
+  props: Property[];
   onReload: () => void; showToast: (msg: string, ok?: boolean) => void;
 }) {
   const [selectedProps, setSelectedProps] = useState<string[]>([])
@@ -1283,6 +1283,7 @@ function TabMassa({
       const t = setTimeout(() => setPreview([]), 0)
       return () => clearTimeout(t)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- generatePreview é estável por closure; deps cobrem os inputs reais
   }, [selectedProps, valor, operacao])
 
   async function applyMassa() {

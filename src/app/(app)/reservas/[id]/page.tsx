@@ -131,6 +131,7 @@ export default function ReservaDetailPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- load só depende de id
   useEffect(() => { const t = setTimeout(() => { load() }, 0); return () => clearTimeout(t) }, [id])
 
   async function applyTransition(to: BookingStatus, nota?: string) {

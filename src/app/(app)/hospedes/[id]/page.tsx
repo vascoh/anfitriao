@@ -2,20 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Guest, Booking, Property } from '@/lib/types'
-import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL } from '@/lib/labels'
+import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
 import type { GuestTag } from '@/lib/types'
 
 export default function HospedeDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { user } = useUser()
   const ownerId = user?.id
-  const router = useRouter()
   const [guest, setGuest] = useState<Guest | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [props, setProps] = useState<Property[]>([])

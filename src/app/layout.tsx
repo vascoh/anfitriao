@@ -119,7 +119,6 @@ export default function RootLayout({
         lang="pt"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
-        {/* eslint-disable-next-line react/no-danger */}
         <head>
           <link rel="preconnect" href="https://clerk.anfitrioes.pt" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />

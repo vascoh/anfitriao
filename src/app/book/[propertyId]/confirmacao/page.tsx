@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { CheckCircle2, Mail, Phone, ArrowLeft } from 'lucide-react'
 import { fmtDate, fmtMoney, nights as calcNights } from '@/lib/utils'
 import { db } from '@/lib/db'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import type { Booking, Property, WebsiteSettings } from '@/lib/types'
 
 export default function ConfirmacaoPage() {
@@ -18,7 +18,6 @@ export default function ConfirmacaoPage() {
 }
 
 function ConfirmacaoInner() {
-  const { propertyId } = useParams<{ propertyId: string }>()
   const searchParamsObj = useSearchParams()
   const bookingId = searchParamsObj.get('b') ?? undefined
   const nome = searchParamsObj.get('nome') ?? undefined

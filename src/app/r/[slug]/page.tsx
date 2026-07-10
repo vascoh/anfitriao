@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
-import type { Property, WebsiteSettings } from '@/lib/types'
+import type { Property } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ const WA_SVG = (
 
 // ─── PropertyCard ─────────────────────────────────────────────────────────────
 
-function PropertyCard({ p, minNights, slug }: { p: Property; minNights: number; slug: string }) {
+function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
   // Link to the booking detail page (still served under /book/[id])
   const href = `/book/${p.id}`
 
@@ -245,7 +245,7 @@ export default async function ReservasPage(
               {props.length === 1 ? '1 alojamento disponível' : `${props.length} alojamentos disponíveis`}
             </p>
             {props.map(p => (
-              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} slug={slug} />
+              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} />
             ))}
           </section>
         )}

@@ -12,7 +12,7 @@ import { SOURCE_LABEL } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
 
 function useOrigin() {
-  const [origin, setOrigin] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''))
+  const [origin] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''))
   return origin
 }
 

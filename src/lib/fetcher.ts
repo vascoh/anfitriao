@@ -22,7 +22,7 @@ export async function fetchBookings(): Promise<Booking[]> {
   return res.ok ? res.json() : []
 }
 
-export async function fetchProperties(ownerId?: string): Promise<Property[]> {
+export async function fetchProperties(_ownerId?: string): Promise<Property[]> {
   // Properties have an anon read policy (active only), but we want ALL properties
   // including inactive ones for the admin pages — use API route.
   const res = await fetch('/api/properties')
