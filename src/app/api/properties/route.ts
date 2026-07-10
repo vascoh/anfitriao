@@ -41,29 +41,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Conta não encontrada' }, { status: 404 })
   }
 
-  // Contar propriedades de topo (não quartos dentro de outra) deste utilizador
-  const { count } = await supabase
-    .from('properties')
-    .select('id', { count: 'exact', head: true })
-    .eq('owner_id', userId)
-    .is('parent_id', null)
-
-  const atual = count ?? 0
-
-  if (atual >= account.propriedades_max) {
-    return NextResponse.json(
-      {
-        error: `Limite do teu plano atingido (${atual}/${account.propriedades_max} propriedades). Faz upgrade para adicionar mais.`,
-        code:  'LIMIT_REACHED',
-        limite: account.propriedades_max,
-        atual,
-      },
-      { status: 403 },
-    )
+  let body: Property & { casas_banho?: number }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
   }
 
-  // Guardar com owner_id
-  const body = await req.json() as Property & { casas_banho?: number }
+  // Upsert serve create e update — distinguir para o guard e para o limite do plano
+  const { data: existing } = typeof body.id === 'string' && body.id
+    ? await supabase.from('properties').select('owner_id').eq('id', body.id).maybeSingle()
+    : { data: null }
+
+  if (existing && existing.owner_id !== null && existing.owner_id !== userId) {
+    return NextResponse.json({ error: 'Sem permissão para alterar esta propriedade.' }, { status: 403 })
+  }
+
+  // Limite do plano só se aplica à criação de novas propriedades de topo
+  if (!existing && !body.parent_id) {
+    const { count } = await supabase
+      .from('properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', userId)
+      .is('parent_id', null)
+
+    const atual = count ?? 0
+
+    if (atual >= account.propriedades_max) {
+      return NextResponse.json(
+        {
+          error: `Limite do teu plano atingido (${atual}/${account.propriedades_max} propriedades). Faz upgrade para adicionar mais.`,
+          code:  'LIMIT_REACHED',
+          limite: account.propriedades_max,
+          atual,
+        },
+        { status: 403 },
+      )
+    }
+  }
 
   // Normalizar casasBanho → casas_banho (padrão do DB)
   const { casasBanho, ...rest } = body as Property

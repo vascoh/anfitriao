@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { Guest } from '@/lib/types'
+import { canUpsertRow } from '@/lib/ownership'
 
 const supabase = createAdminClient()
 
@@ -29,7 +30,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
   }
 
-  const body = await req.json() as Guest
+  let body: Guest
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
+  }
+
+  if (!(await canUpsertRow(supabase, 'guests', body.id, userId))) {
+    return NextResponse.json({ error: 'Sem permissão para alterar este hóspede.' }, { status: 403 })
+  }
+
   const row = { ...body, owner_id: userId }
 
   const { error } = await supabase.from('guests').upsert(row)
