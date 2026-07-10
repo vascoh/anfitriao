@@ -1,24 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server'
+import 'server-only'
 import { Resend } from 'resend'
-import { adminGetBookingById, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 
-export async function POST(req: NextRequest) {
-  if (!process.env.RESEND_API_KEY) {
-    return NextResponse.json({ ok: true, skipped: 'no_api_key' })
-  }
+export interface BookingNotification {
+  bookingId: string
+  ownerId: string | null
+  guestName: string
+  guestEmail: string
+  guestPhone: string | null
+  propertyName: string
+  checkIn: string
+  checkOut: string
+  numHospedes: number
+  total: number
+  notas: string | null
+}
 
-  const {
-    bookingId, guestName, guestEmail, guestPhone,
-    propertyName, checkIn, checkOut, numHospedes, total, notas,
-  } = await req.json()
+/**
+ * Envia os emails de nova reserva (anfitrião + hóspede).
+ * No-op silencioso sem RESEND_API_KEY. Chamado server-side a partir de
+ * /api/book — nunca exposto como endpoint público.
+ */
+export async function sendBookingNotification(p: BookingNotification): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
 
-  const booking = bookingId ? await adminGetBookingById(bookingId) : null
-  const settings = await adminGetWebsiteSettings(booking?.owner_id)
+  const settings = await adminGetWebsiteSettings(p.ownerId)
   const hostTo = process.env.NOTIFY_EMAIL || settings.email
   const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
-  const numNights = nights(checkIn, checkOut)
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
+  const numNights = nights(p.checkIn, p.checkOut)
   const resend = new Resend(process.env.RESEND_API_KEY)
   const sends: Promise<unknown>[] = []
 
@@ -27,62 +38,30 @@ export async function POST(req: NextRequest) {
       resend.emails.send({
         from,
         to: hostTo,
-        subject: `Nova reserva — ${propertyName} · ${fmtDate(checkIn)}`,
-        html: buildHostEmail({ bookingId, guestName, guestEmail, guestPhone, propertyName, checkIn, checkOut, numNights, numHospedes, total, notas, baseUrl }),
+        subject: `Nova reserva — ${p.propertyName} · ${fmtDate(p.checkIn)}`,
+        html: buildHostEmail({ ...p, numNights, baseUrl }),
       })
     )
   }
 
-  if (guestEmail) {
+  if (p.guestEmail) {
     const hostName = settings.host_nome || settings.nome
     const hostContact = settings.telefone || settings.email || ''
     sends.push(
       resend.emails.send({
         from,
-        to: guestEmail,
-        subject: `Pedido de reserva recebido — ${propertyName}`,
-        html: buildGuestEmail({ guestName, propertyName, checkIn, checkOut, numNights, numHospedes, total, hostName, hostContact, notas }),
+        to: p.guestEmail,
+        subject: `Pedido de reserva recebido — ${p.propertyName}`,
+        html: buildGuestEmail({ ...p, numNights, hostName, hostContact }),
       })
     )
   }
 
-  try {
-    await Promise.all(sends)
-  } catch (err) {
-    console.error('[notify-booking]', err)
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true })
+  await Promise.all(sends)
 }
 
-interface HostEmailProps {
-  bookingId: string
-  guestName: string
-  guestEmail: string
-  guestPhone: string | null
-  propertyName: string
-  checkIn: string
-  checkOut: string
-  numNights: number
-  numHospedes: number
-  total: number
-  notas: string | null
-  baseUrl: string
-}
-
-interface GuestEmailProps {
-  guestName: string
-  propertyName: string
-  checkIn: string
-  checkOut: string
-  numNights: number
-  numHospedes: number
-  total: number
-  hostName: string
-  hostContact: string
-  notas: string | null
-}
+type HostEmailProps = BookingNotification & { numNights: number; baseUrl: string }
+type GuestEmailProps = BookingNotification & { numNights: number; hostName: string; hostContact: string }
 
 function buildHostEmail(p: HostEmailProps): string {
   return `<!DOCTYPE html>

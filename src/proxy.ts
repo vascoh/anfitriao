@@ -22,7 +22,6 @@ const isPublicRoute = createRouteMatcher([
   '/api/ical-proxy(.*)',
   '/api/checkin/(.*)',
   '/api/pwa-icon(.*)',
-  '/api/notify-booking(.*)',
   '/api/notify-confirmation(.*)',
   '/api/notify-checkin-complete(.*)',
   '/api/stripe/webhook', // webhook verificado pela assinatura Stripe

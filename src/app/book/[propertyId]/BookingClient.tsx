@@ -334,22 +334,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
         }),
       })
       if (!bookRes.ok) throw new Error('Erro ao criar reserva')
-      fetch('/api/notify-booking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId,
-          guestName: nome.trim(),
-          guestEmail: email.trim(),
-          guestPhone: telefone.trim() || null,
-          propertyName: prop.nome,
-          checkIn,
-          checkOut,
-          numHospedes,
-          total,
-          notas: notas.trim() || null,
-        }),
-      }).catch(() => {})
+      // Email de notificação é enviado server-side por /api/book
       router.push(`/book/${prop.id}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
     } catch {
       setSubmitting(false)
