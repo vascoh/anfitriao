@@ -6,6 +6,12 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-10] Lint a zero + segurança do fluxo de reserva
+- ✅ **Lint 27 → 0** — código morto removido em 14 ficheiros; `no-unused-vars` com `ignoreRestSiblings`/`^_`; disables justificados (Date.now server layout, exhaustive-deps intencionais, `<img>` para URLs arbitrários)
+- ✅ **`/api/book` endurecido** — whitelist de campos (anti mass-assignment: `estado`/`origem`/`owner_id` forçados no servidor), validação de email/datas/limites, parse JSON seguro
+- ✅ **Email de nova reserva server-side** — `lib/notify-booking.ts` (server-only); `/api/book` envia após insert. Removido `/api/notify-booking` (endpoint público que permitia enviar emails arbitrários pelo Resend do projeto) + entrada no proxy + chamada client-side
+- ℹ️ Onboarding wizard `/conta/bem-vindo` verificado: **já usa estado real** (propriedades, iCal, website) — item do backlog obsoleto
+
 ### [2026-06-30] Hardening RLS + teste de reserva em produção
 Limpeza completa do RLS no projeto Supabase `anfitriao` (`nnbqfrszukkzoqwssjvg`). Advisor de segurança: **21 lints → 5** (1 WARN intencional + 4 INFO benignos).
 
@@ -78,7 +84,7 @@ Limpeza completa do RLS no projeto Supabase `anfitriao` (`nnbqfrszukkzoqwssjvg`)
 - [x] 🔴 **Cross-tenant**: removidas policies `authenticated_full_*` das 9 tabelas core ✅ (2026-06-30, migration `drop_authenticated_full_blanket_rls_policies`) — ver secção Segurança
 
 ### 🟡 Importante
-- [ ] Onboarding wizard para novos anfitriões (melhorar `/conta/bem-vindo` com estado real)
+- [x] Onboarding wizard para novos anfitriões ✅ (verificado 2026-07-10: já usa estado real)
 - [x] Perfil do anfitrião editável (`/conta/perfil`) ✅
 - [x] Export SIBA (CSV para portal SEF) ✅
 
@@ -89,7 +95,7 @@ Limpeza completa do RLS no projeto Supabase `anfitriao` (`nnbqfrszukkzoqwssjvg`)
 ### ⚪ Funcionalidades futuras
 - [ ] Subdomain routing (`*.anfitrioes.pt`)
 - [ ] Push notifications (PWA)
-- [ ] Notificações email (nova reserva, check-in, pagamento)
+- [~] Notificações email — nova reserva ✅ server-side (2026-07-10); check-in/pagamento têm rotas mas requerem RESEND_API_KEY configurada
 
 ---
 
