@@ -6,6 +6,9 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13l] db.ts limpo — bugs B1/B2 do HANDOFF fechados
+- ✅ Os getters por ID sem filtro de owner (B1/B2, prioridade Alta) eram **código morto sem callers** — 30+ funções removidas do cliente anon (writes client-side incluídos), -265 linhas. `db.ts` fica só com os 3 getters das páginas públicas `/book`, documentado como tal. Páginas públicas verificadas em produção após deploy.
+
 ### [2026-07-13k] Documentação atualizada
 - ✅ README reescrito (era boilerplate); HANDOFF atualizado ao estado atual (stack, migrations, env vars, pendentes); CLAUDE.md do projeto com convenções críticas (datas, owner_id, notify server-only, proxy.ts, PT-PT).
 - ✅ Verificado que as promessas da landing (RevPAR, ocupação, receita por plataforma, YoY) existem mesmo em /relatorios.
