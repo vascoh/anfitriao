@@ -6,6 +6,11 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13e] Sweep de timezone — today() local
+- ✅ **Bug sistémico**: `today()` devolvia a data UTC; em Lisboa (verão, UTC+1) a app inteira mostrava o dia anterior entre as 00:00 e a 01:00 (página Hoje, filtros, calendários, receita do mês, data mínima no site público). Corrigido para data local + teste.
+- ✅ 20+ usos manuais de `new Date().toISOString().slice(0,10)` substituídos por `today()`/`addDays()` em 14 ficheiros; padding do calendário de preços tinha off-by-one próprio.
+- ✅ Suite (105 testes) verde em Europe/Lisbon e Asia/Tokyo; deploy em produção verificado.
+
 ### [2026-07-13d] Push notifications PWA ✅ (item do backlog)
 - ✅ **Nova reserva e check-in concluído → push no telemóvel do anfitrião.** Tabela `push_subscriptions` (migration 012, RLS só service_role), `lib/push.ts` (web-push + VAPID, limpa subscrições mortas, nunca lança, 4 testes), `/api/push` POST/DELETE com Clerk, handlers no `sw.js` (tocar abre a reserva), `PushToggle` em `/conta/perfil`.
 - ✅ Push independente do RESEND_API_KEY (email continua opcional)
