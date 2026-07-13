@@ -247,9 +247,9 @@ CRON_SECRET=
 
 | # | Ficheiro | Descrição | Prioridade |
 |---|---|---|---|
-| B1 | `db.ts` `getPropertyById`, `getGuestById`, `getBookingById` | Sem filtro owner_id → qualquer tenant pode ler qualquer registo por ID (até JWT estar configurado) | Alto |
-| B2 | `db.ts` `getPriceRules`, `getTarifas`, `getPlatformRates` | Sem filtro owner_id quando chamados sem propertyId | Médio |
-| B3 | `hoje/page.tsx` | Carrega TODOS os bookings históricos via `getBookings()` — lento com muitos dados. `pagamentosEmFalta` justifica o carregamento completo por agora | Baixo |
+| ~~B1~~ | ~~`db.ts` getters por ID sem owner_id~~ | ✅ Resolvido 2026-07-13: eram código morto sem callers — removidos. `db.ts` ficou só com os 3 getters usados pelas páginas públicas `/book` | — |
+| ~~B2~~ | ~~`db.ts` `getPriceRules`/`getTarifas`/`getPlatformRates`~~ | ✅ Resolvido 2026-07-13: código morto removido (as páginas usam API routes) | — |
+| B3 | `hoje/page.tsx` | Carrega TODOS os bookings históricos via API — lento com muitos dados. `pagamentosEmFalta` justifica o carregamento completo por agora | Baixo |
 
 ---
 
