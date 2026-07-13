@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
+import { toast } from 'sonner'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
-import type { Booking, Property, Guest, WebsiteSettings } from '@/lib/types'
+import { transitionBooking, canTransition } from '@/lib/reservations'
+import type { Booking, BookingStatus, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 
 function useTodayLabel() {
@@ -21,7 +23,31 @@ function propName(props: Property[], id: string) {
   return props.find(p => p.id === id)?.nome ?? '—'
 }
 
-function ArrivalCard({ b, guests, props }: { b: Booking; guests: Guest[]; props: Property[] }) {
+// Ação de 1 toque para o estado atual da reserva (princípio: máx. 2 toques)
+function quickAction(b: Booking): { to: BookingStatus; label: string; icon: typeof LogIn } | null {
+  if (b.estado === 'pendente' && canTransition('pendente', 'confirmada')) return { to: 'confirmada', label: 'Confirmar', icon: Check }
+  if (b.estado === 'confirmada' && canTransition('confirmada', 'checkin')) return { to: 'checkin', label: 'Check-in', icon: LogIn }
+  if (b.estado === 'checkin' && canTransition('checkin', 'checkout')) return { to: 'checkout', label: 'Check-out', icon: LogOut }
+  return null
+}
+
+function QuickActionButton({ b, onTransition }: { b: Booking; onTransition: (b: Booking, to: BookingStatus) => void }) {
+  const action = quickAction(b)
+  if (!action) return null
+  const Icon = action.icon
+  return (
+    <button
+      type="button"
+      onClick={e => { e.preventDefault(); e.stopPropagation(); onTransition(b, action.to) }}
+      className="flex items-center gap-1.5 rounded-lg bg-primary/10 text-primary px-3 py-2 text-xs font-semibold active:bg-primary/20 transition-colors shrink-0"
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {action.label}
+    </button>
+  )
+}
+
+function ArrivalCard({ b, guests, props, onTransition }: { b: Booking; guests: Guest[]; props: Property[]; onTransition: (b: Booking, to: BookingStatus) => void }) {
   const n = nights(b.check_in, b.check_out)
   const prop = props.find(p => p.id === b.propriedade_id)
   const guest = guests.find(g => g.id === b.hospede_id)
@@ -48,14 +74,16 @@ function ArrivalCard({ b, guests, props }: { b: Booking; guests: Guest[]; props:
           </span>
         )}
       </div>
+      <QuickActionButton b={b} onTransition={onTransition} />
     </Link>
   )
 }
 
-function InHouseRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: Property[] }) {
+function InHouseRow({ b, guests, props, onTransition }: { b: Booking; guests: Guest[]; props: Property[]; onTransition: (b: Booking, to: BookingStatus) => void }) {
   const prop = props.find(p => p.id === b.propriedade_id)
   const t = today()
   const daysLeft = nights(t, b.check_out)
+  const saiHoje = b.check_out <= t
   return (
     <Link href={`/reservas/${b.id}`}
       className="flex items-center gap-3 px-4 py-3 active:bg-muted/50 transition-colors">
@@ -68,6 +96,7 @@ function InHouseRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
         <p className="text-xs text-muted-foreground">sai {fmtDate(b.check_out)}</p>
         <p className="text-[10px] text-muted-foreground/70">{daysLeft} dia{daysLeft !== 1 ? 's' : ''}</p>
       </div>
+      {saiHoje && <QuickActionButton b={b} onTransition={onTransition} />}
     </Link>
   )
 }
@@ -88,6 +117,36 @@ export default function HojePage() {
       .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); if (s) setSettings(s) })
       .finally(() => setLoaded(true))
   }, [ownerId])
+
+  const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
+    confirmada: 'Reserva confirmada',
+    checkin: 'Check-in registado',
+    checkout: 'Check-out registado',
+  }
+
+  const applyTransition = useCallback(async (b: Booking, to: BookingStatus) => {
+    if (!canTransition(b.estado, to)) return
+    const updated = transitionBooking(b, to)
+    // update otimista; rollback se o servidor recusar
+    setBookings(prev => prev.map(x => x.id === b.id ? updated : x))
+    try {
+      const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      if (!res.ok) throw new Error()
+      toast.success(TRANSITION_MSG[to] ?? 'Estado atualizado')
+      if (to === 'confirmada') {
+        // email de confirmação ao hóspede — mesmo comportamento da página da reserva
+        fetch('/api/notify-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: b.id }),
+        }).catch(() => {})
+      }
+    } catch {
+      setBookings(prev => prev.map(x => x.id === b.id ? b : x))
+      toast.error('Não foi possível atualizar a reserva')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const t = today()
 
@@ -296,7 +355,7 @@ export default function HojePage() {
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Chegadas hoje</h2>
             </div>
             <div className="divide-y divide-border">
-              {chegadas.map(b => <ArrivalCard key={b.id} b={b} guests={guests} props={props} />)}
+              {chegadas.map(b => <ArrivalCard key={b.id} b={b} guests={guests} props={props} onTransition={applyTransition} />)}
             </div>
           </section>
         )}
@@ -309,7 +368,7 @@ export default function HojePage() {
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Saídas hoje</h2>
             </div>
             <div className="divide-y divide-border">
-              {saidas.map(b => <ArrivalCard key={b.id} b={b} guests={guests} props={props} />)}
+              {saidas.map(b => <ArrivalCard key={b.id} b={b} guests={guests} props={props} onTransition={applyTransition} />)}
             </div>
           </section>
         )}
@@ -322,7 +381,7 @@ export default function HojePage() {
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Em casa agora</h2>
             </div>
             <div className="divide-y divide-border">
-              {emCasa.map(b => <InHouseRow key={b.id} b={b} guests={guests} props={props} />)}
+              {emCasa.map(b => <InHouseRow key={b.id} b={b} guests={guests} props={props} onTransition={applyTransition} />)}
             </div>
           </section>
         )}
