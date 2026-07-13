@@ -54,9 +54,9 @@ const faqJsonLd = {
 const features = [
   {
     Icon: RefreshCw,
-    title: 'Sync Airbnb & Booking.com',
-    desc: 'Liga os teus calendários via iCal. As reservas das plataformas aparecem automaticamente e os bloqueios são enviados de volta em tempo real.',
-    metric: 'Sync automático · sem copy-paste',
+    title: 'Sincroniza Airbnb e Booking.com',
+    desc: 'Liga os teus calendários via iCal. As reservas das plataformas aparecem automaticamente e os bloqueios são enviados de volta.',
+    metric: 'Sincronização automática · sem copiar à mão',
   },
   {
     Icon: Smartphone,
@@ -67,7 +67,7 @@ const features = [
   {
     Icon: ChartColumn,
     title: 'Relatórios de receita',
-    desc: 'RevPAR, taxa de ocupação, receita por plataforma e comparação com ano anterior. Tudo actualizado em tempo real.',
+    desc: 'RevPAR, taxa de ocupação, receita por plataforma e comparação com o ano anterior. Tudo atualizado em tempo real.',
     metric: 'RevPAR e ocupação em tempo real',
   },
   {
@@ -79,13 +79,13 @@ const features = [
   {
     Icon: Euro,
     title: 'Sistema de preços',
-    desc: 'Define regras por época, fim-de-semana e estadia mínima. Desconto automático por plataforma. Simples e flexível.',
+    desc: 'Define regras por época, fim de semana e estadia mínima. Desconto automático por plataforma. Simples e flexível.',
     metric: 'Regras por época · sem folhas de cálculo',
   },
   {
     Icon: Globe,
     title: 'Site de reservas diretas',
-    desc: 'O teu próprio site em anfitrioes.pt/r/[o-teu-nome]. Partilha com hóspedes directos e elimina as comissões das OTAs.',
+    desc: 'O teu próprio site em anfitrioes.pt/r/[o-teu-nome]. Partilha com hóspedes diretos e elimina as comissões das plataformas.',
     metric: '0% de comissão em reservas diretas',
   },
 ]
@@ -114,7 +114,7 @@ const testimonials = [
 const steps = [
   {
     number: '01',
-    title: 'Conecta as tuas plataformas',
+    title: 'Liga as tuas plataformas',
     desc: 'Copia o link iCal do Airbnb e do Booking.com e cola no Anfitrião. Em menos de 5 minutos todas as tuas reservas estão sincronizadas.',
   },
   {
@@ -125,7 +125,7 @@ const steps = [
   {
     number: '03',
     title: 'Geres tudo num só lugar',
-    desc: 'Calendário unificado, reservas, receitas, relatórios e IA Concierge. Do telemóvel ou do computador, sempre actualizado.',
+    desc: 'Calendário unificado, reservas, receitas, relatórios e IA Concierge. Do telemóvel ou do computador, sempre atualizado.',
   },
 ]
 
@@ -214,7 +214,7 @@ export default async function Home() {
               <span className="text-primary">sem stress</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Sem planilhas. Sem papelada. Conecta Airbnb e Booking.com, faz check-in digital com SIBA automático e acompanha reservas e receitas — tudo num só lugar.
+              Sem folhas de cálculo. Sem papelada. Liga o Airbnb e o Booking.com, faz check-in digital com SIBA automático e acompanha reservas e receitas — tudo num só lugar.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
@@ -299,12 +299,12 @@ export default async function Home() {
             <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-xs font-medium text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current text-primary" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.5 6.5l-5 8-3-4-1.5 2H7l3.5-5 3 4 3.5-6H16.5z"/></svg>
-                Sync iCal Airbnb
+                iCal Airbnb
               </span>
               <span className="text-border" aria-hidden="true">·</span>
               <span className="flex items-center gap-1.5">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current text-primary" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.5 6.5l-5 8-3-4-1.5 2H7l3.5-5 3 4 3.5-6H16.5z"/></svg>
-                Sync iCal Booking.com
+                iCal Booking.com
               </span>
               <span className="text-border" aria-hidden="true">·</span>
               <span className="flex items-center gap-1.5">
