@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
+import { fetchIcalText } from '@/lib/ical-fetch'
 const supabase = createAdminClient()
 
 function parseIcalDate(s: string): string {
@@ -49,7 +50,6 @@ function parseIcal(text: string): Array<{ uid: string; dtstart: string; dtend: s
 async function syncProperty(
   propertyId: string,
   feeds: IcalFeed[],
-  origin: string,
   ownerId: string,
 ): Promise<{ synced: number; results: Array<{ feed: string; imported: number; skipped: number; error?: string }>; updatedFeeds: IcalFeed[] }> {
   const results: Array<{ feed: string; imported: number; skipped: number; error?: string }> = []
@@ -66,10 +66,7 @@ async function syncProperty(
 
   for (const feed of feeds) {
     try {
-      const proxyUrl = `${origin}/api/ical-proxy?url=${encodeURIComponent(feed.url)}`
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const text = await res.text()
+      const text = await fetchIcalText(feed.url)
       const events = parseIcal(text)
 
       const newBookings: object[] = []
@@ -167,8 +164,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ synced: 0, message: 'No feeds configured' })
     }
 
-    const origin = new URL(req.url).origin
-    const { synced, results } = await syncProperty(propertyId, feeds, origin, propRow.owner_id as string)
+    const { synced, results } = await syncProperty(propertyId, feeds, propRow.owner_id as string)
     return NextResponse.json({ synced, results })
   } catch (err) {
     console.error('[ical-sync] POST error:', err)
@@ -200,13 +196,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ synced: 0, properties: 0, message: 'No feeds configured' })
     }
 
-    const origin = new URL(req.url).origin
     let totalSynced = 0
     const summary: Array<{ propertyId: string; synced: number }> = []
 
     for (const prop of propsWithFeeds) {
       const feeds = prop.ical_feeds as IcalFeed[]
-      const { synced } = await syncProperty(prop.id, feeds, origin, (prop as { owner_id: string }).owner_id)
+      const { synced } = await syncProperty(prop.id, feeds, (prop as { owner_id: string }).owner_id)
       totalSynced += synced
       summary.push({ propertyId: prop.id, synced })
     }

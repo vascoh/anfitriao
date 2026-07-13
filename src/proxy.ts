@@ -18,12 +18,11 @@ const isPublicRoute = createRouteMatcher([
   // APIs públicas
   '/api/book',
   '/api/og(.*)',
-  '/api/ical(.*)',
-  '/api/ical-proxy(.*)',
+  '/api/ical/(.*)',
   '/api/checkin/(.*)',
   '/api/pwa-icon(.*)',
-  '/api/notify-confirmation(.*)',
-  '/api/notify-checkin-complete(.*)',
+  // Extração de documento usada pelo check-in público do hóspede (rate-limited)
+  '/api/documentos/extrair',
   '/api/stripe/webhook', // webhook verificado pela assinatura Stripe
   // Cron jobs (protegidos por CRON_SECRET, não por Clerk)
   '/api/ical-sync(.*)',

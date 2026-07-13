@@ -22,13 +22,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ficheiro em falta' }, { status: 400 })
     }
 
+    if (file.size > 8 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Ficheiro demasiado grande (máx. 8MB)' }, { status: 413 })
+    }
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const
+    type MediaType = (typeof ALLOWED_TYPES)[number]
+    const mediaType: MediaType = (ALLOWED_TYPES as readonly string[]).includes(file.type)
+      ? (file.type as MediaType)
+      : 'image/jpeg'
+
     const bytes = await file.arrayBuffer()
     const base64 = Buffer.from(bytes).toString('base64')
-    const mediaType = (file.type || 'image/jpeg') as
-      | 'image/jpeg'
-      | 'image/png'
-      | 'image/gif'
-      | 'image/webp'
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',

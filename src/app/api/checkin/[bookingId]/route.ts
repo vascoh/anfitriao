@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
+import { sendCheckinCompleteNotification } from '@/lib/notify-checkin'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 const supabase = createAdminClient()
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Campo de texto opcional: trim + limite de tamanho; null se vazio/inválido */
+function optText(v: unknown, max: number): string | null {
+  if (typeof v !== 'string') return null
+  const s = v.trim().slice(0, max)
+  return s || null
+}
+
+function optDate(v: unknown): string | null {
+  const s = optText(v, 10)
+  return s && DATE_RE.test(s) ? s : null
+}
 
 type Params = Promise<{ bookingId: string }>
 
@@ -52,8 +68,14 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
 export async function POST(req: NextRequest, { params }: { params: Params }) {
   const { bookingId } = await params
 
+  const rl = checkRateLimit(`checkin:${getClientIp(req)}`, 10, 3_600_000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
+  }
+
   const body = await req.json().catch(() => null)
-  if (!body || !body.nome?.trim()) {
+  const nome = optText(body?.nome, 200)
+  if (!nome) {
     return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
   }
 
@@ -68,16 +90,16 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   }
 
   const guestData = {
-    nome: body.nome.trim(),
-    email: body.email?.trim() || null,
-    telefone: body.telefone?.trim() || null,
-    nacionalidade: body.nacionalidade?.trim() || null,
-    numero_documento: body.numero_documento?.trim() || null,
-    data_nascimento: body.data_nascimento?.trim() || null,
-    tipo_documento: body.tipo_documento?.trim() || null,
-    sexo: body.sexo?.trim() || null,
-    pais_emissao: body.pais_emissao?.trim() || null,
-    data_validade_doc: body.data_validade_doc?.trim() || null,
+    nome,
+    email: optText(body.email, 320),
+    telefone: optText(body.telefone, 40),
+    nacionalidade: optText(body.nacionalidade, 80),
+    numero_documento: optText(body.numero_documento, 60),
+    data_nascimento: optDate(body.data_nascimento),
+    tipo_documento: optText(body.tipo_documento, 40),
+    sexo: optText(body.sexo, 12),
+    pais_emissao: optText(body.pais_emissao, 80),
+    data_validade_doc: optDate(body.data_validade_doc),
   }
 
   if (booking.hospede_id) {
@@ -95,13 +117,12 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     }],
   }).eq('id', bookingId)
 
-  // Notify host — fire-and-forget, never block the guest
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
-  fetch(`${baseUrl}/api/notify-checkin-complete`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ bookingId }),
-  }).catch(() => {})
+  // Notificar o anfitrião — nunca bloquear o hóspede se o email falhar
+  try {
+    await sendCheckinCompleteNotification(bookingId)
+  } catch (err) {
+    console.error('[checkin] notify', err)
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import 'server-only'
 import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { fmtDate, escHtml } from '@/lib/utils'
 
-export async function POST(req: NextRequest) {
-  if (!process.env.RESEND_API_KEY) {
-    return NextResponse.json({ ok: true, skipped: 'no_api_key' })
-  }
-
-  const { bookingId } = await req.json()
-  if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
+/**
+ * Notifica o anfitrião quando um hóspede conclui o check-in online.
+ * Chamado server-side a partir de /api/checkin/[bookingId] — nunca exposto
+ * como endpoint público (evita abuso do Resend do projeto).
+ */
+export async function sendCheckinCompleteNotification(bookingId: string): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return
 
   const booking = await adminGetBookingById(bookingId)
-  if (!booking) return NextResponse.json({ ok: false, error: 'not found' }, { status: 404 })
+  if (!booking) return
 
   const [guest, prop, settings] = await Promise.all([
     booking.hospede_id ? adminGetGuestById(booking.hospede_id) : Promise.resolve(null),
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     adminGetWebsiteSettings(booking.owner_id),
   ])
   const hostEmail = settings.email
-  if (!hostEmail) return NextResponse.json({ ok: true, skipped: 'no_host_email' })
+  if (!hostEmail) return
 
   const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
   const resend = new Resend(process.env.RESEND_API_KEY)
@@ -32,12 +32,11 @@ export async function POST(req: NextRequest) {
     (guest?.sexo || guest?.pais_emissao)
   )
 
-  try {
-    await resend.emails.send({
-      from,
-      to: hostEmail,
-      subject: `✓ Check-in online concluído — ${guest?.nome ?? 'Hóspede'} · ${prop?.nome ?? 'Alojamento'}`,
-      html: `<!DOCTYPE html>
+  await resend.emails.send({
+    from,
+    to: hostEmail,
+    subject: `✓ Check-in online concluído — ${guest?.nome ?? 'Hóspede'} · ${prop?.nome ?? 'Alojamento'}`,
+    html: `<!DOCTYPE html>
 <html lang="pt">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f5f0;padding:32px 16px;margin:0;">
@@ -90,11 +89,5 @@ export async function POST(req: NextRequest) {
   </div>
 </body>
 </html>`,
-    })
-  } catch (err) {
-    console.error('[notify-checkin-complete]', err)
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true })
+  })
 }

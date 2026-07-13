@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ ok: true, skipped: 'no_api_key' })
   }
@@ -13,6 +17,11 @@ export async function POST(req: NextRequest) {
 
   const booking = await adminGetBookingById(bookingId)
   if (!booking) return NextResponse.json({ ok: false, error: 'booking not found' }, { status: 404 })
+
+  // Só o dono da reserva pode disparar o email (linhas legadas sem owner permitidas)
+  if (booking.owner_id && booking.owner_id !== userId) {
+    return NextResponse.json({ ok: false, error: 'booking not found' }, { status: 404 })
+  }
 
   const [guest, prop, settings] = await Promise.all([
     booking.hospede_id ? adminGetGuestById(booking.hospede_id) : Promise.resolve(null),
