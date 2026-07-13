@@ -324,7 +324,7 @@ export default async function ReservasPage(
                 {settings.telefone}
               </a>
             )}
-            <span className="opacity-75">Powered by Anfitrião</span>
+            <span>Powered by Anfitrião</span>
           </div>
         </div>
       </footer>
