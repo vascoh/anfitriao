@@ -6,6 +6,14 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13d] Push notifications PWA ✅ (item do backlog)
+- ✅ **Nova reserva e check-in concluído → push no telemóvel do anfitrião.** Tabela `push_subscriptions` (migration 012, RLS só service_role), `lib/push.ts` (web-push + VAPID, limpa subscrições mortas, nunca lança, 4 testes), `/api/push` POST/DELETE com Clerk, handlers no `sw.js` (tocar abre a reserva), `PushToggle` em `/conta/perfil`.
+- ✅ Push independente do RESEND_API_KEY (email continua opcional)
+- ✅ VAPID keys geradas e configuradas em `.env.local` + Vercel production
+- ✅ Limpeza: `store.ts`/`mock-data.ts` (código morto) removidos; `outputFileTracingRoot` cala warning de lockfiles
+- ✅ Advisor Supabase re-verificado: sem regressões (1 WARN irredutível + 4 INFO, estado documentado)
+- ℹ️ iOS: requer app instalada no ecrã inicial (PWA) para push funcionar — limitação da Apple
+
 ### [2026-07-13c] SIBA CSV injection + concierge com idioma automático
 - ✅ **CSV formula injection neutralizado** — nomes/dados de hóspedes começados por `= + - @` eram executados como fórmulas no Excel do anfitrião. `lib/siba.ts` (escCsv, normalizeDate, buildSibaCsv) + 10 testes; rota valida `from`/`to`.
 - ✅ **Concierge endurecido** — clamp de mensagem (4000) e contexto, whitelist de tone/idioma, parse JSON seguro
