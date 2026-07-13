@@ -102,13 +102,19 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     data_validade_doc: optDate(body.data_validade_doc),
   }
 
+  // Propagar erros de escrita: sem isto o hóspede via "Obrigado" mesmo quando
+  // o RLS/BD rejeitava os updates e nada ficava gravado (perda de dados silenciosa)
   if (booking.hospede_id) {
-    await supabase.from('guests').update(guestData).eq('id', booking.hospede_id)
+    const { error: gErr } = await supabase.from('guests').update(guestData).eq('id', booking.hospede_id)
+    if (gErr) {
+      console.error('[checkin] guest update', gErr.message)
+      return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+    }
   }
 
   const now = new Date().toISOString()
   const historico: unknown[] = Array.isArray(booking.historico) ? booking.historico : []
-  await supabase.from('bookings').update({
+  const { error: bErr } = await supabase.from('bookings').update({
     historico: [...historico, {
       id: crypto.randomUUID(),
       data: now,
@@ -116,6 +122,10 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       descricao: `Check-in online submetido por ${guestData.nome}`,
     }],
   }).eq('id', bookingId)
+  if (bErr) {
+    console.error('[checkin] booking update', bErr.message)
+    return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+  }
 
   // Notificar o anfitrião — nunca bloquear o hóspede se o email falhar
   try {
