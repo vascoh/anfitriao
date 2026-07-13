@@ -68,9 +68,12 @@ const WA_SVG = (
 
 // ─── PropertyCard ─────────────────────────────────────────────────────────────
 
-function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
+function PropertyCard({ p, minNights, desde }: { p: Property; minNights: number; desde?: number }) {
   // Link to the booking detail page (still served under /book/[id])
   const href = `/book/${p.id}`
+  // Casa com quartos: mostrar "desde" o preço do quarto mais barato
+  const preco = desde ?? p.preco_base
+  const prefixo = desde !== undefined ? 'desde ' : ''
 
   return (
     <Link href={href}
@@ -96,7 +99,7 @@ function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-3xl font-bold text-white leading-none">{fmtMoney(p.preco_base)}</p>
+                <p className="text-3xl font-bold text-white leading-none">{prefixo}{fmtMoney(preco)}</p>
                 <p className="text-white/60 text-xs mt-0.5">
                   por noite{p.taxa_limpeza && p.taxa_limpeza > 0 ? ` · ${fmtMoney(p.taxa_limpeza)} limpeza` : ''}
                 </p>
@@ -114,7 +117,7 @@ function PropertyCard({ p, minNights }: { p: Property; minNights: number }) {
             <p className="text-xs text-muted-foreground">{PROPERTY_TYPE_LABEL[p.tipo]} · {p.cidade}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-2xl font-bold" style={{ color: p.cor }}>{fmtMoney(p.preco_base)}</p>
+            <p className="text-2xl font-bold" style={{ color: p.cor }}>{prefixo}{fmtMoney(preco)}</p>
             <p className="text-xs text-muted-foreground">/ noite</p>
           </div>
         </div>
@@ -182,9 +185,18 @@ export default async function ReservasPage(
     )
   }
 
-  const props = settings.owner_id
+  const allProps = settings.owner_id
     ? await adminGetProperties(settings.owner_id as string)
     : []
+  // Quartos (parent_id) não aparecem como alojamentos independentes — reservam-se
+  // dentro da página da casa-mãe (evita contagem inflacionada e dupla reserva)
+  const props = allProps.filter(p => !p.parent_id)
+  const minRoomPrice = new Map<string, number>()
+  for (const room of allProps) {
+    if (!room.parent_id || !room.ativo) continue
+    const cur = minRoomPrice.get(room.parent_id)
+    if (cur === undefined || room.preco_base < cur) minRoomPrice.set(room.parent_id, room.preco_base)
+  }
 
   const brandName = settings.logo_texto || settings.nome
   const waLink = settings.telefone
@@ -245,7 +257,7 @@ export default async function ReservasPage(
               {props.length === 1 ? '1 alojamento disponível' : `${props.length} alojamentos disponíveis`}
             </p>
             {props.map(p => (
-              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} />
+              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} desde={minRoomPrice.get(p.id)} />
             ))}
           </section>
         )}
