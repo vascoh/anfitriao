@@ -406,7 +406,12 @@ export default async function Home() {
               <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">Testemunhos</div>
               <h2 className="text-3xl font-bold md:text-4xl">O que dizem os anfitriões</h2>
             </div>
-            <div className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label="Testemunhos de anfitriões"
+              className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0"
+            >
               {testimonials.map(t => (
                 <figure
                   key={t.name}

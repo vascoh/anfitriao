@@ -70,7 +70,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // sem maximumScale: bloquear o zoom viola WCAG 1.4.4 (axe: meta-viewport)
   viewportFit: 'cover',
   themeColor: '#C2714F',
 }

@@ -43,6 +43,7 @@
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
     "@vitest/coverage-v8": "^4.1.10",
+    "axe-core": "^4.12.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "husky": "^9.1.7",

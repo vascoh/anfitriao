@@ -156,14 +156,14 @@ function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, r
 
       {/* Month navigation */}
       <div className="flex items-center justify-between">
-        <button type="button" onClick={prevMonth}
+        <button type="button" onClick={prevMonth} aria-label="Mês anterior"
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </button>
         <span className="text-sm font-semibold">{MONTHS[month]} {year}</span>
-        <button type="button" onClick={nextMonth}
+        <button type="button" onClick={nextMonth} aria-label="Mês seguinte"
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
 
@@ -350,9 +350,9 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     <div className="min-h-dvh bg-background flex flex-col">
 
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
-        <Link href={prop.parent_id ? `/book/${prop.parent_id}` : '/book'}
+        <Link href={prop.parent_id ? `/book/${prop.parent_id}` : '/book'} aria-label="Voltar"
           className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
         <span className="font-semibold text-sm truncate flex-1">{prop.nome}</span>
         {checkIn && checkOut && hasEnoughNights && (

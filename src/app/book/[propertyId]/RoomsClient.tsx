@@ -135,8 +135,8 @@ export default function RoomsClient({ parent, rooms, settings, occupiedIds }: Pr
     <div className="min-h-dvh bg-background flex flex-col">
 
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
-        <Link href="/book" className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-5 w-5" />
+        <Link href="/book" aria-label="Voltar" className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
         <span className="font-semibold text-sm truncate flex-1">{parent.nome}</span>
       </header>
