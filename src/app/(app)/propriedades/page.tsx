@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, BedDouble, ChevronDown, ChevronRight as ChevronRightIcon, Home } from 'lucide-react'
-import { fmtMoney } from '@/lib/utils'
+import { fmtMoney, today as localToday } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'
@@ -19,7 +19,7 @@ function PropertyCard({ p, bookings, guests, isRoom = false }: {
   const now = new Date()
   const thisYear = now.getFullYear()
   const thisMonth = now.getMonth()
-  const today = now.toISOString().slice(0, 10)
+  const today = localToday()
 
   const active = bookings.find(b => b.propriedade_id === p.id && b.estado === 'checkin')
   const next = bookings
@@ -115,8 +115,7 @@ function ParentPropertyGroup({ parent, rooms, bookings, guests }: {
   const [expanded, setExpanded] = useState(true)
 
   // Aggregate occupancy across all rooms
-  const now = new Date()
-  const today = now.toISOString().slice(0, 10)
+  const today = localToday()
   const occupiedRooms = rooms.filter(r =>
     bookings.some(b => b.propriedade_id === r.id && b.estado === 'checkin')
   ).length

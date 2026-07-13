@@ -6,6 +6,7 @@ import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Guest, Booking, Property, GuestTag } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
+import { today } from '@/lib/utils'
 import { useUser } from '@clerk/nextjs'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
@@ -88,7 +89,7 @@ export default function HospedesPage() {
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `siba-hospedes-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `siba-hospedes-${today()}.csv`
     a.click()
   }
 

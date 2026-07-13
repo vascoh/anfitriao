@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { uuid, today } from '@/lib/utils'
+import { uuid, today, addDays } from '@/lib/utils'
 import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
 import { detectConflict, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
@@ -51,13 +51,7 @@ function NovaReservaInner() {
   // Form state
   const [propId, setPropId] = useState(() => searchParams.get('propriedade') ?? '')
   const [checkIn, setCheckIn] = useState(() => searchParams.get('checkin') ?? today())
-  const [checkOut, setCheckOut] = useState(() => {
-    const ci = searchParams.get('checkin')
-    if (ci) {
-      const d = new Date(ci + 'T00:00:00'); d.setDate(d.getDate() + 2); return d.toISOString().slice(0, 10)
-    }
-    const d = new Date(); d.setDate(d.getDate() + 2); return d.toISOString().slice(0, 10)
-  })
+  const [checkOut, setCheckOut] = useState(() => addDays(searchParams.get('checkin') ?? today(), 2))
   const [guestId, setGuestId] = useState('')
   const [newGuestNome, setNewGuestNome] = useState('')
   const [numHospedes, setNumHospedes] = useState(2)
@@ -232,9 +226,7 @@ function NovaReservaInner() {
                   onChange={e => {
                     setCheckIn(e.target.value)
                     if (e.target.value >= checkOut) {
-                      const d = new Date(e.target.value)
-                      d.setDate(d.getDate() + 1)
-                      setCheckOut(d.toISOString().slice(0, 10))
+                      setCheckOut(addDays(e.target.value, 1))
                     }
                   }}
                   className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"

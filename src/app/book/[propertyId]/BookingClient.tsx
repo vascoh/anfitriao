@@ -10,7 +10,7 @@ import {
   Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees,
   CheckCircle2,
 } from 'lucide-react'
-import { uuid, fmtMoney, nights as calcNights } from '@/lib/utils'
+import { uuid, fmtMoney, nights as calcNights, today as localToday } from '@/lib/utils'
 import { addDays, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, WebsiteSettings, PriceRule, Tarifa, PlatformRate } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -244,7 +244,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localToday()
   // antecedencia_dias = 0 → today is bookable; 1 → earliest is tomorrow
   const minDate = addDays(today, settings.antecedencia_dias ?? 0)
   const numNights = checkIn && checkOut ? calcNights(checkIn, checkOut) : 0

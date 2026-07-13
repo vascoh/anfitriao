@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { fetchProperties } from '@/lib/fetcher'
 import { getPriceForDay } from '@/lib/reservations'
-import { fmtMoney, uuid } from '@/lib/utils'
+import { fmtMoney, uuid, today as localToday } from '@/lib/utils'
 import type {
   Property, PriceRule, PriceRuleTipo, Tarifa, TarifaTipo,
   PlatformRate, BookingSource,
@@ -184,7 +184,7 @@ function TabVisao({
     setEditing(null)
   }
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localToday()
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-8">
@@ -329,7 +329,7 @@ function TabCalendario({ props, rules }: { props: Property[]; rules: PriceRule[]
     // Padding from previous month
     for (let i = startPad - 1; i >= 0; i--) {
       const d = new Date(viewYear, viewMonth, -i)
-      const date = d.toISOString().slice(0, 10)
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       const { preco, regra } = getPriceForDay(prop, date, rules.filter(r => r.property_id === prop.id && r.ativo))
       days.push({ date, preco, regra, isCurrentMonth: false })
     }
@@ -346,7 +346,7 @@ function TabCalendario({ props, rules }: { props: Property[]; rules: PriceRule[]
     if (remaining < 7) {
       for (let i = 1; i <= remaining; i++) {
         const d = new Date(viewYear, viewMonth + 1, i)
-        const date = d.toISOString().slice(0, 10)
+        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         const { preco, regra } = getPriceForDay(prop, date, rules.filter(r => r.property_id === prop.id && r.ativo))
         days.push({ date, preco, regra, isCurrentMonth: false })
       }
@@ -366,7 +366,7 @@ function TabCalendario({ props, rules }: { props: Property[]; rules: PriceRule[]
     return 'text-muted-foreground'
   }
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localToday()
   const monthLabel = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(new Date(viewYear, viewMonth, 1))
 
   return (

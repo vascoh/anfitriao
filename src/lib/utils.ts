@@ -12,7 +12,10 @@ export function uuid(): string {
 }
 
 export function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  // Data LOCAL do dispositivo — toISOString() daria a data UTC, que em
+  // Europe/Lisbon (verão, UTC+1) mostra o dia anterior entre as 00:00 e a 01:00
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export function parseDate(s: string): Date {

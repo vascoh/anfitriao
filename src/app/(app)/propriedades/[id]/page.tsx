@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
-import { fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -98,7 +98,7 @@ export default function PropriedadeDetailPage() {
   )
 
   const activeBooking = bookings.find(b => b.estado === 'checkin')
-  const t = new Date().toISOString().slice(0, 10)
+  const t = today()
   const nextBooking = bookings
     .filter(b => b.estado === 'confirmada' && b.check_in >= t)
     .sort((a, b) => a.check_in.localeCompare(b.check_in))[0]

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
-import { today, fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
 import type { Booking, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
@@ -122,16 +122,12 @@ export default function HojePage() {
   )
 
   const proximasChegadas = useMemo(() => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10)
-    const horizon = new Date()
-    horizon.setDate(horizon.getDate() + 7)
-    const horizonStr = horizon.toISOString().slice(0, 10)
+    const tomorrowStr = addDays(t, 1)
+    const horizonStr = addDays(t, 7)
     return bookings
       .filter(b => b.check_in >= tomorrowStr && b.check_in <= horizonStr && b.estado !== 'cancelada' && b.estado !== 'no_show')
       .sort((a, b) => a.check_in.localeCompare(b.check_in))
-  }, [bookings])
+  }, [bookings, t])
 
   const activeProps = useMemo(() => props.filter(p => p.ativo), [props])
   const totalUnidades = activeProps.length
@@ -147,19 +143,16 @@ export default function HojePage() {
   )
 
   const receitaMes = useMemo(() => {
-    const month = new Date().toISOString().slice(0, 7)
+    const month = t.slice(0, 7)
     return bookings
       .filter(b => b.check_in.startsWith(month) && !['cancelada', 'no_show'].includes(b.estado))
       .reduce((sum, b) => sum + b.preco_total, 0)
-  }, [bookings])
+  }, [bookings, t])
 
   const receitaPrevista = useMemo(() => {
-    const todayStr = t
-    const horizon = new Date()
-    horizon.setDate(horizon.getDate() + 28)
-    const horizonStr = horizon.toISOString().slice(0, 10)
+    const horizonStr = addDays(t, 28)
     return bookings
-      .filter(b => (b.estado === 'confirmada' || b.estado === 'checkin') && b.check_in >= todayStr && b.check_in < horizonStr)
+      .filter(b => (b.estado === 'confirmada' || b.estado === 'checkin') && b.check_in >= t && b.check_in < horizonStr)
       .reduce((sum, b) => sum + b.preco_total, 0)
   }, [bookings, t])
 

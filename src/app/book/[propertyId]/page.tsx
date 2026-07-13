@@ -4,6 +4,7 @@ import {
   adminGetPriceRules, adminGetTarifas, adminGetPlatformRates, adminGetPropertyById,
 } from '@/lib/db-admin'
 import { blockedDates } from '@/lib/reservations'
+import { today } from '@/lib/utils'
 import BookingClient from './BookingClient'
 import RoomsClient from './RoomsClient'
 
@@ -44,7 +45,7 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
   const rooms = props.filter(p => p.parent_id === propertyId && p.ativo)
 
   if (rooms.length > 0) {
-    const today = new Date().toISOString().slice(0, 10)
+    const t = today()
     const occupiedIds = new Set(
       rooms
         .filter(room =>
@@ -52,8 +53,8 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
             b.propriedade_id === room.id &&
             b.estado !== 'cancelada' &&
             b.estado !== 'no_show' &&
-            b.check_in <= today &&
-            b.check_out > today
+            b.check_in <= t &&
+            b.check_out > t
           )
         )
         .map(r => r.id)

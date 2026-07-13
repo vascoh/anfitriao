@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown, Download } from 'lucide-react'
 import { fetchGuests } from '@/lib/fetcher'
+import { today } from '@/lib/utils'
 import type { Guest } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
 
@@ -50,7 +51,7 @@ export default function DocumentosPage() {
   const currentYear = new Date().getFullYear()
   const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0')
   const [sibaFrom, setSibaFrom] = useState(`${currentYear}-${currentMonth}-01`)
-  const [sibaTo, setSibaTo] = useState(new Date().toISOString().slice(0, 10))
+  const [sibaTo, setSibaTo] = useState(today())
   const [sibaExporting, setSibaExporting] = useState(false)
 
   async function exportSIBA() {

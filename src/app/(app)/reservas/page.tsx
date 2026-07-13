@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
-import { fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Booking, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
@@ -20,7 +20,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 ]
 
 function filterBookings(bookings: Booking[], filter: Filter): Booking[] {
-  const t = new Date().toISOString().slice(0, 10)
+  const t = today()
   switch (filter) {
     case 'ativas':   return bookings.filter(b => b.estado === 'checkin')
     case 'proximas': return bookings.filter(b => b.estado === 'confirmada' && b.check_in > t)

@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { today } from './utils'
 import type { Property, Guest, Booking, WebsiteSettings, PriceRule, Tarifa, PlatformRate } from './types'
 
 // DB row types (snake_case as stored in Supabase)
@@ -130,11 +131,11 @@ export const db = {
 
   // Future bookings only — for availability checks (much lighter than getBookings)
   getActiveBookings: async (ownerId?: string): Promise<Booking[]> => {
-    const today = new Date().toISOString().slice(0, 10)
+    const t = today()
     let q = supabase
       .from('bookings')
       .select('*')
-      .gte('check_out', today)
+      .gte('check_out', t)
       .not('estado', 'in', '("cancelada","no_show")')
       .order('check_in', { ascending: true })
     if (ownerId) q = q.eq('owner_id', ownerId)

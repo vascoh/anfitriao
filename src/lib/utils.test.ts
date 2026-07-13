@@ -61,6 +61,12 @@ describe('parseDate / today', () => {
   it('today returns YYYY-MM-DD', () => {
     expect(today()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
+
+  it('today devolve a data local, não a UTC', () => {
+    const d = new Date()
+    const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    expect(today()).toBe(local)
+  })
 })
 
 describe('escHtml', () => {

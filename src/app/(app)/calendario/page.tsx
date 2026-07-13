@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth } from '@/lib/reservations'
-import { addDays } from '@/lib/utils'
+import { addDays, today as localToday } from '@/lib/utils'
 import type { Booking, Property } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/labels'
 
@@ -35,10 +35,8 @@ function TimelineView({
   properties: Property[]
   guests: { id: string; nome: string }[]
 }) {
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), [])
-  const [windowStart, setWindowStart] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 2); return d.toISOString().slice(0, 10)
-  })
+  const today = useMemo(() => localToday(), [])
+  const [windowStart, setWindowStart] = useState(() => addDays(localToday(), -2))
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const days = useMemo(() => {
@@ -66,8 +64,7 @@ function TimelineView({
   function prevWindow() { setWindowStart(w => addDays(w, -7)) }
   function nextWindow() { setWindowStart(w => addDays(w, 7)) }
   function goToday() {
-    const d = new Date(); d.setDate(d.getDate() - 2)
-    setWindowStart(d.toISOString().slice(0, 10))
+    setWindowStart(addDays(localToday(), -2))
   }
 
   const CELL_W = 40 // px per day column
@@ -302,7 +299,7 @@ function GridView({
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [selected, setSelected] = useState<string | null>(null)
-  const today = now.toISOString().slice(0, 10)
+  const today = localToday()
 
   const grid = useMemo(() => {
     const firstDay = new Date(year, month, 1)

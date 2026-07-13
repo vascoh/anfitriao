@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
-import { today, fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
+import { today, addDays, fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 import { Resend } from 'resend'
 import { checkCronAuth } from '@/lib/cron-auth'
 const supabase = createAdminClient()
@@ -16,9 +16,7 @@ export async function GET(req: NextRequest) {
   }
 
   const t = today()
-  const cutoff = new Date(t)
-  cutoff.setDate(cutoff.getDate() + 3)
-  const cutoffStr = cutoff.toISOString().slice(0, 10)
+  const cutoffStr = addDays(t, 3)
 
   // Bookings with check-in in the next 3 days, confirmed/pendente, with balance
   const { data: bookings, error } = await supabase

@@ -6,7 +6,7 @@ import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
 import { occupancyForMonth } from '@/lib/reservations'
-import { fmtMoney, nights } from '@/lib/utils'
+import { fmtMoney, nights, today as localToday, addDays } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
 import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
 
@@ -271,15 +271,12 @@ export default function RelatoriosPage() {
   const currentMonth = now.getFullYear() === year ? now.getMonth() : -1
 
   const forecastRevenue = useMemo(() => {
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const horizon = new Date(today)
-    horizon.setDate(horizon.getDate() + 28)
-    const todayStr = today.toISOString().slice(0, 10)
-    const horizonStr = horizon.toISOString().slice(0, 10)
+    const todayStr = localToday()
+    const horizonStr = addDays(todayStr, 28)
     return bookings
       .filter(b => (b.estado === 'confirmada' || b.estado === 'pendente') && b.check_in >= todayStr && b.check_in < horizonStr)
       .reduce((sum, b) => sum + b.preco_total, 0)
-  }, [bookings, now])
+  }, [bookings])
 
   // Year-over-year comparison
   const prevYear = year - 1
