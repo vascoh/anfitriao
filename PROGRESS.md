@@ -6,6 +6,10 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13k] Documentação atualizada
+- ✅ README reescrito (era boilerplate); HANDOFF atualizado ao estado atual (stack, migrations, env vars, pendentes); CLAUDE.md do projeto com convenções críticas (datas, owner_id, notify server-only, proxy.ts, PT-PT).
+- ✅ Verificado que as promessas da landing (RevPAR, ocupação, receita por plataforma, YoY) existem mesmo em /relatorios.
+
 ### [2026-07-13j] Acessibilidade WCAG 2.1 AA nas páginas públicas
 - ✅ Auditoria axe-core (mobile) às 4 páginas públicas; corrigido e re-verificado em produção: zoom desbloqueado (maximumScale removido — WCAG 1.4.4, afetava tudo), aria-label nos botões prev/next do calendário (critical) e nos links "voltar" só-ícone, carrossel de testemunhos focável por teclado.
 - ⚠️ **DECISÃO DE DESIGN PENDENTE**: ~54 nós falham contraste AA — sobretudo texto branco sobre terracotta `#C2714F` (ratio ~3.5:1, AA pede 4.5:1 em texto pequeno) e badges pequenos sobre fundos `primary/10`. Corrigir implica escurecer o terracotta (ex: `#A85A3B`) ou criar um token mais escuro só para texto pequeno. Mexe na paleta da marca (PRODUCT.md) — decisão humana.
