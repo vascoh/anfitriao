@@ -6,6 +6,11 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13n] E2E autenticado: mecanismo pronto, bloqueado por MAINTENANCE_MODE
+- ✅ **Mecanismo de login E2E funciona**: user de teste via Clerk Backend API + sign-in token consumido com `/sign-in?__clerk_ticket=<token>` (tokens são de uso único). Validado: autentica, `/hoje` renderiza o onboarding de primeira vez, formulário de nova propriedade preenche e submete.
+- ⛔ **Bloqueios confirmados empiricamente**: (1) localmente, `ensureAccount`/`getAccountByClerkId` precisam de `SUPABASE_SERVICE_ROLE_KEY` (tabela accounts é service_role-only) e a key está marcada *sensitive* no Vercel (o `env pull` devolve vazio) → POST /api/properties responde 404 "Conta não encontrada"; (2) em produção, o **maintenance mode está ativo** — utilizador novo é redirecionado para `/em-construcao`.
+- ➡️ Para completar o teste do onboarding: definir `MAINTENANCE_MODE=false` no Vercel (e re-correr contra produção) OU fornecer a service role key localmente. Limpeza feita: user Clerk apagado, 0 linhas órfãs na BD, ficheiros sensíveis removidos.
+
 ### [2026-07-13m] Contraste WCAG AA: 0 violações axe nas 4 páginas públicas ✅
 - ✅ **Paleta ajustada com preview visual antes de aplicar** (identidade preservada — mesmo tom, mais profundo): `--primary` claro oklch 59%→52% (branco sobre terracotta ~3.6→>4.5:1); modo escuro inalterado.
 - ✅ Badges emerald/amber do mockup e calculadora um degrau mais escuros; "Poupa 2 meses" por cor em vez de opacity; botões WhatsApp em teal escuro da marca (#075E54 sólido, #0F7060 outline); métricas dos features e comodidades dos quartos sem /70 fraco.
