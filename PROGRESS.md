@@ -6,6 +6,11 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13m] Contraste WCAG AA: 0 violações axe nas 4 páginas públicas ✅
+- ✅ **Paleta ajustada com preview visual antes de aplicar** (identidade preservada — mesmo tom, mais profundo): `--primary` claro oklch 59%→52% (branco sobre terracotta ~3.6→>4.5:1); modo escuro inalterado.
+- ✅ Badges emerald/amber do mockup e calculadora um degrau mais escuros; "Poupa 2 meses" por cor em vez de opacity; botões WhatsApp em teal escuro da marca (#075E54 sólido, #0F7060 outline); métricas dos features e comodidades dos quartos sem /70 fraco.
+- ✅ **axe-core em produção: 0 violações WCAG 2.1 A/AA** na landing, /r/casadevasco, /book/prop-1 e /book multi-quarto. Decisão de contraste do 2026-07-13j resolvida.
+
 ### [2026-07-13l] db.ts limpo — bugs B1/B2 do HANDOFF fechados
 - ✅ Os getters por ID sem filtro de owner (B1/B2, prioridade Alta) eram **código morto sem callers** — 30+ funções removidas do cliente anon (writes client-side incluídos), -265 linhas. `db.ts` fica só com os 3 getters das páginas públicas `/book`, documentado como tal. Páginas públicas verificadas em produção após deploy.
 
