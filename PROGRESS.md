@@ -6,6 +6,11 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13h] Review da landing page + copy PT-PT
+- ✅ Audit completo (mobile 375px + desktop): SEO sólido (title 49c, meta 156c, canonical, OG, 1 H1, FAQPage schema), sem scroll horizontal, imagens com dimensões, above-the-fold com CTA forte.
+- ✅ Brasileirismos e inglês removidos do copy: planilhas→folhas de cálculo, Conecta→Liga, Sync→Sincroniza, OTAs→plataformas; grafia AO90 (atualizado, diretos, fim de semana). Deployado e verificado.
+- ⚠️ **DECISÃO PENDENTE (humana)**: os 3 testemunhos com nome/cidade/5 estrelas (Ana Ferreira, Miguel Santos, Carla Mendes) aparentam ser fictícios — o produto ainda não lançou. Risco legal (publicidade enganosa) e de confiança. Opções: substituir por resultados do beta com consentimento, remover a secção até haver clientes reais, ou reformular como cenários ilustrativos claramente marcados.
+
 ### [2026-07-13g] E2E multi-quarto ✅ (sem bugs encontrados)
 - ✅ Fluxo público multi-quarto validado em browser (Playwright, build de produção local + BD de produção): `/book/<parent>` renderiza os 3 quartos da Casa de Vasco com preços/capacidade/disponibilidade → "Reservar" → fluxo de reserva do quarto → confirmação. BD verificada: reserva no quarto certo, owner derivado, preço = noites × preço base do quarto. Dados de teste removidos.
 
