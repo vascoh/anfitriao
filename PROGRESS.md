@@ -6,6 +6,12 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13b] E2E dos fluxos públicos + fix de perda de dados no check-in
+- ✅ **E2E browser (Playwright)** — fluxo completo validado: `/book/prop-1` (calendário → dados → submit → confirmação com bookingId) e `/checkin/[id]` (preencher manualmente → SIBA → Confirmar → Obrigado). Reserva e check-in verificados na BD de produção; dados de teste removidos.
+- ✅ **Bug real (perda de dados silenciosa)** — `/api/checkin` ignorava erros dos UPDATEs: com o admin client em fallback anon, o RLS rejeitava as escritas mas o hóspede via "Obrigado" e nada ficava gravado. Agora devolve 500 e o formulário mostra erro. Corrigido + deployado + revalidado E2E em produção.
+- ℹ️ Item crítico do backlog "testar fluxo onboarding→reserva→check-in" parcialmente coberto (partes públicas); onboarding autenticado requer sessão Clerk.
+- ⚠️ Infra local: `next dev --webpack` pendura sob carga no WSL2 (CPU spin); para E2E usar `npm run build && npm run start`.
+
 ### [2026-07-13] Testes automatizados + hardening de endpoints públicos
 - ✅ **Vitest configurado** — `npm test` / `test:watch` / `test:coverage`; 90 testes em `src/**/*.test.ts`
 - ✅ **Bug real (timezone)** — `utils.addDays` usava meia-noite local + `toISOString()`, devolvia o dia anterior em TZ > UTC (Europe/Lisbon no verão). Afetava a data mínima de reserva no `/book` e a navegação do calendário. Corrigido para UTC; duplicado em `calendario/page.tsx` removido.
