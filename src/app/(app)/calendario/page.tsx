@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth } from '@/lib/reservations'
+import { addDays } from '@/lib/utils'
 import type { Booking, Property } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/labels'
 
@@ -17,12 +18,6 @@ const TIMELINE_DAYS = 21
 
 function isoDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-}
-
-function addDays(iso: string, n: number): string {
-  const d = new Date(iso + 'T00:00:00')
-  d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
 }
 
 function daysBetween(a: string, b: string): number {
