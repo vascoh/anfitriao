@@ -38,25 +38,36 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const body = await req.json()
-  const { message, targetLang, tone, context } = body
+  const body = await req.json().catch(() => null)
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'JSON inválido' }, { status: 400 })
+  }
+  const { message, targetLang, tone, context } = body as Record<string, unknown>
 
-  if (!message?.trim()) {
-    return new Response(JSON.stringify({ error: 'Mensagem em falta' }), { status: 400 })
+  const msg = typeof message === 'string' ? message.trim().slice(0, 4000) : ''
+  if (!msg) {
+    return NextResponse.json({ error: 'Mensagem em falta' }, { status: 400 })
   }
 
-  const langName = LANG_NAMES[targetLang] ?? 'English'
-  const toneInstruction = TONE_INSTRUCTIONS[tone] ?? TONE_INSTRUCTIONS.amigavel
+  // 'auto' responde no idioma da mensagem do hóspede
+  const langInstruction =
+    targetLang === 'auto' || !LANG_NAMES[targetLang as string]
+      ? "Write a reply in the same language as the guest's message."
+      : `Write a reply in ${LANG_NAMES[targetLang as string]}.`
+  const toneInstruction = TONE_INSTRUCTIONS[tone as string] ?? TONE_INSTRUCTIONS.amigavel
 
+  const clamp = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : '')
   let contextBlock = ''
-  if (context) {
+  if (context && typeof context === 'object') {
+    const c = context as Record<string, unknown>
+    const amenities = Array.isArray(c.amenities) ? c.amenities.filter(a => typeof a === 'string').slice(0, 40) : []
     contextBlock = `
 Property context:
-- Name: ${context.propertyName}
-- City: ${context.city}
-${context.checkinInstructions ? `- Check-in instructions: ${context.checkinInstructions}` : ''}
-${context.houseRules ? `- House rules: ${context.houseRules}` : ''}
-${context.amenities?.length ? `- Amenities: ${context.amenities.join(', ')}` : ''}
+- Name: ${clamp(c.propertyName, 200)}
+- City: ${clamp(c.city, 100)}
+${c.checkinInstructions ? `- Check-in instructions: ${clamp(c.checkinInstructions, 2000)}` : ''}
+${c.houseRules ? `- House rules: ${clamp(c.houseRules, 2000)}` : ''}
+${amenities.length ? `- Amenities: ${amenities.join(', ')}` : ''}
 
 Use this context to give accurate, specific answers when relevant.
 `
@@ -72,10 +83,10 @@ Use this context to give accurate, specific answers when relevant.
 ${contextBlock}
 A guest sent the following message:
 """
-${message}
+${msg}
 """
 
-Write a reply in ${langName}. ${toneInstruction} Be concise and helpful. Reply only with the message text — no quotes, no explanation, no subject line.`,
+${langInstruction} ${toneInstruction} Be concise and helpful. Reply only with the message text — no quotes, no explanation, no subject line.`,
       },
     ],
   })

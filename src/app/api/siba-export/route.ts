@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+import { buildSibaCsv } from '@/lib/siba'
 
 const supabase = createAdminClient()
 
-function esc(v: string | null | undefined): string {
-  return `"${String(v ?? '').replace(/"/g, '""')}"`
-}
-
-function parseDatePt(s: string | null | undefined): string {
-  if (!s) return ''
-  // Handle DD/MM/YYYY from OCR
-  if (s.includes('/')) {
-    const [d, m, y] = s.split('/')
-    return y && m && d ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : s
-  }
-  return s
-}
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 /**
  * GET /api/siba-export?from=YYYY-MM-DD&to=YYYY-MM-DD
@@ -33,8 +22,8 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get('from')
   const to = searchParams.get('to')
 
-  if (!from || !to) {
-    return NextResponse.json({ error: 'Parâmetros "from" e "to" são obrigatórios (YYYY-MM-DD)' }, { status: 400 })
+  if (!from || !to || !DATE_RE.test(from) || !DATE_RE.test(to) || from > to) {
+    return NextResponse.json({ error: 'Parâmetros "from" e "to" são obrigatórios (YYYY-MM-DD, from ≤ to)' }, { status: 400 })
   }
 
   // Fetch bookings in range for this owner
@@ -72,27 +61,24 @@ export async function GET(req: NextRequest) {
   const guestMap = new Map((guestsRes.data ?? []).map(g => [g.id, g]))
   const propMap = new Map((propsRes.data ?? []).map(p => [p.id, p]))
 
-  const header = ['Check-in', 'Check-out', 'Nº Hóspedes', 'Alojamento', 'Nome', 'Data Nascimento', 'Nacionalidade', 'Nº Documento', 'Tipo Documento', 'Validade Documento', 'Sexo', 'País Emissão']
-  const rows = bookings.map(b => {
+  const csv = buildSibaCsv(bookings.map(b => {
     const g = guestMap.get(b.hospede_id ?? '')
-    const p = propMap.get(b.propriedade_id)
-    return [
-      b.check_in,
-      b.check_out,
-      String(b.num_hospedes),
-      p?.nome ?? '',
-      g?.nome ?? '',
-      parseDatePt(g?.data_nascimento),
-      g?.nacionalidade ?? '',
-      g?.numero_documento ?? '',
-      g?.tipo_documento ?? '',
-      parseDatePt(g?.data_validade_doc),
-      g?.sexo ?? '',
-      g?.pais_emissao ?? '',
-    ].map(v => esc(v)).join(',')
-  })
+    return {
+      check_in: b.check_in,
+      check_out: b.check_out,
+      num_hospedes: b.num_hospedes,
+      alojamento: propMap.get(b.propriedade_id)?.nome ?? '',
+      nome: g?.nome ?? '',
+      data_nascimento: g?.data_nascimento,
+      nacionalidade: g?.nacionalidade,
+      numero_documento: g?.numero_documento,
+      tipo_documento: g?.tipo_documento,
+      data_validade_doc: g?.data_validade_doc,
+      sexo: g?.sexo,
+      pais_emissao: g?.pais_emissao,
+    }
+  }))
 
-  const csv = '﻿' + [header.map(h => esc(h)).join(','), ...rows].join('\r\n')
   const filename = `siba-${from}-${to}.csv`
 
   return new Response(csv, {

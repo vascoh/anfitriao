@@ -7,6 +7,7 @@ import type { Property } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
 
 const LANGS = [
+  { code: 'auto', label: 'Auto' },
   { code: 'pt', label: 'PT' },
   { code: 'en', label: 'EN' },
   { code: 'es', label: 'ES' },
@@ -58,7 +59,7 @@ export default function ConciergePage() {
   const { user } = useUser()
   const ownerId = user?.id
   const [message, setMessage] = useState('')
-  const [targetLang, setTargetLang] = useState('en')
+  const [targetLang, setTargetLang] = useState('auto')
   const [tone, setTone] = useState('amigavel')
   const [reply, setReply] = useState('')
   const [loading, setLoading] = useState(false)
