@@ -6,6 +6,10 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13i] Site público /r/[slug]: quartos deixam de duplicar a listagem
+- ✅ **Bug de produto (E2E)**: a listagem mostrava a casa-mãe E os 3 quartos como cards independentes ("7 alojamentos") — confuso, contagem inflacionada e risco de dupla reserva. Agora só propriedades de topo; casas com quartos mostram "desde X€" (quarto ativo mais barato). Verificado em produção ("4 alojamentos", zero erros de consola/rede).
+- ✅ Crons Vercel auditados: ical-sync 04:00, payment-reminders 09:00, trial-reminders 10:00, CRON_SECRET presente. Nota de escala: sync 1×/dia é o limite do plano Hobby; ao crescer, subir para Pro e sync horário (janela de dupla reserva atual: 24h, mitigada pelo botão de sync manual).
+
 ### [2026-07-13h] Review da landing page + copy PT-PT
 - ✅ Audit completo (mobile 375px + desktop): SEO sólido (title 49c, meta 156c, canonical, OG, 1 H1, FAQPage schema), sem scroll horizontal, imagens com dimensões, above-the-fold com CTA forte.
 - ✅ Brasileirismos e inglês removidos do copy: planilhas→folhas de cálculo, Conecta→Liga, Sync→Sincroniza, OTAs→plataformas; grafia AO90 (atualizado, diretos, fim de semana). Deployado e verificado.
