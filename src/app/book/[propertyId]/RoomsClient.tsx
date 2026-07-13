@@ -82,12 +82,12 @@ function RoomCard({ room, isOccupied }: RoomCardProps) {
         {room.comodidades.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {room.comodidades.slice(0, 4).map(a => (
-              <span key={a} className="text-[11px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-medium">
+              <span key={a} className="text-[11px] bg-muted px-2 py-0.5 rounded-full text-foreground/70 font-medium">
                 {AMENITY_LABEL[a] ?? a.replace(/_/g, ' ')}
               </span>
             ))}
             {room.comodidades.length > 4 && (
-              <span className="text-[11px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground font-medium">
+              <span className="text-[11px] bg-muted px-2 py-0.5 rounded-full text-foreground/70 font-medium">
                 +{room.comodidades.length - 4}
               </span>
             )}

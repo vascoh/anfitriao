@@ -53,8 +53,10 @@ export function PricingSection() {
             </button>
           </div>
           <span
-            className={`rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 transition-opacity ${
-              annual ? 'opacity-100' : 'opacity-50'
+            className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+              annual
+                ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-400'
+                : 'bg-muted text-foreground/70'
             }`}
           >
             Poupa 2 meses

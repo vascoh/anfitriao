@@ -249,8 +249,8 @@ export default async function Home() {
               {[
                 { label: 'Chegadas hoje', value: '3', color: 'text-primary' },
                 { label: 'Saídas hoje', value: '1', color: 'text-foreground' },
-                { label: 'Em casa', value: '7', color: 'text-emerald-500 dark:text-emerald-400' },
-                { label: 'Reservas pendentes', value: '2', color: 'text-amber-500 dark:text-amber-400' },
+                { label: 'Em casa', value: '7', color: 'text-emerald-700 dark:text-emerald-400' },
+                { label: 'Reservas pendentes', value: '2', color: 'text-amber-700 dark:text-amber-400' },
               ].map(s => (
                 <div key={s.label} className="rounded-xl border border-border bg-background p-4">
                   <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
@@ -272,7 +272,7 @@ export default async function Home() {
                     <div className="text-xs text-muted-foreground truncate">{r.prop}</div>
                   </div>
                   <div className="text-xs text-muted-foreground shrink-0">{r.data}</div>
-                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:text-emerald-400">
                     <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -286,7 +286,7 @@ export default async function Home() {
 
           {/* Stat badge below mockup */}
           <div className="mt-8 flex justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
               <Check className="h-3.5 w-3.5" aria-hidden="true" />
               Poupa até 2h por semana em burocracia
             </span>
@@ -341,7 +341,7 @@ export default async function Home() {
                   </div>
                   <h3 className="font-bold text-lg mb-2">{f.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-                  <p className="mt-3 text-xs font-medium text-muted-foreground/70">{f.metric}</p>
+                  <p className="mt-3 text-xs font-medium text-muted-foreground">{f.metric}</p>
                 </div>
               ))}
             </div>

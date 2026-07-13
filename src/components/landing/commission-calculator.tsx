@@ -52,7 +52,7 @@ export function CommissionCalculator() {
           {/* Results grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1.5 rounded-xl bg-destructive/5 border border-destructive/20 p-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive uppercase tracking-wide">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 uppercase tracking-wide">
                 <TrendingDown className="h-3.5 w-3.5" />
                 Airbnb (15%)
               </div>
@@ -61,7 +61,7 @@ export function CommissionCalculator() {
             </div>
 
             <div className="flex flex-col gap-1.5 rounded-xl bg-destructive/5 border border-destructive/20 p-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive uppercase tracking-wide">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-red-700 uppercase tracking-wide">
                 <TrendingDown className="h-3.5 w-3.5" />
                 Booking.com (18%)
               </div>
@@ -70,11 +70,11 @@ export function CommissionCalculator() {
             </div>
 
             <div className="flex flex-col gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 uppercase tracking-wide">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 uppercase tracking-wide">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Anfitrião (0%)
               </div>
-              <p className="text-2xl font-bold text-emerald-600">€{PLAN_PRICE}</p>
+              <p className="text-2xl font-bold text-emerald-700">€{PLAN_PRICE}</p>
               <p className="text-xs text-muted-foreground">custo fixo mensal</p>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function CommissionCalculator() {
                 <p className="text-xl font-bold text-primary mt-1">
                   poupas €{netSaving.toLocaleString('pt-PT')}/mês vs. média OTA
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-foreground/75 mt-1">
                   €{(netSaving * 12).toLocaleString('pt-PT')} por ano a mais para ti.
                 </p>
               </div>

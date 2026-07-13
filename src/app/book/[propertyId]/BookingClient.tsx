@@ -581,7 +581,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
 
           {waLink && (
             <a href={waLink} target="_blank" rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-sm border border-[#25D366]/40 text-[#25D366] hover:bg-[#25D366]/5 transition-colors">
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-semibold text-sm border border-[#25D366]/40 text-[#0F7060] hover:bg-[#25D366]/5 transition-colors">
               {WA_ICON}
               Reservar via WhatsApp
             </a>

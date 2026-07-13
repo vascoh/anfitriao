@@ -44,8 +44,9 @@
   --popover: oklch(96.5% 0.008 65);
   --popover-foreground: oklch(19% 0.012 258);
 
-  /* Terracotta accent — one accent, ≤10% surface */
-  --primary: oklch(59% 0.155 38);
+  /* Terracotta accent — one accent, ≤10% surface.
+     52% (era 59%): mesmo tom, mais profundo — branco sobre primary passa WCAG AA (≥4.5:1) */
+  --primary: oklch(52% 0.14 38);
   --primary-foreground: oklch(98% 0.005 65);
 
   --secondary: oklch(93% 0.009 65);
