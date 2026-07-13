@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { fetchSettings } from '@/lib/fetcher'
 import type { WebsiteSettings } from '@/lib/types'
+import { PushToggle } from '@/components/push-toggle'
 
 export default function PerfilPage() {
   const { user } = useUser()
@@ -119,6 +120,8 @@ export default function PerfilPage() {
             <p className="text-[10px] text-muted-foreground">Aparece como botão WhatsApp no teu site de reservas.</p>
           </div>
         </section>
+
+        <PushToggle />
 
         {/* Site de reservas */}
         <section className="flex flex-col gap-3">

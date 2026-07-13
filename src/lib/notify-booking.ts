@@ -1,6 +1,7 @@
 import 'server-only'
 import { Resend } from 'resend'
 import { adminGetWebsiteSettings } from '@/lib/db-admin'
+import { sendPushToOwner } from '@/lib/push'
 import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 
 export interface BookingNotification {
@@ -18,11 +19,19 @@ export interface BookingNotification {
 }
 
 /**
- * Envia os emails de nova reserva (anfitrião + hóspede).
- * No-op silencioso sem RESEND_API_KEY. Chamado server-side a partir de
- * /api/book — nunca exposto como endpoint público.
+ * Notifica nova reserva: push para os dispositivos do anfitrião + emails
+ * (anfitrião e hóspede). Emails são no-op sem RESEND_API_KEY; o push é
+ * independente. Chamado server-side a partir de /api/book — nunca exposto
+ * como endpoint público.
  */
 export async function sendBookingNotification(p: BookingNotification): Promise<void> {
+  // Push primeiro — não depende do Resend e nunca lança
+  await sendPushToOwner(p.ownerId, {
+    title: `Nova reserva — ${p.propertyName}`,
+    body: `${p.guestName} · ${fmtDate(p.checkIn)} → ${fmtDate(p.checkOut)} · ${fmtMoney(p.total)}`,
+    url: `/reservas/${p.bookingId}`,
+  })
+
   if (!process.env.RESEND_API_KEY) return
 
   const settings = await adminGetWebsiteSettings(p.ownerId)

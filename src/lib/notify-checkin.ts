@@ -1,6 +1,7 @@
 import 'server-only'
 import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { sendPushToOwner } from '@/lib/push'
 import { fmtDate, escHtml } from '@/lib/utils'
 
 /**
@@ -9,8 +10,6 @@ import { fmtDate, escHtml } from '@/lib/utils'
  * como endpoint público (evita abuso do Resend do projeto).
  */
 export async function sendCheckinCompleteNotification(bookingId: string): Promise<void> {
-  if (!process.env.RESEND_API_KEY) return
-
   const booking = await adminGetBookingById(bookingId)
   if (!booking) return
 
@@ -19,6 +18,15 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
     booking.propriedade_id ? adminGetPropertyById(booking.propriedade_id) : Promise.resolve(null),
     adminGetWebsiteSettings(booking.owner_id),
   ])
+
+  // Push independente do email
+  await sendPushToOwner(booking.owner_id, {
+    title: 'Check-in online concluído',
+    body: `${guest?.nome ?? 'Hóspede'} · ${prop?.nome ?? 'Alojamento'}`,
+    url: `/reservas/${bookingId}`,
+  })
+
+  if (!process.env.RESEND_API_KEY) return
   const hostEmail = settings.email
   if (!hostEmail) return
 

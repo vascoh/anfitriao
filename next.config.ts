@@ -3,6 +3,9 @@ import type { NextConfig } from 'next'
 const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig: NextConfig = {
+  // Lockfile perdido em ~/ fazia o Next inferir a raiz errada do workspace
+  outputFileTracingRoot: __dirname,
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },

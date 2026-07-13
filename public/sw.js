@@ -1,4 +1,4 @@
-const CACHE = 'anfitriao-v1'
+const CACHE = 'anfitriao-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', e => {
@@ -30,5 +30,36 @@ self.addEventListener('fetch', e => {
         return cached ?? fresh
       })
     )
+  )
+})
+
+// ─── Web Push ─────────────────────────────────────────────────────────────────
+self.addEventListener('push', e => {
+  let data = {}
+  try { data = e.data ? e.data.json() : {} } catch { data = { body: e.data?.text() } }
+  const title = data.title || 'Anfitrião'
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || '',
+      icon: '/api/pwa-icon?size=192',
+      badge: '/api/pwa-icon?size=96',
+      data: { url: data.url || '/hoje' },
+    })
+  )
+})
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close()
+  const url = e.notification.data?.url || '/hoje'
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if ('focus' in client) {
+          client.navigate(url)
+          return client.focus()
+        }
+      }
+      return clients.openWindow(url)
+    })
   )
 })
