@@ -6,6 +6,10 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13j] Acessibilidade WCAG 2.1 AA nas páginas públicas
+- ✅ Auditoria axe-core (mobile) às 4 páginas públicas; corrigido e re-verificado em produção: zoom desbloqueado (maximumScale removido — WCAG 1.4.4, afetava tudo), aria-label nos botões prev/next do calendário (critical) e nos links "voltar" só-ícone, carrossel de testemunhos focável por teclado.
+- ⚠️ **DECISÃO DE DESIGN PENDENTE**: ~54 nós falham contraste AA — sobretudo texto branco sobre terracotta `#C2714F` (ratio ~3.5:1, AA pede 4.5:1 em texto pequeno) e badges pequenos sobre fundos `primary/10`. Corrigir implica escurecer o terracotta (ex: `#A85A3B`) ou criar um token mais escuro só para texto pequeno. Mexe na paleta da marca (PRODUCT.md) — decisão humana.
+
 ### [2026-07-13i] Site público /r/[slug]: quartos deixam de duplicar a listagem
 - ✅ **Bug de produto (E2E)**: a listagem mostrava a casa-mãe E os 3 quartos como cards independentes ("7 alojamentos") — confuso, contagem inflacionada e risco de dupla reserva. Agora só propriedades de topo; casas com quartos mostram "desde X€" (quarto ativo mais barato). Verificado em produção ("4 alojamentos", zero erros de consola/rede).
 - ✅ Crons Vercel auditados: ical-sync 04:00, payment-reminders 09:00, trial-reminders 10:00, CRON_SECRET presente. Nota de escala: sync 1×/dia é o limite do plano Hobby; ao crescer, subir para Pro e sync horário (janela de dupla reserva atual: 24h, mitigada pelo botão de sync manual).
