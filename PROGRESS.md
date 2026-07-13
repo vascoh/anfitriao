@@ -6,6 +6,12 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13c] SIBA CSV injection + concierge com idioma automático
+- ✅ **CSV formula injection neutralizado** — nomes/dados de hóspedes começados por `= + - @` eram executados como fórmulas no Excel do anfitrião. `lib/siba.ts` (escCsv, normalizeDate, buildSibaCsv) + 10 testes; rota valida `from`/`to`.
+- ✅ **Concierge endurecido** — clamp de mensagem (4000) e contexto, whitelist de tone/idioma, parse JSON seguro
+- ✅ **Concierge "Auto"** — novo default: responde no idioma da mensagem do hóspede, sem o anfitrião escolher
+- ✅ Deploy em produção verificado (100 testes verdes)
+
 ### [2026-07-13b] E2E dos fluxos públicos + fix de perda de dados no check-in
 - ✅ **E2E browser (Playwright)** — fluxo completo validado: `/book/prop-1` (calendário → dados → submit → confirmação com bookingId) e `/checkin/[id]` (preencher manualmente → SIBA → Confirmar → Obrigado). Reserva e check-in verificados na BD de produção; dados de teste removidos.
 - ✅ **Bug real (perda de dados silenciosa)** — `/api/checkin` ignorava erros dos UPDATEs: com o admin client em fallback anon, o RLS rejeitava as escritas mas o hóspede via "Obrigado" e nada ficava gravado. Agora devolve 500 e o formulário mostra erro. Corrigido + deployado + revalidado E2E em produção.
