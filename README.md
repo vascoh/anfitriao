@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Anfitrião
 
-## Getting Started
+Gestão de Alojamento Local para anfitriões portugueses — reservas, check-in online com SIBA, sincronização iCal (Airbnb/Booking.com), preços, relatórios e concierge com IA.
 
-First, run the development server:
+**Produção:** [anfitrioes.pt](https://anfitrioes.pt)
+
+## Stack
+
+- **Next.js 16** (App Router, webpack) · TypeScript · Tailwind CSS 4
+- **Clerk** (auth multi-tenant) · **Supabase** (Postgres + RLS) · **Stripe** (subscrições)
+- **Anthropic Claude** (concierge multilingue, OCR de documentos)
+- **Resend** (emails) · **web-push** (notificações) · PWA
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev          # dev server (webpack) — ver nota WSL2 abaixo
+npm run build        # build de produção
+npm start            # servir o build
+npm test             # Vitest (unit)
+npm run test:watch
+npm run typecheck    # tsc --noEmit
+npm run lint         # ESLint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+⚠️ **WSL2**: `next dev --webpack` pode pendurar sob carga (CPU spin). Para testes E2E locais usar `npm run build && npm start`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O auto-deploy GitHub→Vercel está **desligado**. Deploy manual:
 
-## Learn More
+```bash
+npm test && npm run build   # validar primeiro
+npx vercel deploy --prod    # CLI já autenticada
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Estrutura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+  app/
+    (app)/        # app autenticada (hoje, reservas, calendário, preços, …)
+    (admin)/      # backoffice do admin
+    api/          # API routes (auth Clerk, cron com CRON_SECRET, públicas rate-limited)
+    book/         # site público de reservas por propriedade
+    checkin/      # check-in online do hóspede (público, capability URL)
+    r/[slug]/     # site público de cada anfitrião
+  lib/            # lógica de negócio pura + clients (testada em *.test.ts)
+  proxy.ts        # middleware Clerk: rotas públicas, maintenance mode, billing
+supabase/migrations/
+docs/HANDOFF.md   # estado detalhado, env vars, pendentes
+PROGRESS.md       # log de sessões e decisões
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Ambiente
 
-## Deploy on Vercel
+Copiar `.env.example` para `.env.local` e preencher. Chaves críticas: Clerk, Supabase (URL + anon key; `SUPABASE_SERVICE_ROLE_KEY` em produção), Stripe, `ANTHROPIC_API_KEY`, `RESEND_API_KEY` (opcional), VAPID (web push), `CRON_SECRET`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Testes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Unit** (Vitest): `src/**/*.test.ts` — pricing, conflitos, iCal, SIBA/CSV, rate-limit, push, validação do /api/book. A suite passa em qualquer timezone.
+- **E2E** (Playwright, scripts ad-hoc): fluxos públicos de reserva, multi-quarto e check-in validados em browser contra o build de produção.

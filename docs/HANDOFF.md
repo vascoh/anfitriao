@@ -1,6 +1,6 @@
 # Anfitrião — Handoff
 
-_Última actualização: 2026-06-06_
+_Última atualização: 2026-07-13_ · O histórico detalhado de sessões vive em `PROGRESS.md`.
 
 ---
 
@@ -16,7 +16,9 @@ O produto está funcionalmente completo para uso por um único anfitrião. O mod
 
 | Camada | Tecnologia |
 |---|---|
-| Frontend | Next.js 15, TypeScript, Tailwind CSS, shadcn/ui |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS 4, shadcn/ui |
+| Testes | Vitest (unit, `npm test`); Playwright para E2E ad-hoc |
+| Notificações | Resend (email) + web-push/VAPID (push PWA) |
 | Auth | Clerk |
 | Base de dados | Supabase (Postgres), project `nnbqfrszukkzoqwssjvg` (eu-west-1) |
 | Pagamentos | Stripe (subscriptions) |
@@ -70,7 +72,12 @@ src/
     utils.ts              # Helpers
     supabase.ts           # Clientes Supabase (anon + admin)
     rate-limit.ts         # In-memory rate limiter (sliding window por IP)
-  middleware.ts           # Clerk auth + maintenance mode
+    siba.ts               # Geração CSV SIBA (escape + anti formula injection)
+    push.ts               # Envio web-push aos dispositivos do anfitrião
+    ical-fetch.ts         # Fetch de feeds iCal com allowlist anti-SSRF
+    notify-booking.ts     # Emails+push de nova reserva (server-only)
+    notify-checkin.ts     # Email+push de check-in concluído (server-only)
+  proxy.ts                # Middleware Clerk: rotas públicas, maintenance mode, billing
 ```
 
 ---
@@ -87,6 +94,8 @@ src/
 | 006 `multitenancy_foundation` | owner_id em todas as tabelas (nullable TEXT), slug em website_settings |
 | 007 `accounts` | Tabela accounts (Stripe customer_id, plan, trial) |
 | **008 `rls_owner_isolation`** | **RLS por owner_id — APLICADO 2026-06-06** |
+| 009–011 (2026-06-30) | Hardening RLS: remoção de policies blanket `authenticated_full_*`, UPDATE anon mortos, consolidação de INSERT anon |
+| 012 `push_subscriptions` | Subscrições web-push (RLS ativo sem políticas — só service_role) — 2026-07-13 |
 
 ### Nota crítica — `owner_id` é nullable
 
@@ -166,6 +175,18 @@ NEXT_PUBLIC_ADMIN_USER_ID=user_3DrUZjHebFBKAawGzhOfGzwwel6
 
 # Maintenance (remover ou false para abrir ao público)
 MAINTENANCE_MODE=true
+
+# Web Push (VAPID) — gerar com: npx web-push generate-vapid-keys
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:suporte@anfitrioes.pt
+
+# Emails (opcional — sem RESEND_API_KEY os emails são no-op)
+RESEND_API_KEY=
+NOTIFY_FROM=
+
+# Cron (produção)
+CRON_SECRET=
 ```
 
 ---
@@ -202,16 +223,22 @@ MAINTENANCE_MODE=true
 - [ ] **Testar fluxo completo de onboarding** — novo utilizador → criar propriedade → receber reserva → check-in
 - [ ] **Definir `MAINTENANCE_MODE=false`** em Vercel — depois de validar o JWT template
 
+### Decisões humanas pendentes (2026-07-13)
+
+- [ ] **Testemunhos da landing** — os 3 testemunhos aparentam ser fictícios (produto não lançado): substituir por beta reais, remover ou marcar como ilustrativos
+- [ ] **Contraste AA** — ~54 nós falham WCAG AA (texto branco sobre terracotta `#C2714F` ≈ 3.5:1); corrigir implica escurecer a paleta (ex: `#A85A3B`)
+- [ ] **Wildcard DNS** para subdomain routing (`*.anfitrioes.pt`)
+
 ### Importante (antes de crescimento)
 
-- [ ] **Onboarding wizard** — guia passo-a-passo para novos anfitriões (steps: criar propriedade → configurar website → conectar iCal)
-- [ ] **Subdomain routing** — `*.anfitrioes.pt` para o site de reservas diretas (actualmente `/r/[slug]`)
-- [ ] **Notificações email** — nova reserva, check-in pendente, pagamento em falta (infra está: `api/notify-*` routes existem mas dependem de SMTP configurado)
+- [x] Onboarding wizard ✅ (verificado 2026-07-10, usa estado real)
+- [x] Notificações email ✅ (nova reserva, confirmação, check-in, lembretes de pagamento via cron — requerem `RESEND_API_KEY`)
+- [x] Push notifications PWA ✅ (2026-07-13 — toggle em `/conta/perfil`)
+- [ ] **Subdomain routing** — `*.anfitrioes.pt` (atualmente `/r/[slug]`)
+- [ ] **Sync iCal mais frequente** — cron 1×/dia é o limite do plano Vercel Hobby; com clientes, subir a Pro e sync horário
 
 ### Nice-to-have
 
-- [ ] **og:image dinâmico** para a landing page (geração via `@vercel/og`)
-- [ ] **Push notifications** via PWA (infra: service worker existe, falta registo de push)
 - [ ] **Migração `owner_id NOT NULL`** — depois de todos os dados de produção terem owner_id preenchido, adicionar constraint NOT NULL para prevenir registos órfãos
 
 ---
