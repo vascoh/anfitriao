@@ -6,6 +6,9 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13f] Hoje: ações de 1 toque nos cartões
+- ✅ Botão da próxima ação válida (Confirmar / Check-in / Check-out) diretamente nos cartões de chegadas, saídas e "em casa" (quando sai hoje) — sem abrir a reserva. Update otimista com rollback; confirmar dispara o email ao hóspede (mesmo fluxo da página da reserva).
+
 ### [2026-07-13e] Sweep de timezone — today() local
 - ✅ **Bug sistémico**: `today()` devolvia a data UTC; em Lisboa (verão, UTC+1) a app inteira mostrava o dia anterior entre as 00:00 e a 01:00 (página Hoje, filtros, calendários, receita do mês, data mínima no site público). Corrigido para data local + teste.
 - ✅ 20+ usos manuais de `new Date().toISOString().slice(0,10)` substituídos por `today()`/`addDays()` em 14 ficheiros; padding do calendário de preços tinha off-by-one próprio.
