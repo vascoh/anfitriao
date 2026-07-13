@@ -6,6 +6,9 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13g] E2E multi-quarto ✅ (sem bugs encontrados)
+- ✅ Fluxo público multi-quarto validado em browser (Playwright, build de produção local + BD de produção): `/book/<parent>` renderiza os 3 quartos da Casa de Vasco com preços/capacidade/disponibilidade → "Reservar" → fluxo de reserva do quarto → confirmação. BD verificada: reserva no quarto certo, owner derivado, preço = noites × preço base do quarto. Dados de teste removidos.
+
 ### [2026-07-13f] Hoje: ações de 1 toque nos cartões
 - ✅ Botão da próxima ação válida (Confirmar / Check-in / Check-out) diretamente nos cartões de chegadas, saídas e "em casa" (quando sai hoje) — sem abrir a reserva. Update otimista com rollback; confirmar dispara o email ao hóspede (mesmo fluxo da página da reserva).
 
