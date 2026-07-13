@@ -219,7 +219,7 @@ export default async function ReservasPage(
             )}
             {waLink && (
               <a href={waLink} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] text-white text-xs font-semibold hover:opacity-90 transition-opacity">
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#075E54] text-white text-xs font-semibold hover:opacity-90 transition-opacity">
                 {WA_SVG}
                 <span>WhatsApp</span>
               </a>
@@ -301,7 +301,7 @@ export default async function ReservasPage(
             )}
             {waLink && (
               <a href={waLink} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#25D366] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#075E54] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
                 {WA_SVG}
                 Falar com o anfitrião
               </a>
@@ -324,7 +324,7 @@ export default async function ReservasPage(
                 {settings.telefone}
               </a>
             )}
-            <span className="opacity-40">Powered by Anfitrião</span>
+            <span className="opacity-75">Powered by Anfitrião</span>
           </div>
         </div>
       </footer>
