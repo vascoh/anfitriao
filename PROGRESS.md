@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-13] Testes automatizados + hardening de endpoints públicos
+- ✅ **Vitest configurado** — `npm test` / `test:watch` / `test:coverage`; 90 testes em `src/**/*.test.ts`
+- ✅ **Bug real (timezone)** — `utils.addDays` usava meia-noite local + `toISOString()`, devolvia o dia anterior em TZ > UTC (Europe/Lisbon no verão). Afetava a data mínima de reserva no `/book` e a navegação do calendário. Corrigido para UTC; duplicado em `calendario/page.tsx` removido.
+- ✅ **Endpoints de email fechados** — `/api/notify-payment-reminder` removido (público, sem callers, abusável); `/api/notify-checkin-complete` convertido em lib server-only (`lib/notify-checkin.ts`); `/api/notify-confirmation` exige Clerk + ownership. Mesma classe do `/api/notify-booking` removido a 2026-07-10.
+- ✅ **SSRF/ical** — `lib/ical-fetch.ts` (allowlist HTTPS, revalidação pós-redirect, timeout, cap 5MB); `ical-sync` faz fetch direto; `/api/ical-proxy` autenticado
+- ✅ **Check-in público** — rate limit 10/h/IP, clamps de tamanho/formato em todos os campos
+- ✅ **Bug (guest UX)** — `/api/documentos/extrair` não estava na lista pública do middleware: o scan de documento falhava silenciosamente para hóspedes anónimos no check-in online. Corrigido + cap 8MB + whitelist de media types.
+- ✅ **Testes em 3 timezones** — suite passa em Europe/Lisbon, Asia/Tokyo, America/Los_Angeles
+
 ### [2026-07-10] Lint a zero + segurança do fluxo de reserva
 - ✅ **Lint 27 → 0** — código morto removido em 14 ficheiros; `no-unused-vars` com `ignoreRestSiblings`/`^_`; disables justificados (Date.now server layout, exhaustive-deps intencionais, `<img>` para URLs arbitrários)
 - ✅ **`/api/book` endurecido** — whitelist de campos (anti mass-assignment: `estado`/`origem`/`owner_id` forçados no servidor), validação de email/datas/limites, parse JSON seguro
