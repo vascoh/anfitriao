@@ -13,6 +13,7 @@ _Iniciado: 2026-06-06_
 - ℹ️ Código já estava limpo: sem ficheiros de dados demo (localStorage é só tema); mockup da landing é ilustrativo e rotulado; templates do concierge são funcionalidade.
 - ⚠️ Pendentes humanos p/ produção: `NOTIFY_FROM` com domínio verificado no Resend (fallback é onboarding@resend.dev); desligar `MAINTENANCE_MODE`; deploy (`npx vercel deploy --prod`).
 - ✅ typecheck 0, lint 0, 109 testes, build OK.
+- 🚀 **Deployado em produção** (2026-07-19, `vercel deploy --prod` → anfitrioes.pt). Smoke test OK: landing 200, feed iCal sem nomes/ids, /api/book valida UUID. Commits `889f72a` (copy) + `cb9fd4e` (segurança+prep).
 
 ### [2026-07-19] Auditoria de bugs — cadeia de PII no iCal fechada + /api/book endurecido
 - 🔒 **Crítico corrigido**: o feed público `/api/ical/[propertyId]` expunha os UUIDs reais das reservas (UID) e nomes de hóspedes (SUMMARY). Com o propertyId visível nos URLs `/book`, qualquer pessoa podia obter bookingIds e puxar a PII completa do hóspede (documento, nascimento, telefone) via `GET /api/checkin/[bookingId]`. Agora: UID = sha256 do id (estável, não reversível) e summary genérico "Reservado"/"Bloqueado". Nota: plataformas que importam o feed veem UIDs novos uma vez (re-sync limpo, feed substituído por inteiro).
