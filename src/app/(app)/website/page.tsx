@@ -352,6 +352,28 @@ export default function WebsitePage() {
             </div>
           </div>
 
+          {/* ── Identidade dos emails ao hóspede ── */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Email de reservas (respostas dos hóspedes)</label>
+              <input type="email" value={settings.email_reservas ?? ''} onChange={e => update('email_reservas', e.target.value)}
+                placeholder="Se vazio, usa o email de contacto"
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Cor principal dos emails</label>
+              <input type="color" value={settings.cor_primaria ?? '#C2714F'} onChange={e => update('cor_primaria', e.target.value)}
+                className="h-[42px] w-full rounded-lg border border-input bg-card px-2 py-1.5 cursor-pointer" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-muted-foreground font-medium">Assinatura dos emails (opcional)</label>
+            <textarea value={settings.assinatura_email ?? ''} onChange={e => update('assinatura_email', e.target.value)} rows={2}
+              placeholder="Até já! — Vasco, Casa de Vasco"
+              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground font-medium">Mínimo de noites</label>

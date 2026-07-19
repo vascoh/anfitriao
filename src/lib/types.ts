@@ -80,6 +80,13 @@ export interface WebsiteSettings {
   slug?: string
   /** Clerk userId of the host who owns these settings */
   owner_id?: string
+  /** Identidade de email do alojamento (ver lib/email/identity.ts) */
+  cor_primaria?: string | null
+  cor_secundaria?: string | null
+  idioma?: string | null
+  /** Reply-To dos emails ao hóspede; se vazio usa `email` */
+  email_reservas?: string | null
+  assinatura_email?: string | null
 }
 
 export interface Booking {

@@ -6,6 +6,14 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-19c] Nova arquitetura de emails — lib/email com provider, identidade e EmailService
+- 🏗️ **`src/lib/email/`**: interface `EmailProvider` (Resend isolado num ficheiro; Noop sem key), `EmailIdentity` por anfitrião (derivada de `website_settings`), layout único de templates com blocos reutilizáveis, `EmailService` como ponto único de envio (7 métodos). ~500 linhas de HTML duplicado eliminadas dos 5 pontos de envio. Ver `docs/EMAILS.md`.
+- ✉️ **Separação plataforma vs alojamento**: hóspede recebe `"Casa de Vasco via Anfitriões" <noreply@…>` com **Reply-To = email do alojamento** (novo); anfitrião recebe `"Anfitriões" <noreply@…>`. Envio sempre pelo domínio da plataforma (zero SPF/DKIM para clientes).
+- 🐛 Removido `NOTIFY_EMAIL` (env global que desviava notificações de TODOS os anfitriões para uma caixa — resquício single-tenant).
+- 🗃️ Migração `website_settings_email_identity`: + `cor_primaria`, `cor_secundaria`, `idioma`, `email_reservas`, `assinatura_email` (aplicada em produção). Campos editáveis na página /website.
+- ✅ 118 testes (9 novos p/ email: From/Reply-To, sanitização de header injection, escape de HTML, identidade), typecheck 0, lint 0, build OK.
+- ⚠️ Continua pendente: `EMAIL_FROM` no Vercel com domínio verificado no Resend (substitui `NOTIFY_FROM`).
+
 ### [2026-07-19b] Limpeza pré-produção — dados mock removidos da BD + config centralizada
 - 🧹 **BD de produção limpa** (backup completo em `.backups/mock-dump-2026-07-19.json`, fora do git): apagados 3 propriedades seed (prop-1/2/3 — Alfama, Chiado, Cascais), 10 hóspedes de teste (guest-1..6, Teste Debug, Teste Manus, Zezé Camarinha, tia zezinha), 11 reservas (res-1..8 + 3 de teste manual) e todas as price_rules (6) e price_change_log (6), que só referenciavam props seed. Fica: **Casa de Vasco + 3 quartos, 0 reservas, 0 hóspedes** — única conta é a do Vasco.
 - 🧹 `/api/book` deixa de aceitar ids legados não-UUID (já não existem na BD).

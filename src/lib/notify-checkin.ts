@@ -1,14 +1,12 @@
 import 'server-only'
-import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { emailService } from '@/lib/email'
 import { sendPushToOwner } from '@/lib/push'
-import { fmtDate, escHtml } from '@/lib/utils'
-import { NOTIFY_FROM } from '@/lib/config'
 
 /**
  * Notifica o anfitrião quando um hóspede conclui o check-in online.
  * Chamado server-side a partir de /api/checkin/[bookingId] — nunca exposto
- * como endpoint público (evita abuso do Resend do projeto).
+ * como endpoint público (evita abuso do provider de email).
  */
 export async function sendCheckinCompleteNotification(bookingId: string): Promise<void> {
   const booking = await adminGetBookingById(bookingId)
@@ -27,12 +25,7 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
     url: `/reservas/${bookingId}`,
   })
 
-  if (!process.env.RESEND_API_KEY) return
-  const hostEmail = settings.email
-  if (!hostEmail) return
-
-  const from = NOTIFY_FROM
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  if (!settings.email) return
 
   const sibaComplete = !!(
     guest?.numero_documento &&
@@ -41,62 +34,17 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
     (guest?.sexo || guest?.pais_emissao)
   )
 
-  await resend.emails.send({
-    from,
-    to: hostEmail,
-    subject: `✓ Check-in online concluído — ${guest?.nome ?? 'Hóspede'} · ${prop?.nome ?? 'Alojamento'}`,
-    html: `<!DOCTYPE html>
-<html lang="pt">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9f5f0;padding:32px 16px;margin:0;">
-  <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #ede8e0;">
-    <div style="height:4px;background:#10b981;"></div>
-    <div style="padding:28px 32px 24px;">
-      <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#9a8070;">Check-in online</p>
-      <h1 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#1a1209;">Hóspede registado com sucesso</h1>
-
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;">
-        <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#166534;">
-          ${escHtml(guest?.nome ?? '—')}
-          ${sibaComplete ? ' <span style="font-size:11px;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:8px;">SIBA ✓</span>' : ''}
-        </p>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <tr>
-            <td style="padding:3px 0;color:#6b5c4e;width:40%;">Propriedade</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(prop?.nome ?? '—')}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:#6b5c4e;">Check-in</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${fmtDate(booking.check_in)}</td>
-          </tr>
-          <tr>
-            <td style="padding:3px 0;color:#6b5c4e;">Hóspedes</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${booking.num_hospedes}</td>
-          </tr>
-          ${guest?.numero_documento ? `
-          <tr>
-            <td style="padding:3px 0;color:#6b5c4e;">Documento</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(guest.tipo_documento ?? '')} ${escHtml(guest.numero_documento)}</td>
-          </tr>` : ''}
-          ${guest?.nacionalidade ? `
-          <tr>
-            <td style="padding:3px 0;color:#6b5c4e;">Nacionalidade</td>
-            <td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(guest.nacionalidade)}</td>
-          </tr>` : ''}
-        </table>
-      </div>
-
-      ${!sibaComplete ? `
-      <div style="background:#fffbf5;border:1px solid #fed7aa;border-radius:8px;padding:12px;margin-bottom:20px;">
-        <p style="margin:0;font-size:12px;color:#92400e;">
-          <strong>Atenção:</strong> Alguns dados SIBA estão em falta. Verifica o perfil do hóspede antes da chegada.
-        </p>
-      </div>` : ''}
-
-      <p style="margin:0;font-size:12px;color:#9a8070;text-align:center;">Anfitrião · Reservas Diretas</p>
-    </div>
-  </div>
-</body>
-</html>`,
+  await emailService.sendCheckinComplete({
+    ownerId: booking.owner_id ?? null,
+    ownerEmail: settings.email,
+    guestName: guest?.nome ?? 'Hóspede',
+    propertyName: prop?.nome ?? 'Alojamento',
+    checkIn: booking.check_in,
+    numHospedes: booking.num_hospedes,
+    documento: guest?.numero_documento
+      ? `${guest.tipo_documento ?? ''} ${guest.numero_documento}`.trim()
+      : null,
+    nacionalidade: guest?.nacionalidade ?? null,
+    sibaComplete,
   })
 }
