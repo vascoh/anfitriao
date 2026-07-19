@@ -90,24 +90,22 @@ const features = [
   },
 ]
 
-const testimonials = [
+// Cenários de uso ilustrativos — não são testemunhos de clientes.
+const scenarios = [
   {
-    quote: 'Antes passava o domingo a copiar reservas para o Excel. Agora abro o telemóvel e está tudo lá. O check-in online foi o que mais mudou: os hóspedes chegam e já está tudo tratado.',
-    name: 'Ana Ferreira',
-    city: 'Porto',
-    property: 'T1 no centro histórico',
+    title: 'Tens um T1 e um emprego a tempo inteiro',
+    quote: 'Acaba com os domingos a copiar reservas para o Excel. Abres o telemóvel e está tudo lá. Os hóspedes fazem o check-in online antes de chegar e os dados SIBA ficam prontos sem papelada.',
+    tag: 'Check-in online + SIBA',
   },
   {
-    quote: 'Geria três apartamentos com blocos de notas e mensagens perdidas. O calendário unificado acabou com as duplas reservas. E os dados do SIBA ficam prontos sem eu tocar em nada.',
-    name: 'Miguel Santos',
-    city: 'Lisboa',
-    property: '3 apartamentos em Alfama',
+    title: 'Geres 3 apartamentos em plataformas diferentes',
+    quote: 'O calendário unificado via iCal elimina as duplas reservas entre Airbnb e Booking.com. Cada reserva entra sozinha, com alerta no telemóvel no momento.',
+    tag: 'Sincronização iCal',
   },
   {
-    quote: 'O Concierge responde aos hóspedes franceses melhor do que eu. Na época alta isso vale ouro. E os relatórios mostram finalmente quanto rende cada plataforma.',
-    name: 'Carla Mendes',
-    city: 'Faro',
-    property: 'Moradia no Algarve',
+    title: 'Os teus hóspedes escrevem em 5 línguas',
+    quote: 'O Concierge com IA responde em português, inglês, francês e mais — com o contexto do teu alojamento. E os relatórios mostram quanto rende cada plataforma.',
+    tag: 'Concierge IA + Relatórios',
   },
 ]
 
@@ -403,31 +401,28 @@ export default async function Home() {
         <section className="border-t border-border" aria-label="Testemunhos de anfitriões">
           <div className="mx-auto max-w-6xl px-6 py-24">
             <div className="text-center mb-16">
-              <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">Testemunhos</div>
-              <h2 className="text-3xl font-bold md:text-4xl">O que dizem os anfitriões</h2>
+              <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">No teu dia a dia</div>
+              <h2 className="text-3xl font-bold md:text-4xl">Feito para anfitriões como tu</h2>
             </div>
             <div
               tabIndex={0}
               role="region"
-              aria-label="Testemunhos de anfitriões"
+              aria-label="Cenários de uso"
               className="-mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-4 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0"
             >
-              {testimonials.map(t => (
-                <figure
-                  key={t.name}
+              {scenarios.map(s => (
+                <div
+                  key={s.title}
                   className="flex w-[85%] shrink-0 snap-center flex-col rounded-2xl border border-border bg-card p-6 md:w-auto"
                 >
-                  <div className="text-sm tracking-wider text-amber-500" aria-label="Classificação: 5 de 5 estrelas">
-                    ★★★★★
+                  <h3 className="text-sm font-bold">{s.title}</h3>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {s.quote}
+                  </p>
+                  <div className="mt-6 border-t border-border pt-4">
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">{s.tag}</span>
                   </div>
-                  <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground">
-                    &ldquo;{t.quote}&rdquo;
-                  </blockquote>
-                  <figcaption className="mt-6 border-t border-border pt-4">
-                    <div className="text-sm font-semibold">{t.name}</div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">{t.property} · {t.city}</div>
-                  </figcaption>
-                </figure>
+                </div>
               ))}
             </div>
           </div>
