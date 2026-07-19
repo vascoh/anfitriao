@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
+import { APP_URL, NOTIFY_FROM } from '@/lib/config'
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
@@ -33,8 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, skipped: 'no_guest_email' })
   }
 
-  const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+  const from = NOTIFY_FROM
+  const baseUrl = APP_URL
   const numNights = nights(booking.check_in, booking.check_out)
   const hostName = settings.host_nome || settings.nome
   const hostContact = settings.telefone || settings.email || ''

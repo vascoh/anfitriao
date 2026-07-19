@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { sendBookingNotification } from '@/lib/notify-booking'
-import { uuid, nights } from '@/lib/utils'
+import { uuid, nights, today } from '@/lib/utils'
+import { calculatePriceWithRules } from '@/lib/reservations'
+import { adminGetPriceRules, adminGetTarifas, adminGetPlatformRates } from '@/lib/db-admin'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import type { Property } from '@/lib/types'
 
 const supabase = createAdminClient()
 
@@ -20,6 +24,11 @@ function bad(error: string) {
  * Fields are whitelisted server-side; estado/origem are forced (pendente/direto).
  */
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(`book:${getClientIp(req)}`, 10, 3_600_000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
+  }
+
   let payload: { guest?: Record<string, unknown>; booking?: Record<string, unknown> }
   try {
     payload = await req.json()
@@ -32,10 +41,7 @@ export async function POST(req: NextRequest) {
 
   const propriedade_id = booking.propriedade_id
   if (typeof propriedade_id !== 'string' || !UUID_RE.test(propriedade_id)) {
-    // ids legados podem não ser uuid (ex: 'prop-1') — aceitar strings curtas simples
-    if (typeof propriedade_id !== 'string' || !/^[\w-]{1,64}$/.test(propriedade_id)) {
-      return bad('propriedade_id obrigatório')
-    }
+    return bad('propriedade_id obrigatório')
   }
 
   const nome = typeof guest.nome === 'string' ? guest.nome.trim() : ''
@@ -51,15 +57,13 @@ export async function POST(req: NextRequest) {
       nights(check_in, check_out) < 1) {
     return bad('Datas inválidas')
   }
+  if (check_in < today() || nights(check_in, check_out) > 365) {
+    return bad('Datas inválidas')
+  }
 
   const num_hospedes = Number(booking.num_hospedes ?? 1)
   if (!Number.isInteger(num_hospedes) || num_hospedes < 1 || num_hospedes > 50) {
     return bad('Número de hóspedes inválido')
-  }
-
-  const preco_total = Number(booking.preco_total ?? 0)
-  if (isNaN(preco_total) || preco_total < 0 || preco_total > 100000) {
-    return bad('Preço inválido')
   }
 
   const notas = typeof booking.notas === 'string' ? booking.notas.trim().slice(0, 2000) : undefined
@@ -71,15 +75,42 @@ export async function POST(req: NextRequest) {
   // Derive owner from the property
   const { data: prop, error: propErr } = await supabase
     .from('properties')
-    .select('owner_id, nome')
+    .select('*')
     .eq('id', propriedade_id as string)
     .single()
 
-  if (propErr || !prop) {
+  if (propErr || !prop || prop.ativo === false) {
     return NextResponse.json({ error: 'Propriedade não encontrada' }, { status: 404 })
   }
 
   const owner_id = prop.owner_id as string | null
+
+  // Disponibilidade verificada no servidor — o cliente pode contornar o calendário
+  const { data: conflicts, error: cErr } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('propriedade_id', propriedade_id as string)
+    .not('estado', 'in', '("cancelada","no_show")')
+    .lt('check_in', check_out)
+    .gt('check_out', check_in)
+    .limit(1)
+
+  if (cErr) {
+    console.error('[POST /api/book] conflict check', cErr.message)
+    return NextResponse.json({ error: 'Erro ao verificar disponibilidade.' }, { status: 500 })
+  }
+  if (conflicts && conflicts.length > 0) {
+    return NextResponse.json({ error: 'Estas datas já não estão disponíveis.' }, { status: 409 })
+  }
+
+  // Preço calculado no servidor — nunca confiar no valor enviado pelo cliente
+  const [rules, tarifas, rates] = await Promise.all([
+    adminGetPriceRules(owner_id ?? undefined),
+    adminGetTarifas(owner_id ?? undefined),
+    adminGetPlatformRates(owner_id ?? undefined),
+  ])
+  const preco_total = calculatePriceWithRules(prop as Property, check_in, check_out, rules, tarifas, rates, 'direto').total
+
   const now = new Date().toISOString()
 
   const { error: gErr } = await supabase.from('guests').insert({
@@ -115,6 +146,8 @@ export async function POST(req: NextRequest) {
   })
   if (bErr) {
     console.error('[POST /api/book] booking insert', bErr.message)
+    // Não deixar hóspede órfão se a reserva falhar
+    await supabase.from('guests').delete().eq('id', guestId).eq('criado_em', now)
     return NextResponse.json({ error: 'Erro ao criar reserva.' }, { status: 500 })
   }
 

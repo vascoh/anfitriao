@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { today, addDays, fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
 import { Resend } from 'resend'
 import { checkCronAuth } from '@/lib/cron-auth'
+import { NOTIFY_FROM } from '@/lib/config'
 const supabase = createAdminClient()
 
 // Cron: sends payment reminders 3 days before check-in for bookings with outstanding balance
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
   const propMap = new Map((properties ?? []).map(p => [p.id, p]))
   const settingsMap = new Map((allSettings ?? []).map((s: Record<string, string>) => [s.owner_id, s]))
 
-  const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
+  const from = NOTIFY_FROM
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   let sent = 0

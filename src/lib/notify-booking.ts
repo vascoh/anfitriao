@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import { sendPushToOwner } from '@/lib/push'
 import { fmtDate, fmtMoney, nights, escHtml } from '@/lib/utils'
+import { APP_URL, NOTIFY_FROM } from '@/lib/config'
 
 export interface BookingNotification {
   bookingId: string
@@ -36,8 +37,8 @@ export async function sendBookingNotification(p: BookingNotification): Promise<v
 
   const settings = await adminGetWebsiteSettings(p.ownerId)
   const hostTo = process.env.NOTIFY_EMAIL || settings.email
-  const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
+  const from = NOTIFY_FROM
+  const baseUrl = APP_URL
   const numNights = nights(p.checkIn, p.checkOut)
   const resend = new Resend(process.env.RESEND_API_KEY)
   const sends: Promise<unknown>[] = []

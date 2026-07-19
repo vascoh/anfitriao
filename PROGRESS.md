@@ -6,6 +6,22 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-19b] Limpeza pré-produção — dados mock removidos da BD + config centralizada
+- 🧹 **BD de produção limpa** (backup completo em `.backups/mock-dump-2026-07-19.json`, fora do git): apagados 3 propriedades seed (prop-1/2/3 — Alfama, Chiado, Cascais), 10 hóspedes de teste (guest-1..6, Teste Debug, Teste Manus, Zezé Camarinha, tia zezinha), 11 reservas (res-1..8 + 3 de teste manual) e todas as price_rules (6) e price_change_log (6), que só referenciavam props seed. Fica: **Casa de Vasco + 3 quartos, 0 reservas, 0 hóspedes** — única conta é a do Vasco.
+- 🧹 `/api/book` deixa de aceitar ids legados não-UUID (já não existem na BD).
+- 🔧 **`lib/config.ts` novo** — `APP_URL` e `NOTIFY_FROM` centralizados; 4 rotas (notify-confirmation, stripe/portal, cron/trial-reminders) tinham fallback hardcoded para o URL antigo `anfitriao-nine.vercel.app` (emails e redirects do Stripe apontariam para lá se `NEXT_PUBLIC_APP_URL` faltasse). 11 ficheiros migrados.
+- ℹ️ Código já estava limpo: sem ficheiros de dados demo (localStorage é só tema); mockup da landing é ilustrativo e rotulado; templates do concierge são funcionalidade.
+- ⚠️ Pendentes humanos p/ produção: `NOTIFY_FROM` com domínio verificado no Resend (fallback é onboarding@resend.dev); desligar `MAINTENANCE_MODE`; deploy (`npx vercel deploy --prod`).
+- ✅ typecheck 0, lint 0, 109 testes, build OK.
+
+### [2026-07-19] Auditoria de bugs — cadeia de PII no iCal fechada + /api/book endurecido
+- 🔒 **Crítico corrigido**: o feed público `/api/ical/[propertyId]` expunha os UUIDs reais das reservas (UID) e nomes de hóspedes (SUMMARY). Com o propertyId visível nos URLs `/book`, qualquer pessoa podia obter bookingIds e puxar a PII completa do hóspede (documento, nascimento, telefone) via `GET /api/checkin/[bookingId]`. Agora: UID = sha256 do id (estável, não reversível) e summary genérico "Reservado"/"Bloqueado". Nota: plataformas que importam o feed veem UIDs novos uma vez (re-sync limpo, feed substituído por inteiro).
+- 🔒 `/api/book` endurecido: rate limit (10/h por IP — convenção de rotas públicas), **preço recalculado no servidor** com `calculatePriceWithRules` (antes aceitava `preco_total` do cliente, 0–100k€), verificação de disponibilidade server-side (409 se datas ocupadas), rejeição de check-in no passado e estadias >365 noites, propriedade inativa → 404, limpeza do hóspede órfão se o insert da reserva falhar.
+- 🔒 `GET /api/checkin/[bookingId]` com rate limit (60/h por IP) — devolve PII, dificulta enumeração.
+- ✨ BookingClient mostra a mensagem de erro do servidor (ex.: "Estas datas já não estão disponíveis.") em vez de erro genérico.
+- ✅ Auditado sem problemas: rotas privadas (auth + owner_id + `canUpsertRow`), crons (`checkCronAuth`), datas TZ-safe, iCal fetch via allowlist anti-SSRF, `documentos/extrair` e `concierge` com rate limit.
+- ✅ Validação: typecheck 0, lint 0, 109 testes verdes (route.test.ts do /api/book reescrito com datas dinâmicas + casos 409/429/preço server-side), `next build` OK. **Não deployado** — falta `npx vercel deploy --prod`.
+
 ### [2026-07-13n] E2E autenticado: mecanismo pronto, bloqueado por MAINTENANCE_MODE
 - ✅ **Mecanismo de login E2E funciona**: user de teste via Clerk Backend API + sign-in token consumido com `/sign-in?__clerk_ticket=<token>` (tokens são de uso único). Validado: autentica, `/hoje` renderiza o onboarding de primeira vez, formulário de nova propriedade preenche e submete.
 - ⛔ **Bloqueios confirmados empiricamente**: (1) localmente, `ensureAccount`/`getAccountByClerkId` precisam de `SUPABASE_SERVICE_ROLE_KEY` (tabela accounts é service_role-only) e a key está marcada *sensitive* no Vercel (o `env pull` devolve vazio) → POST /api/properties responde 404 "Conta não encontrada"; (2) em produção, o **maintenance mode está ativo** — utilizador novo é redirecionado para `/em-construcao`.

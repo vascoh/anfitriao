@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { PwaRegister } from '@/components/pwa-register'
 import './globals.css'
+import { APP_URL } from '@/lib/config'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -14,7 +15,6 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
 
 const OG_IMAGE = `${APP_URL}/api/og`
 

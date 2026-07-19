@@ -7,10 +7,10 @@ import { fmtMoney } from '@/lib/utils'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import type { Property } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { APP_URL } from '@/lib/config'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }

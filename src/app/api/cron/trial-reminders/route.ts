@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { Resend } from 'resend'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { escHtml } from '@/lib/utils'
+import { APP_URL, NOTIFY_FROM } from '@/lib/config'
 const supabase = createAdminClient()
 
 // Cron: envia emails de aviso de trial a expirar
@@ -17,8 +18,8 @@ export async function GET(req: NextRequest) {
   }
 
   const now  = new Date()
-  const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitriao-nine.vercel.app'
+  const from = NOTIFY_FROM
+  const baseUrl = APP_URL
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   // Janelas de tempo: faltam 3 dias ou falta 1 dia

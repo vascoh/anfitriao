@@ -1,26 +1,65 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
+import { today, addDays } from '@/lib/utils'
 
 const inserted: { table: string; row: Record<string, unknown> }[] = []
-let propertyRow: { owner_id: string | null; nome: string } | null = { owner_id: 'owner-1', nome: 'Casa do Mar' }
+const deleted: string[] = []
+let propertyRow: Record<string, unknown> | null = null
+let conflictRows: Array<{ id: string }> = []
 
 vi.mock('@/lib/supabase', () => ({
   createAdminClient: () => ({
     from: (table: string) => ({
-      select: () => ({
-        eq: () => ({
-          single: async () =>
-            propertyRow
-              ? { data: propertyRow, error: null }
-              : { data: null, error: { message: 'not found' } },
-        }),
-      }),
+      select: () => {
+        if (table === 'properties') {
+          return {
+            eq: () => ({
+              single: async () =>
+                propertyRow
+                  ? { data: propertyRow, error: null }
+                  : { data: null, error: { message: 'not found' } },
+            }),
+          }
+        }
+        // bookings — verificação de conflito de datas
+        return {
+          eq: () => ({
+            not: () => ({
+              lt: () => ({
+                gt: () => ({
+                  limit: async () => ({ data: conflictRows, error: null }),
+                }),
+              }),
+            }),
+          }),
+        }
+      },
       insert: async (row: Record<string, unknown>) => {
         inserted.push({ table, row })
         return { error: null }
       },
+      delete: () => ({
+        eq: (_col: string, val: string) => ({
+          eq: async () => {
+            deleted.push(val)
+            return { error: null }
+          },
+        }),
+      }),
     }),
   }),
+}))
+
+vi.mock('@/lib/db-admin', () => ({
+  adminGetPriceRules: async () => [],
+  adminGetTarifas: async () => [],
+  adminGetPlatformRates: async () => [],
+}))
+
+let rateLimited = false
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: () => ({ allowed: !rateLimited, remaining: 0, resetAt: 0 }),
+  getClientIp: () => '1.2.3.4',
 }))
 
 const notifyMock = vi.fn(async (..._args: unknown[]) => {})
@@ -38,21 +77,29 @@ function makeReq(body: unknown): NextRequest {
   })
 }
 
+// Datas dinâmicas: a suite tem de passar em qualquer data/timezone
+const CHECK_IN = addDays(today(), 30)
+const CHECK_OUT = addDays(today(), 32)
+
 const VALID = {
   guest: { nome: 'João Silva', email: 'joao@example.com', telefone: '+351911111111' },
   booking: {
-    propriedade_id: 'prop-1',
-    check_in: '2026-09-10',
-    check_out: '2026-09-12',
+    propriedade_id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+    check_in: CHECK_IN,
+    check_out: CHECK_OUT,
     num_hospedes: 2,
-    preco_total: 200,
   },
 }
 
+const PROPERTY = { id: 'prop-1', owner_id: 'owner-1', nome: 'Casa do Mar', preco_base: 100, taxa_limpeza: 0, ativo: true }
+
 beforeEach(() => {
   inserted.length = 0
+  deleted.length = 0
   notifyMock.mockClear()
-  propertyRow = { owner_id: 'owner-1', nome: 'Casa do Mar' }
+  propertyRow = { ...PROPERTY }
+  conflictRows = []
+  rateLimited = false
 })
 
 describe('POST /api/book', () => {
@@ -83,6 +130,16 @@ describe('POST /api/book', () => {
     expect(booking.owner_id).toBe('owner-1')
   })
 
+  it('computes the price server-side, ignoring the client value', async () => {
+    const res = await POST(makeReq({
+      guest: VALID.guest,
+      booking: { ...VALID.booking, preco_total: 1 },
+    }))
+    expect(res.status).toBe(200)
+    // 2 noites × 100€ (preco_base), sem regras/tarifas
+    expect(inserted[1].row.preco_total).toBe(200)
+  })
+
   it('rejects invalid JSON', async () => {
     const res = await POST(makeReq('{not json'))
     expect(res.status).toBe(400)
@@ -98,19 +155,21 @@ describe('POST /api/book', () => {
     expect(res.status).toBe(400)
   })
 
-  it('rejects invalid or inverted dates', async () => {
+  it('rejects invalid, inverted or past dates', async () => {
     for (const dates of [
-      { check_in: '10-09-2026', check_out: '2026-09-12' },
-      { check_in: '2026-09-12', check_out: '2026-09-10' },
-      { check_in: '2026-09-10', check_out: '2026-09-10' },
+      { check_in: '10-09-2026', check_out: CHECK_OUT },
+      { check_in: CHECK_OUT, check_out: CHECK_IN },
+      { check_in: CHECK_IN, check_out: CHECK_IN },
+      { check_in: addDays(today(), -2), check_out: addDays(today(), 1) },
+      { check_in: CHECK_IN, check_out: addDays(CHECK_IN, 400) },
     ]) {
       const res = await POST(makeReq({ ...VALID, booking: { ...VALID.booking, ...dates } }))
       expect(res.status).toBe(400)
     }
   })
 
-  it('rejects out-of-range guest count and price', async () => {
-    for (const patch of [{ num_hospedes: 0 }, { num_hospedes: 51 }, { num_hospedes: 2.5 }, { preco_total: -1 }, { preco_total: 200000 }]) {
+  it('rejects out-of-range guest count', async () => {
+    for (const patch of [{ num_hospedes: 0 }, { num_hospedes: 51 }, { num_hospedes: 2.5 }]) {
       const res = await POST(makeReq({ ...VALID, booking: { ...VALID.booking, ...patch } }))
       expect(res.status).toBe(400)
     }
@@ -120,6 +179,27 @@ describe('POST /api/book', () => {
     propertyRow = null
     const res = await POST(makeReq(VALID))
     expect(res.status).toBe(404)
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('returns 404 when the property is inactive', async () => {
+    propertyRow = { ...PROPERTY, ativo: false }
+    const res = await POST(makeReq(VALID))
+    expect(res.status).toBe(404)
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('returns 409 when the dates are no longer available', async () => {
+    conflictRows = [{ id: 'existing-booking' }]
+    const res = await POST(makeReq(VALID))
+    expect(res.status).toBe(409)
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('returns 429 when rate limited', async () => {
+    rateLimited = true
+    const res = await POST(makeReq(VALID))
+    expect(res.status).toBe(429)
     expect(inserted).toHaveLength(0)
   })
 

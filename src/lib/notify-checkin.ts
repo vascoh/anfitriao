@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { sendPushToOwner } from '@/lib/push'
 import { fmtDate, escHtml } from '@/lib/utils'
+import { NOTIFY_FROM } from '@/lib/config'
 
 /**
  * Notifica o anfitrião quando um hóspede conclui o check-in online.
@@ -30,7 +31,7 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
   const hostEmail = settings.email
   if (!hostEmail) return
 
-  const from = process.env.NOTIFY_FROM ?? 'Anfitrião <onboarding@resend.dev>'
+  const from = NOTIFY_FROM
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   const sibaComplete = !!(

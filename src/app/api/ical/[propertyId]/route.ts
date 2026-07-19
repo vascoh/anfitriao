@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase'
 import { generateIcal } from '@/lib/ical'
 const supabase = createAdminClient()
 
 export const revalidate = 300
+
+// UID estável mas não reversível: o id real da reserva não pode sair num feed
+// público — dá acesso ao GET /api/checkin/[bookingId] (PII do hóspede).
+function publicUid(bookingId: string): string {
+  return createHash('sha256').update(`anfitriao-ical:${bookingId}`).digest('hex').slice(0, 32)
+}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params
@@ -17,16 +24,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pro
 
   if (!prop) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
 
-  const { data: guests } = await supabase
-    .from('guests')
-    .select('id, nome')
-    .eq('owner_id', prop.owner_id)
-
-  const guestMap = new Map((guests ?? []).map(g => [g.id, g.nome as string]))
-
+  // Sem nomes de hóspedes: o feed é acessível a qualquer pessoa que conheça o
+  // propertyId (visível nos URLs públicos /book) — só datas de ocupação.
   const events = (bookings ?? []).map(b => ({
-    uid: `${b.id}@anfitriao`,
-    summary: b.hospede_id ? (guestMap.get(b.hospede_id) ?? 'Reservado') : 'Bloqueado',
+    uid: `${publicUid(b.id as string)}@anfitriao`,
+    summary: b.hospede_id ? 'Reservado' : 'Bloqueado',
     start: b.check_in as string,
     end: b.check_out as string,
   }))

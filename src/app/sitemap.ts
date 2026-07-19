@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
+import { APP_URL } from '@/lib/config'
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

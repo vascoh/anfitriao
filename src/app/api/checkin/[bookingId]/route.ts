@@ -20,8 +20,14 @@ function optDate(v: unknown): string | null {
 
 type Params = Promise<{ bookingId: string }>
 
-export async function GET(_req: NextRequest, { params }: { params: Params }) {
+export async function GET(req: NextRequest, { params }: { params: Params }) {
   const { bookingId } = await params
+
+  // Devolve PII do hóspede — limitar tentativas de enumeração de bookingIds
+  const rl = checkRateLimit(`checkin-get:${getClientIp(req)}`, 60, 3_600_000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
+  }
 
   const { data: booking, error } = await supabase
     .from('bookings')

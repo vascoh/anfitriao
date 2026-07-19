@@ -333,7 +333,15 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
           },
         }),
       })
-      if (!bookRes.ok) throw new Error('Erro ao criar reserva')
+      if (!bookRes.ok) {
+        // Mostrar a mensagem do servidor (ex.: datas indisponíveis), se existir
+        const body = await bookRes.json().catch(() => null)
+        setSubmitting(false)
+        setSubmitError(typeof body?.error === 'string' && body.error
+          ? body.error
+          : 'Ocorreu um erro ao enviar o pedido. Tenta novamente.')
+        return
+      }
       // Email de notificação é enviado server-side por /api/book
       router.push(`/book/${prop.id}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
     } catch {
