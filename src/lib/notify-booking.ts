@@ -2,6 +2,7 @@ import 'server-only'
 import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import { emailService } from '@/lib/email'
 import { sendPushToOwner } from '@/lib/push'
+import { getNotificationPreferences } from '@/lib/notification-preferences'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 
 export interface BookingNotification {
@@ -24,18 +25,22 @@ export interface BookingNotification {
  * /api/book — nunca exposto como endpoint público.
  */
 export async function sendBookingNotification(p: BookingNotification): Promise<void> {
+  const prefs = await getNotificationPreferences(p.ownerId)
+
   // Push primeiro — não depende do provider de email e nunca lança
-  await sendPushToOwner(p.ownerId, {
-    title: `Nova reserva — ${p.propertyName}`,
-    body: `${p.guestName} · ${fmtDate(p.checkIn)} → ${fmtDate(p.checkOut)} · ${fmtMoney(p.total)}`,
-    url: `/reservas/${p.bookingId}`,
-  })
+  if (prefs.nova_reserva_push) {
+    await sendPushToOwner(p.ownerId, {
+      title: `Nova reserva — ${p.propertyName}`,
+      body: `${p.guestName} · ${fmtDate(p.checkIn)} → ${fmtDate(p.checkOut)} · ${fmtMoney(p.total)}`,
+      url: `/reservas/${p.bookingId}`,
+    })
+  }
 
   const settings = await adminGetWebsiteSettings(p.ownerId)
   const numNights = nights(p.checkIn, p.checkOut)
   const sends: Promise<unknown>[] = []
 
-  if (settings.email) {
+  if (settings.email && prefs.nova_reserva_email) {
     sends.push(emailService.sendOwnerNotification({
       ...p,
       ownerEmail: settings.email,

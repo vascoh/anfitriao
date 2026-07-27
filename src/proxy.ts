@@ -17,9 +17,12 @@ const isPublicRoute = createRouteMatcher([
   '/(auth)(.*)',
   // APIs públicas
   '/api/book',
+  '/api/book/checkout',
+  '/api/book-checkout-fulfill',
   '/api/og(.*)',
   '/api/ical/(.*)',
   '/api/checkin/(.*)',
+  '/api/book-confirmation/(.*)',
   '/api/pwa-icon(.*)',
   // Extração de documento usada pelo check-in público do hóspede (rate-limited)
   '/api/documentos/extrair',

@@ -3,15 +3,10 @@ import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import { SUPPORT_EMAIL } from './config'
 import type { EmailIdentity } from './types'
 import type { WebsiteSettings } from '@/lib/types'
+import { safeColor } from '@/lib/color'
 
 const DEFAULT_PRIMARY = '#C2714F'
 const DEFAULT_SECONDARY = '#9a8070'
-
-const HEX_RE = /^#[0-9a-fA-F]{6}$/
-
-function safeColor(value: string | null | undefined, fallback: string): string {
-  return value && HEX_RE.test(value) ? value : fallback
-}
 
 /** Constrói a EmailIdentity a partir do website_settings já carregado. */
 export function identityFromSettings(settings: WebsiteSettings): EmailIdentity {

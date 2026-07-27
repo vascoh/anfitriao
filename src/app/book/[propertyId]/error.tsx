@@ -27,8 +27,8 @@ export default function BookPropertyError({
         >
           Tentar novamente
         </button>
-        <Link href="/book" className="px-5 py-2.5 rounded-xl border border-border text-sm font-semibold">
-          Ver alojamentos
+        <Link href="/" className="px-5 py-2.5 rounded-xl border border-border text-sm font-semibold">
+          Página inicial
         </Link>
       </div>
     </div>

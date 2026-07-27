@@ -12,6 +12,7 @@ import {
 import { checkinCompleteEmail } from './templates/checkin'
 import { paymentReminderEmail } from './templates/payment'
 import { trialEndingEmail, trialExpiredEmail } from './templates/platform'
+import { automationMessageEmail } from './templates/automation'
 
 /**
  * EmailService — ponto único de envio de emails da aplicação.
@@ -138,6 +139,24 @@ class EmailService {
       p.guestEmail,
       `Pagamento pendente — ${p.propertyName} · ${fmtDate(p.checkIn)}`,
       paymentReminderEmail({ ...p, identity }),
+    )
+  }
+
+  // ── Automações ──────────────────────────────────────────────────────────────
+
+  /** Hóspede: mensagem de uma automação do anfitrião (lembrete, código da porta, pedido de avaliação, ...). */
+  async sendAutomationMessage(p: {
+    ownerId: string | null
+    guestEmail: string
+    subject: string
+    mensagem: string
+  }): Promise<SendResult> {
+    const identity = await emailIdentityForOwner(p.ownerId)
+    return this.sendAsProperty(
+      identity,
+      p.guestEmail,
+      p.subject,
+      automationMessageEmail({ identity, subject: p.subject, mensagem: p.mensagem }),
     )
   }
 

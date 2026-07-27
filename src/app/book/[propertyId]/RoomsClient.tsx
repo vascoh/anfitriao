@@ -6,6 +6,7 @@ import { ArrowLeft, BedDouble, Bath, Users, MapPin } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import type { Property, WebsiteSettings } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { siteTheme } from '@/lib/site-theme'
 
 const AMENITY_LABEL: Record<string, string> = {
   wifi: 'Wi-Fi', ar_condicionado: 'A/C', estacionamento: 'Parque',
@@ -130,12 +131,14 @@ interface Props {
 
 export default function RoomsClient({ parent, rooms, settings, occupiedIds }: Props) {
   const availableCount = rooms.filter(r => !occupiedIds.has(r.id)).length
+  const backHref = settings.slug ? `/r/${settings.slug}` : '/'
+  const theme = siteTheme(settings)
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col">
+    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
 
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
-        <Link href="/book" aria-label="Voltar" className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+        <Link href={backHref} aria-label="Voltar" className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
         <span className="font-semibold text-sm truncate flex-1">{parent.nome}</span>

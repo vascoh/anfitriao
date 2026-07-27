@@ -5,6 +5,7 @@ import {
 } from '@/lib/db-admin'
 import { blockedDates } from '@/lib/reservations'
 import { today } from '@/lib/utils'
+import { getAccountByClerkId } from '@/lib/accounts'
 import BookingClient from './BookingClient'
 import RoomsClient from './RoomsClient'
 
@@ -15,14 +16,16 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
   const prop = await adminGetPropertyById(propertyId)
   const ownerId = prop?.owner_id as string | undefined
 
-  const [props, ws, bookings, rules, tars, rates] = await Promise.all([
+  const [props, ws, bookings, rules, tars, rates, account] = await Promise.all([
     adminGetProperties(ownerId),
     adminGetWebsiteSettings(ownerId),
     adminGetBookings(ownerId),
     adminGetPriceRules(ownerId),
     adminGetTarifas(ownerId),
     adminGetPlatformRates(ownerId),
+    ownerId ? getAccountByClerkId(ownerId) : Promise.resolve(null),
   ])
+  const paymentsEnabled = !!account?.stripe_connect_charges_enabled
 
   if (!ws.enabled) {
     return (
@@ -33,10 +36,11 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
   }
 
   if (!prop || !prop.ativo) {
+    const backHref = ws.slug ? `/r/${ws.slug}` : '/'
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-muted-foreground">Este alojamento não está disponível.</p>
-        <Link href="/book" className="text-sm text-primary hover:underline">← Ver todos os alojamentos</Link>
+        <Link href={backHref} className="text-sm text-primary hover:underline">← Ver todos os alojamentos</Link>
       </div>
     )
   }
@@ -81,6 +85,7 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
       priceRules={rules}
       tarifas={tars}
       platformRates={rates}
+      paymentsEnabled={paymentsEnabled}
     />
   )
 }

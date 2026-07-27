@@ -2,12 +2,15 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees } from 'lucide-react'
+import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Home } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import type { Property } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { APP_URL } from '@/lib/config'
+import { siteTheme } from '@/lib/site-theme'
+import { SiteNav, SiteFooter, WA_SVG } from './_components/site-chrome'
+import { resolveLang, t, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
 
@@ -28,7 +31,7 @@ export async function generateMetadata(
     description,
     openGraph: {
       type: 'website',
-      locale: 'pt_PT',
+      locale: resolveLang(settings.idioma) === 'en' ? 'en_US' : 'pt_PT',
       title,
       description,
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
@@ -60,24 +63,19 @@ const AMENITY_LABEL: Record<string, string> = {
   piscina: 'Piscina', cozinha: 'Cozinha', maquina_lavar: 'Lavandaria',
   secador: 'Secador', tv: 'TV', varanda: 'Varanda', jardim: 'Jardim',
 }
-const WA_SVG = (
-  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-  </svg>
-)
-
 // ─── PropertyCard ─────────────────────────────────────────────────────────────
 
-function PropertyCard({ p, minNights, desde }: { p: Property; minNights: number; desde?: number }) {
+function PropertyCard({ p, minNights, desde, minimal, lang }: { p: Property; minNights: number; desde?: number; minimal?: boolean; lang: SiteLang }) {
   // Link to the booking detail page (still served under /book/[id])
   const href = `/book/${p.id}`
   // Casa com quartos: mostrar "desde" o preço do quarto mais barato
   const preco = desde ?? p.preco_base
   const prefixo = desde !== undefined ? 'desde ' : ''
+  const rounding = minimal ? 'rounded-lg' : 'rounded-2xl'
 
   return (
     <Link href={href}
-      className="group block rounded-2xl overflow-hidden border border-border hover:shadow-xl hover:border-primary/15 transition-all duration-300">
+      className={`group block ${rounding} overflow-hidden border border-border ${minimal ? 'hover:border-primary/30' : 'hover:shadow-xl hover:border-primary/15'} transition-all duration-300`}>
 
       {p.imagem_url ? (
         <div className="relative h-60 lg:h-72 overflow-hidden bg-muted">
@@ -101,24 +99,26 @@ function PropertyCard({ p, minNights, desde }: { p: Property; minNights: number;
               <div className="text-right shrink-0">
                 <p className="text-3xl font-bold text-white leading-none">{prefixo}{fmtMoney(preco)}</p>
                 <p className="text-white/60 text-xs mt-0.5">
-                  por noite{p.taxa_limpeza && p.taxa_limpeza > 0 ? ` · ${fmtMoney(p.taxa_limpeza)} limpeza` : ''}
+                  {t(lang, 'per_night')}{p.taxa_limpeza && p.taxa_limpeza > 0 ? ` · ${fmtMoney(p.taxa_limpeza)} ${t(lang, 'cleaning_fee')}` : ''}
                 </p>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-5 flex items-center gap-4" style={{ backgroundColor: p.cor + '12' }}>
-          <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: p.cor + '20' }}>
-            <span className="text-2xl">🏠</span>
+        <div className="p-5 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ backgroundColor: p.cor + '12' }}>
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: p.cor + '20' }}>
+              <Home className="h-5 w-5" style={{ color: p.cor }} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-lg">{p.nome}</p>
+              <p className="text-xs text-muted-foreground">{PROPERTY_TYPE_LABEL[p.tipo]} · {p.cidade}</p>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-lg truncate">{p.nome}</p>
-            <p className="text-xs text-muted-foreground">{PROPERTY_TYPE_LABEL[p.tipo]} · {p.cidade}</p>
-          </div>
-          <div className="text-right shrink-0">
+          <div className="sm:ml-auto sm:text-right shrink-0">
             <p className="text-2xl font-bold" style={{ color: p.cor }}>{prefixo}{fmtMoney(preco)}</p>
-            <p className="text-xs text-muted-foreground">/ noite</p>
+            <p className="text-xs text-muted-foreground">/ {t(lang, 'per_night')}</p>
           </div>
         </div>
       )}
@@ -134,7 +134,7 @@ function PropertyCard({ p, minNights, desde }: { p: Property; minNights: number;
             <Bath className="h-3.5 w-3.5" />{p.casasBanho}wc
           </span>
           <span className="flex items-center gap-1 shrink-0">
-            <Users className="h-3.5 w-3.5" />até {p.capacidade}
+            <Users className="h-3.5 w-3.5" />{t(lang, 'up_to')} {p.capacidade}
           </span>
           <div className="hidden sm:flex items-center gap-3 overflow-hidden">
             {p.comodidades.slice(0, 4).map(a => (
@@ -146,13 +146,13 @@ function PropertyCard({ p, minNights, desde }: { p: Property; minNights: number;
           </div>
         </div>
         <span className="flex items-center gap-1 text-sm font-semibold text-primary group-hover:gap-2 transition-all duration-200 shrink-0">
-          Reservar <ArrowRight className="h-4 w-4" />
+          {t(lang, 'reservar')} <ArrowRight className="h-4 w-4" />
         </span>
       </div>
 
       {minNights > 1 && (
         <div className="px-5 py-2 border-t border-border bg-muted/30">
-          <p className="text-[11px] text-muted-foreground">Mínimo {minNights} noites</p>
+          <p className="text-[11px] text-muted-foreground">{minNightsLabel(lang, minNights)}</p>
         </div>
       )}
     </Link>
@@ -198,47 +198,32 @@ export default async function ReservasPage(
     if (cur === undefined || room.preco_base < cur) minRoomPrice.set(room.parent_id, room.preco_base)
   }
 
-  const brandName = settings.logo_texto || settings.nome
   const waLink = settings.telefone
     ? `https://wa.me/${settings.telefone.replace(/\D/g, '')}`
     : null
+  const isMinimal = settings.template_id === 'minimal'
+  const theme = siteTheme(settings)
+  const faq = settings.secoes?.faq ?? []
+  const lang = resolveLang(settings.idioma)
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col">
+    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
 
-      {/* Top nav */}
-      <nav className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <span className="font-bold text-sm tracking-tight">{brandName}</span>
-          <div className="flex items-center gap-3">
-            {settings.email && (
-              <a href={`mailto:${settings.email}`}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
-                {settings.email}
-              </a>
-            )}
-            {waLink && (
-              <a href={waLink} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#075E54] text-white text-xs font-semibold hover:opacity-90 transition-opacity">
-                {WA_SVG}
-                <span>WhatsApp</span>
-              </a>
-            )}
-          </div>
-        </div>
-      </nav>
+      <SiteNav slug={slug} settings={settings} active="" />
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto w-full px-4 pt-16 pb-10 flex flex-col items-center text-center gap-4">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
-          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-          Reservas diretas · Sem comissões
-        </div>
-        <h1 className="text-4xl lg:text-5xl font-bold tracking-tight leading-tight max-w-xl">
+      <section className={`max-w-3xl mx-auto w-full px-4 flex flex-col gap-4 ${isMinimal ? 'pt-10 pb-6 items-start text-left' : 'pt-16 pb-10 items-center text-center'}`}>
+        {!isMinimal && (
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+            {t(lang, 'hero_badge')}
+          </div>
+        )}
+        <h1 className={`font-bold tracking-tight leading-tight max-w-xl ${isMinimal ? 'text-3xl lg:text-4xl' : 'text-4xl lg:text-5xl'}`}>
           {settings.nome}
         </h1>
         {settings.descricao && (
-          <p className="text-muted-foreground text-base lg:text-lg max-w-lg leading-relaxed">
+          <p className={`text-muted-foreground leading-relaxed max-w-lg ${isMinimal ? 'text-sm' : 'text-base lg:text-lg'}`}>
             {settings.descricao}
           </p>
         )}
@@ -249,15 +234,15 @@ export default async function ReservasPage(
         {/* Property listings */}
         {props.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 text-center py-20">
-            <p className="text-muted-foreground">Nenhum alojamento disponível neste momento.</p>
+            <p className="text-muted-foreground">{t(lang, 'listing_empty')}</p>
           </div>
         ) : (
           <section className="flex flex-col gap-5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              {props.length === 1 ? '1 alojamento disponível' : `${props.length} alojamentos disponíveis`}
+              {listingAvailable(lang, props.length)}
             </p>
             {props.map(p => (
-              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} desde={minRoomPrice.get(p.id)} />
+              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} desde={minRoomPrice.get(p.id)} minimal={isMinimal} lang={lang} />
             ))}
           </section>
         )}
@@ -265,24 +250,36 @@ export default async function ReservasPage(
         {/* Why book direct */}
         <section className="border-t border-b border-border py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:divide-x sm:divide-border">
           <div className="flex flex-col gap-1 sm:pr-6">
-            <p className="text-sm font-semibold">Sem taxas de serviço</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Reservar diretamente significa pagar menos. Sem comissões para plataformas de terceiros.
-            </p>
+            <p className="text-sm font-semibold">{t(lang, 'why_title_1')}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{t(lang, 'why_body_1')}</p>
           </div>
           <div className="flex flex-col gap-1 sm:px-6">
-            <p className="text-sm font-semibold">Contacto direto</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Comunicação direta com o anfitrião. Pedidos especiais atendidos com mais atenção.
-            </p>
+            <p className="text-sm font-semibold">{t(lang, 'why_title_2')}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{t(lang, 'why_body_2')}</p>
           </div>
           <div className="flex flex-col gap-1 sm:pl-6">
-            <p className="text-sm font-semibold">Cancelamento flexível</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Políticas e pagamento acordados diretamente com o anfitrião, sem burocracia.
-            </p>
+            <p className="text-sm font-semibold">{t(lang, 'why_title_3')}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">{t(lang, 'why_body_3')}</p>
           </div>
         </section>
+
+        {/* FAQ */}
+        {faq.length > 0 && (
+          <section className="flex flex-col gap-5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t(lang, 'faq_title')}</p>
+            <div className="flex flex-col divide-y divide-border border-t border-b border-border">
+              {faq.map((item, i) => (
+                <details key={i} className="group py-4">
+                  <summary className="flex items-center justify-between gap-3 cursor-pointer list-none font-semibold text-sm">
+                    {item.pergunta}
+                    <span className="text-muted-foreground group-open:rotate-45 transition-transform text-lg leading-none">+</span>
+                  </summary>
+                  <p className="text-sm text-muted-foreground leading-relaxed mt-2">{item.resposta}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Host section */}
         {(settings.host_nome || settings.host_bio) && (
@@ -294,7 +291,7 @@ export default async function ReservasPage(
             </div>
             <div>
               <p className="font-bold text-lg">{settings.host_nome ?? settings.nome}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Anfitrião</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t(lang, 'host_role')}</p>
             </div>
             {settings.host_bio && (
               <p className="text-sm text-muted-foreground leading-relaxed max-w-md">{settings.host_bio}</p>
@@ -303,31 +300,14 @@ export default async function ReservasPage(
               <a href={waLink} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#075E54] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
                 {WA_SVG}
-                Falar com o anfitrião
+                {t(lang, 'talk_to_host')}
               </a>
             )}
           </section>
         )}
       </main>
 
-      <footer className="border-t border-border">
-        <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground text-sm">{brandName}</span>
-          <div className="flex items-center gap-4 flex-wrap">
-            {settings.email && (
-              <a href={`mailto:${settings.email}`} className="hover:text-foreground transition-colors">
-                {settings.email}
-              </a>
-            )}
-            {settings.telefone && (
-              <a href={`tel:${settings.telefone}`} className="hover:text-foreground transition-colors">
-                {settings.telefone}
-              </a>
-            )}
-            <span>Powered by Anfitrião</span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter slug={slug} settings={settings} />
     </div>
   )
 }

@@ -57,6 +57,15 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
     .order('criado_em', { ascending: false })
     .limit(5)
 
+  // Histórico de alterações sensíveis (estado/plano)
+  const { data: auditLog } = await supabase
+    .from('audit_log')
+    .select('id, actor_id, acao, detalhes, criado_em')
+    .eq('entidade', 'account')
+    .eq('entidade_id', conta.id)
+    .order('criado_em', { ascending: false })
+    .limit(10)
+
   const trial = trialInfo(conta.trial_ends_at)
 
   return (
@@ -164,6 +173,34 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
                     <span className="text-xs text-muted-foreground capitalize">{r.estado}</span>
                   </li>
                 ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Histórico de alterações (audit log) */}
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-sm font-semibold">Histórico de alterações</h2>
+            </div>
+            {!auditLog?.length ? (
+              <p className="px-5 py-6 text-sm text-muted-foreground">Sem alterações registadas.</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {auditLog.map(entry => {
+                  const detalhes = entry.detalhes as { de?: string; para?: string }
+                  return (
+                    <li key={entry.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">
+                          {entry.acao === 'estado_alterado' ? 'Estado' : 'Plano'}: {detalhes.de} → {detalhes.para}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {entry.actor_id ? `por ${entry.actor_id}` : 'automático (Stripe)'} · {fmtDatetime(entry.criado_em)}
+                        </p>
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>

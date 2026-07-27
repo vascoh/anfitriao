@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { today, addDays } from '@/lib/utils'
 
+vi.mock('server-only', () => ({}))
+
 const inserted: { table: string; row: Record<string, unknown> }[] = []
 const deleted: string[] = []
 let propertyRow: Record<string, unknown> | null = null

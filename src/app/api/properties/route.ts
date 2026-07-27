@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { getAccountByClerkId } from '@/lib/accounts'
+import { logAudit } from '@/lib/audit'
 import type { Property } from '@/lib/types'
 const supabase = createAdminClient()
 
@@ -100,11 +101,21 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
 
+  const { data: existing } = await supabase.from('properties').select('nome').eq('id', id).maybeSingle()
+
   const { error } = await supabase.from('properties').delete().eq('id', id).eq('owner_id', userId)
   if (error) {
     console.error('[DELETE /api/properties]', error.message)
     return NextResponse.json({ error: 'Erro ao eliminar.' }, { status: 500 })
   }
+
+  await logAudit({
+    actorId: userId,
+    entidade: 'property',
+    entidadeId: id,
+    acao: 'eliminada',
+    detalhes: { nome: existing?.nome ?? null },
+  })
 
   return NextResponse.json({ ok: true })
 }

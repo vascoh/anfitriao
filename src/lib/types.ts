@@ -27,6 +27,10 @@ export interface Property {
   comodidades: string[]
   descricao?: string
   imagem_url?: string
+  /** Fotos adicionais para a galeria do site público (além da foto principal) */
+  fotos?: string[]
+  /** Se true, a página /localizacao do site público mostra a morada completa; default false (só mostra a cidade) */
+  mostrar_morada_publica?: boolean
   instrucoes_checkin: string
   regras_casa: string
   preco_base: number
@@ -87,6 +91,46 @@ export interface WebsiteSettings {
   /** Reply-To dos emails ao hóspede; se vazio usa `email` */
   email_reservas?: string | null
   assinatura_email?: string | null
+  /** Template do site público (ver website_templates); 'classico' por omissão */
+  template_id?: string | null
+  /** Família tipográfica do site público: null/undefined = default, 'serif', 'arredondada' */
+  fonte?: string | null
+  /** Conteúdo opcional por secção do site público (hoje: só FAQ) */
+  secoes?: { faq?: Array<{ pergunta: string; resposta: string }> } | null
+}
+
+export interface WebsiteTemplate {
+  id: string
+  nome: string
+  descricao: string
+}
+
+export type ExpenseCategoria = 'limpeza' | 'manutencao' | 'comissoes' | 'utilidades' | 'marketing' | 'iva' | 'outro'
+
+export type AutomationTrigger = 'checkin_amanha' | 'checkout_hoje' | 'pedir_avaliacao'
+export type AutomationAction = 'email_hospede'
+
+export interface Automation {
+  id: string
+  owner_id?: string | null
+  nome: string
+  trigger_tipo: AutomationTrigger
+  action_tipo: AutomationAction
+  assunto: string
+  mensagem: string
+  ativo: boolean
+  criado_em: string
+}
+
+export interface Expense {
+  id: string
+  propriedade_id?: string | null
+  categoria: ExpenseCategoria
+  descricao: string
+  valor: number
+  data: string
+  owner_id?: string | null
+  criado_em: string
 }
 
 export interface Booking {

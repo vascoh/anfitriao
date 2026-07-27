@@ -361,7 +361,7 @@ export default function WebsitePage() {
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Cor principal dos emails</label>
+              <label className="text-xs text-muted-foreground font-medium">Cor principal (site e emails)</label>
               <input type="color" value={settings.cor_primaria ?? '#C2714F'} onChange={e => update('cor_primaria', e.target.value)}
                 className="h-[42px] w-full rounded-lg border border-input bg-card px-2 py-1.5 cursor-pointer" />
             </div>
@@ -372,6 +372,88 @@ export default function WebsitePage() {
             <textarea value={settings.assinatura_email ?? ''} onChange={e => update('assinatura_email', e.target.value)} rows={2}
               placeholder="Até já! — Vasco, Casa de Vasco"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+          </div>
+
+          {/* ── Aparência do site público ── */}
+          <div className="flex flex-col gap-3 pt-2 border-t border-border">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest pt-3">Aparência do site</p>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Template</label>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { id: 'classico', nome: 'Clássico', desc: 'Hero centrado, cartões arredondados' },
+                  { id: 'minimal', nome: 'Minimal', desc: 'Mais compacto, cantos retos' },
+                ] as const).map(t => (
+                  <button key={t.id} type="button" onClick={() => update('template_id', t.id)}
+                    className={`text-left rounded-lg border px-3 py-2.5 transition-colors ${
+                      (settings.template_id ?? 'classico') === t.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-input bg-card hover:bg-muted'
+                    }`}>
+                    <p className="text-sm font-semibold">{t.nome}</p>
+                    <p className="text-[11px] text-muted-foreground">{t.desc}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Idioma do site</label>
+              <select value={settings.idioma ?? 'pt'} onChange={e => update('idioma', e.target.value)}
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="pt">Português</option>
+                <option value="en">English</option>
+              </select>
+              <p className="text-[11px] text-muted-foreground">Aplica-se ao menu, rodapé e textos fixos do site. O teu texto (descrição, FAQ) mantém-se como escreveste.</p>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground font-medium">Tipo de letra</label>
+              <select value={settings.fonte ?? ''} onChange={e => update('fonte', e.target.value || null)}
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="">Default (Geist)</option>
+                <option value="serif">Elegante (serifada)</option>
+                <option value="arredondada">Arredondada (amigável)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground font-medium">Perguntas frequentes (site público)</label>
+                <button type="button"
+                  onClick={() => update('secoes', { ...settings.secoes, faq: [...(settings.secoes?.faq ?? []), { pergunta: '', resposta: '' }] })}
+                  className="text-xs text-primary font-semibold flex items-center gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Adicionar
+                </button>
+              </div>
+              {(settings.secoes?.faq ?? []).map((item, i) => (
+                <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-input bg-card p-3">
+                  <div className="flex items-center gap-2">
+                    <input type="text" value={item.pergunta} placeholder="Pergunta"
+                      onChange={e => {
+                        const faq = [...(settings.secoes?.faq ?? [])]
+                        faq[i] = { ...faq[i], pergunta: e.target.value }
+                        update('secoes', { ...(settings.secoes ?? {}), faq })
+                      }}
+                      className="flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <button type="button" onClick={() => {
+                      const faq = (settings.secoes?.faq ?? []).filter((_, j) => j !== i)
+                      update('secoes', { ...(settings.secoes ?? {}), faq })
+                    }} className="p-2 text-muted-foreground hover:text-destructive shrink-0">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <textarea value={item.resposta} placeholder="Resposta" rows={2}
+                    onChange={e => {
+                      const faq = [...(settings.secoes?.faq ?? [])]
+                      faq[i] = { ...faq[i], resposta: e.target.value }
+                      update('secoes', { ...(settings.secoes ?? {}), faq })
+                    }}
+                    className="rounded-md border border-input bg-background px-2.5 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { fetchSettings } from '@/lib/fetcher'
 import type { WebsiteSettings } from '@/lib/types'
 import { PushToggle } from '@/components/push-toggle'
+import { NotificationEmailToggle } from '@/components/notification-email-toggle'
 
 export default function PerfilPage() {
   const { user } = useUser()
@@ -121,7 +122,10 @@ export default function PerfilPage() {
           </div>
         </section>
 
-        <PushToggle />
+        <div className="flex flex-col gap-3">
+          <PushToggle />
+          <NotificationEmailToggle />
+        </div>
 
         {/* Site de reservas */}
         <section className="flex flex-col gap-3">

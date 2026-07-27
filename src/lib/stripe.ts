@@ -23,3 +23,11 @@ export const PLAN_PRICE_IDS: Record<'starter' | 'pro', string | undefined> = {
   starter: process.env.STRIPE_STARTER_PRICE_ID,
   pro:     process.env.STRIPE_PRO_PRICE_ID,
 }
+
+// Preços fixos em euros — só para exibição (landing, dashboard admin). A
+// fonte de verdade do valor cobrado é sempre o Price ID no Stripe.
+export const PLAN_PRICE_EUR: Record<AccountPlano, number> = {
+  trial:   0,
+  starter: 19,
+  pro:     39,
+}

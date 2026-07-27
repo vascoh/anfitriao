@@ -8,12 +8,13 @@ import {
   ArrowLeft, ChevronLeft, ChevronRight,
   BedDouble, Bath, Users, MapPin,
   Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees,
-  CheckCircle2,
+  CheckCircle2, MousePointerClick, CreditCard,
 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights, today as localToday } from '@/lib/utils'
 import { addDays, calculatePriceWithRules } from '@/lib/reservations'
 import type { Property, WebsiteSettings, PriceRule, Tarifa, PlatformRate } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { siteTheme } from '@/lib/site-theme'
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
   wifi:            <Wifi className="h-4 w-4" />,
@@ -133,16 +134,17 @@ function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, r
   }
 
   const selectionPhaseLabel = !checkIn
-    ? '👆 Seleciona a data de entrada'
+    ? 'Seleciona a data de entrada'
     : !checkOut
-    ? '👆 Agora seleciona a data de saída'
+    ? 'Agora seleciona a data de saída'
     : null
 
   return (
     <div className="flex flex-col gap-4">
       {/* Phase instruction */}
       {selectionPhaseLabel && (
-        <div className="text-center text-sm font-semibold text-primary">
+        <div className="flex items-center justify-center gap-1.5 text-center text-sm font-semibold text-primary">
+          <MousePointerClick className="h-4 w-4 shrink-0" />
           {selectionPhaseLabel}
         </div>
       )}
@@ -225,9 +227,10 @@ interface Props {
   priceRules: PriceRule[]
   tarifas: Tarifa[]
   platformRates: PlatformRate[]
+  paymentsEnabled: boolean
 }
 
-export default function BookingClient({ prop, settings, blocked: blockedArr, priceRules, tarifas, platformRates }: Props) {
+export default function BookingClient({ prop, settings, blocked: blockedArr, priceRules, tarifas, platformRates, paymentsEnabled }: Props) {
   const router = useRouter()
 
   const blockedSet = useMemo(() => new Set(blockedArr), [blockedArr])
@@ -236,7 +239,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
   const [checkIn, setCheckIn] = useState<string | null>(null)
   const [checkOut, setCheckOut] = useState<string | null>(null)
   const [rangeError, setRangeError] = useState(false)
-  const [numHospedes, setNumHospedes] = useState(2)
+  const [numHospedes, setNumHospedes] = useState(() => Math.min(2, prop.capacidade))
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -350,15 +353,59 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     }
   }
 
+  async function handlePay() {
+    if (!checkIn || !checkOut || !nome.trim() || !email.trim()) return
+    if (numNights < minNights) return
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const guestId = uuid()
+      const bookingId = uuid()
+      const res = await fetch('/api/book/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guest: {
+            id: guestId,
+            nome: nome.trim(),
+            email: email.trim(),
+            telefone: telefone.trim() || undefined,
+            notas: notas.trim() || undefined,
+          },
+          booking: {
+            id: bookingId,
+            propriedade_id: prop.id,
+            check_in: checkIn,
+            check_out: checkOut,
+            num_hospedes: numHospedes,
+            notas: notas.trim() || undefined,
+          },
+        }),
+      })
+      const body = await res.json().catch(() => null)
+      if (!res.ok || !body?.url) {
+        setSubmitting(false)
+        setSubmitError(typeof body?.error === 'string' ? body.error : 'Ocorreu um erro ao iniciar o pagamento.')
+        return
+      }
+      window.location.href = body.url
+    } catch {
+      setSubmitting(false)
+      setSubmitError('Ocorreu um erro ao iniciar o pagamento. Tenta novamente.')
+    }
+  }
+
   const waLink = settings.telefone
     ? `https://wa.me/${settings.telefone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá! Gostaria de fazer uma reserva em ${prop.nome}.`)}`
     : null
+  const theme = siteTheme(settings)
+  const backHref = prop.parent_id ? `/book/${prop.parent_id}` : (settings.slug ? `/r/${settings.slug}` : '/')
 
   return (
-    <div className="min-h-dvh bg-background flex flex-col">
+    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
 
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center gap-3">
-        <Link href={prop.parent_id ? `/book/${prop.parent_id}` : '/book'} aria-label="Voltar"
+        <Link href={backHref} aria-label="Voltar"
           className="p-1.5 -ml-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </Link>
@@ -552,7 +599,9 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
                 <span className="text-primary text-xl font-bold">{fmtMoney(total)}</span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Sem taxas de serviço · Pagamento acordado diretamente com o anfitrião.
+                {paymentsEnabled
+                  ? 'Sem taxas de serviço · Pagamento seguro com cartão, processado pela Stripe.'
+                  : 'Sem taxas de serviço · Pagamento acordado diretamente com o anfitrião.'}
               </p>
             </div>
           )}
@@ -574,18 +623,43 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
             <p className="text-xs text-destructive text-center">{submitError}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={!canSubmit || submitting}
-            className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-bold text-sm disabled:opacity-40 active:opacity-80 transition-opacity flex items-center justify-center gap-2">
-            {submitting ? (
-              'A enviar pedido...'
-            ) : canSubmit ? (
-              <><CheckCircle2 className="h-4 w-4" /> Enviar pedido de reserva</>
-            ) : (
-              'Enviar pedido de reserva'
-            )}
-          </button>
+          {paymentsEnabled ? (
+            <>
+              <button
+                type="button"
+                onClick={handlePay}
+                disabled={!canSubmit || submitting}
+                className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-bold text-sm disabled:opacity-40 active:opacity-80 transition-opacity flex items-center justify-center gap-2">
+                {submitting ? 'A abrir pagamento...' : <><CreditCard className="h-4 w-4" /> Pagar e reservar agora</>}
+              </button>
+
+              <div className="flex items-center gap-3 -my-1">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[11px] text-muted-foreground">ou</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              <button
+                type="submit"
+                disabled={!canSubmit || submitting}
+                className="w-full rounded-xl py-3 font-semibold text-sm border border-input text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
+                Pedir reserva sem pagar agora
+              </button>
+            </>
+          ) : (
+            <button
+              type="submit"
+              disabled={!canSubmit || submitting}
+              className="w-full bg-primary text-primary-foreground rounded-xl py-4 font-bold text-sm disabled:opacity-40 active:opacity-80 transition-opacity flex items-center justify-center gap-2">
+              {submitting ? (
+                'A enviar pedido...'
+              ) : canSubmit ? (
+                <><CheckCircle2 className="h-4 w-4" /> Enviar pedido de reserva</>
+              ) : (
+                'Enviar pedido de reserva'
+              )}
+            </button>
+          )}
 
           {waLink && (
             <a href={waLink} target="_blank" rel="noopener noreferrer"

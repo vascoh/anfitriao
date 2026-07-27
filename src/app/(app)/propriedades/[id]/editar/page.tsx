@@ -49,8 +49,10 @@ export default function EditarPropriedadePage() {
   const [tipo, setTipo] = useState<PropertyType>('apartamento')
   const [endereco, setEndereco] = useState('')
   const [cidade, setCidade] = useState('')
+  const [mostrarMoradaPublica, setMostrarMoradaPublica] = useState(false)
   const [descricao, setDescricao] = useState('')
   const [imagemUrl, setImagemUrl] = useState('')
+  const [fotos, setFotos] = useState<string[]>([])
   const [quartos, setQuartos] = useState(1)
   const [casasBanho, setCasasBanho] = useState(1)
   const [capacidade, setCapacidade] = useState(2)
@@ -76,6 +78,7 @@ export default function EditarPropriedadePage() {
       setTipo(p.tipo)
       setEndereco(p.endereco)
       setCidade(p.cidade)
+      setMostrarMoradaPublica(p.mostrar_morada_publica ?? false)
       setQuartos(p.quartos)
       setCasasBanho(p.casasBanho)
       setCapacidade(p.capacidade)
@@ -85,6 +88,7 @@ export default function EditarPropriedadePage() {
       setComodidades(p.comodidades)
       setDescricao(p.descricao ?? '')
       setImagemUrl(p.imagem_url ?? '')
+      setFotos(p.fotos ?? [])
       setInstrucoesCheckin(p.instrucoes_checkin)
       setRegrasCasa(p.regras_casa)
       setIcalFeeds(p.ical_feeds ?? [])
@@ -120,7 +124,8 @@ export default function EditarPropriedadePage() {
       // Save first to persist current feeds
       const updated: Property = {
         ...prop, nome: nome.trim(), tipo, endereco: endereco.trim(), cidade: cidade.trim(),
-        descricao: descricao.trim() || undefined, imagem_url: imagemUrl.trim() || undefined,
+        descricao: descricao.trim() || undefined, imagem_url: imagemUrl.trim() || undefined, fotos,
+        mostrar_morada_publica: mostrarMoradaPublica,
         quartos, casasBanho, capacidade, preco_base: precoBase, taxa_limpeza: taxaLimpeza || undefined, cor, comodidades,
         instrucoes_checkin: instrucoesCheckin.trim(), regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
@@ -159,6 +164,8 @@ export default function EditarPropriedadePage() {
         cidade: cidade.trim(),
         descricao: descricao.trim() || undefined,
         imagem_url: imagemUrl.trim() || undefined,
+        fotos,
+        mostrar_morada_publica: mostrarMoradaPublica,
         quartos,
         casasBanho,
         capacidade,
@@ -239,6 +246,20 @@ export default function EditarPropriedadePage() {
             <input type="text" value={cidade} onChange={e => setCidade(e.target.value)}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
+          <button type="button" onClick={() => setMostrarMoradaPublica(v => !v)}
+            className="flex items-center gap-3 rounded-lg border border-input bg-card px-3 py-3 text-left">
+            <div className="flex-1">
+              <p className="text-sm font-medium">Mostrar morada completa no site público</p>
+              <p className="text-xs text-muted-foreground">
+                {mostrarMoradaPublica
+                  ? 'A página "Localização" mostra a morada exata a qualquer visitante.'
+                  : 'A página "Localização" mostra só a cidade; a morada exata fica para depois da reserva confirmada.'}
+              </p>
+            </div>
+            <span className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${mostrarMoradaPublica ? 'bg-primary' : 'bg-muted'}`}>
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${mostrarMoradaPublica ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+            </span>
+          </button>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Descrição pública</label>
             <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={3}
@@ -254,6 +275,27 @@ export default function EditarPropriedadePage() {
               // eslint-disable-next-line @next/next/no-img-element -- URL arbitrário/preview local, fora do next/image
               <img src={imagemUrl} alt="Preview" className="rounded-lg h-32 w-full object-cover mt-1" />
             )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs text-muted-foreground font-medium">Mais fotos (galeria do site)</label>
+              <button type="button" onClick={() => setFotos(prev => [...prev, ''])}
+                className="text-xs text-primary font-semibold flex items-center gap-1">
+                <Plus className="h-3.5 w-3.5" /> Adicionar
+              </button>
+            </div>
+            {fotos.map((url, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input type="url" value={url} placeholder="https://..."
+                  onChange={e => setFotos(prev => prev.map((u, j) => j === i ? e.target.value : u))}
+                  className="flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                <button type="button" onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
+                  className="p-2 text-muted-foreground hover:text-destructive shrink-0">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 

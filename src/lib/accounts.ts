@@ -1,4 +1,5 @@
 import { createAdminClient } from './supabase'
+import { logAudit } from './audit'
 
 // All account operations run server-side (API routes, server components, layout.tsx).
 // Use admin client so service_role bypasses RLS — accounts are never exposed to the browser.
@@ -21,6 +22,10 @@ export interface Account {
   stripe_subscription_id: string | null
   stripe_price_id: string | null
   current_period_end: string | null
+  /** Conta Stripe Connect do anfitrião — recebe os pagamentos dos hóspedes diretamente (charges diretas, nunca passam pela conta da plataforma) */
+  stripe_connect_account_id: string | null
+  stripe_connect_charges_enabled: boolean
+  stripe_connect_details_submitted: boolean
   criado_em: string
   atualizado_em: string
 }
@@ -139,7 +144,11 @@ export async function getAccountByClerkId(clerkUserId: string): Promise<Account 
   return data as Account
 }
 
-/** Actualiza campos da conta (admin ou webhook). */
+/**
+ * Actualiza campos da conta (admin ou webhook).
+ * `actorId` = Clerk userId de quem fez a alteração; `null` para chamadas de
+ * sistema (webhook Stripe) — só relevante para o audit log, nunca bloqueia.
+ */
 export async function updateAccount(
   id: string,
   updates: Partial<Pick<
@@ -147,10 +156,16 @@ export async function updateAccount(
     | 'estado' | 'plano' | 'propriedades_max' | 'notas_admin'
     | 'stripe_customer_id' | 'stripe_subscription_id'
     | 'stripe_price_id' | 'current_period_end'
+    | 'stripe_connect_account_id' | 'stripe_connect_charges_enabled' | 'stripe_connect_details_submitted'
   >>,
+  actorId: string | null = null,
 ): Promise<void> {
+  const before = (updates.estado || updates.plano) ? await getAccountById(id) : null
+
   const { error } = await getClient().from('accounts').update(updates).eq('id', id)
   if (error) throw new Error(`[updateAccount] ${error.message}`)
+
+  await logAccountChange(id, actorId, before, updates)
 }
 
 /** Actualiza pelo stripe_customer_id (útil nos webhooks). */
@@ -162,11 +177,26 @@ export async function updateAccountByCustomerId(
     | 'stripe_subscription_id' | 'stripe_price_id' | 'current_period_end'
   >>,
 ): Promise<void> {
+  const before = (updates.estado || updates.plano) ? await getAccountByCustomerId(stripeCustomerId) : null
+
   const { error } = await getClient()
     .from('accounts')
     .update(updates)
     .eq('stripe_customer_id', stripeCustomerId)
   if (error) throw new Error(`[updateAccountByCustomerId] ${error.message}`)
+
+  if (before) await logAccountChange(before.id, null, before, updates)
+}
+
+/** Devolve uma conta pelo stripe_connect_account_id (conta Connect do anfitrião). */
+export async function getAccountByConnectAccountId(connectAccountId: string): Promise<Account | null> {
+  const { data, error } = await getClient()
+    .from('accounts')
+    .select('*')
+    .eq('stripe_connect_account_id', connectAccountId)
+    .single()
+  if (error || !data) return null
+  return data as Account
 }
 
 /** Devolve uma conta pelo stripe_customer_id. */
@@ -178,4 +208,32 @@ export async function getAccountByCustomerId(stripeCustomerId: string): Promise<
     .single()
   if (error || !data) return null
   return data as Account
+}
+
+/** Regista no audit log mudanças de estado/plano (billing ou override do admin). */
+async function logAccountChange(
+  accountId: string,
+  actorId: string | null,
+  before: Account | null,
+  updates: Partial<Pick<Account, 'estado' | 'plano'>>,
+): Promise<void> {
+  if (!before) return
+  if (updates.estado && updates.estado !== before.estado) {
+    await logAudit({
+      actorId,
+      entidade: 'account',
+      entidadeId: accountId,
+      acao: 'estado_alterado',
+      detalhes: { de: before.estado, para: updates.estado },
+    })
+  }
+  if (updates.plano && updates.plano !== before.plano) {
+    await logAudit({
+      actorId,
+      entidade: 'account',
+      entidadeId: accountId,
+      acao: 'plano_alterado',
+      detalhes: { de: before.plano, para: updates.plano },
+    })
+  }
 }

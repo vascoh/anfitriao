@@ -5,8 +5,10 @@ import {
   updateAccount,
   updateAccountByCustomerId,
   getAccountByCustomerId,
+  getAccountByConnectAccountId,
   syncAccountToClerk,
 } from '@/lib/accounts'
+import { fulfillCheckoutSession } from '@/lib/checkout-fulfillment'
 
 // Raw body necessário para verificar assinatura do Stripe
 export async function POST(req: NextRequest) {
@@ -40,9 +42,16 @@ export async function POST(req: NextRequest) {
 async function handleEvent(event: Stripe.Event) {
   switch (event.type) {
 
-    // Pagamento concluído — activar conta
+    // Pagamento de uma reserva de hóspede (charge direta na conta Connect do
+    // anfitrião — event.account identifica de qual). Fallback fiável ao
+    // preenchimento síncrono feito pela página de confirmação; idempotente.
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session
+      if (session.mode === 'payment' && event.account) {
+        const result = await fulfillCheckoutSession(event.account, session.id)
+        if (!result.ok) console.error('[webhook] fulfillCheckoutSession falhou', session.id, result.reason)
+        break
+      }
       if (session.mode !== 'subscription') break
 
       const accountId   = session.metadata?.account_id
@@ -144,6 +153,19 @@ async function handleEvent(event: Stripe.Event) {
         await updateAccountByCustomerId(customerId, { estado: 'activo' })
         await syncClerkMetadata(customerId, account.plano, 'activo')
       }
+      break
+    }
+
+    // Estado da conta Stripe Connect do anfitrião (onboarding) mudou.
+    case 'account.updated': {
+      const acct = event.data.object as Stripe.Account
+      const account = await getAccountByConnectAccountId(acct.id)
+      if (!account) break
+
+      await updateAccount(account.id, {
+        stripe_connect_charges_enabled: !!acct.charges_enabled,
+        stripe_connect_details_submitted: !!acct.details_submitted,
+      })
       break
     }
 

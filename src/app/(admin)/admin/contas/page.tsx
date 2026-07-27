@@ -1,5 +1,6 @@
 import { listAllAccounts } from '@/lib/accounts'
 import type { AccountEstado, AccountPlano } from '@/lib/accounts'
+import { PLAN_PRICE_EUR } from '@/lib/stripe'
 import Link from 'next/link'
 
 // ─── Helpers de UI ────────────────────────────────────────────────────────────
@@ -50,6 +51,9 @@ export default async function ContasPage() {
   const emTrial   = contas.filter(c => c.estado === 'trial').length
   const activos   = contas.filter(c => c.estado === 'activo').length
   const suspensos = contas.filter(c => c.estado === 'suspenso').length
+  const mrr = contas
+    .filter(c => c.estado === 'activo')
+    .reduce((sum, c) => sum + PLAN_PRICE_EUR[c.plano], 0)
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
@@ -61,12 +65,13 @@ export default async function ContasPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
         {[
           { label: 'Total', value: total,     color: 'text-foreground' },
           { label: 'Trial',    value: emTrial,  color: 'text-blue-600 dark:text-blue-400' },
           { label: 'Activos',  value: activos,  color: 'text-green-600 dark:text-green-400' },
           { label: 'Suspensos',value: suspensos,color: 'text-red-600 dark:text-red-400' },
+          { label: 'MRR',      value: `€${mrr}`,color: 'text-primary' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-card border border-border rounded-xl p-4">
             <p className="text-xs text-muted-foreground mb-1">{label}</p>
