@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
-import { ArrowLeft, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, RefreshCw, Upload, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType, IcalFeed, BookingSource } from '@/lib/types'
@@ -53,6 +53,8 @@ export default function EditarPropriedadePage() {
   const [descricao, setDescricao] = useState('')
   const [imagemUrl, setImagemUrl] = useState('')
   const [fotos, setFotos] = useState<string[]>([])
+  const [uploadingPrincipal, setUploadingPrincipal] = useState(false)
+  const [uploadingFotoIdx, setUploadingFotoIdx] = useState<number | null>(null)
   const [quartos, setQuartos] = useState(1)
   const [casasBanho, setCasasBanho] = useState(1)
   const [capacidade, setCapacidade] = useState(2)
@@ -94,6 +96,46 @@ export default function EditarPropriedadePage() {
       setIcalFeeds(p.ical_feeds ?? [])
     })
   }, [id, router, ownerId])
+
+  async function uploadFoto(file: File): Promise<string> {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/upload', { method: 'POST', body: form })
+    const json = await res.json().catch(() => ({})) as { url?: string; error?: string }
+    if (!res.ok || !json.url) {
+      throw new Error(json.error ?? 'Erro ao carregar o ficheiro')
+    }
+    return json.url
+  }
+
+  async function handleUploadPrincipal(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploadingPrincipal(true)
+    try {
+      setImagemUrl(await uploadFoto(file))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao carregar o ficheiro')
+    } finally {
+      setUploadingPrincipal(false)
+    }
+  }
+
+  async function handleUploadFoto(i: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploadingFotoIdx(i)
+    try {
+      const url = await uploadFoto(file)
+      setFotos(prev => prev.map((u, j) => j === i ? url : u))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao carregar o ficheiro')
+    } finally {
+      setUploadingFotoIdx(null)
+    }
+  }
 
   function toggleAmenity(aid: string) {
     setComodidades(prev => prev.includes(aid) ? prev.filter(x => x !== aid) : [...prev, aid])
@@ -267,10 +309,17 @@ export default function EditarPropriedadePage() {
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Foto principal (URL)</label>
-            <input type="url" value={imagemUrl} onChange={e => setImagemUrl(e.target.value)}
-              placeholder="https://..."
-              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            <label className="text-xs text-muted-foreground font-medium">Foto principal</label>
+            <div className="flex items-center gap-2">
+              <input type="url" value={imagemUrl} onChange={e => setImagemUrl(e.target.value)}
+                placeholder="https://... ou carrega um ficheiro"
+                className="flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label className="shrink-0 flex items-center justify-center h-10 w-10 rounded-lg border border-input bg-card text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                {uploadingPrincipal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                  disabled={uploadingPrincipal} onChange={handleUploadPrincipal} />
+              </label>
+            </div>
             {imagemUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- URL arbitrário/preview local, fora do next/image
               <img src={imagemUrl} alt="Preview" className="rounded-lg h-32 w-full object-cover mt-1" />
@@ -287,9 +336,14 @@ export default function EditarPropriedadePage() {
             </div>
             {fotos.map((url, i) => (
               <div key={i} className="flex items-center gap-2">
-                <input type="url" value={url} placeholder="https://..."
+                <input type="url" value={url} placeholder="https://... ou carrega um ficheiro"
                   onChange={e => setFotos(prev => prev.map((u, j) => j === i ? e.target.value : u))}
                   className="flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                <label className="shrink-0 flex items-center justify-center h-10 w-10 rounded-lg border border-input bg-card text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                  {uploadingFotoIdx === i ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                    disabled={uploadingFotoIdx !== null} onChange={e => handleUploadFoto(i, e)} />
+                </label>
                 <button type="button" onClick={() => setFotos(prev => prev.filter((_, j) => j !== i))}
                   className="p-2 text-muted-foreground hover:text-destructive shrink-0">
                   <Trash2 className="h-4 w-4" />
