@@ -9,6 +9,10 @@ const isPublicRoute = createRouteMatcher([
   // Website público de reservas
   '/book(.*)',
   '/r/(.*)',
+  // SEO — bug pré-existente: nunca estiveram na lista pública, o Clerk
+  // bloqueava-os (404 disfarçado), o Google nunca conseguiu lê-los
+  '/robots.txt',
+  '/sitemap.xml',
   // Check-in online do hóspede
   '/checkin(.*)',
   // Auth
