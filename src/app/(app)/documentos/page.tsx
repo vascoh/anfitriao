@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown, Download } from 'lucide-react'
+import { Camera, FileText, ExternalLink, RotateCcw, Copy, Check, UserCheck, ChevronDown, Download, Send } from 'lucide-react'
 import { fetchGuests } from '@/lib/fetcher'
 import { today } from '@/lib/utils'
 import type { Guest } from '@/lib/types'
@@ -53,6 +53,8 @@ export default function DocumentosPage() {
   const [sibaFrom, setSibaFrom] = useState(`${currentYear}-${currentMonth}-01`)
   const [sibaTo, setSibaTo] = useState(today())
   const [sibaExporting, setSibaExporting] = useState(false)
+  const [sibaSubmitting, setSibaSubmitting] = useState(false)
+  const [sibaSubmitMsg, setSibaSubmitMsg] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
 
   async function exportSIBA() {
     setSibaExporting(true)
@@ -71,6 +73,28 @@ export default function DocumentosPage() {
       a.click()
     } finally {
       setSibaExporting(false)
+    }
+  }
+
+  async function submitSIBA() {
+    setSibaSubmitting(true)
+    setSibaSubmitMsg(null)
+    try {
+      const res = await fetch('/api/siba-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: sibaFrom, to: sibaTo }),
+      })
+      const json = await res.json().catch(() => ({})) as { error?: string; results?: Array<{ success: boolean }> }
+      if (!res.ok) {
+        setSibaSubmitMsg({ tipo: 'erro', texto: json.error ?? 'Submissão automática indisponível. Usa a exportação CSV.' })
+        return
+      }
+      const total = json.results?.length ?? 0
+      const ok = json.results?.filter(r => r.success).length ?? 0
+      setSibaSubmitMsg({ tipo: ok === total && total > 0 ? 'ok' : 'erro', texto: `${ok}/${total} boletins submetidos com sucesso à AIMA.` })
+    } finally {
+      setSibaSubmitting(false)
     }
   }
 
@@ -176,11 +200,23 @@ export default function DocumentosPage() {
                 className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
-          <button onClick={exportSIBA} disabled={sibaExporting || !sibaFrom || !sibaTo}
-            className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold disabled:opacity-40 active:opacity-80 transition-opacity">
-            <Download className="h-4 w-4" />
-            {sibaExporting ? 'A exportar...' : 'Exportar CSV'}
-          </button>
+          <div className="flex gap-2">
+            <button onClick={exportSIBA} disabled={sibaExporting || !sibaFrom || !sibaTo}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold disabled:opacity-40 active:opacity-80 transition-opacity">
+              <Download className="h-4 w-4" />
+              {sibaExporting ? 'A exportar...' : 'Exportar CSV'}
+            </button>
+            <button onClick={submitSIBA} disabled={sibaSubmitting || !sibaFrom || !sibaTo}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-input bg-background py-2.5 text-sm font-semibold disabled:opacity-40 active:opacity-80 transition-opacity">
+              <Send className="h-4 w-4" />
+              {sibaSubmitting ? 'A submeter...' : 'Submeter à AIMA'}
+            </button>
+          </div>
+          {sibaSubmitMsg && (
+            <p className={`text-xs rounded-lg px-3 py-2 ${sibaSubmitMsg.tipo === 'ok' ? 'text-emerald-700 bg-emerald-500/10 border border-emerald-500/20' : 'text-destructive bg-destructive/5 border border-destructive/20'}`}>
+              {sibaSubmitMsg.texto}
+            </p>
+          )}
         </div>
         <input
           ref={fileRef}

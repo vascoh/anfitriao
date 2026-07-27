@@ -149,6 +149,11 @@ export interface Booking {
   criado_em: string
   historico: BookingEvent[]
   owner_id?: string
+  /** Estado da submissão automática à AIMA/SIBA (ver lib/siba-api.ts) */
+  siba_status?: 'nao_submetido' | 'a_processar' | 'submetido' | 'falhou'
+  siba_submitted_at?: string | null
+  siba_reference?: string | null
+  siba_error?: string | null
 }
 
 // --- Sistema de preços ---

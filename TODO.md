@@ -48,6 +48,12 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 - [ ] `ChannelAdapter` + candidatura a Booking Connectivity Partner / Airbnb API — **adiado deliberadamente** (mesma lógica do RBAC: sem parceria real, é trabalho especulativo)
 - [ ] Webhooks / API pública — adiado até haver parceiro real a pedir
 
+## Fase — Revisão checkout/SIBA/documentos (2026-07-27)
+- [x] Checkout Stripe Connect + confirmação de reserva — auditado, completo e sem falhas encontradas (charge direta na conta do anfitrião, webhook + fallback idempotentes, reembolso automático em conflito)
+- [x] OCR de documentos no check-in — já existia (`/api/documentos/extrair`), confirmado a funcionar; decisão: não persistir a foto (privacidade)
+- [x] Scaffolding para submissão automática SIBA/AIMA — `lib/siba-api.ts` (adapter placeholder), `lib/siba-fetch.ts` (query partilhada com o export CSV), `/api/siba-submit`, colunas `siba_status`/`siba_reference`/`siba_error` em `bookings` (migration 024), botão "Submeter à AIMA" em `/documentos`
+- [ ] **Pendência humana**: obter credenciais/documentação técnica oficial da API SIBA junto da AIMA; sem isso `submitBookingToSiba` (`lib/siba-api.ts`) fica por implementar e a rota devolve 501 (fallback: exportação CSV manual, inalterada e funcional)
+
 ## Pendências para Validação Humana (não bloqueiam desenvolvimento)
 Ver `docs/SAAS_ARCHITECTURE.md` §13 — lista viva, atualizada conforme surgem novas decisões de negócio:
 1. Prioridade de fase (recomendação: fundação → templates → RBAC → canais reais)
