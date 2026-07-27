@@ -29,7 +29,7 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 - [x] Páginas adicionais por tenant: Sobre, Galeria (1 foto/propriedade), Localização, Privacidade, Cookies, Termos — ver `CHANGELOG_PHASE_06.md`
 - [x] Galeria multi-foto por propriedade (`properties.fotos`, URL-based) — ver `CHANGELOG_PHASE_07.md`
 - [ ] Blog (precisa modelo de conteúdo — posts/editor — maior que as páginas estáticas já feitas)
-- [~] Upload de ficheiros para fotos — código pronto (`/api/upload`, botão de upload em `propriedades/[id]/editar` para foto principal e galeria, mantendo o campo de URL como alternativa); **pendência humana**: criar a Vercel Blob Store (`vercel blob create-store`, tem custo de armazenamento/bandwidth) e configurar `BLOB_READ_WRITE_TOKEN` em produção — sem isso a rota devolve 501 e a UI cai para URL manual
+- [x] Upload de ficheiros para fotos — Vercel Blob Store criada (`anfitriao-fotos`, acesso público) e `BLOB_READ_WRITE_TOKEN` ligado em produção/preview/development; botão de upload em `propriedades/nova` e `propriedades/[id]/editar` (foto principal + galeria), URL continua disponível como alternativa. Testado E2E em produção com sessão Clerk real: upload, gravação e visualização da foto confirmados (dados de teste `TESTE-E2E` removidos, incl. blobs órfãos). Corrigido em simultâneo: CSP `img-src` e `images.remotePatterns` não incluíam o domínio do Blob — a foto ficava guardada mas invisível até este fix
 - [ ] Sitemap + Schema.org por tenant — **bloqueado por pendência humana** (ver abaixo): implica mudar `/r/[slug]` de `noindex` para indexável
 
 ## Fase 3 — Operação e retenção (em curso)
