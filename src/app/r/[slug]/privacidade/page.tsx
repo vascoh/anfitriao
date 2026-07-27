@@ -14,7 +14,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Política de Privacidade — ${settings.nome}` : 'Privacidade',
     alternates: { canonical: `${APP_URL}/r/${slug}/privacidade` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

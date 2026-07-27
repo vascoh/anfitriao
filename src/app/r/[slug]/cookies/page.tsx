@@ -14,7 +14,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Política de Cookies — ${settings.nome}` : 'Cookies',
     alternates: { canonical: `${APP_URL}/r/${slug}/cookies` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

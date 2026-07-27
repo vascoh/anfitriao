@@ -14,7 +14,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Localização — ${settings.nome}` : 'Localização',
     alternates: { canonical: `${APP_URL}/r/${slug}/localizacao` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

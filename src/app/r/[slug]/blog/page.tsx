@@ -16,7 +16,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Blog — ${settings.nome}` : 'Blog',
     alternates: { canonical: `${APP_URL}/r/${slug}/blog` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

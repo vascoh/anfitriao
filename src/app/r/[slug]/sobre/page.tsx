@@ -13,7 +13,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Sobre — ${settings.nome}` : 'Sobre',
     alternates: { canonical: `${APP_URL}/r/${slug}/sobre` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

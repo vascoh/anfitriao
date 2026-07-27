@@ -14,7 +14,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Galeria — ${settings.nome}` : 'Galeria',
     alternates: { canonical: `${APP_URL}/r/${slug}/galeria` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

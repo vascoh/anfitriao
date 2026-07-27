@@ -43,7 +43,7 @@ export async function generateMetadata(
       images: [ogImage],
     },
     alternates: { canonical: `${APP_URL}/r/${slug}` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 

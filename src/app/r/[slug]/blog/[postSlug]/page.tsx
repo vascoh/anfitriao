@@ -21,7 +21,7 @@ export async function generateMetadata(
     title,
     description: post.resumo ?? undefined,
     alternates: { canonical: `${APP_URL}/r/${slug}/blog/${postSlug}` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
     openGraph: post.imagem_capa
       ? { type: 'article', title, description: post.resumo ?? undefined, images: [{ url: post.imagem_capa }] }
       : undefined,

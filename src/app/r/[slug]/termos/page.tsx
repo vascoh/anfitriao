@@ -14,7 +14,7 @@ export async function generateMetadata(
   return {
     title: settings ? `Termos e Condições — ${settings.nome}` : 'Termos',
     alternates: { canonical: `${APP_URL}/r/${slug}/termos` },
-    robots: { index: true, follow: true },
+    robots: { index: false, follow: false },
   }
 }
 
