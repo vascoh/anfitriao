@@ -42,6 +42,18 @@ export interface Property {
   /** If set, this property is a room inside the parent property */
   parent_id?: string | null
   owner_id?: string | null
+
+  // ─── Cofre de conformidade (migration 027) ───────────────────────────
+  // Base legal de cada campo documentada em lib/compliance.ts
+  /** Número de registo no RNAL — obrigatório em toda a publicidade */
+  rnal_numero?: string | null
+  rnal_data?: string | null
+  seguro_seguradora?: string | null
+  seguro_apolice?: string | null
+  seguro_validade?: string | null
+  livro_reclamacoes_registado?: boolean | null
+  livro_reclamacoes_url?: string | null
+  certificado_energetico_validade?: string | null
 }
 
 export interface Guest {

@@ -42,7 +42,7 @@ const PLANOS = [
       'AI Concierge ilimitado',
       'Calendário + iCal sync',
       'Check-in online',
-      'SEF / SIBA automático',
+      'Boletim SIBA pronto a submeter',
       'Suporte por email',
     ],
   },

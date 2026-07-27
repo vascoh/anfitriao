@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server'
 
 export function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const title = searchParams.get('title') ?? 'Gestão de Alojamento Local sem stress'
+  const title = searchParams.get('title') ?? 'Gestão de Alojamento Local sem papelada'
 
   return new ImageResponse(
     (
@@ -99,7 +99,7 @@ export function GET(req: NextRequest) {
             marginBottom: 44,
           }}
         >
-          Sincroniza Airbnb e Booking.com, check-in online legal, SIBA automático e IA Concierge — tudo num só lugar.
+          Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada.
         </div>
 
         {/* Badge */}

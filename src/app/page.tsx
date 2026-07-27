@@ -9,10 +9,11 @@ import {
 import { MobileNav } from '@/components/landing/mobile-nav'
 import { PricingSection } from '@/components/landing/pricing-section'
 import { CommissionCalculator } from '@/components/landing/commission-calculator'
+import { CONCORRENTES } from '@/lib/comparacoes'
 
 export const metadata: Metadata = {
-  title: 'Anfitrião — Gestão de Alojamento Local sem stress',
-  description: 'Sincroniza Airbnb e Booking.com, faz check-in online com SIBA automático, gere reservas e receitas com IA. Começa grátis hoje — sem cartão de crédito.',
+  title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
+  description: 'Airbnb e Booking.com num só calendário. Check-in online que deixa os boletins do SIBA prontos antes da chegada. Feito em Portugal, para a lei portuguesa.',
   alternates: {
     canonical: '/',
   },
@@ -26,17 +27,27 @@ const faqJsonLd = {
     {
       '@type': 'Question',
       name: 'O Anfitrião funciona com Airbnb e Booking.com?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Sim. A sincronização é feita via iCal — o padrão universal de calendários. Basta copiar o link iCal de cada plataforma e colar no Anfitrião. As reservas aparecem automaticamente e os bloqueios de datas são enviados de volta.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Sim. A sincronização é feita via iCal — o padrão universal de calendários. Basta copiar o link iCal de cada plataforma e colar no Anfitrião. As reservas entram sozinhas e o Anfitrião publica um calendário que as plataformas leem de volta. Nota: o iCal é o método suportado por todas as plataformas, mas não é instantâneo — o Airbnb e o Booking.com atualizam de 30 minutos a algumas horas. Reduz muito o risco de dupla reserva, mas não o elimina por completo.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'O Anfitrião comunica os boletins ao SIBA por mim?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Ainda não de forma automática. O Anfitrião recolhe no check-in online todos os dados obrigatórios do boletim de alojamento e gera o ficheiro pronto a submeter no portal SIBA. A submissão final continua a ser feita por ti, em poucos cliques. A submissão automática depende de acesso oficial da AIMA e está em desenvolvimento.' },
     },
     {
       '@type': 'Question',
       name: 'O check-in online é legalmente válido em Portugal?',
-      acceptedAnswer: { '@type': 'Answer', text: 'Sim. O Anfitrião recolhe os dados obrigatórios para comunicação ao SIBA (Sistema de Informação de Boletins de Alojamento). Os dados ficam prontos antes da chegada do hóspede, sem papelada manual.' },
+      acceptedAnswer: { '@type': 'Answer', text: 'Sim. Os dados que o hóspede preenche são exatamente os campos obrigatórios do boletim de alojamento. Recolhê-los digitalmente antes da chegada é válido — o que a lei exige é que o boletim seja comunicado até 3 dias úteis após o check-in.' },
     },
     {
       '@type': 'Question',
       name: 'Preciso de instalar alguma coisa?',
       acceptedAnswer: { '@type': 'Answer', text: 'Não. O Anfitrião é 100% web — funciona em qualquer browser, em computador ou telemóvel. Não há aplicação para instalar. Também está disponível como PWA para acesso rápido a partir do ecrã inicial do telemóvel.' },
+    },
+    {
+      '@type': 'Question',
+      name: 'E se pagar e não gostar?',
+      acceptedAnswer: { '@type': 'Answer', text: 'Devolvemos o dinheiro. Tens 30 dias a partir do primeiro pagamento para pedir reembolso total, sem justificação e sem perguntas. Basta escreveres para suporte@anfitrioes.pt.' },
     },
     {
       '@type': 'Question',
@@ -55,14 +66,14 @@ const features = [
   {
     Icon: RefreshCw,
     title: 'Sincroniza Airbnb e Booking.com',
-    desc: 'Liga os teus calendários via iCal. As reservas das plataformas aparecem automaticamente e os bloqueios são enviados de volta.',
+    desc: 'Liga os teus calendários via iCal. As reservas entram sozinhas e o Anfitrião publica de volta um calendário que as plataformas leem.',
     metric: 'Sincronização automática · sem copiar à mão',
   },
   {
     Icon: Smartphone,
-    title: 'Check-in online + SIBA',
-    desc: 'Os teus hóspedes fazem o registo antecipado pelo telemóvel. Os dados SIBA ficam prontos antes da chegada — sem papelada, sem filas.',
-    metric: 'Dados SIBA prontos em 2 min',
+    title: 'Check-in online + boletim SIBA',
+    desc: 'Os teus hóspedes fazem o registo antecipado pelo telemóvel, com leitura do documento por foto. O ficheiro do SIBA fica gerado e pronto a submeter.',
+    metric: 'Boletim pronto antes da chegada',
   },
   {
     Icon: ChartColumn,
@@ -85,7 +96,7 @@ const features = [
   {
     Icon: Globe,
     title: 'Site de reservas diretas',
-    desc: 'O teu próprio site em anfitrioes.pt/r/[o-teu-nome]. Partilha com hóspedes diretos e elimina as comissões das plataformas.',
+    desc: 'O teu próprio site com galeria, blog e pagamento online. Partilha o link com hóspedes repetentes e recebe reservas sem comissão de plataforma.',
     metric: '0% de comissão em reservas diretas',
   },
 ]
@@ -99,7 +110,7 @@ const scenarios = [
   },
   {
     title: 'Geres 3 apartamentos em plataformas diferentes',
-    quote: 'O calendário unificado via iCal elimina as duplas reservas entre Airbnb e Booking.com. Cada reserva entra sozinha, com alerta no telemóvel no momento.',
+    quote: 'O calendário unificado via iCal reduz drasticamente o risco de dupla reserva entre Airbnb e Booking.com. Cada reserva entra sozinha, com alerta no telemóvel.',
     tag: 'Sincronização iCal',
   },
   {
@@ -118,7 +129,7 @@ const steps = [
   {
     number: '02',
     title: 'Os hóspedes fazem check-in online',
-    desc: 'Enviamos automaticamente um link personalizado a cada hóspede. Eles preenchem os dados antes de chegar — tu recebes tudo pronto para o SIBA.',
+    desc: 'Enviamos automaticamente um link personalizado a cada hóspede. Eles preenchem os dados antes de chegar — tu ficas com o boletim do SIBA gerado e pronto a submeter.',
   },
   {
     number: '03',
@@ -130,15 +141,23 @@ const steps = [
 const faqs = [
   {
     q: 'O Anfitrião funciona com Airbnb e Booking.com?',
-    a: 'Sim. A sincronização é feita via iCal — o padrão universal de calendários. Basta copiar o link iCal de cada plataforma e colar no Anfitrião. As reservas aparecem automaticamente e os bloqueios de datas são enviados de volta.',
+    a: 'Sim. A sincronização é feita via iCal — o padrão universal de calendários. Basta copiar o link iCal de cada plataforma e colar no Anfitrião. As reservas entram sozinhas e o Anfitrião publica um calendário que as plataformas leem de volta. Nota honesta: o iCal é o método suportado por todas as plataformas, mas não é instantâneo — o Airbnb e o Booking.com atualizam de 30 minutos a algumas horas. Reduz muito o risco de dupla reserva, mas não o elimina por completo.',
+  },
+  {
+    q: 'O Anfitrião comunica os boletins ao SIBA por mim?',
+    a: 'Ainda não de forma automática. O Anfitrião recolhe no check-in online todos os dados obrigatórios do boletim de alojamento e gera o ficheiro pronto a submeter no portal SIBA. A submissão final continua a ser feita por ti, em poucos cliques. A submissão automática depende de acesso oficial da AIMA e está em desenvolvimento — quando ficar disponível, entra sem custo adicional.',
   },
   {
     q: 'O check-in online é legalmente válido em Portugal?',
-    a: 'Sim. O Anfitrião recolhe os dados obrigatórios para comunicação ao SIBA. Os dados ficam prontos antes da chegada do hóspede, sem papelada manual.',
+    a: 'Sim. Os dados que o hóspede preenche são exatamente os campos obrigatórios do boletim de alojamento. Recolhê-los digitalmente antes da chegada é válido — o que a lei exige é que o boletim seja comunicado até 3 dias úteis após o check-in.',
   },
   {
     q: 'Preciso de instalar alguma coisa?',
     a: 'Não. O Anfitrião é 100% web — funciona em qualquer browser, em computador ou telemóvel. Também está disponível como PWA para acesso rápido a partir do ecrã inicial do telemóvel.',
+  },
+  {
+    q: 'E se pagar e não gostar?',
+    a: 'Devolvemos o dinheiro. Tens 30 dias a partir do primeiro pagamento para pedir reembolso total, sem justificação e sem perguntas. Basta escreveres para suporte@anfitrioes.pt. O risco é nosso, não teu.',
   },
   {
     q: 'Posso cancelar quando quiser?',
@@ -209,10 +228,10 @@ export default async function Home() {
             </div>
             <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-6xl">
               Gere o teu Alojamento Local{' '}
-              <span className="text-primary">sem stress</span>
+              <span className="text-primary">sem papelada</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Sem folhas de cálculo. Sem papelada. Liga o Airbnb e o Booking.com, faz check-in digital com SIBA automático e acompanha reservas e receitas — tudo num só lugar.
+              Airbnb e Booking.com num só calendário. Check-in online que deixa o boletim do SIBA pronto antes de o hóspede chegar. Feito em Portugal, para a lei portuguesa.
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
@@ -228,7 +247,9 @@ export default async function Home() {
                 Já tenho conta
               </Link>
             </div>
-            <p className="mt-4 text-xs text-muted-foreground">Sem cartão de crédito · Cancela quando quiseres</p>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Sem cartão de crédito · Cancela quando quiseres · Garantia de 30 dias
+            </p>
           </div>
 
           {/* Dashboard mockup */}
@@ -275,7 +296,7 @@ export default async function Home() {
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                       <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                     </span>
-                    SIBA ✓
+                    Boletim pronto
                   </div>
                 </div>
               ))}
@@ -290,6 +311,11 @@ export default async function Home() {
             </span>
           </div>
         </section>
+
+        {/* ── Calculadora de comissões ───────────────────────── */}
+        {/* Posicionada logo após o hero: é o ativo de conversão mais forte
+            da página (mostra a poupança em euros antes de pedir o registo). */}
+        <CommissionCalculator />
 
         {/* ── Trust bar ──────────────────────────────────────── */}
         <section className="border-y border-border bg-muted/30" aria-label="Compatibilidades">
@@ -359,9 +385,6 @@ export default async function Home() {
               </Link>
             </div>
         </section>
-
-        {/* ── Calculadora de comissões ───────────────────────── */}
-        <CommissionCalculator />
 
         {/* ── Como funciona ──────────────────────────────────── */}
         <section id="como-funciona" className="mx-auto max-w-6xl px-6 py-24">
@@ -468,7 +491,8 @@ export default async function Home() {
           <div className="mx-auto max-w-3xl px-6 py-24 text-center">
             <h2 className="text-3xl font-bold md:text-4xl">Pronto para simplificar a gestão do teu AL?</h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Começa hoje. 14 dias grátis, sem cartão de crédito, sem compromisso.
+              Começa hoje. 14 dias grátis, sem cartão de crédito. Se pagares e não gostares,
+              devolvemos o dinheiro nos primeiros 30 dias.
             </p>
             <Link
               href="/sign-up"
@@ -488,6 +512,10 @@ export default async function Home() {
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
                 <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
                 Dados seguros e encriptados
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                Garantia de reembolso de 30 dias
               </span>
             </div>
           </div>
@@ -518,6 +546,18 @@ export default async function Home() {
                   <li><a href="#funcionalidades" className="hover:text-foreground transition-colors">Funcionalidades</a></li>
                   <li><a href="#precos" className="hover:text-foreground transition-colors">Preços</a></li>
                   <li><a href="#faq" className="hover:text-foreground transition-colors">FAQ</a></li>
+                </ul>
+              </nav>
+              <nav aria-label="Comparações">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Comparar</p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {CONCORRENTES.map(c => (
+                    <li key={c.slug}>
+                      <Link href={`/vs/${c.slug}`} className="hover:text-foreground transition-colors">
+                        vs {c.nome}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </nav>
               <nav aria-label="Conta">

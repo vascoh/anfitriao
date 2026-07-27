@@ -8,7 +8,7 @@ export function trialEndingEmail(p: { firstName: string; daysLeft: number; trial
   return renderEmail(theme, `
     ${kicker(urgent ? 'Último dia' : 'O teu trial está a acabar', theme)}
     ${heading(urgent ? 'O teu trial termina amanhã' : `Faltam ${p.daysLeft} dias de trial`)}
-    ${paragraph(`Olá ${escHtml(p.firstName)}, o teu período experimental termina a <strong>${escHtml(p.trialDate)}</strong>. Para continuares a usar o calendário, o check-in online e o SIBA automático sem interrupções, ativa a tua subscrição.`)}
+    ${paragraph(`Olá ${escHtml(p.firstName)}, o teu período experimental termina a <strong>${escHtml(p.trialDate)}</strong>. Para continuares a usar o calendário, o check-in online e o boletim SIBA sem interrupções, ativa a tua subscrição.`)}
     ${ctaButton('Ativar subscrição →', `${p.baseUrl}/conta/billing`, theme)}
     ${paragraph('Se precisares de ajuda ou tiveres questões, basta responder a este email.')}
   `)

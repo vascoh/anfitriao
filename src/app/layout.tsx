@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: 'Anfitrião — Gestão de Alojamento Local',
     template: '%s · Anfitrião',
   },
-  description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal, acompanha reservas e receitas. O assistente de Alojamento Local feito para Portugal.',
+  description: 'Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada. O assistente de Alojamento Local feito para Portugal.',
   keywords: [
     'alojamento local', 'AL Portugal', 'gestão AL', 'airbnb gestão',
     'booking gestão', 'SIBA SEF', 'check-in online', 'reservas diretas',
@@ -47,14 +47,14 @@ export const metadata: Metadata = {
     locale: 'pt_PT',
     url: APP_URL,
     siteName: 'Anfitrião',
-    title: 'Anfitrião — Gestão de Alojamento Local sem stress',
-    description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal e acompanha reservas. Feito para anfitriões portugueses.',
+    title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
+    description: 'Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada. Feito para anfitriões portugueses.',
     images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Anfitrião — Gestão de Alojamento Local' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Anfitrião — Gestão de Alojamento Local sem stress',
-    description: 'Sincroniza Airbnb e Booking.com, faz check-in online legal e acompanha reservas. Feito para anfitriões portugueses.',
+    title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
+    description: 'Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada. Feito para anfitriões portugueses.',
     images: [OG_IMAGE],
   },
   robots: {
