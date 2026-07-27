@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
+import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 import { LegalPage } from '../_components/legal-page'
 
@@ -10,7 +11,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  return { title: settings ? `Política de Privacidade — ${settings.nome}` : 'Privacidade', robots: { index: false, follow: false } }
+  return {
+    title: settings ? `Política de Privacidade — ${settings.nome}` : 'Privacidade',
+    alternates: { canonical: `${APP_URL}/r/${slug}/privacidade` },
+    robots: { index: true, follow: true },
+  }
 }
 
 export default async function PrivacidadePage({ params }: { params: Promise<{ slug: string }> }) {

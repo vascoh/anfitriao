@@ -42,7 +42,8 @@ export async function generateMetadata(
       description,
       images: [ogImage],
     },
-    robots: { index: false, follow: false },
+    alternates: { canonical: `${APP_URL}/r/${slug}` },
+    robots: { index: true, follow: true },
   }
 }
 
@@ -206,8 +207,35 @@ export default async function ReservasPage(
   const faq = settings.secoes?.faq ?? []
   const lang = resolveLang(settings.idioma)
 
+  // Schema.org — um LodgingBusiness por alojamento ativo (ver docs/SAAS_ARCHITECTURE.md §6.3);
+  // dados já existem em properties/website_settings, não pedidos extra ao anfitrião.
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': props.filter(p => p.ativo).map(p => ({
+      '@type': 'LodgingBusiness',
+      name: p.nome,
+      description: p.descricao || settings.descricao || undefined,
+      url: `${APP_URL}/book/${p.id}`,
+      image: p.imagem_url || undefined,
+      telephone: settings.telefone || undefined,
+      email: settings.email || undefined,
+      priceRange: fmtMoney(minRoomPrice.get(p.id) ?? p.preco_base),
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: p.mostrar_morada_publica ? p.endereco : undefined,
+        addressLocality: p.cidade,
+        addressCountry: 'PT',
+      },
+      amenityFeature: p.comodidades.map(a => ({ '@type': 'LocationFeatureSpecification', name: a, value: true })),
+    })),
+  }
+
   return (
     <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
+      {props.some(p => p.ativo) && (
+        <script type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      )}
 
       <SiteNav slug={slug} settings={settings} active="" />
 

@@ -3,6 +3,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
+import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 
 export async function generateMetadata(
@@ -10,7 +11,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  return { title: settings ? `Galeria — ${settings.nome}` : 'Galeria', robots: { index: false, follow: false } }
+  return {
+    title: settings ? `Galeria — ${settings.nome}` : 'Galeria',
+    alternates: { canonical: `${APP_URL}/r/${slug}/galeria` },
+    robots: { index: true, follow: true },
+  }
 }
 
 export default async function GaleriaPage({ params }: { params: Promise<{ slug: string }> }) {

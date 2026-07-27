@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetPublishedPostBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { resolveLang, t } from '@/lib/i18n'
+import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../../_components/site-chrome'
 
 export async function generateMetadata(
@@ -13,10 +14,17 @@ export async function generateMetadata(
   const { slug, postSlug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   const post = settings?.owner_id ? await adminGetPublishedPostBySlug(settings.owner_id, postSlug) : null
+  if (!post) return { title: 'Blog', robots: { index: false, follow: false } }
+
+  const title = `${post.titulo} — ${settings?.nome}`
   return {
-    title: post ? `${post.titulo} — ${settings?.nome}` : 'Blog',
-    description: post?.resumo ?? undefined,
-    robots: { index: false, follow: false },
+    title,
+    description: post.resumo ?? undefined,
+    alternates: { canonical: `${APP_URL}/r/${slug}/blog/${postSlug}` },
+    robots: { index: true, follow: true },
+    openGraph: post.imagem_capa
+      ? { type: 'article', title, description: post.resumo ?? undefined, images: [{ url: post.imagem_capa }] }
+      : undefined,
   }
 }
 

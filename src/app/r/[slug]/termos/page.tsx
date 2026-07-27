@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
+import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 import { LegalPage } from '../_components/legal-page'
 
@@ -10,7 +11,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  return { title: settings ? `Termos e Condições — ${settings.nome}` : 'Termos', robots: { index: false, follow: false } }
+  return {
+    title: settings ? `Termos e Condições — ${settings.nome}` : 'Termos',
+    alternates: { canonical: `${APP_URL}/r/${slug}/termos` },
+    robots: { index: true, follow: true },
+  }
 }
 
 export default async function TermosPage({ params }: { params: Promise<{ slug: string }> }) {

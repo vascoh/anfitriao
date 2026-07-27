@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetPublishedPosts } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { resolveLang, t } from '@/lib/i18n'
+import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 
 export async function generateMetadata(
@@ -12,7 +13,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  return { title: settings ? `Blog — ${settings.nome}` : 'Blog', robots: { index: false, follow: false } }
+  return {
+    title: settings ? `Blog — ${settings.nome}` : 'Blog',
+    alternates: { canonical: `${APP_URL}/r/${slug}/blog` },
+    robots: { index: true, follow: true },
+  }
 }
 
 export default async function BlogListPage({ params }: { params: Promise<{ slug: string }> }) {

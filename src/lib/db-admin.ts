@@ -104,6 +104,17 @@ export async function adminGetWebsiteSettingsBySlug(slug: string): Promise<Websi
   return data as WebsiteSettings
 }
 
+/** Slugs de todos os sites públicos ativos — usado para listar os sitemaps por tenant no robots.txt raiz. */
+export async function adminGetEnabledSiteSlugs(): Promise<string[]> {
+  const { data, error } = await getSupabase()
+    .from('website_settings')
+    .select('slug')
+    .eq('enabled', true)
+    .not('slug', 'is', null)
+  if (error) { console.error('[adminGetEnabledSiteSlugs]', error.message); return [] }
+  return (data as { slug: string }[]).map(d => d.slug)
+}
+
 export async function adminGetPublishedPosts(ownerId: string): Promise<Post[]> {
   const { data, error } = await getSupabase()
     .from('posts')
