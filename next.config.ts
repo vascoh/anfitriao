@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: '**.public.blob.vercel-storage.com' },
     ],
     formats: ['image/avif', 'image/webp'],
   },
@@ -53,7 +54,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.anfitriao.pt https://*.clerk.accounts.dev",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://img.clerk.com",
+              "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://img.clerk.com https://*.public.blob.vercel-storage.com",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://clerk.anfitriao.pt https://*.clerk.accounts.dev https://*.ingest.sentry.io",
               "frame-src https://clerk.anfitriao.pt https://*.clerk.accounts.dev",
               "worker-src 'self' blob:",
