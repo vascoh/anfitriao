@@ -133,6 +133,21 @@ export interface Expense {
   criado_em: string
 }
 
+export interface Post {
+  id: string
+  owner_id?: string | null
+  slug: string
+  titulo: string
+  /** Texto curto usado na lista do blog; se vazio, deriva-se do início de `conteudo` */
+  resumo?: string | null
+  /** Texto simples — parágrafos separados por linha em branco, sem markdown/HTML */
+  conteudo: string
+  imagem_capa?: string | null
+  publicado: boolean
+  criado_em: string
+  atualizado_em?: string
+}
+
 export interface Booking {
   id: string
   propriedade_id: string

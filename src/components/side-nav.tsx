@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Home, CalendarCheck2, CalendarDays, Users,
-  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag, Moon, Sun, ShieldCheck, CreditCard, UserRound, Wallet, Zap,
+  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag, Moon, Sun, ShieldCheck, CreditCard, UserRound, Wallet, Zap, Newspaper,
 } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
@@ -25,6 +25,7 @@ const secondary = [
   { href: '/concierge', label: 'Concierge IA', Icon: Sparkles },
   { href: '/propriedades', label: 'Propriedades', Icon: Building2 },
   { href: '/website', label: 'Website', Icon: Globe },
+  { href: '/blog', label: 'Blog', Icon: Newspaper },
   { href: '/documentos', label: 'Documentos SIBA', Icon: FileText },
   { href: '/conta/perfil', label: 'Perfil', Icon: UserRound },
   { href: '/conta/pagamentos', label: 'Pagamentos', Icon: CreditCard },

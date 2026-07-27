@@ -17,6 +17,7 @@ export function SiteNav({ slug, settings, active }: { slug: string; settings: We
     { href: '/sobre', label: t(lang, 'nav_sobre') },
     { href: '/galeria', label: t(lang, 'nav_galeria') },
     { href: '/localizacao', label: t(lang, 'nav_localizacao') },
+    { href: '/blog', label: t(lang, 'nav_blog') },
   ]
 
   return (

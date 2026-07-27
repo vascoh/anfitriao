@@ -5,7 +5,7 @@
  */
 
 import { createAdminClient } from './supabase'
-import type { Booking, Guest, Property, WebsiteSettings } from './types'
+import type { Booking, Guest, Property, WebsiteSettings, Post } from './types'
 
 const DEFAULT_WEBSITE: WebsiteSettings = {
   enabled: false,
@@ -102,4 +102,27 @@ export async function adminGetWebsiteSettingsBySlug(slug: string): Promise<Websi
     .maybeSingle()
   if (error || !data) return null
   return data as WebsiteSettings
+}
+
+export async function adminGetPublishedPosts(ownerId: string): Promise<Post[]> {
+  const { data, error } = await getSupabase()
+    .from('posts')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .eq('publicado', true)
+    .order('criado_em', { ascending: false })
+  if (error) { console.error('[adminGetPublishedPosts]', error.message); return [] }
+  return data as Post[]
+}
+
+export async function adminGetPublishedPostBySlug(ownerId: string, slug: string): Promise<Post | null> {
+  const { data, error } = await getSupabase()
+    .from('posts')
+    .select('*')
+    .eq('owner_id', ownerId)
+    .eq('slug', slug)
+    .eq('publicado', true)
+    .maybeSingle()
+  if (error || !data) return null
+  return data as Post
 }
