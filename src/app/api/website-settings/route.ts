@@ -31,6 +31,16 @@ export async function POST(req: NextRequest) {
     .eq('owner_id', userId)
     .maybeSingle()
 
+  // 23505 pode ser por slug duplicado (esperado, mensagem específica) ou por
+  // outra constraint (ex.: PK) — mapear tudo para "URL em uso" mascarava bugs
+  // reais (ver migration 026: website_settings.id tinha DEFAULT fixo).
+  function duplicateMessage(error: { code?: string; message: string }): string {
+    if (error.code === '23505' && error.message.includes('slug')) {
+      return 'Este URL já está a ser usado. Escolhe outro.'
+    }
+    return 'Erro ao guardar.'
+  }
+
   if (existing) {
     const { error } = await supabase
       .from('website_settings')
@@ -38,8 +48,7 @@ export async function POST(req: NextRequest) {
       .eq('owner_id', userId)
     if (error) {
       console.error('[POST /api/website-settings]', error.message)
-      const msg = error.code === '23505' ? 'Este URL já está a ser usado. Escolhe outro.' : 'Erro ao guardar.'
-      return NextResponse.json({ error: msg }, { status: 500 })
+      return NextResponse.json({ error: duplicateMessage(error) }, { status: 500 })
     }
   } else {
     const { error } = await supabase
@@ -47,8 +56,7 @@ export async function POST(req: NextRequest) {
       .insert({ ...body, owner_id: userId })
     if (error) {
       console.error('[POST /api/website-settings]', error.message)
-      const msg = error.code === '23505' ? 'Este URL já está a ser usado. Escolhe outro.' : 'Erro ao guardar.'
-      return NextResponse.json({ error: msg }, { status: 500 })
+      return NextResponse.json({ error: duplicateMessage(error) }, { status: 500 })
     }
   }
 
