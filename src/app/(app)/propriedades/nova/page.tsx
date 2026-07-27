@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
 import type { Property, PropertyType } from '@/lib/types'
@@ -48,12 +48,32 @@ function NovaPropriedadeForm() {
   const [comodidades, setComodidades] = useState<string[]>(['wifi', 'cozinha'])
   const [instrucoesCheckin, setInstrucoesCheckin] = useState('')
   const [regrasCasa, setRegrasCasa] = useState('')
+  const [uploadingPrincipal, setUploadingPrincipal] = useState(false)
 
   function toggleAmenity(id: string) {
     setComodidades(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
   const [saving, setSaving] = useState(false)
+
+  async function handleUploadPrincipal(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setUploadingPrincipal(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const json = await res.json().catch(() => ({})) as { url?: string; error?: string }
+      if (!res.ok || !json.url) throw new Error(json.error ?? 'Erro ao carregar o ficheiro')
+      setImagemUrl(json.url)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao carregar o ficheiro')
+    } finally {
+      setUploadingPrincipal(false)
+    }
+  }
 
   async function handleSave() {
     if (!nome.trim() || !cidade.trim()) return
@@ -167,10 +187,17 @@ function NovaPropriedadeForm() {
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Foto principal (URL)</label>
-            <input type="url" value={imagemUrl} onChange={e => setImagemUrl(e.target.value)}
-              placeholder="https://..."
-              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            <label className="text-xs text-muted-foreground font-medium">Foto principal</label>
+            <div className="flex items-center gap-2">
+              <input type="url" value={imagemUrl} onChange={e => setImagemUrl(e.target.value)}
+                placeholder="https://... ou carrega um ficheiro"
+                className="flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+              <label className="shrink-0 flex items-center justify-center h-10 w-10 rounded-lg border border-input bg-card text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                {uploadingPrincipal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                  disabled={uploadingPrincipal} onChange={handleUploadPrincipal} />
+              </label>
+            </div>
             {imagemUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- URL arbitrário/preview local, fora do next/image
               <img src={imagemUrl} alt="Preview" className="rounded-lg h-32 w-full object-cover mt-1" />
