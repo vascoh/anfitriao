@@ -4,7 +4,7 @@
  * the anon Supabase client and return owner-filtered data via the admin key.
  */
 
-import type { Guest, Booking, Property, WebsiteSettings, Expense, Automation, Post } from './types'
+import type { Guest, Booking, Property, WebsiteSettings, Expense, Automation, Post, PlatformRate } from './types'
 
 export async function fetchSettings(): Promise<WebsiteSettings | null> {
   const res = await fetch('/api/website-settings')
@@ -35,6 +35,13 @@ export async function fetchAutomations(): Promise<Automation[]> {
 export async function fetchPosts(): Promise<Post[]> {
   const res = await fetch('/api/posts')
   return res.ok ? res.json() : []
+}
+
+export async function fetchPlatformRates(): Promise<PlatformRate[]> {
+  const res = await fetch('/api/platform-rates')
+  if (!res.ok) return []
+  const data = await res.json()
+  return Array.isArray(data) ? data : []
 }
 
 export async function fetchProperties(_ownerId?: string): Promise<Property[]> {

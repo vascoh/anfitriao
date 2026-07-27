@@ -4,9 +4,10 @@ import { useState, useEffect, useMemo } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Plus, Trash2, Wallet, Download } from 'lucide-react'
-import { fetchExpenses, fetchBookings, fetchProperties } from '@/lib/fetcher'
+import { fetchExpenses, fetchBookings, fetchProperties, fetchPlatformRates } from '@/lib/fetcher'
 import { fmtMoney, fmtDate, today } from '@/lib/utils'
-import type { Expense, ExpenseCategoria, Booking, Property } from '@/lib/types'
+import { SOURCE_LABEL } from '@/lib/labels'
+import type { Expense, ExpenseCategoria, Booking, Property, PlatformRate } from '@/lib/types'
 
 const CATEGORIA_LABEL: Record<ExpenseCategoria, string> = {
   limpeza: 'Limpeza',
@@ -22,8 +23,18 @@ function isActive(b: Booking) {
   return b.estado !== 'cancelada' && b.estado !== 'no_show'
 }
 
+/** Comissão retida pela plataforma numa reserva, se houver taxa configurada para a propriedade+plataforma e o preço estiver preenchido (reservas iCal chegam com preco_total=0 até o anfitrião o corrigir). */
+function commissionFor(booking: Booking, platformRates: PlatformRate[]): number {
+  if (booking.origem === 'direto' || booking.preco_total <= 0) return 0
+  const rate = platformRates.find(r => r.property_id === booking.propriedade_id && r.plataforma === booking.origem && r.ativo)
+  return rate ? booking.preco_total * (rate.comissao_pct / 100) : 0
+}
+
 /** CSV abre nativamente no Excel — evita adicionar uma dependência (.xlsx/PDF) para um ganho marginal. */
-function buildFinanceCsv(expenses: Expense[], properties: Property[], year: number, receitaAno: number, despesaAno: number): string {
+function buildFinanceCsv(
+  expenses: Expense[], properties: Property[], year: number,
+  receitaAno: number, despesaAno: number, comissaoAno: number,
+): string {
   const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`
   const propName = (id?: string | null) => properties.find(p => p.id === id)?.nome ?? ''
   const cols = ['Data', 'Categoria', 'Descrição', 'Propriedade', 'Valor (€)']
@@ -35,7 +46,8 @@ function buildFinanceCsv(expenses: Expense[], properties: Property[], year: numb
     '',
     ['', '', '', 'Receita ' + year, receitaAno.toFixed(2)].map(esc).join(','),
     ['', '', '', 'Despesas ' + year, despesaAno.toFixed(2)].map(esc).join(','),
-    ['', '', '', 'Lucro ' + year, (receitaAno - despesaAno).toFixed(2)].map(esc).join(','),
+    ['', '', '', 'Comissões plataformas ' + year + ' (estimado)', comissaoAno.toFixed(2)].map(esc).join(','),
+    ['', '', '', 'Lucro líquido ' + year, (receitaAno - despesaAno - comissaoAno).toFixed(2)].map(esc).join(','),
   ]
   return [cols.map(esc).join(','), ...rows, ...summary].join('\n')
 }
@@ -46,6 +58,7 @@ export default function FinanceiroPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
   const [properties, setProperties] = useState<Property[]>([])
+  const [platformRates, setPlatformRates] = useState<PlatformRate[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -57,10 +70,11 @@ export default function FinanceiroPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchExpenses(), fetchBookings(), fetchProperties()]).then(([e, b, p]) => {
+    Promise.all([fetchExpenses(), fetchBookings(), fetchProperties(), fetchPlatformRates()]).then(([e, b, p, pr]) => {
       setExpenses(e)
       setBookings(b)
       setProperties(p.filter(x => !x.parent_id))
+      setPlatformRates(pr)
       setLoading(false)
     })
   }, [ownerId])
@@ -81,7 +95,32 @@ export default function FinanceiroPage() {
     [expenses, year],
   )
 
+  const bookingsAno = useMemo(() =>
+    bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year))),
+    [bookings, year],
+  )
+
+  const comissaoAno = useMemo(() =>
+    bookingsAno.reduce((sum, b) => sum + commissionFor(b, platformRates), 0),
+    [bookingsAno, platformRates],
+  )
+
+  const comissaoPorPlataforma = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const b of bookingsAno) {
+      const c = commissionFor(b, platformRates)
+      if (c > 0) map.set(b.origem, (map.get(b.origem) ?? 0) + c)
+    }
+    return [...map.entries()].sort((a, b) => b[1] - a[1])
+  }, [bookingsAno, platformRates])
+
+  const temReservasSemPreco = useMemo(() =>
+    bookingsAno.some(b => b.origem !== 'direto' && b.preco_total <= 0),
+    [bookingsAno],
+  )
+
   const lucroAno = receitaAno - despesaAno
+  const lucroLiquidoAno = lucroAno - comissaoAno
 
   async function handleAdd() {
     if (!descricao.trim() || !valor || Number(valor) < 0) {
@@ -117,7 +156,7 @@ export default function FinanceiroPage() {
   }
 
   function exportCsv() {
-    const csv = buildFinanceCsv(expenses, properties, year, receitaAno, despesaAno)
+    const csv = buildFinanceCsv(expenses, properties, year, receitaAno, despesaAno, comissaoAno)
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -168,6 +207,41 @@ export default function FinanceiroPage() {
             <p className={`text-lg font-bold mt-1 ${lucroAno < 0 ? 'text-destructive' : ''}`}>{fmtMoney(lucroAno)}</p>
           </div>
         </div>
+
+        {/* Comissões por plataforma */}
+        <section className="flex flex-col gap-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Comissões por plataforma (estimado)</p>
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
+            {comissaoPorPlataforma.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {temReservasSemPreco
+                  ? 'Há reservas de Airbnb/Booking sem preço registado — edita a reserva e preenche o valor para estimar a comissão retida.'
+                  : 'Sem comissões a estimar. Configura as taxas em Preços → Plataformas e regista o preço das reservas indiretas.'}
+              </p>
+            ) : (
+              <>
+                {comissaoPorPlataforma.map(([origem, valor]) => (
+                  <div key={origem} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{SOURCE_LABEL[origem as keyof typeof SOURCE_LABEL] ?? origem}</span>
+                    <span className="font-medium">{fmtMoney(valor)}</span>
+                  </div>
+                ))}
+                <div className="h-px bg-border" />
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total comissões {year}</span>
+                  <span className="font-semibold">{fmtMoney(comissaoAno)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="font-semibold">Lucro líquido {year} (após comissões)</span>
+                  <span className={`font-bold ${lucroLiquidoAno < 0 ? 'text-destructive' : ''}`}>{fmtMoney(lucroLiquidoAno)}</span>
+                </div>
+              </>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              Estimativa com base nas taxas de comissão configuradas por plataforma e no preço registado em cada reserva — não substitui o extrato oficial do Airbnb/Booking.
+            </p>
+          </div>
+        </section>
 
         {/* Nova despesa */}
         <section className="flex flex-col gap-3">
