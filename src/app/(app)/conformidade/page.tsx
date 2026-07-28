@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import { fetchProperties } from '@/lib/fetcher'
 import { today, fmtDate } from '@/lib/utils'
@@ -151,11 +151,20 @@ export default function ConformidadePage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Conformidade</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          As obrigações legais de cada alojamento, num sítio só. Avisamos-te antes de expirarem.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Conformidade</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            As obrigações legais de cada alojamento, num sítio só. Avisamos-te antes de expirarem.
+          </p>
+        </div>
+        <Link
+          href="/conformidade/ine"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition-colors hover:bg-muted"
+        >
+          <BarChart3 className="h-4 w-4" aria-hidden="true" />
+          Inquérito do INE
+        </Link>
       </header>
 
       {/* Resumo */}

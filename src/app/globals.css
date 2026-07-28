@@ -118,4 +118,79 @@
   html {
     @apply font-sans;
   }
+
+  /* Números em tabelas e KPIs não podem "dançar" ao atualizar. */
+  th, td, .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── Motion ────────────────────────────────────────────────────────────────
+   Regra: motion só com CSS nativo. Nada de bibliotecas de animação em JS —
+   não vale o custo em bundle nem o risco de jank. Tudo aqui é opcional: se o
+   browser não suportar (scroll-timeline, View Transitions), degrada para
+   conteúdo estático, nunca para conteúdo invisível.
+   ------------------------------------------------------------------------- */
+
+@keyframes anf-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@layer utilities {
+  /* Revelação ao entrar no viewport, sem JS nem IntersectionObserver.
+     `animation-range` faz a animação completar-se logo que o elemento entra. */
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: anf-fade-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+
+  /* Entrada simples para elementos já visíveis no carregamento. */
+  .fade-up {
+    animation: anf-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Realce suave ao passar o rato — usado nos cards de funcionalidade. */
+  .lift {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+  }
+  .lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px -12px rgb(0 0 0 / 0.18);
+  }
+}
+
+/* Transições entre páginas — nativas, sem custo de JS. */
+@view-transition {
+  navigation: auto;
+}
+
+/* Respeitar quem pediu menos movimento. Cobre tanto as utilidades acima como
+   qualquer animação de biblioteca (tw-animate-css) e as View Transitions. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal,
+  .fade-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .lift:hover {
+    transform: none;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

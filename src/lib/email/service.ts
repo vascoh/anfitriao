@@ -11,7 +11,9 @@ import {
 } from './templates/reservations'
 import { checkinCompleteEmail } from './templates/checkin'
 import { paymentReminderEmail } from './templates/payment'
-import { trialEndingEmail, trialExpiredEmail } from './templates/platform'
+import {
+  trialEndingEmail, trialExpiredEmail, complianceAlertEmail, noitesOrfasEmail, relatorioMensalEmail,
+} from './templates/platform'
 import { automationMessageEmail } from './templates/automation'
 
 /**
@@ -179,6 +181,54 @@ class EmailService {
       p.to,
       '🔔 O teu trial Anfitriões expirou hoje',
       trialExpiredEmail({ ...p, baseUrl: APP_URL }),
+    )
+  }
+
+  /** Anfitrião: documentos de conformidade a expirar ou expirados. */
+  async sendComplianceAlert(p: {
+    to: string
+    firstName: string
+    linhas: Array<[string, string]>
+    temExpirado: boolean
+  }): Promise<SendResult> {
+    return this.sendAsPlatform(
+      p.to,
+      p.temExpirado
+        ? '⚠️ Tens documentos do teu Alojamento Local expirados'
+        : '📋 Documentos do teu Alojamento Local a expirar',
+      complianceAlertEmail({ ...p, baseUrl: APP_URL }),
+    )
+  }
+
+  /** Anfitrião: noites órfãs detetadas no calendário. */
+  async sendNoitesOrfas(p: {
+    to: string
+    firstName: string
+    linhas: Array<[string, string]>
+  }): Promise<SendResult> {
+    return this.sendAsPlatform(
+      p.to,
+      p.linhas.length === 1
+        ? '💡 Tens uma noite por encher'
+        : `💡 ${p.linhas.length} buracos no teu calendário`,
+      noitesOrfasEmail({ ...p, baseUrl: APP_URL }),
+    )
+  }
+
+  /** Anfitrião: resumo mensal de desempenho, enviado no dia 1. */
+  async sendRelatorioMensal(p: {
+    to: string
+    firstName: string
+    mesLabel: string
+    destaque: string
+    variacao: string | null
+    metricas: Array<[string, string]>
+    porOrigem: Array<[string, string]>
+  }): Promise<SendResult> {
+    return this.sendAsPlatform(
+      p.to,
+      `📊 O teu ${p.mesLabel} em números`,
+      relatorioMensalEmail({ ...p, baseUrl: APP_URL }),
     )
   }
 }

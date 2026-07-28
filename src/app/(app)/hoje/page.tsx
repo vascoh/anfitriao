@@ -10,6 +10,7 @@ import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/li
 import { transitionBooking, canTransition } from '@/lib/reservations'
 import type { Booking, BookingStatus, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
+import { OnboardingCard } from '@/components/onboarding-card'
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
@@ -290,6 +291,19 @@ export default function HojePage() {
       </header>
 
       <div className="flex flex-col gap-0 max-w-5xl w-full">
+
+        {/* Ativação — desaparece sozinho quando a conta está configurada */}
+        <div className="px-4 lg:px-8 pt-5 empty:hidden">
+          <OnboardingCard
+            estado={{
+              temPropriedade: props.length > 0,
+              temIcal: props.some(p => (p.ical_feeds?.length ?? 0) > 0),
+              temReserva: bookings.length > 0,
+              temConformidade: props.some(p => Boolean(p.rnal_numero) && Boolean(p.seguro_apolice)),
+              siteAtivo: Boolean(settings?.enabled && settings?.slug),
+            }}
+          />
+        </div>
 
         {/* Alertas */}
         {temAlertas && (
