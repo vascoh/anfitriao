@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3 } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3, Coins } from 'lucide-react'
 import Link from 'next/link'
 import { fetchProperties } from '@/lib/fetcher'
 import { today, fmtDate } from '@/lib/utils'
@@ -158,13 +158,22 @@ export default function ConformidadePage() {
             As obrigações legais de cada alojamento, num sítio só. Avisamos-te antes de expirarem.
           </p>
         </div>
-        <Link
-          href="/conformidade/ine"
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition-colors hover:bg-muted"
-        >
-          <BarChart3 className="h-4 w-4" aria-hidden="true" />
-          Inquérito do INE
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/conformidade/taxa-turistica"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition-colors hover:bg-muted"
+          >
+            <Coins className="h-4 w-4" aria-hidden="true" />
+            Taxa turística
+          </Link>
+          <Link
+            href="/conformidade/ine"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold transition-colors hover:bg-muted"
+          >
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            Inquérito do INE
+          </Link>
+        </div>
       </header>
 
       {/* Resumo */}
