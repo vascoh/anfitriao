@@ -15,6 +15,18 @@
     {
       "path": "/api/cron/automations",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/compliance-alerts",
+      "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/noites-orfas",
+      "schedule": "0 11 * * 1"
+    },
+    {
+      "path": "/api/cron/relatorio-mensal",
+      "schedule": "0 8 1 * *"
     }
   ]
 }

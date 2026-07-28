@@ -2,14 +2,33 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, CalendarCheck2, Users, Building2, X } from 'lucide-react'
+import {
+  Search, CalendarCheck2, Users, Building2, X, Plus, ArrowRight, FileDown, type LucideIcon,
+} from 'lucide-react'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { fmtDate } from '@/lib/utils'
 import { STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
+import { todosOsDestinos } from '@/lib/navigation'
 import type { Booking, Guest, Property } from '@/lib/types'
 
+/** Remove acentos para "calendario" encontrar "Calendário". */
+function normalizar(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+/** Ações que criam ou executam algo — sempre no topo dos resultados. */
+const ACCOES: Array<{ label: string; href: string; Icon: LucideIcon; palavras: string }> = [
+  { label: 'Nova reserva', href: '/reservas/nova', Icon: Plus, palavras: 'criar adicionar booking' },
+  { label: 'Novo alojamento', href: '/propriedades/nova', Icon: Plus, palavras: 'criar adicionar propriedade casa' },
+  { label: 'Novo hóspede', href: '/hospedes/novo', Icon: Plus, palavras: 'criar adicionar cliente' },
+  { label: 'Novo artigo do blog', href: '/blog/novo', Icon: Plus, palavras: 'criar adicionar post' },
+  { label: 'Exportar boletins SIBA', href: '/documentos', Icon: FileDown, palavras: 'sef aima descarregar csv' },
+]
+
+type ResultType = 'accao' | 'navegacao' | 'booking' | 'guest' | 'property'
+
 interface Result {
-  type: 'booking' | 'guest' | 'property'
+  type: ResultType
   id: string
   title: string
   subtitle: string
@@ -20,18 +39,43 @@ interface Result {
 }
 
 function search(q: string, bookings: Booking[], guests: Guest[], props: Property[]): Result[] {
-  if (!q.trim()) return []
-  const lq = q.toLowerCase()
+  const termo = normalizar(q.trim())
   const results: Result[] = []
 
-  guests.filter(g => g.nome.toLowerCase().includes(lq) || g.email?.toLowerCase().includes(lq)).slice(0, 4).forEach(g => {
+  // Sem pesquisa: sugestões por omissão, para o ⌘K ser útil ao abrir
+  if (!termo) {
+    ACCOES.slice(0, 3).forEach(a => {
+      results.push({ type: 'accao', id: a.href, title: a.label, subtitle: '', href: a.href })
+    })
+    todosOsDestinos().slice(0, 6).forEach(d => {
+      results.push({ type: 'navegacao', id: d.href, title: d.label, subtitle: d.descricao ?? '', href: d.href })
+    })
+    return results
+  }
+
+  ACCOES
+    .filter(a => normalizar(a.label).includes(termo) || normalizar(a.palavras).includes(termo))
+    .forEach(a => {
+      results.push({ type: 'accao', id: a.href, title: a.label, subtitle: '', href: a.href })
+    })
+
+  todosOsDestinos()
+    .filter(d => normalizar(d.label).includes(termo) || normalizar(d.descricao ?? '').includes(termo))
+    .slice(0, 5)
+    .forEach(d => {
+      results.push({ type: 'navegacao', id: d.href, title: d.label, subtitle: d.descricao ?? '', href: d.href })
+    })
+
+  const lq = termo
+
+  guests.filter(g => normalizar(g.nome).includes(lq) || normalizar(g.email ?? '').includes(lq)).slice(0, 4).forEach(g => {
     results.push({ type: 'guest', id: g.id, title: g.nome, subtitle: g.email ?? g.nacionalidade ?? '', href: `/hospedes/${g.id}` })
   })
 
   bookings.filter(b => {
     const g = guests.find(x => x.id === b.hospede_id)
     const p = props.find(x => x.id === b.propriedade_id)
-    return g?.nome.toLowerCase().includes(lq) || p?.nome.toLowerCase().includes(lq) || b.id.includes(lq)
+    return normalizar(g?.nome ?? '').includes(lq) || normalizar(p?.nome ?? '').includes(lq) || b.id.includes(lq)
   }).slice(0, 5).forEach(b => {
     const g = guests.find(x => x.id === b.hospede_id)
     const p = props.find(x => x.id === b.propriedade_id)
@@ -46,14 +90,28 @@ function search(q: string, bookings: Booking[], guests: Guest[], props: Property
     })
   })
 
-  props.filter(p => p.nome.toLowerCase().includes(lq) || p.cidade.toLowerCase().includes(lq)).slice(0, 3).forEach(p => {
+  props.filter(p => normalizar(p.nome).includes(lq) || normalizar(p.cidade).includes(lq)).slice(0, 3).forEach(p => {
     results.push({ type: 'property', id: p.id, title: p.nome, subtitle: p.cidade, href: `/propriedades/${p.id}`, color: p.cor })
   })
 
   return results
 }
 
-const TYPE_ICON = { booking: CalendarCheck2, guest: Users, property: Building2 }
+const TYPE_ICON: Record<ResultType, LucideIcon> = {
+  accao: Plus,
+  navegacao: ArrowRight,
+  booking: CalendarCheck2,
+  guest: Users,
+  property: Building2,
+}
+
+const TYPE_GROUP: Record<ResultType, string> = {
+  accao: 'Ações',
+  navegacao: 'Ir para',
+  booking: 'Reservas',
+  guest: 'Hóspedes',
+  property: 'Alojamentos',
+}
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false)
@@ -125,7 +183,7 @@ export function GlobalSearch() {
             value={q}
             onChange={e => setQ(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Pesquisar hóspedes, reservas, propriedades..."
+            placeholder="Pesquisar ou executar uma ação..."
             className="flex-1 text-sm bg-transparent placeholder:text-muted-foreground/60 focus:outline-none"
           />
           {q && (
@@ -141,9 +199,17 @@ export function GlobalSearch() {
           <div className="max-h-80 overflow-y-auto py-1.5">
             {results.map((r, i) => {
               const Icon = TYPE_ICON[r.type]
+              // Cabeçalho sempre que o grupo muda — dá estrutura sem precisar
+              // de reordenar nem agrupar os resultados fora do render
+              const novoGrupo = i === 0 || results[i - 1].type !== r.type
               return (
+                <div key={`${r.type}-${r.id}`}>
+                {novoGrupo && (
+                  <p className="px-4 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {TYPE_GROUP[r.type]}
+                  </p>
+                )}
                 <button
-                  key={`${r.type}-${r.id}`}
                   onClick={() => go(r.href)}
                   onMouseEnter={() => setCursor(i)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${i === cursor ? 'bg-muted' : 'hover:bg-muted/50'}`}
@@ -170,6 +236,7 @@ export function GlobalSearch() {
                     <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
                   )}
                 </button>
+                </div>
               )
             })}
           </div>
@@ -179,11 +246,6 @@ export function GlobalSearch() {
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">Sem resultados para &ldquo;{q}&rdquo;</div>
         )}
 
-        {!q && (
-          <div className="px-4 py-4 text-center text-xs text-muted-foreground/60">
-            Escreve para pesquisar em hóspedes, reservas e propriedades
-          </div>
-        )}
 
         {/* Footer hint */}
         <div className="px-4 py-2 border-t border-border flex items-center gap-3 text-[10px] text-muted-foreground/60">

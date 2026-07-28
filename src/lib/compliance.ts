@@ -201,6 +201,42 @@ export function resumirConformidade(itens: ItemConformidade[]): ResumoConformida
   }
 }
 
+/**
+ * Marcos (em dias antes de expirar) em que se envia alerta.
+ * Escolhidos para dar tempo de renovar sem transformar o produto em spam:
+ * um mês para tratar, uma semana para agir, e o próprio dia.
+ */
+export const MARCOS_ALERTA = [30, 14, 7, 3, 1, 0] as const
+
+/** De quantos em quantos dias se repete o alerta depois de já ter expirado. */
+export const REPETIR_APOS_EXPIRAR_DIAS = 7
+
+/**
+ * Decide se hoje é dia de alertar sobre um item com validade.
+ *
+ * Antes de expirar, alerta nos marcos. Depois de expirar, repete
+ * semanalmente — um seguro caducado é motivo de cancelamento do registo,
+ * por isso não se deixa cair no silêncio, mas também não se avisa todos os
+ * dias.
+ *
+ * Sem `diasParaExpirar` (item sem data) devolve false: a falta de documento
+ * aparece no cofre, mas não gera notificação diária.
+ */
+export function deveAlertar(diasParaExpirar: number | undefined): boolean {
+  if (diasParaExpirar === undefined) return false
+
+  if (diasParaExpirar >= 0) {
+    return (MARCOS_ALERTA as readonly number[]).includes(diasParaExpirar)
+  }
+
+  return Math.abs(diasParaExpirar) % REPETIR_APOS_EXPIRAR_DIAS === 0
+}
+
+/** Itens de um alojamento que hoje justificam notificação. */
+export function itensParaAlertar(itens: ItemConformidade[]): ItemConformidade[] {
+  return itens.filter(i => i.obrigatorio && deveAlertar(i.diasParaExpirar))
+}
+
 /** Ordem de gravidade para ordenar a lista: o que exige ação vem primeiro. */
 const PESO: Record<EstadoItem, number> = {
   expirado: 0,

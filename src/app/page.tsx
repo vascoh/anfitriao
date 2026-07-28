@@ -359,7 +359,7 @@ export default async function Home() {
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {features.map(f => (
-                <div key={f.title} className="rounded-2xl border border-border bg-card p-6 hover:border-primary/40 transition-colors">
+                <div key={f.title} className="reveal lift rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/40">
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10" aria-hidden="true">
                     <f.Icon className="h-5 w-5 text-primary" />
                   </div>
@@ -395,7 +395,7 @@ export default async function Home() {
           </div>
           <div className="grid gap-8 md:grid-cols-3">
             {steps.map((step, i) => (
-              <div key={step.number} className="relative flex flex-col gap-4">
+              <div key={step.number} className="reveal relative flex flex-col gap-4">
                 {/* Connector line */}
                 {i < steps.length - 1 && (
                   <div className="absolute left-[2.25rem] top-[2.25rem] hidden h-px w-[calc(100%+2rem)] border-t border-dashed border-border md:block" aria-hidden="true" />
@@ -436,7 +436,7 @@ export default async function Home() {
               {scenarios.map(s => (
                 <div
                   key={s.title}
-                  className="flex w-[85%] shrink-0 snap-center flex-col rounded-2xl border border-border bg-card p-6 md:w-auto"
+                  className="reveal lift flex w-[85%] shrink-0 snap-center flex-col rounded-2xl border border-border bg-card p-6 md:w-auto"
                 >
                   <h3 className="text-sm font-bold">{s.title}</h3>
                   <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">

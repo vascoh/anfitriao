@@ -2,36 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import {
-  Home, CalendarCheck2, CalendarDays, Users,
-  Sparkles, FileText, Building2, Globe, TrendingUp, Search, Tag, Moon, Sun, ShieldCheck, CreditCard, UserRound, Wallet, Zap, Newspaper,
-} from 'lucide-react'
+import { Search, Moon, Sun, ShieldCheck } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
 import { useTheme } from '@/hooks/use-theme'
-
-const primary = [
-  { href: '/hoje', label: 'Hoje', Icon: Home },
-  { href: '/reservas', label: 'Reservas', Icon: CalendarCheck2 },
-  { href: '/calendario', label: 'Calendário', Icon: CalendarDays },
-  { href: '/hospedes', label: 'Hóspedes', Icon: Users },
-]
-
-const secondary = [
-  { href: '/precos', label: 'Preços', Icon: Tag },
-  { href: '/relatorios', label: 'Relatórios', Icon: TrendingUp },
-  { href: '/financeiro', label: 'Financeiro', Icon: Wallet },
-  { href: '/automacoes', label: 'Automações', Icon: Zap },
-  { href: '/concierge', label: 'Concierge IA', Icon: Sparkles },
-  { href: '/propriedades', label: 'Propriedades', Icon: Building2 },
-  { href: '/website', label: 'Website', Icon: Globe },
-  { href: '/blog', label: 'Blog', Icon: Newspaper },
-  { href: '/documentos', label: 'Documentos SIBA', Icon: FileText },
-  { href: '/conformidade', label: 'Conformidade', Icon: ShieldCheck },
-  { href: '/conta/perfil', label: 'Perfil', Icon: UserRound },
-  { href: '/conta/pagamentos', label: 'Pagamentos', Icon: CreditCard },
-  { href: '/conta/billing', label: 'Subscrição', Icon: CreditCard },
-]
+import { NAV, CONTA_NAV, rotaAtiva, seccaoDe } from '@/lib/navigation'
 
 export function SideNav() {
   const pathname = usePathname()
@@ -42,9 +17,7 @@ export function SideNav() {
   const { isDark, setTheme } = useTheme()
   const isAdmin = user?.id === process.env.NEXT_PUBLIC_ADMIN_USER_ID
 
-  function active(href: string) {
-    return pathname === href || pathname.startsWith(href + '/')
-  }
+  const seccaoAtual = seccaoDe(pathname)
 
   return (
     <aside className="hidden lg:flex flex-col w-56 shrink-0 h-dvh border-r border-border bg-card">
@@ -73,39 +46,48 @@ export function SideNav() {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
-        {primary.map(({ href, label, Icon }) => {
+        {NAV.map(({ href, label, Icon, children }) => {
+          const emSeccao = seccaoAtual?.href === href
+          const exato = rotaAtiva(pathname, href)
           const showBadge = href === '/hoje' && alertsCount > 0
+
           return (
-            <Link key={href} href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active(href)
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground/65 hover:bg-muted hover:text-foreground'
-              }`}>
-              <Icon className={`h-4 w-4 shrink-0 ${active(href) ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
-              <span className="flex-1">{label}</span>
-              {showBadge && (
-                <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center tabular-nums">
-                  {alertsCount > 9 ? '9+' : alertsCount}
-                </span>
+            <div key={href}>
+              <Link href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  exato
+                    ? 'bg-primary/10 text-primary'
+                    : emSeccao
+                      ? 'text-foreground'
+                      : 'text-foreground/65 hover:bg-muted hover:text-foreground'
+                }`}>
+                <Icon className={`h-4 w-4 shrink-0 ${emSeccao ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
+                <span className="flex-1">{label}</span>
+                {showBadge && (
+                  <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center tabular-nums">
+                    {alertsCount > 9 ? '9+' : alertsCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Sub-navegação: só existe dentro da secção ativa */}
+              {emSeccao && children && (
+                <div className="mt-0.5 mb-1 ml-[1.4rem] flex flex-col gap-0.5 border-l border-border pl-3">
+                  {children.map(sub => (
+                    <Link key={sub.href} href={sub.href}
+                      className={`rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                        rotaAtiva(pathname, sub.href)
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-foreground/55 hover:bg-muted hover:text-foreground'
+                      }`}>
+                      {sub.label}
+                    </Link>
+                  ))}
+                </div>
               )}
-            </Link>
+            </div>
           )
         })}
-
-        <div className="my-2 h-px bg-border" />
-
-        {secondary.map(({ href, label, Icon }) => (
-          <Link key={href} href={href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              active(href)
-                ? 'bg-primary/10 text-primary'
-                : 'text-foreground/65 hover:bg-muted hover:text-foreground'
-            }`}>
-            <Icon className={`h-4 w-4 shrink-0 ${active(href) ? 'stroke-[2.5]' : 'stroke-[1.5]'}`} />
-            {label}
-          </Link>
-        ))}
 
         {/* Admin link — só visível para o admin */}
         {isAdmin && (
@@ -119,6 +101,21 @@ export function SideNav() {
           </>
         )}
       </nav>
+
+      {/* Conta — fora da navegação principal, para não roubar um dos 6 lugares */}
+      <div className="border-t border-border p-2 shrink-0 flex flex-col gap-0.5">
+        {CONTA_NAV.map(({ href, label, Icon }) => (
+          <Link key={href} href={href}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+              rotaAtiva(pathname, href)
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground/55 hover:bg-muted hover:text-foreground'
+            }`}>
+            <Icon className="h-3.5 w-3.5 shrink-0 stroke-[1.5]" />
+            {label}
+          </Link>
+        ))}
+      </div>
 
       {/* Bottom actions */}
       <div className="border-t border-border p-2 shrink-0 flex flex-col gap-0.5">

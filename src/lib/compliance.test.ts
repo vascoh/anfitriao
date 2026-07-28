@@ -4,7 +4,10 @@ import {
   avaliarConformidade,
   resumirConformidade,
   ordenarPorGravidade,
+  deveAlertar,
+  itensParaAlertar,
   DIAS_AVISO_EXPIRACAO,
+  MARCOS_ALERTA,
   type CamposConformidade,
 } from './compliance'
 
@@ -174,6 +177,72 @@ describe('resumirConformidade', () => {
     const r = resumirConformidade(avaliarConformidade({}, HOJE))
     expect(r.criticos).toBe(3)
     expect(r.pendentes).toBe(3)
+  })
+})
+
+describe('deveAlertar', () => {
+  it('alerta em cada marco definido', () => {
+    for (const marco of MARCOS_ALERTA) {
+      expect(deveAlertar(marco)).toBe(true)
+    }
+  })
+
+  it('não alerta em dias que não são marcos', () => {
+    for (const dias of [29, 21, 15, 10, 5, 2]) {
+      expect(deveAlertar(dias)).toBe(false)
+    }
+  })
+
+  it('não alerta para itens sem data de validade', () => {
+    expect(deveAlertar(undefined)).toBe(false)
+  })
+
+  it('repete semanalmente depois de expirar', () => {
+    expect(deveAlertar(-7)).toBe(true)
+    expect(deveAlertar(-14)).toBe(true)
+    expect(deveAlertar(-28)).toBe(true)
+  })
+
+  it('não repete nos dias intermédios após expirar', () => {
+    for (const dias of [-1, -3, -6, -8, -13]) {
+      expect(deveAlertar(dias)).toBe(false)
+    }
+  })
+
+  it('não alerta muito antes do primeiro marco', () => {
+    expect(deveAlertar(365)).toBe(false)
+    expect(deveAlertar(31)).toBe(false)
+  })
+})
+
+describe('itensParaAlertar', () => {
+  it('não devolve nada quando está tudo em dia', () => {
+    expect(itensParaAlertar(avaliarConformidade(completo, HOJE))).toEqual([])
+  })
+
+  it('devolve o seguro quando faltam exatamente 7 dias', () => {
+    const itens = avaliarConformidade({ ...completo, seguro_validade: '2026-08-03' }, HOJE)
+    const alertas = itensParaAlertar(itens)
+    expect(alertas).toHaveLength(1)
+    expect(alertas[0].chave).toBe('seguro')
+  })
+
+  it('ignora o certificado energético por ser facultativo', () => {
+    const itens = avaliarConformidade(
+      { ...completo, certificado_energetico_validade: '2026-08-03' },
+      HOJE,
+    )
+    expect(itensParaAlertar(itens)).toEqual([])
+  })
+
+  it('ignora itens sem validade, mesmo obrigatórios e em falta', () => {
+    const itens = avaliarConformidade({ rnal_numero: null }, HOJE)
+    expect(itensParaAlertar(itens)).toEqual([])
+  })
+
+  it('alerta sobre seguro expirado há uma semana', () => {
+    const itens = avaliarConformidade({ ...completo, seguro_validade: '2026-07-20' }, HOJE)
+    expect(itensParaAlertar(itens).map(i => i.chave)).toEqual(['seguro'])
   })
 })
 
