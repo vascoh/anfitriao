@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server'
 const isPublicRoute = createRouteMatcher([
   // Landing page de marketing
   '/',
+  // Páginas de comparação com concorrentes (SEO de alta intenção)
+  '/vs(.*)',
   // Página de manutenção — acessível a todos (não cria loop de redirect)
   '/em-construcao',
   // Website público de reservas

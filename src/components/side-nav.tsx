@@ -27,6 +27,7 @@ const secondary = [
   { href: '/website', label: 'Website', Icon: Globe },
   { href: '/blog', label: 'Blog', Icon: Newspaper },
   { href: '/documentos', label: 'Documentos SIBA', Icon: FileText },
+  { href: '/conformidade', label: 'Conformidade', Icon: ShieldCheck },
   { href: '/conta/perfil', label: 'Perfil', Icon: UserRound },
   { href: '/conta/pagamentos', label: 'Pagamentos', Icon: CreditCard },
   { href: '/conta/billing', label: 'Subscrição', Icon: CreditCard },
