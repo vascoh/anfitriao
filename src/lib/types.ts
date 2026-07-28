@@ -176,6 +176,17 @@ export interface Booking {
   criado_em: string
   historico: BookingEvent[]
   owner_id?: string
+  // ─── Faturação certificada (migration 028) ───────────────────────────
+  // O documento legal vive no fornecedor certificado; aqui só a referência.
+  fatura_estado?: 'nao_emitida' | 'a_emitir' | 'emitida' | 'falhou'
+  fatura_id_externo?: string | null
+  fatura_numero?: string | null
+  fatura_atcud?: string | null
+  fatura_url?: string | null
+  fatura_total?: number | null
+  fatura_emitida_em?: string | null
+  fatura_erro?: string | null
+
   /** Estado da submissão automática à AIMA/SIBA (ver lib/siba-api.ts) */
   siba_status?: 'nao_submetido' | 'a_processar' | 'submetido' | 'falhou'
   siba_submitted_at?: string | null
