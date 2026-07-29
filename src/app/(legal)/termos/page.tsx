@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description:
     'Condições de utilização do Anfitrião: subscrições, período experimental, cancelamento, reembolsos e responsabilidades.',
   alternates: { canonical: '/termos' },
+  // Rascunho: fora do índice até à revisão jurídica. Retirar depois disso.
+  robots: { index: false, follow: false },
 }
 
 export default function TermosPage() {

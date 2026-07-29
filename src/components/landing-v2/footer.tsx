@@ -6,6 +6,17 @@ import { CONCORRENTES } from '@/lib/comparacoes'
  * Só destinos que existem e são públicos. As âncoras são absolutas (`/#...`)
  * porque o rodapé também aparece nas páginas legais, onde um `#precos` isolado
  * não levaria a lado nenhum. `/blog` e `/ajuda` continuam de fora até existirem.
+ *
+ * ⚠️ A coluna Legal está retirada de propósito: `/termos` e `/privacidade`
+ * existem mas são rascunhos com campos [POR PREENCHER] e aviso de revisão.
+ * Ligá-las do rodapé publicaria documentos legais por terminar. Repor este
+ * bloco assim que estiverem revistas:
+ *
+ *   { titulo: 'Legal', links: [
+ *       { label: 'Termos', href: '/termos' },
+ *       { label: 'Privacidade', href: '/privacidade' },
+ *       { label: 'Cookies', href: '/cookies' },
+ *   ] },
  */
 const COLUNAS = [
   {
@@ -21,14 +32,6 @@ const COLUNAS = [
     links: [
       { label: 'Entrar', href: '/sign-in' },
       { label: 'Criar conta', href: '/sign-up' },
-    ],
-  },
-  {
-    titulo: 'Legal',
-    links: [
-      { label: 'Termos', href: '/termos' },
-      { label: 'Privacidade', href: '/privacidade' },
-      { label: 'Cookies', href: '/cookies' },
     ],
   },
   {
@@ -60,7 +63,7 @@ export function Footer() {
                 (os ícones SVG estão no histórico do git). */}
           </div>
 
-          <nav aria-label="Rodapé" className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <nav aria-label="Rodapé" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {COLUNAS.map((coluna) => (
               <div key={coluna.titulo}>
                 <h2 className="text-sm font-semibold text-white">{coluna.titulo}</h2>

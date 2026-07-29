@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description:
     'Que dados o Anfitrião recolhe, para quê, com quem os partilha e que direitos tens sobre eles.',
   alternates: { canonical: '/privacidade' },
+  // Rascunho: fora do índice até à revisão jurídica. Retirar depois disso.
+  robots: { index: false, follow: false },
 }
 
 export default function PrivacidadePage() {

@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description:
     'Que cookies e armazenamento local o Anfitrião usa. Sem publicidade, sem analítica, sem rastreio de terceiros.',
   alternates: { canonical: '/cookies' },
+  // Rascunho: fora do índice até à revisão jurídica. Retirar depois disso.
+  robots: { index: false, follow: false },
 }
 
 export default function CookiesPage() {
