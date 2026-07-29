@@ -63,6 +63,18 @@ Criadas em `src/app/(legal)/` (grupo de rotas, não afeta URLs), com `PaginaLega
 
 ---
 
+### [2026-07-29] Acessibilidade da landing v2 — auditoria axe-core
+
+A landing nova nunca tinha sido auditada, apesar de existir um commit anterior sobre contraste WCAG AA nas páginas públicas e de o `axe-core` estar nas devDependencies (sem harness a usá-lo). Auditadas `/`, `/termos`, `/privacidade` e `/cookies`, em desktop e mobile, com as regras wcag2a/wcag2aa/wcag21a/wcag21aa. **14 violações → 0.**
+
+- 🎨 **`text-slate-500` sobre `slate-900`/`slate-950`** dava 3.7–4.2:1, abaixo do mínimo de 4.5:1. Afetava a barra do mockup de painel, as etiquetas de canal, o estado das propriedades, a data das páginas legais e o rodapé. Todas passaram a `text-slate-400`.
+- 🔗 **Links em corpo de texto sublinhados sempre**, não só no hover: dentro de um parágrafo, distingui-los apenas pela cor falha o WCAG 1.4.1 (não-dependência da cor). Corrigido em `pagina-legal.tsx`.
+- 🧪 **`landing-v2/contraste.test.ts`** — guarda de regressão sem dependências novas: falha se as classes de cinzento demasiado escuro voltarem aos componentes da landing ou das páginas legais. Verificado que falha mesmo (introduzida uma violação de propósito, o teste apanhou-a e nomeou o ficheiro).
+
+**Limitação assumida:** o guarda é textual, não sabe calcular contraste nem lê cores em CSS arbitrário (`text-[#...]`). Não substitui o axe. O Playwright não é dependência do projeto e não o acrescentei só para isto — a auditoria a sério continua a ser um passo manual antes de deploys com mudanças visuais.
+
+---
+
 ### [2026-07-28] Fase 1 — resto do que não dependia de credenciais
 Executado tudo o que faltava da Fase 1 do `docs/PLANO-ESTRATEGICO-2026.md` sem depender de chaves externas nem de decisões comerciais.
 

@@ -104,11 +104,11 @@ export function Footer() {
         </nav>
 
         <div className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-400">
             © {new Date().getFullYear()} Anfitrião. Todos os direitos reservados.
           </p>
           <ul className="flex flex-wrap gap-4">
-            <li className="flex items-center gap-1.5 text-xs text-slate-500">
+            <li className="flex items-center gap-1.5 text-xs text-slate-400">
               <Lock className="size-3.5 text-emerald-400" aria-hidden />
               Ligação encriptada
             </li>

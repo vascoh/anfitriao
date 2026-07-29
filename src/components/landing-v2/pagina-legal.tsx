@@ -51,7 +51,7 @@ export function PaginaLegal({
       <h1 className="mt-8 text-3xl font-bold tracking-tight text-white sm:text-4xl">
         {titulo}
       </h1>
-      <p className="mt-3 text-sm text-slate-500">
+      <p className="mt-3 text-sm text-slate-400">
         Última atualização:{' '}
         <time dateTime={atualizadoEm}>
           {new Date(atualizadoEm).toLocaleDateString('pt-PT', {
@@ -64,7 +64,9 @@ export function PaginaLegal({
 
       <div className="mt-12">
         <AvisoRevisao />
-        <div className="space-y-6 text-[15px] leading-relaxed text-slate-300 [&_a]:text-cyan-400 [&_a]:underline-offset-4 hover:[&_a]:underline [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-white [&_li]:my-1.5 [&_strong]:font-semibold [&_strong]:text-white [&_table]:w-full [&_table]:text-sm [&_td]:border-t [&_td]:border-white/10 [&_td]:py-2.5 [&_td]:pr-4 [&_td]:align-top [&_th]:pb-2.5 [&_th]:pr-4 [&_th]:text-left [&_th]:font-semibold [&_th]:text-white [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
+        {/* Os links de corpo de texto vão sempre sublinhados: dentro de um
+            parágrafo, distingui-los só pela cor falha o WCAG 1.4.1. */}
+        <div className="space-y-6 text-[15px] leading-relaxed text-slate-300 [&_a]:text-cyan-400 [&_a]:underline [&_a]:underline-offset-4 [&_h2]:mt-12 [&_h2]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-white [&_li]:my-1.5 [&_strong]:font-semibold [&_strong]:text-white [&_table]:w-full [&_table]:text-sm [&_td]:border-t [&_td]:border-white/10 [&_td]:py-2.5 [&_td]:pr-4 [&_td]:align-top [&_th]:pb-2.5 [&_th]:pr-4 [&_th]:text-left [&_th]:font-semibold [&_th]:text-white [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-5">
           {children}
         </div>
       </div>

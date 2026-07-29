@@ -46,7 +46,7 @@ export function Newsletter() {
               message: 'Email inválido.',
             },
           })}
-          className={`h-11 min-w-0 flex-1 rounded-xl border bg-slate-950/60 px-4 text-sm text-white placeholder:text-slate-500 focus:outline-2 focus:outline-offset-1 focus:outline-cyan-400 ${
+          className={`h-11 min-w-0 flex-1 rounded-xl border bg-slate-950/60 px-4 text-sm text-white placeholder:text-slate-400 focus:outline-2 focus:outline-offset-1 focus:outline-cyan-400 ${
             errors.email ? 'border-red-500/60' : 'border-white/15'
           }`}
         />

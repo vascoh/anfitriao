@@ -64,7 +64,7 @@ export function DashboardPreview() {
             <span className="size-2.5 rounded-full bg-red-400/60" />
             <span className="size-2.5 rounded-full bg-amber-400/60" />
             <span className="size-2.5 rounded-full bg-emerald-400/60" />
-            <span className="ml-4 text-xs text-slate-500">anfitrioes.pt / painel</span>
+            <span className="ml-4 text-xs text-slate-400">anfitrioes.pt / painel</span>
           </div>
 
           <div className="grid gap-5 p-5 sm:p-7 lg:grid-cols-3">
@@ -73,7 +73,7 @@ export function DashboardPreview() {
               <div className="flex items-center gap-2">
                 <Calendar className="size-4 text-cyan-400" aria-hidden />
                 <h3 className="text-sm font-semibold text-white">Calendário unificado</h3>
-                <span className="ml-auto text-xs text-slate-500">Julho</span>
+                <span className="ml-auto text-xs text-slate-400">Julho</span>
               </div>
               <div className="mt-4 grid grid-cols-7 gap-1.5">
                 {Array.from({ length: 35 }).map((_, i) => {
@@ -124,7 +124,7 @@ export function DashboardPreview() {
                         {m.nome.charAt(0)}
                       </span>
                       <span className="text-xs font-medium text-white">{m.nome}</span>
-                      <span className="ml-auto text-[10px] text-slate-500">{m.canal}</span>
+                      <span className="ml-auto text-[10px] text-slate-400">{m.canal}</span>
                     </div>
                     <p className="mt-1.5 truncate text-xs text-slate-400">{m.texto}</p>
                   </li>
@@ -157,7 +157,7 @@ export function DashboardPreview() {
                         className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-emerald-500"
                       />
                     </div>
-                    <p className="mt-2 text-[11px] text-slate-500">{p.estado}</p>
+                    <p className="mt-2 text-[11px] text-slate-400">{p.estado}</p>
                   </li>
                 ))}
               </ul>
