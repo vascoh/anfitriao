@@ -18,5 +18,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     })),
+    // Páginas legais — prioridade baixa, mas têm de ser indexáveis: um site
+    // comercial sem termos e privacidade acessíveis é um sinal negativo.
+    ...['termos', 'privacidade', 'cookies'].map(slug => ({
+      url: `${APP_URL}/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    })),
   ]
 }

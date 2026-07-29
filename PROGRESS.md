@@ -6,6 +6,63 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-29] Landing page nova (v2) — em produção
+
+Redesenho completo da homepage de marketing: escuro por omissão, paleta ciano/esmeralda, animações com Motion + scroll suave com Lenis. Componentes em `src/components/landing-v2/` (header, hero, hero-visual, problem-solution, features, dashboard-preview, pricing, testimonials, faq, cta-section, newsletter, footer, smooth-scroll) e variantes partilhadas em `lib/landing-animations.ts`. Deployado e verificado no site real.
+
+- 💰 **Preços reais, não os do briefing** — o briefing pedia €29/€79; a produção cobra Starter €19 / Pro €39. Decisão do Vasco: manter os reais. Anunciar preços diferentes dos que o Stripe cobra no checkout não era uma decisão técnica minha.
+- 📦 **`lib/planos.ts`** — limites, preços (mensal e anual), `TRIAL_DIAS` e helpers de copy passaram a viver num módulo **sem dependências de runtime**. Foi de propósito: `lib/stripe.ts` faz `new Stripe(STRIPE_SECRET_KEY)` no topo, e as secções de preços são `'use client'` — importá-lo do browser levaria o SDK e a chave secreta para o bundle. `stripe.ts` reexporta `PLAN_LIMITS`/`PLAN_PRICE_EUR` para os importadores antigos não partirem. Confirmado que `.next/static` não contém segredos nem o SDK.
+- 🧹 A copy da FAQ ("Starter até 3, Pro até 10", "14 dias") também deriva de `planos.ts` — era o sítio com mais probabilidade de divergir quando os preços mudassem.
+- 🗑️ **`src/components/landing/` eliminada** — `pricing-section`, `commission-calculator` e `mobile-nav` ficaram órfãs ao substituir a homepage.
+- 🗣️ **Tratamento por "tu"** — a copy nova nasceu formal ("você"); alinhada com a voz do resto do site e da app.
+- 🔍 **SEO preservado** — FAQPage JSON-LD gerado a partir de `landing-v2/faq-data.ts` (fonte única com o acordeão). Os 6 links `/vs/*` de alta intenção migraram para uma secção própria do rodapé. `redirect('/hoje')` para sessão iniciada mantido.
+- ⚖️ **Garantia de 30 dias recuperada** da landing anterior para a FAQ — é um compromisso comercial já publicado.
+- 🎨 Escopo visual isolado em `.landing-v2` (globals.css): Inter no corpo, Geist nos títulos, escuro independente do tema guardado em `anf:theme`.
+
+**Retirado antes de publicar** (nada disto podia ir para um site comercial):
+
+- **Testemunhos inventados** — três depoimentos com nomes e cidades fictícios. Na UE, avaliações inventadas apresentadas como reais são prática proibida (Diretiva Omnibus). `TESTEMUNHOS` é agora um array vazio tipado e o componente devolve `null` enquanto estiver assim — volta ao ar sozinho mal existam depoimentos verdadeiros.
+- **Newsletter** — o formulário confirmava "ficaste subscrito" sem subscrever ninguém (sem endpoint). Fora do rodapé; componente fica no repo.
+- **Badge "Conforme o RGPD"** — afirmação de conformidade legal não verificável, ainda por cima num site sem política de privacidade acessível. Ficou só "Ligação encriptada", que é verdade.
+- **Links para `/blog`, `/ajuda`, `/contacto`, `/termos`, `/privacidade`, `/cookies`** — não estão em `isPublicRoute`, por isso mandavam o visitante para o ecrã de login. Fora do rodapé e do menu.
+- **Ícones LinkedIn/X** — apontavam para as homepages dessas redes, não para perfis do Anfitrião.
+
+**Bugs corrigidos pelo caminho:**
+
+- 🐛 **H1 sem espaços no `textContent`** — só apareceu ao inspecionar o site já publicado. O `mr-[0.25em]` dava espaço visual mas nenhum espaço textual: o Google e os leitores de ecrã liam `Centralizatudo.Hospedamelhor.` no elemento com mais peso de SEO da página. O espaço tem de ser um nó de texto **entre** os spans (dentro do `inline-block` é descartado). Obrigou a segundo deploy. **Lição: screenshot não valida texto acessível — verificar `textContent` de títulos animados palavra a palavra.**
+- Gradiente do CTA invisível: `-z-10` punha-o atrás do fundo da página; resolvido com `isolate`.
+- `lucide-react` v1 já não exporta ícones de marca (`Linkedin`, `Twitter`).
+- Um screenshot saiu sem CSS por causa de um zombie `next-server` no porto 3000 — o caso já descrito no CLAUDE.md, não um defeito da página.
+
+- ✅ 289 testes, typecheck 0, lint 0, build OK. Verificado no site em produção (desktop 1440px e mobile 390px): H1 correto, €19/€39, ambos os blocos JSON-LD, 6 links `/vs`, zero links mortos, zero erros de consola.
+
+**Pendentes humanos:**
+- **Páginas legais criadas mas por rever** — ver entrada seguinte.
+- Depoimentos reais e autorizados para reativar a secção de testemunhos.
+- Endpoint de subscrição para repor a newsletter.
+- `/blog` e `/ajuda` continuam por criar.
+- Landing anterior guardada em `.backups/page.landing-v1.20260729.tsx` (e no git).
+
+---
+
+### [2026-07-29] Páginas legais — `/termos`, `/privacidade`, `/cookies`
+
+Criadas em `src/app/(legal)/` (grupo de rotas, não afeta URLs), com `PaginaLegal` em `components/landing-v2/pagina-legal.tsx` a dar o mesmo aspeto escuro da homepage. **Não deployadas** — têm campos por preencher.
+
+- 📋 **Conteúdo derivado do código, não genérico.** Os campos do boletim de hóspede vieram de `lib/siba-fetch.ts` (nome, data de nascimento, sexo, nacionalidade, tipo/número/validade/país do documento). A lista de subcontratantes é a real: Clerk, Supabase, Vercel, Stripe, Resend, Anthropic.
+- 🍪 **Zero rastreio, confirmado por grep** — não há Google Analytics, gtag, Posthog, Plausible, `@vercel/analytics` nem píxeis. A página de cookies pode portanto afirmar que só existem cookies estritamente necessários (sessão do Clerk) e `anf:theme` em localStorage, e explicar porque não há banner de consentimento. Se algum dia entrar analítica, **esta página passa a mentir** — atualizar em conjunto.
+- ⚖️ **Distinção responsável/subcontratante** explícita: responsáveis pelos dados do anfitrião, subcontratantes quanto aos dados dos hóspedes (o anfitrião é que responde perante eles). É a distinção que costuma faltar neste tipo de produto.
+- 🙅 **Limitações assumidas nos termos**, em vez de escondidas: o iCal não é instantâneo e não elimina a dupla reserva; a submissão ao SIBA é feita pelo anfitrião, não por nós. Alinhado com o que a FAQ já dizia.
+- 🔗 `isPublicRoute` no `proxy.ts` e sitemap atualizados. Coluna Legal reposta no rodapé.
+- 🐛 **Âncoras do rodapé passaram a absolutas** (`/#precos` em vez de `#precos`): o rodapé agora também aparece nas páginas legais, onde uma âncora isolada não levaria a lado nenhum.
+- ✅ typecheck 0, lint 0, build OK (as três páginas são estáticas), 289 testes. Verificado que as três respondem sem sessão — antes o Clerk mandava para o login.
+
+**Pendentes humanos (bloqueiam o deploy destas páginas):**
+- **10 campos `[POR PREENCHER]`**, assinalados a amarelo na própria página para não passarem despercebidos: denominação social, NIF, morada, região de alojamento dos dados, prazos de conservação, IVA incluído ou não, limite temporal de responsabilidade, entidade de resolução de litígios de consumo.
+- **Revisão por advogado.** Cada página abre com um aviso de rascunho por rever — remover `AvisoRevisao` depois da revisão.
+
+---
+
 ### [2026-07-28] Fase 1 — resto do que não dependia de credenciais
 Executado tudo o que faltava da Fase 1 do `docs/PLANO-ESTRATEGICO-2026.md` sem depender de chaves externas nem de decisões comerciais.
 

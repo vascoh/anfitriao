@@ -12,22 +12,12 @@ export function priceToPlano(priceId: string): AccountPlano {
   return 'starter' // fallback
 }
 
-// Limites por plano
-export const PLAN_LIMITS: Record<AccountPlano, { propriedades_max: number }> = {
-  trial:   { propriedades_max: 1 },
-  starter: { propriedades_max: 3 },
-  pro:     { propriedades_max: 10 },
-}
-
 export const PLAN_PRICE_IDS: Record<'starter' | 'pro', string | undefined> = {
   starter: process.env.STRIPE_STARTER_PRICE_ID,
   pro:     process.env.STRIPE_PRO_PRICE_ID,
 }
 
-// Preços fixos em euros — só para exibição (landing, dashboard admin). A
-// fonte de verdade do valor cobrado é sempre o Price ID no Stripe.
-export const PLAN_PRICE_EUR: Record<AccountPlano, number> = {
-  trial:   0,
-  starter: 19,
-  pro:     39,
-}
+// Limites e preços vivem em `lib/planos.ts` — sem dependências de runtime, para
+// poderem ser importados também do browser. Reexportados aqui por compatibilidade
+// com quem já importava de '@/lib/stripe'; código novo deve importar de '@/lib/planos'.
+export { PLAN_LIMITS, PLAN_PRICE_EUR } from './planos'
