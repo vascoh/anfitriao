@@ -6,6 +6,24 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-30] RGPD a sério — retenção por código, acesso e apagamento (Fase 2.16)
+
+Fecha ANF-1.10, ANF-1.11 e ANF-1.12. Até aqui a retenção era uma frase na política de privacidade; passa a ser uma rotina que corre todos os dias.
+
+- 🗓️ **Prazos com base legal, num sítio só** — `lib/retencao.ts`: boletim de alojamento **1 ano** após a saída (Lei 23/2007 art. 16.º — recolhido para comunicar às autoridades; cumprido o fim, acaba o fundamento), nome e contactos **3 anos** após a última estadia (interesse legítimo, art. 6.º n.º 1 al. f), dados fiscais **10 anos** e intocáveis (art. 52.º do CIVA).
+- 🧹 **Anonimiza, não apaga.** A reserva é um registo fiscal: apagar o hóspede partiria a cadeia. Anonimizar cumpre o art. 17.º na parte que nos compete — dados anonimizados deixam de ser dados pessoais (cons. 26) — e deixa de pé receita, ocupação e noites. O art. 17.º n.º 3 al. b ressalva precisamente o que a lei obriga a conservar.
+- ⏱️ **O prazo conta-se da última saída, não da criação do registo**: quem volta reinicia a contagem, uma reserva por cumprir não inicia nada, e canceladas/no-shows não contam (não houve estadia). É a diferença entre uma política defensável e uma que apaga dados de um hóspede que está prestes a chegar.
+- 🤖 Cron `/api/cron/retencao` diário às **03:00**, antes do `ical-sync` — é a única rotina que apaga, e não convém competir com as que escrevem. **Não notifica ninguém de propósito**: cumprir a política é o comportamento normal, não um evento. Cada anonimização fica no `audit_log` com autor, grupos e motivo.
+- 📤 **Acesso e portabilidade (art. 15.º e 20.º)** — `GET /api/guests/[id]/dados` devolve ficha e reservas em JSON, como ficheiro para o anfitrião reencaminhar. Exportar só a ficha omitiria metade do que se trata sobre a pessoa.
+- 🗑️ **Apagamento a pedido (art. 17.º)** — `DELETE` na mesma rota, e botão na ficha do hóspede com confirmação. Quem responde ao titular é o anfitrião (é ele o responsável pelo tratamento; nós somos subcontratante), por isso as rotas exigem sessão dele e só atuam sobre hóspedes da sua conta — não há aqui nada público.
+- 📋 **Registo de atividades de tratamento** (art. 30.º) em `docs/RGPD-REGISTO-TRATAMENTOS.md`, derivado do esquema real e não de um modelo genérico: 7 tratamentos, fundamento de cada um, subcontratantes verdadeiros e uma tabela de medidas do art. 32.º que assume o que **não** está feito (RLS por JWT, encriptação em repouso dos campos de documento, log de acesso, MFA).
+- 🔗 **A política de privacidade passa a ler os prazos de `lib/retencao.ts`** — mesma decisão que levou os preços para `lib/planos.ts`: a promessa pública e o comportamento real não podem divergir. Fecha 2 dos 10 campos `[POR PREENCHER]`.
+- 🗃️ Migração **029** aplicada em produção (aditiva): `anonimizado_em`, `anonimizado_grupos`, `retencao_completa` + índice parcial. O `retencao_completa` existe para o SQL não ter de saber quantos grupos tem a política — quem decide é a app.
+- ✅ **327 testes** (22 novos), verificados também em `TZ=Pacific/Kiritimati` e `Pacific/Midway`; typecheck 0, lint 0, build OK.
+- 🔍 **Verificado antes de ligar**: os 2 hóspedes em produção têm check-out futuro (31/07 e 05/08), por isso a rotina é hoje um no-op. Com o serviço a existir desde maio de 2026, nada pode atingir o prazo de 1 ano antes de meados de 2027 — há tempo de sobra para rever os prazos antes de apagarem seja o que for.
+- ⏭️ **Fica por fazer da mesma família**: encriptação em repouso dos campos de documento (ANF-1.7) e log de acesso a dados sensíveis (ANF-1.8) — ambos maiores e independentes.
+- 👤 **Pendência humana**: prazo de conservação dos dados da conta após cancelamento e do `audit_log`. São os únicos números desta matéria que não consegui derivar da lei nem do código — dependem de decisão comercial.
+
 ### [2026-07-30] Verificação dos crons da Vercel — e o que ela desenterrou
 
 A sessão de 28/07 deixou por confirmar se os 7 crons corriam, na suposição de que o plano Hobby limitava a 2. **A suposição estava errada e a preocupação era infundada** — mas a verificação encontrou outra coisa, pior.

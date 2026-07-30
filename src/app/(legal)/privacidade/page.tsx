@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import { PaginaLegal, PorPreencher } from '@/components/landing-v2/pagina-legal'
+// Os prazos vêm de onde são aplicados: a política não pode prometer um número
+// que o código não cumpre (mesma razão que levou os preços para lib/planos.ts).
+import { PRAZOS, PRAZO_FISCAL, descreverPrazo } from '@/lib/retencao'
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade',
@@ -153,20 +156,34 @@ export default function PrivacidadePage() {
       <h2>5. Durante quanto tempo guardamos</h2>
       <ul>
         <li>
-          <strong>Dados da conta:</strong> enquanto a subscrição estiver ativa e
-          durante <PorPreencher>prazo</PorPreencher> após o cancelamento.
+          <strong>Boletim de alojamento</strong> (documento de identificação,
+          data de nascimento, sexo e nacionalidade):{' '}
+          {descreverPrazo(PRAZOS.boletim.dias)} após a saída do hóspede. É
+          recolhido para comunicação às autoridades ao abrigo da Lei 23/2007;
+          cumprido esse fim, deixa de haver motivo para o guardar.
         </li>
         <li>
-          <strong>Dados de hóspedes:</strong> pelo período necessário ao
-          cumprimento das obrigações legais do anfitrião —{' '}
-          <PorPreencher>prazo de conservação</PorPreencher>. O anfitrião pode
-          apagá-los antes disso a partir da aplicação.
+          <strong>Nome e contactos do hóspede:</strong>{' '}
+          {descreverPrazo(PRAZOS.contacto.dias)} após a última estadia, para o
+          anfitrião poder reconhecer quem volta e provar a estadia.
         </li>
         <li>
-          <strong>Dados de faturação:</strong> pelo prazo exigido pela lei fiscal
-          portuguesa.
+          <strong>Dados de faturação:</strong> {PRAZO_FISCAL.anos} anos, por
+          imposição da lei fiscal portuguesa (art. 52.º do CIVA). É por isso
+          que apagar os dados de um hóspede não apaga a reserva: ficam os
+          valores e as datas, sem identificação de ninguém.
+        </li>
+        <li>
+          <strong>Dados da conta:</strong> enquanto a subscrição estiver ativa
+          e durante <PorPreencher>prazo</PorPreencher> após o cancelamento.
         </li>
       </ul>
+      <p>
+        Estes prazos não são uma intenção: são aplicados automaticamente todos
+        os dias por uma rotina que anonimiza o que já não pode ser conservado.
+        O anfitrião pode antecipar o apagamento a qualquer momento, a partir da
+        ficha do hóspede.
+      </p>
 
       <h2>6. Os teus direitos</h2>
       <p>

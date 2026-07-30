@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/retencao",
+      "schedule": "0 3 * * *"
+    },
+    {
       "path": "/api/ical-sync",
       "schedule": "0 4 * * *"
     },

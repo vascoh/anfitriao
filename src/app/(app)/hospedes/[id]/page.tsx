@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
-import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle, Download, Trash2 } from 'lucide-react'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
+import { PRAZOS, descreverPrazo, NOME_ANONIMO } from '@/lib/retencao'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
@@ -34,6 +35,8 @@ export default function HospedeDetailPage() {
   const [paisEmissao, setPaisEmissao] = useState('')
   const [tags, setTags] = useState<GuestTag[]>([])
   const [saveError, setSaveError] = useState('')
+  const [aApagar, setAApagar] = useState(false)
+  const [apagarErro, setApagarErro] = useState('')
 
   useEffect(() => {
     if (!ownerId) return
@@ -84,6 +87,44 @@ export default function HospedeDetailPage() {
       setEditing(false)
     } catch {
       setSaveError('Erro ao guardar. Tenta novamente.')
+    }
+  }
+
+  /**
+   * Apagamento a pedido do titular (RGPD art. 17.º). Irreversível e sem
+   * desfazer, por isso confirma-se antes; o servidor anonimiza em vez de
+   * eliminar, para não partir os registos com relevância fiscal.
+   */
+  async function apagarDados() {
+    if (!guest) return
+    if (!confirm('Apagar os dados pessoais deste hóspede? O nome, contactos e documento são removidos de forma irreversível. As reservas mantêm-se, sem identificação.')) return
+
+    setAApagar(true)
+    setApagarErro('')
+    try {
+      const res = await fetch(`/api/guests/${guest.id}/dados`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      const apagado: Guest = {
+        ...guest,
+        nome: NOME_ANONIMO,
+        email: undefined,
+        telefone: undefined,
+        notas: undefined,
+        nacionalidade: undefined,
+        numero_documento: undefined,
+        tipo_documento: undefined,
+        data_nascimento: undefined,
+        data_validade_doc: undefined,
+        sexo: undefined,
+        pais_emissao: undefined,
+        anonimizado_em: new Date().toISOString(),
+      }
+      setGuest(apagado)
+      resetForm(apagado)
+    } catch {
+      setApagarErro('Não foi possível apagar os dados. Tenta novamente.')
+    } finally {
+      setAApagar(false)
     }
   }
 
@@ -327,6 +368,50 @@ export default function HospedeDetailPage() {
           <div className="mx-4 rounded-xl border border-border bg-card px-4 py-3.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Notas</p>
             <p className="text-sm text-foreground/80 leading-relaxed">{guest.notas}</p>
+          </div>
+        )}
+
+        {/* Dados e privacidade (RGPD art. 15.º/17.º/20.º) */}
+        {!editing && (
+          <div className="mx-4 rounded-xl border border-border bg-card px-4 py-3.5 flex flex-col gap-3">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Dados e privacidade</p>
+              {guest.anonimizado_em ? (
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  Dados pessoais apagados em {fmtDate(guest.anonimizado_em.slice(0, 10), { day: 'numeric', month: 'long', year: 'numeric' })}.
+                  As reservas mantêm-se por obrigação fiscal.
+                </p>
+              ) : (
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  O boletim de alojamento é apagado {descreverPrazo(PRAZOS.boletim.dias)} após a
+                  saída; nome e contactos, {descreverPrazo(PRAZOS.contacto.dias)}. Podes
+                  antecipar a qualquer momento, se o hóspede o pedir.
+                </p>
+              )}
+            </div>
+
+            {apagarErro && <p className="text-sm text-destructive">{apagarErro}</p>}
+
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`/api/guests/${guest.id}/dados`}
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50 transition-colors"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Exportar dados
+              </a>
+              {!guest.anonimizado_em && (
+                <button
+                  onClick={apagarDados}
+                  disabled={aApagar}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 text-destructive px-3 py-2 text-xs font-medium hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {aApagar ? 'A apagar…' : 'Apagar dados pessoais'}
+                </button>
+              )}
+            </div>
           </div>
         )}
 

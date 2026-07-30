@@ -72,6 +72,10 @@ export interface Guest {
   notas?: string
   criado_em: string
   owner_id?: string
+  /** Quando os dados pessoais foram anonimizados (retenção ou pedido do titular). */
+  anonimizado_em?: string | null
+  /** Grupos já anonimizados — ver `lib/retencao.ts`. */
+  anonimizado_grupos?: string[] | null
 }
 
 export interface BookingEvent {

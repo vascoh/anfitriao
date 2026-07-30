@@ -55,6 +55,11 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 - [x] Scaffolding para submissão automática SIBA/AIMA — `lib/siba-api.ts` (adapter placeholder), `lib/siba-fetch.ts` (query partilhada com o export CSV), `/api/siba-submit`, colunas `siba_status`/`siba_reference`/`siba_error` em `bookings` (migration 024), botão "Submeter à AIMA" em `/documentos`
 - [ ] **Pendência humana**: obter credenciais/documentação técnica oficial da API SIBA junto da AIMA; sem isso `submitBookingToSiba` (`lib/siba-api.ts`) fica por implementar e a rota devolve 501 (fallback: exportação CSV manual, inalterada e funcional)
 
+## Fase 2 (plano estratégico) — RGPD ✅ (2026-07-30)
+- [x] **2.16 / ANF-1.10, 1.11, 1.12** — retenção aplicada por código (`lib/retencao.ts` + cron diário às 03:00), exportação e apagamento a pedido (`/api/guests/[id]/dados`, art. 15.º/17.º/20.º) e registo de atividades de tratamento (`docs/RGPD-REGISTO-TRATAMENTOS.md`, art. 30.º). Anonimiza em vez de apagar — a reserva tem de ser conservada 10 anos (art. 52.º do CIVA). Migração 029 aplicada em produção.
+- [ ] **Pendência humana**: prazo de conservação dos dados da conta após cancelamento e do `audit_log` — os únicos campos que faltam ao registo de tratamentos e à política de privacidade nesta matéria
+- [ ] Falta da mesma família (não feito neste incremento): encriptação em repouso dos campos de documento (ANF-1.7) e log de acesso a dados sensíveis (ANF-1.8)
+
 ## Pendências para Validação Humana (não bloqueiam desenvolvimento)
 Ver `docs/SAAS_ARCHITECTURE.md` §13 — lista viva, atualizada conforme surgem novas decisões de negócio:
 1. Prioridade de fase (recomendação: fundação → templates → RBAC → canais reais)
