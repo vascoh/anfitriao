@@ -13,6 +13,7 @@ import {
   transitionBooking,
   bookingsByProperty,
   occupancyForMonth,
+  unidadesReservaveis,
 } from './reservations'
 import type { Booking, Property, PriceRule, Tarifa, PlatformRate } from './types'
 
@@ -311,5 +312,37 @@ describe('occupancyForMonth', () => {
   it('excludes cancelled bookings', () => {
     const bookings = [mkBooking({ check_in: '2026-08-10', check_out: '2026-08-15', estado: 'cancelada' })]
     expect(occupancyForMonth(bookings, 'prop-1', 2026, 7).occupied).toBe(0)
+  })
+})
+
+describe('unidadesReservaveis', () => {
+  const casa: Property = { ...PROPERTY, id: 'casa', nome: 'Casa de Vasco' }
+  const quarto = (id: string, over: Partial<Property> = {}): Property =>
+    ({ ...PROPERTY, id, nome: id, parent_id: 'casa', ...over })
+
+  it('exclui a casa quando tem quartos ativos — reservam-se os quartos, não ela', () => {
+    const ids = unidadesReservaveis([casa, quarto('q1'), quarto('q2')]).map(p => p.id)
+    expect(ids).toEqual(['q1', 'q2'])
+  })
+
+  it('uma casa sem quartos continua a ser reservável', () => {
+    expect(unidadesReservaveis([casa]).map(p => p.id)).toEqual(['casa'])
+  })
+
+  it('quartos inativos não transformam a casa em contentor', () => {
+    // Desativados os quartos todos, volta a ser a casa que se aluga.
+    const ids = unidadesReservaveis([casa, quarto('q1', { ativo: false })]).map(p => p.id)
+    expect(ids).toEqual(['casa'])
+  })
+
+  it('exclui alojamentos inativos', () => {
+    const ids = unidadesReservaveis([{ ...casa, ativo: false }, quarto('q1')]).map(p => p.id)
+    expect(ids).toEqual(['q1'])
+  })
+
+  it('não confunde casas diferentes', () => {
+    const outra: Property = { ...PROPERTY, id: 'outra' }
+    const ids = unidadesReservaveis([casa, outra, quarto('q1')]).map(p => p.id)
+    expect(ids).toEqual(['outra', 'q1'])
   })
 })

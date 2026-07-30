@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
-import { transitionBooking, canTransition } from '@/lib/reservations'
+import { transitionBooking, canTransition, unidadesReservaveis } from '@/lib/reservations'
 import type { Booking, BookingStatus, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 import { OnboardingCard } from '@/components/onboarding-card'
@@ -216,7 +216,8 @@ export default function HojePage() {
       .sort((a, b) => a.check_in.localeCompare(b.check_in))
   }, [bookings, t])
 
-  const activeProps = useMemo(() => props.filter(p => p.ativo), [props])
+  // Unidades que se alugam — uma casa com quartos não conta como uma delas
+  const activeProps = useMemo(() => unidadesReservaveis(props), [props])
   const totalUnidades = activeProps.length
   const ocupacao = totalUnidades > 0 ? Math.round((emCasa.length / totalUnidades) * 100) : 0
   const vagas = useMemo(() =>

@@ -272,3 +272,24 @@ export function occupancyForMonth(
 
   return { occupied, total: daysInMonth, pct: Math.round((occupied / daysInMonth) * 100) }
 }
+
+/**
+ * Alojamentos que se alugam por si — os que contam como unidade para ocupação,
+ * RevPAR e para criar uma reserva.
+ *
+ * Uma casa com quartos ativos é o contentor deles, não uma unidade: alugar a
+ * casa inteira *e* os quartos ao mesmo tempo seria vender a mesma cama duas
+ * vezes. O site público já se comporta assim — `/book/[id]` de uma casa com
+ * quartos mostra a lista de quartos e nunca um formulário de reserva — mas a
+ * app interna contava-a como mais uma unidade, o que diluía a ocupação e o
+ * RevPAR (4 unidades onde só há 3 alugáveis) e deixava criar-lhe reservas.
+ *
+ * Derivado da estrutura em vez de um campo próprio: assim não há um estado
+ * que possa contradizer a realidade quando se acrescenta ou remove um quarto.
+ */
+export function unidadesReservaveis(properties: Property[]): Property[] {
+  const contentores = new Set(
+    properties.filter(p => p.parent_id && p.ativo).map(p => p.parent_id),
+  )
+  return properties.filter(p => p.ativo && !contentores.has(p.id))
+}

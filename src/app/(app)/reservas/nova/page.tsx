@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
 import { uuid, today, addDays } from '@/lib/utils'
 import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
-import { detectConflict, calculatePriceWithRules } from '@/lib/reservations'
+import { detectConflict, calculatePriceWithRules, unidadesReservaveis } from '@/lib/reservations'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 
@@ -69,7 +69,8 @@ function NovaReservaInner() {
   useEffect(() => {
     if (!ownerId) return
     fetchProperties().then(all => {
-      const active = all.filter(p => p.ativo)
+      // Uma casa com quartos não se reserva: reservam-se os quartos dela.
+      const active = unidadesReservaveis(all)
       setProperties(active)
       const preselected = searchParams.get('propriedade')
       if (preselected && active.some(p => p.id === preselected)) {

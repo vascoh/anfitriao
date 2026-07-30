@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
-import { occupancyForMonth } from '@/lib/reservations'
+import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
 import { fmtMoney, nights, today as localToday, addDays } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
 import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
@@ -98,7 +98,7 @@ function topGuests(
 }
 
 function occupancyByMonth(bookings: Booking[], properties: Property[], year: number): number[] {
-  const activeProps = properties.filter(p => p.ativo)
+  const activeProps = unidadesReservaveis(properties)
   if (activeProps.length === 0) return Array(12).fill(0)
   return Array.from({ length: 12 }, (_, m) => {
     const total = activeProps.reduce((sum, p) => {
@@ -132,7 +132,7 @@ function calcRevPAR(
   year: number,
   month?: number, // undefined = full year
 ): number {
-  const activeProps = properties.filter(p => p.ativo)
+  const activeProps = unidadesReservaveis(properties)
   if (activeProps.length === 0) return 0
 
   const isCurrentYear = year === new Date().getFullYear()
@@ -256,7 +256,7 @@ export default function RelatoriosPage() {
   const cancellationRate = useMemo(() => calcCancellationRate(bookings, year), [bookings, year])
   const collectionRate = useMemo(() => calcCollectionRate(bookings, year), [bookings, year])
 
-  const activeProps = useMemo(() => properties.filter(p => p.ativo), [properties])
+  const activeProps = useMemo(() => unidadesReservaveis(properties), [properties])
   const occupancyMonth = year === now.getFullYear() ? now.getMonth() : 11
 
   const propOccupancy = useMemo(() =>

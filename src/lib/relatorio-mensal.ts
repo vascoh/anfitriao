@@ -1,4 +1,4 @@
-import { occupancyForMonth } from './reservations'
+import { occupancyForMonth, unidadesReservaveis } from './reservations'
 import type { Booking, Property } from './types'
 
 /**
@@ -57,7 +57,9 @@ export function resumoMensal(
   const inicio = primeiroDia(ano, mes)
   const fim = primeiroDiaSeguinte(ano, mes)
 
-  const ativas = properties.filter(p => p.ativo !== false)
+  // Só o que se aluga: uma casa com quartos é o contentor deles, e contá-la
+  // como unidade diluiria a ocupação e o RevPAR com noites que não existem.
+  const ativas = unidadesReservaveis(properties)
   const doMes = bookings.filter(b => conta(b) && b.check_in >= inicio && b.check_in < fim)
 
   const receita = doMes.reduce((s, b) => s + (b.preco_total || 0), 0)

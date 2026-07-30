@@ -6,6 +6,16 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-30] Limpeza para o mês real + a casa deixa de contar como unidade
+
+- 🧹 **Produção limpa**: apagadas as 2 reservas de teste (`52accf4f`, `27ad9ffb`) e os 2 hóspedes órfãos (Vasco Henriques, Tia zezinha). Fica **0 reservas, 0 hóspedes, 4 propriedades**. Cópia em `.backups/dump-antes-limpeza-2026-07-30.json` (fora do git).
+- 🛑 **A "Casa de Vasco" NÃO foi apagada** — o pedido inicial era apagá-la, mas a estrutura já era a descrita: `parent_id` dos 3 quartos aponta para ela. É onde vivem a morada real (Rua de Bijagós 13A, Amora) e as comodidades da casa; os quartos têm morada vazia. Com `ON DELETE SET NULL`, apagá-la deixaria 3 alojamentos órfãos sem morada e faria o site público voltar a listar 3 cards independentes — o bug corrigido a 13/07.
+- 🎯 **Decisão do utilizador**: a casa não se aluga inteira, só os quartos. Implementado como **regra derivada, não campo novo**: `unidadesReservaveis()` em `lib/reservations.ts` — um alojamento com quartos ativos é o contentor deles, não uma unidade.
+- 🐛 **Bug real que isto corrigiu**, e que teria estragado os números do mês: a ocupação e o RevPAR contavam a casa-mãe como unidade alugável. Com 3 quartos e 1 casa, o denominador era 4 unidades × dias em vez de 3 — **ocupação e RevPAR subavaliados em ~25%**, e a Casa de Vasco aparecia todos os dias na lista de "livres" do `/hoje`. Corrigido em 6 sítios: `relatorio-mensal.ts` (email mensal), `/hoje` (ocupação e vagas), `/relatorios` (ocupação por mês, RevPAR, ocupação por alojamento) e o seletor do `/reservas/nova`, que deixava criar reservas na casa inteira.
+- 🧭 Derivado da estrutura em vez de um campo próprio para não haver estado que contradiga a realidade quando se acrescenta ou remove um quarto — e porque o site público **já** se comportava assim (`/book/[id]` de uma casa com quartos mostra a lista de quartos, nunca um formulário). A app interna é que discordava.
+- ✅ 334 testes (5 novos), typecheck 0, lint 0, build OK.
+- ⚠️ **Não mexido, a confirmar**: `/financeiro` filtra `!x.parent_id`, ou seja mostra só as casas-mãe no seletor de propriedade. Como as reservas vivem nos quartos, filtrar por "Casa de Vasco" não devolve nada. Não é o mesmo problema e pode ser intencional (agregar por casa) — mas com o mês real vai dar de caras com isto.
+
 ### [2026-07-30] RGPD a sério — retenção por código, acesso e apagamento (Fase 2.16)
 
 Fecha ANF-1.10, ANF-1.11 e ANF-1.12. Até aqui a retenção era uma frase na política de privacidade; passa a ser uma rotina que corre todos os dias.
