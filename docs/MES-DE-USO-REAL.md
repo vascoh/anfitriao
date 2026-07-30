@@ -34,15 +34,22 @@ aparecer, nada foi enviado — ela é a prova, não a ausência de erros.
 O núcleo do produto. **Nunca correu com dados reais**: as 4 propriedades têm
 `ical_feeds` vazio.
 
-1. Airbnb → Calendário → Disponibilidade → Sincronizar calendários → **Exportar
-   calendário**. Copiar o URL `.ics`.
-2. Booking.com → Extranet → Tarifas e disponibilidade → Sincronização de
-   calendários → exportar.
-3. Colar em Propriedades → *(cada alojamento)* → Editar → Feeds iCal.
-4. Carregar em sincronizar à mão e confirmar que aparecem reservas.
+**Com o Amenitiz ligado, importa-se dele e só dele** — já agrega o Airbnb e o
+Booking. Ligar também as OTA diretamente duplica cada reserva.
 
-Os domínios localizados (`airbnb.pt` e afins) passaram a ser aceites hoje —
-antes o URL copiado do site português era rejeitado com "URL não permitido".
+1. Amenitiz → **Channel Manager → iCals**. Copiar o endereço de **cada quarto**
+   (são 3: Individual, Casal, Familiar — a Casa de Vasco não leva nenhum).
+2. Colar em Propriedades → *(cada quarto)* → Editar → Calendários externos,
+   com a fonte **"Amenitiz ou outro gestor de canais"**.
+3. Carregar em sincronizar à mão e confirmar que aparecem reservas.
+
+Os passos de cada plataforma estão agora dentro da app, no próprio formulário
+("Onde encontro este endereço?"). Se um endereço for recusado, a mensagem diz
+**qual é o domínio** — basta pedires para ser acrescentado.
+
+⚠️ **O iCal só transporta datas ocupadas.** Preços, estadia mínima e restrições
+de chegada continuam a definir-se no Amenitiz — não é limitação da app, é do
+formato. O plano para os trazer para cá está em `docs/SINCRONIZACAO.md`.
 
 ⚠️ **Limite conhecido:** a sincronização automática corre **1×/dia** (às 04:00).
 É o máximo do plano Hobby da Vercel, que restringe crons a uma execução diária.

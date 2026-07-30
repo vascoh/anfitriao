@@ -6,6 +6,18 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-07-30] Sincronização: instruções na app + o plano para preços e restrições
+
+Contexto novo: o Vasco tem o **Amenitiz** como gestor de canais ativo. Isso muda a topologia certa e destapou uma mina.
+
+- 🧨 **O feed do Amenitiz seria recusado** — `amenitiz.com`/`amenitiz.io` não estavam na allowlist anti-SSRF. Mesma classe do `airbnb.pt`. Acrescentados, mais Smoobu, Lodgify e Beds24.
+- 💬 **A mensagem de recusa passa a nomear o domínio**: "O domínio «x» não está na lista de plataformas suportadas". Antes era um beco sem saída ("URL não permitido") que não distinguia http, domínio em falta ou URL partido. Agora um domínio novo é um pedido de 30 segundos em vez de uma investigação.
+- 📖 **Instruções dentro do formulário**, não num manual à parte: `lib/ical-guias.ts` tem os passos de menu de cada plataforma (verificados contra a documentação pública), o exemplo do endereço e as notas. Há teste a garantir que os exemplos que ensinamos **passam na allowlist** — um guia que ensina um URL recusado é pior do que nenhum.
+- ⚠️ **Aviso de duplicação** (`deveAvisarDuplicacao`): quem já tem gestor de canais ligado e tenta acrescentar o Airbnb recebe aviso. A mesma reserva chegaria por dois caminhos com UID diferentes, a deduplicação não a apanharia e a ocupação passaria dos 100 %. Com o Amenitiz é **um feed por quarto, dele e só dele**.
+- 📄 **`docs/SINCRONIZACAO.md`** — a resposta ao "botão para sincronizar o resto": **não pode existir por iCal**. O formato só transporta datas ocupadas, como a própria documentação do Amenitiz confirma. Proposta em três fases (observador → consultor → gestor), sendo a fase intermédia uma **fila de "por aplicar"** que usa o modelo que já existe (`price_rules`, `tarifas`, `platform_rates`) e é o mesmo que um `ChannelAdapter` enviaria — quando a API do Amenitiz estiver ligada, a fila drena sozinha em vez de à mão. Nada se deita fora.
+- 👤 **Pendência humana barata e com prazo longo**: pedir acesso à API no painel do Amenitiz (Definições → API). Sem isso não há fase 3, e a resposta demora o que demorar.
+- ✅ 345 testes (11 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-07-30] Limpeza para o mês real + a casa deixa de contar como unidade
 
 - 🧹 **Produção limpa**: apagadas as 2 reservas de teste (`52accf4f`, `27ad9ffb`) e os 2 hóspedes órfãos (Vasco Henriques, Tia zezinha). Fica **0 reservas, 0 hóspedes, 4 propriedades**. Cópia em `.backups/dump-antes-limpeza-2026-07-30.json` (fora do git).

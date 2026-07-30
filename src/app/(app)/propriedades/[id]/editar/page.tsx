@@ -9,14 +9,52 @@ import { toast } from 'sonner'
 import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType, IcalFeed, BookingSource } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { GUIAS, GUIA_AMENITIZ, AVISO_FONTE_DUPLICADA, deveAvisarDuplicacao, eGestorDeCanais } from '@/lib/ical-guias'
 
 const ICAL_SOURCES: { value: BookingSource; label: string }[] = [
+  { value: 'outro', label: 'Amenitiz ou outro gestor de canais' },
   { value: 'airbnb', label: 'Airbnb' },
   { value: 'booking', label: 'Booking.com' },
   { value: 'expedia', label: 'Expedia' },
   { value: 'vrbo', label: 'VRBO' },
-  { value: 'outro', label: 'Outro' },
 ]
+
+/**
+ * Passos concretos para ir buscar o endereço iCal à plataforma escolhida.
+ * O conteúdo vive em `lib/ical-guias.ts`; aqui só se apresenta.
+ *
+ * Em "Outro" mostra-se o Amenitiz por extenso: é o gestor de canais que
+ * sabemos estar em uso, e passos concretos valem mais do que uma instrução
+ * genérica que não diz onde carregar.
+ */
+function GuiaIcalPainel({ fonte }: { fonte: BookingSource }) {
+  const guia = fonte === 'outro' ? GUIA_AMENITIZ : GUIAS[fonte as keyof typeof GUIAS]
+  if (!guia) return null
+
+  return (
+    <details className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+      <summary className="text-xs font-semibold cursor-pointer select-none">
+        Onde encontro este endereço? · {guia.label}
+      </summary>
+      <ol className="mt-3 flex flex-col gap-1.5 list-decimal list-inside">
+        {guia.passos.map(passo => (
+          <li key={passo} className="text-xs text-foreground/80 leading-relaxed">{passo}</li>
+        ))}
+      </ol>
+      <p className="mt-2.5 text-[11px] text-muted-foreground break-all">
+        Deve parecer-se com: <code className="font-mono">{guia.exemploUrl}</code>
+      </p>
+      {guia.notas?.map(nota => (
+        <p key={nota} className="mt-1.5 text-[11px] text-amber-700 leading-relaxed">{nota}</p>
+      ))}
+      {fonte === 'outro' && (
+        <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+          Noutro gestor, procura uma secção chamada iCal, Sincronização de calendários ou Exportar calendário.
+        </p>
+      )}
+    </details>
+  )
+}
 
 const PRESET_COLORS = [
   '#C2714F', '#E07B39', '#3D82F6', '#10B981', '#8B5CF6',
@@ -66,7 +104,9 @@ export default function EditarPropriedadePage() {
   const [regrasCasa, setRegrasCasa] = useState('')
   const [icalFeeds, setIcalFeeds] = useState<IcalFeed[]>([])
   const [newFeedUrl, setNewFeedUrl] = useState('')
-  const [newFeedSource, setNewFeedSource] = useState<BookingSource>('airbnb')
+  const [newFeedSource, setNewFeedSource] = useState<BookingSource>('outro')
+  const temGestorDeCanais = icalFeeds.some(f => eGestorDeCanais(f.url))
+  const avisoDuplicacao = deveAvisarDuplicacao(icalFeeds.map(f => f.url), newFeedSource)
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
 
@@ -442,7 +482,15 @@ export default function EditarPropriedadePage() {
         {/* iCal Sync */}
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Calendários externos (iCal)</p>
-          <p className="text-xs text-muted-foreground -mt-1">Importa reservas do Airbnb, Booking.com e outras plataformas via URL iCal.</p>
+          <p className="text-xs text-muted-foreground -mt-1">
+            Traz para cá as reservas das plataformas. O iCal transporta <strong>só datas ocupadas</strong> —
+            preços, estadia mínima e restrições de chegada continuam a definir-se em cada plataforma.
+          </p>
+          {temGestorDeCanais && (
+            <p className="text-xs text-muted-foreground -mt-1">
+              Tens um gestor de canais ligado: as reservas do Airbnb e do Booking já vêm por aí.
+            </p>
+          )}
 
           {icalFeeds.map(feed => (
             <div key={feed.id} className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3">
@@ -471,6 +519,12 @@ export default function EditarPropriedadePage() {
             >
               {ICAL_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
+            <GuiaIcalPainel fonte={newFeedSource} />
+            {avisoDuplicacao && (
+              <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 leading-relaxed">
+                {AVISO_FONTE_DUPLICADA}
+              </p>
+            )}
             <div className="flex gap-2">
               <input
                 type="url"

@@ -24,6 +24,12 @@ const ALLOWED_HOSTNAMES = [
   'airbnb.com.br',
   'booking.com',
   'admin.booking.com',
+  // Gestores de canais: quem usa um deles importa daqui, não das OTA diretamente
+  'amenitiz.com',
+  'amenitiz.io',
+  'smoobu.com',
+  'lodgify.com',
+  'beds24.com',
   'vrbo.com',
   'homeaway.com',
   'expedia.com',
@@ -61,9 +67,30 @@ export class IcalFetchError extends Error {
  * Fetch an iCal feed with SSRF protection: HTTPS-only allowlisted hosts,
  * redirect destinations re-validated, 15s timeout, 5MB size cap.
  */
+/**
+ * Mensagem de recusa que diz o que foi recusado.
+ *
+ * A anterior — "URL não permitido" — era um beco sem saída: o anfitrião não
+ * ficava a saber se o problema era o http, o domínio ou o URL estar partido, e
+ * a plataforma dele podia estar simplesmente a faltar na lista. Nomear o
+ * domínio transforma isso num pedido de 30 segundos.
+ */
+export function mensagemUrlRecusado(url: string): string {
+  let parsed: URL | null = null
+  try {
+    parsed = new URL(url)
+  } catch {
+    return 'URL inválido. Copia o endereço completo, começado por https://'
+  }
+  if (parsed.protocol !== 'https:') {
+    return 'O endereço tem de começar por https:// — os feeds em http não são aceites.'
+  }
+  return `O domínio "${parsed.hostname}" não está na lista de plataformas suportadas. Se for o teu gestor de canais ou uma plataforma legítima, pede para ser acrescentado.`
+}
+
 export async function fetchIcalText(url: string): Promise<string> {
   if (!isAllowedIcalUrl(url)) {
-    throw new IcalFetchError('URL não permitido. Apenas feeds HTTPS de plataformas suportadas.', 403)
+    throw new IcalFetchError(mensagemUrlRecusado(url), 403)
   }
 
   const res = await fetch(url, {
