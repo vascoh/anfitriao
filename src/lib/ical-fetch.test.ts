@@ -12,6 +12,16 @@ describe('isAllowedIcalUrl', () => {
     expect(isAllowedIcalUrl('https://ical.booking.com/v1/export?t=x')).toBe(true) // subdomain
   })
 
+  it('accepts localised Airbnb domains — o anfitrião PT copia o URL de airbnb.pt', () => {
+    expect(isAllowedIcalUrl('https://www.airbnb.pt/calendar/ical/123.ics?s=abc')).toBe(true)
+    expect(isAllowedIcalUrl('https://www.airbnb.es/calendar/ical/123.ics')).toBe(true)
+    expect(isAllowedIcalUrl('https://www.airbnb.co.uk/calendar/ical/123.ics')).toBe(true)
+  })
+
+  it('rejects Airbnb TLDs fora da lista (a allowlist é explícita, não um padrão)', () => {
+    expect(isAllowedIcalUrl('https://www.airbnb.ru/calendar/ical/123.ics')).toBe(false)
+  })
+
   it('rejects plain HTTP', () => {
     expect(isAllowedIcalUrl('http://www.airbnb.com/calendar/ical/123.ics')).toBe(false)
   })

@@ -3,9 +3,25 @@ import 'server-only'
 // Allowlist of domains from which iCal feeds are accepted.
 // Prevents SSRF attacks where an attacker supplies an internal URL
 // (e.g. http://169.254.169.254/latest/meta-data/ on cloud VMs).
+//
+// Os domínios localizados do Airbnb estão aqui de propósito: o anfitrião
+// copia o URL de exportação a partir do site em que tem sessão iniciada, e
+// um anfitrião português está quase sempre em airbnb.pt. Sem estes, o feed
+// dele era rejeitado com "URL não permitido" e a culpa parecia ser do
+// Airbnb. Cada entrada cobre também `www.` e subdomínios (ver
+// isAllowedIcalUrl), por isso `ical.booking.com` já está coberto.
 const ALLOWED_HOSTNAMES = [
+  // Airbnb — .com e os domínios localizados mais prováveis num anfitrião europeu
   'airbnb.com',
+  'airbnb.pt',
+  'airbnb.es',
+  'airbnb.fr',
+  'airbnb.it',
+  'airbnb.de',
+  'airbnb.nl',
+  'airbnb.ie',
   'airbnb.co.uk',
+  'airbnb.com.br',
   'booking.com',
   'admin.booking.com',
   'vrbo.com',

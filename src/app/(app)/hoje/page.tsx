@@ -181,6 +181,33 @@ export default function HojePage() {
     [bookings, t]
   )
 
+  /**
+   * Sincronizações partidas ou paradas. Um feed que deixa de sincronizar é a
+   * falha mais cara do produto — traz dupla reserva — e era invisível: só
+   * aparecia a quem entrasse na página de edição da propriedade.
+   * O cron corre 1×/dia, por isso 48h sem sincronizar são duas execuções
+   * falhadas, não um atraso.
+   */
+  const feedsComProblema = useMemo(() => {
+    // Comparação por data (não por timestamp): mantém o memo puro e usa o
+    // mesmo `today()` do resto da página, sem o bug de fuso dos milissegundos.
+    const limite = addDays(t, -2)
+    return props.flatMap(p =>
+      (p.ical_feeds ?? [])
+        .filter(f => f.error || !f.last_sync || f.last_sync.slice(0, 10) < limite)
+        .map(f => ({
+          propId: p.id,
+          propNome: p.nome,
+          feedNome: f.nome,
+          motivo: f.error
+            ? f.error
+            : !f.last_sync
+              ? 'nunca sincronizou'
+              : `sem sincronizar desde ${fmtDate(f.last_sync.slice(0, 10))}`,
+        })),
+    )
+  }, [props, t])
+
   const proximasChegadas = useMemo(() => {
     const tomorrowStr = addDays(t, 1)
     const horizonStr = addDays(t, 7)
@@ -216,7 +243,7 @@ export default function HojePage() {
       .reduce((sum, b) => sum + b.preco_total, 0)
   }, [bookings, t])
 
-  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0
+  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
   const semPropriedades = loaded && props.length === 0
 
@@ -316,9 +343,22 @@ export default function HojePage() {
                 </p>
               </div>
               <span className="text-[11px] font-semibold text-amber-700 tabular-nums">
-                {pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length} item{pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length !== 1 ? 's' : ''}
+                {pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length + feedsComProblema.length} item{pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length + feedsComProblema.length !== 1 ? 's' : ''}
               </span>
             </div>
+            {feedsComProblema.map(f => (
+              <Link key={`feed-${f.propId}-${f.feedNome}`} href={`/propriedades/${f.propId}/editar`}
+                className="flex items-start gap-3 bg-red-50 border-b border-red-100 px-4 lg:px-8 py-3 active:bg-red-100 transition-colors">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-destructive">Calendário por sincronizar — risco de dupla reserva</p>
+                  <p className="text-xs text-destructive/75 truncate">
+                    {f.feedNome} · {f.propNome} · {f.motivo}
+                  </p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+              </Link>
+            ))}
             {pendentes.map(b => (
               <Link key={b.id} href={`/reservas/${b.id}`}
                 className="flex items-start gap-3 bg-amber-50 border-b border-amber-100 px-4 lg:px-8 py-3 active:bg-amber-100 transition-colors">
