@@ -1,4 +1,4 @@
-import { limiteDePropriedades, TRIAL_DIAS } from '@/lib/planos'
+import { limiteDeUnidades, PLAN_LIMITS, PLAN_PRICE_EUR, TRIAL_DIAS } from '@/lib/planos'
 
 /**
  * Fonte única das perguntas frequentes: alimenta o acordeão e o
@@ -23,9 +23,9 @@ export const PERGUNTAS = [
       'Depende do número de propriedades e do volume de reservas. O tempo sai sobretudo de três sítios: deixar de saltar entre os extranets das plataformas, o hóspede preencher sozinho os dados do check-in, e as obrigações legais — boletins, taxa turística, INE — deixarem de ser feitas de memória.',
   },
   {
-    pergunta: 'Posso ter várias propriedades?',
+    pergunta: 'E se eu tiver uma guest house ou um hotel pequeno?',
     resposta:
-      `Sim. O plano Starter cobre ${limiteDePropriedades('starter')} e o Pro ${limiteDePropriedades('pro')}. Acima disso temos planos Enterprise à medida — escreve para suporte@anfitrioes.pt. Podes mudar de plano a qualquer momento, sem perder dados.`,
+      `Cabe. Contamos quartos alugáveis, não propriedades: o Starter cobre ${limiteDeUnidades('starter')}, o Pro ${limiteDeUnidades('pro')} e o Empresa ${limiteDeUnidades('empresa')} por €${PLAN_PRICE_EUR.empresa}/mês — menos de €2,50 por quarto, quando a concorrência cobra 10 a 20 € por unidade. Acima de ${PLAN_LIMITS.empresa.propriedades_max} quartos, escreve para suporte@anfitrioes.pt. Podes mudar de plano a qualquer momento, sem perder dados.`,
   },
   {
     pergunta: 'Que apoio está incluído?',

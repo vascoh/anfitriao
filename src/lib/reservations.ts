@@ -293,3 +293,29 @@ export function unidadesReservaveis(properties: Property[]): Property[] {
   )
   return properties.filter(p => p.ativo && !contentores.has(p.id))
 }
+
+/**
+ * Quantas unidades alugáveis é que uma conta ocupa — a medida do limite do
+ * plano.
+ *
+ * Antes contavam-se as propriedades de topo, o que deixava um hotel de 40
+ * quartos caber no plano mais barato: os quartos são filhos e não contavam
+ * para nada. Contar unidades alugáveis é a única medida que trata da mesma
+ * forma três apartamentos e uma casa de três quartos — que é exatamente o
+ * mesmo trabalho para a plataforma e o mesmo valor para quem a usa.
+ *
+ * Repare-se numa consequência desejável: acrescentar o **primeiro** quarto a
+ * uma casa não gasta unidade nenhuma. A casa deixa de ser alugável no mesmo
+ * momento em que o quarto passa a sê-lo.
+ *
+ * Recebe só o que precisa (e não `Property[]`) para poder ser usada com o
+ * resultado mínimo de uma query.
+ */
+export function contarUnidadesReservaveis(
+  properties: Array<{ id: string; parent_id?: string | null; ativo?: boolean | null }>,
+): number {
+  const contentores = new Set(
+    properties.filter(p => p.parent_id && p.ativo !== false).map(p => p.parent_id),
+  )
+  return properties.filter(p => p.ativo !== false && !contentores.has(p.id)).length
+}

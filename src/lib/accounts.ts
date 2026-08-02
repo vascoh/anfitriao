@@ -5,7 +5,7 @@ import { logAudit } from './audit'
 // Use admin client so service_role bypasses RLS — accounts are never exposed to the browser.
 function getClient() { return createAdminClient() }
 
-export type AccountPlano = 'trial' | 'starter' | 'pro'
+export type AccountPlano = 'trial' | 'starter' | 'pro' | 'empresa'
 export type AccountEstado = 'trial' | 'activo' | 'suspenso' | 'cancelado'
 
 export interface Account {

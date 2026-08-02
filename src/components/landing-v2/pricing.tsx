@@ -8,7 +8,8 @@ import { Check } from 'lucide-react'
 import { staggerContainer, fadeInUp, VIEWPORT, EASE_OUT } from '@/lib/landing-animations'
 import {
   precoMensal,
-  limiteDePropriedadesCapitalizado,
+  precoPorUnidade,
+  limiteDeUnidadesCapitalizado,
   DESCONTO_ANUAL_LABEL,
   TRIAL_DIAS,
   PLAN_LIMITS,
@@ -31,7 +32,7 @@ const PLANOS: Plano[] = [
     preco: () => 'Grátis',
     resumo: `${TRIAL_DIAS} dias, sem cartão de crédito`,
     features: [
-      limiteDePropriedadesCapitalizado('trial'),
+      limiteDeUnidadesCapitalizado('trial'),
       'Calendário unificado',
       'Check-in online SIBA',
       'Concierge com IA',
@@ -44,10 +45,10 @@ const PLANOS: Plano[] = [
     nome: 'Starter',
     preco: (anual) => `€${precoMensal('starter', anual)}`,
     sufixo: '/mês',
-    resumo: limiteDePropriedadesCapitalizado('starter'),
+    resumo: limiteDeUnidadesCapitalizado('starter'),
     destaque: true,
     features: [
-      limiteDePropriedadesCapitalizado('starter'),
+      limiteDeUnidadesCapitalizado('starter'),
       'Reservas ilimitadas',
       'Concierge com IA ilimitado',
       'Check-in online SIBA',
@@ -60,16 +61,31 @@ const PLANOS: Plano[] = [
     nome: 'Pro',
     preco: (anual) => `€${precoMensal('pro', anual)}`,
     sufixo: '/mês',
-    resumo: limiteDePropriedadesCapitalizado('pro'),
+    resumo: limiteDeUnidadesCapitalizado('pro'),
     features: [
-      limiteDePropriedadesCapitalizado('pro'),
+      limiteDeUnidadesCapitalizado('pro'),
       'Tudo o do Starter',
-      'Relatórios avançados',
+      'Relatórios e RevPAR por alojamento',
+      'Site de reservas diretas',
       'Apoio prioritário',
-      'Acesso antecipado a novidades',
     ],
     cta: 'Começar',
     href: '/sign-up',
+  },
+  {
+    nome: 'Empresa',
+    preco: (anual) => `€${precoMensal('empresa', anual)}`,
+    sufixo: '/mês',
+    resumo: 'Guest houses, hostels e hotéis',
+    features: [
+      limiteDeUnidadesCapitalizado('empresa'),
+      `Menos de €${precoPorUnidade('empresa').toFixed(2).replace('.', ',')} por quarto`,
+      'Tudo o do Pro',
+      'Boletins do SIBA por estabelecimento',
+      'Migração assistida',
+    ],
+    cta: 'Falar connosco',
+    href: 'mailto:suporte@anfitrioes.pt?subject=Plano%20Empresa',
   },
 ]
 
@@ -132,7 +148,7 @@ export function Pricing() {
           initial="hidden"
           whileInView="visible"
           viewport={VIEWPORT}
-          className="mt-14 grid items-start gap-6 lg:grid-cols-3"
+          className="mt-14 grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-4"
         >
           {PLANOS.map((plano) => (
             <motion.li

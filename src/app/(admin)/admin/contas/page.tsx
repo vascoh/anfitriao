@@ -23,12 +23,14 @@ const planoLabel: Record<AccountPlano, string> = {
   trial:   '—',
   starter: 'Starter',
   pro:     'Pro',
+  empresa: 'Empresa',
 }
 
 const planoClasses: Record<AccountPlano, string> = {
   trial:   'text-muted-foreground',
   starter: 'text-blue-600 dark:text-blue-400 font-medium',
   pro:     'text-primary font-semibold',
+  empresa: 'text-emerald-600 dark:text-emerald-400 font-semibold',
 }
 
 function fmtDate(iso: string) {

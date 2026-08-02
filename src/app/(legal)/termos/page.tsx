@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { PaginaLegal, PorPreencher } from '@/components/landing-v2/pagina-legal'
-import { TRIAL_DIAS, PLAN_LIMITS } from '@/lib/planos'
+import { TRIAL_DIAS, limiteDeUnidades } from '@/lib/planos'
 
 export const metadata: Metadata = {
   title: 'Termos e Condições',
@@ -56,10 +56,14 @@ export default function TermosPage() {
       <h2>4. Planos e pagamento</h2>
       <p>
         Os planos disponíveis, respetivos limites e preços estão indicados na{' '}
-        <Link href="/#precos">página de preços</Link>. O plano Starter abrange até{' '}
-        {PLAN_LIMITS.starter.propriedades_max} alojamentos e o plano Pro até{' '}
-        {PLAN_LIMITS.pro.propriedades_max}. Os preços são apresentados em euros
-        e <PorPreencher>com ou sem IVA — indicar</PorPreencher>.
+        <Link href="/#precos">página de preços</Link>. O limite de cada plano é
+        contado em <strong>unidades alugáveis</strong>: um alojamento que se
+        arrenda por inteiro conta como uma unidade, e um alojamento dividido em
+        quartos conta tantas unidades quantos os quartos que se arrendam
+        separadamente. O plano Starter abrange {limiteDeUnidades('starter')}, o
+        Pro {limiteDeUnidades('pro')} e o Empresa {limiteDeUnidades('empresa')}.
+        Os preços são apresentados em euros e{' '}
+        <PorPreencher>com ou sem IVA — indicar</PorPreencher>.
       </p>
       <p>
         A subscrição é mensal ou anual, conforme escolhido, e renova-se

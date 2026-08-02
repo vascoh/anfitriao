@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { getAccountByClerkId } from '@/lib/accounts'
 import { logAudit } from '@/lib/audit'
 import type { Property } from '@/lib/types'
+import { contarUnidadesReservaveis } from '@/lib/reservations'
 const supabase = createAdminClient()
 
 export async function GET() {
@@ -63,23 +64,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sem permissão para alterar esta propriedade.' }, { status: 403 })
   }
 
-  // Limite do plano só se aplica à criação de novas propriedades de topo
-  if (!existing && !body.parent_id) {
-    const { count } = await supabase
+  /* Limite do plano, em unidades alugáveis.
+   *
+   * Contava-se propriedades de topo, o que deixava um hotel de 40 quartos
+   * caber no plano mais barato: os quartos são filhos e não contavam para
+   * nada. Passa a contar-se o que se aluga.
+   *
+   * Simula-se a criação antes de a fazer, porque a resposta depende da
+   * estrutura e não de uma soma: acrescentar o **primeiro** quarto a uma casa
+   * não gasta unidade nenhuma — a casa deixa de ser alugável no mesmo momento
+   * em que o quarto passa a sê-lo. */
+  if (!existing) {
+    const { data: atuais } = await supabase
       .from('properties')
-      .select('id', { count: 'exact', head: true })
+      .select('id, parent_id, ativo')
       .eq('owner_id', userId)
-      .is('parent_id', null)
 
-    const atual = count ?? 0
+    const antes = contarUnidadesReservaveis(atuais ?? [])
+    const depois = contarUnidadesReservaveis([
+      ...(atuais ?? []),
+      { id: '__nova__', parent_id: body.parent_id ?? null, ativo: body.ativo !== false },
+    ])
 
-    if (atual >= account.propriedades_max) {
+    if (depois > antes && antes >= account.propriedades_max) {
+      const rotulo = body.parent_id ? 'quartos' : 'alojamentos'
       return NextResponse.json(
         {
-          error: `Limite do teu plano atingido (${atual}/${account.propriedades_max} propriedades). Faz upgrade para adicionar mais.`,
+          error: `Limite do teu plano atingido (${antes}/${account.propriedades_max} ${rotulo}). Faz upgrade para adicionar mais.`,
           code:  'LIMIT_REACHED',
           limite: account.propriedades_max,
-          atual,
+          atual: antes,
         },
         { status: 403 },
       )

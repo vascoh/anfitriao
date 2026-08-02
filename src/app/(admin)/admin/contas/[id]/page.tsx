@@ -4,6 +4,7 @@ import { getAccountById } from '@/lib/accounts'
 import { createAdminClient } from '@/lib/supabase'
 import { EditAccountForm } from './EditAccountForm'
 import type { AccountEstado, AccountPlano } from '@/lib/accounts'
+import { PLAN_PRICE_EUR, limiteDeUnidades } from '@/lib/planos'
 
 const supabase = createAdminClient()
 
@@ -18,8 +19,13 @@ const estadoClasses: Record<AccountEstado, string> = {
   suspenso:  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   cancelado: 'bg-muted text-muted-foreground',
 }
+// Derivado de lib/planos para o painel do admin não poder divergir do preço
+// e do limite que o cliente vê.
 const planoLabel: Record<AccountPlano, string> = {
-  trial: '— Sem plano pago', starter: 'Starter · €19/mês', pro: 'Pro · €39/mês',
+  trial: '— Sem plano pago',
+  starter: `Starter · €${PLAN_PRICE_EUR.starter}/mês · ${limiteDeUnidades('starter')}`,
+  pro: `Pro · €${PLAN_PRICE_EUR.pro}/mês · ${limiteDeUnidades('pro')}`,
+  empresa: `Empresa · €${PLAN_PRICE_EUR.empresa}/mês · ${limiteDeUnidades('empresa')}`,
 }
 
 function fmtDatetime(iso: string) {

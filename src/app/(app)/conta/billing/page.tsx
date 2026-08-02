@@ -1,7 +1,8 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { getAccountByClerkId } from '@/lib/accounts'
-import { PLAN_LIMITS } from '@/lib/stripe'
+import { PLAN_PRICE_IDS } from '@/lib/stripe'
+import { PLAN_NOME, PLAN_PRICE_EUR, limiteDeUnidadesCapitalizado } from '@/lib/planos'
 import { UpgradeButton } from './UpgradeButton'
 import type { AccountEstado } from '@/lib/accounts'
 
@@ -31,34 +32,53 @@ const estadoBanner: Record<AccountEstado, { bg: string; text: string; msg: strin
   },
 }
 
+/**
+ * Planos oferecidos, derivados de `lib/planos` — os números nunca são
+ * escritos à mão aqui, para a página de faturação não poder contradizer a
+ * landing nem o que o Stripe cobra.
+ *
+ * As funcionalidades listadas são só as que existem. A versão anterior
+ * prometia "Integração multi-canal" no Pro, que não existe: o que há é
+ * sincronização por iCal, e dizê-lo de outra maneira é vender o que não se
+ * entrega.
+ */
 const PLANOS = [
   {
     key: 'starter' as const,
-    nome: 'Starter',
-    preco: '19',
-    priceIdEnv: 'STRIPE_STARTER_PRICE_ID' as const,
+    nome: PLAN_NOME.starter,
+    preco: String(PLAN_PRICE_EUR.starter),
     features: [
-      'Até 3 propriedades',
-      'AI Concierge ilimitado',
-      'Calendário + iCal sync',
-      'Check-in online',
-      'Boletim SIBA pronto a submeter',
-      'Suporte por email',
+      limiteDeUnidadesCapitalizado('starter'),
+      'Calendário unificado com iCal',
+      'Check-in online com leitura de documento',
+      'Boletins do SIBA',
+      'Faturação certificada e SAF-T',
+      'Concierge com IA',
     ],
   },
   {
     key: 'pro' as const,
-    nome: 'Pro',
-    preco: '39',
-    priceIdEnv: 'STRIPE_PRO_PRICE_ID' as const,
+    nome: PLAN_NOME.pro,
+    preco: String(PLAN_PRICE_EUR.pro),
     destaque: true,
     features: [
-      'Até 10 propriedades',
+      limiteDeUnidadesCapitalizado('pro'),
       'Tudo do Starter',
-      'Relatórios avançados',
-      'Suporte prioritário',
-      'Acesso antecipado a novas features',
-      'Integração multi-canal',
+      'Relatórios e RevPAR por alojamento',
+      'Site de reservas diretas',
+      'Apoio prioritário',
+    ],
+  },
+  {
+    key: 'empresa' as const,
+    nome: PLAN_NOME.empresa,
+    preco: String(PLAN_PRICE_EUR.empresa),
+    features: [
+      limiteDeUnidadesCapitalizado('empresa'),
+      'Tudo do Pro',
+      'Credenciais do SIBA por estabelecimento',
+      'Apoio com resposta no próprio dia',
+      'Migração assistida a partir do teu sistema atual',
     ],
   },
 ]
@@ -81,8 +101,13 @@ export default async function BillingPage({
   const isTrial    = account.estado === 'trial'
   const isActivo   = account.estado === 'activo'
   const banner     = estadoBanner[account.estado]
-  const starterPriceId = process.env.STRIPE_STARTER_PRICE_ID ?? ''
-  const proPriceId     = process.env.STRIPE_PRO_PRICE_ID ?? ''
+  // Um plano sem Price ID configurado não é comprável — o cartão mostra
+  // "falar connosco" em vez de um botão que rebentaria no checkout.
+  const priceIds: Record<string, string> = {
+    starter: PLAN_PRICE_IDS.starter ?? '',
+    pro:     PLAN_PRICE_IDS.pro ?? '',
+    empresa: PLAN_PRICE_IDS.empresa ?? '',
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -157,7 +182,7 @@ export default async function BillingPage({
             )}
 
             <p className="text-xs text-muted-foreground mt-1">
-              {PLAN_LIMITS[account.plano].propriedades_max} {PLAN_LIMITS[account.plano].propriedades_max === 1 ? 'propriedade' : 'propriedades'} incluídas
+              {limiteDeUnidadesCapitalizado(account.plano)}
             </p>
           </div>
 
@@ -190,9 +215,9 @@ export default async function BillingPage({
       {(isTrial || account.estado === 'cancelado' || account.estado === 'suspenso') && (
         <>
           <p className="text-sm font-semibold mb-4">Escolhe um plano</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PLANOS.map(plano => {
-              const priceId = plano.key === 'starter' ? starterPriceId : proPriceId
+              const priceId = priceIds[plano.key] ?? ''
               const isCurrentPlan = account.plano === plano.key && isActivo
 
               return (
@@ -229,12 +254,21 @@ export default async function BillingPage({
                     ))}
                   </ul>
 
-                  <UpgradeButton
-                    priceId={priceId}
-                    label={isCurrentPlan ? 'Plano actual' : `Activar ${plano.nome}`}
-                    disabled={isCurrentPlan || !priceId}
-                    variant={plano.destaque ? 'primary' : 'outline'}
-                  />
+                  {priceId ? (
+                    <UpgradeButton
+                      priceId={priceId}
+                      label={isCurrentPlan ? 'Plano actual' : `Activar ${plano.nome}`}
+                      disabled={isCurrentPlan}
+                      variant={plano.destaque ? 'primary' : 'outline'}
+                    />
+                  ) : (
+                    <a
+                      href={`mailto:suporte@anfitrioes.pt?subject=Plano ${plano.nome}`}
+                      className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-5 text-sm font-semibold transition-colors hover:bg-muted"
+                    >
+                      Falar connosco
+                    </a>
+                  )}
                 </div>
               )
             })}

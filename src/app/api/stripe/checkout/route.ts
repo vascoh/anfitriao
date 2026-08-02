@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { stripe, priceToPlano } from '@/lib/stripe'
+import { stripe, priceToPlano, PLAN_PRICE_IDS } from '@/lib/stripe'
 import { getAccountByClerkId, updateAccount } from '@/lib/accounts'
 import { APP_URL } from '@/lib/config'
 
@@ -9,7 +9,9 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   const { priceId } = await req.json() as { priceId: string }
-  const allowedPriceIds = [process.env.STRIPE_STARTER_PRICE_ID, process.env.STRIPE_PRO_PRICE_ID].filter(Boolean)
+  // Só os preços que a plataforma conhece — um priceId arbitrário do Stripe
+  // criaria uma subscrição que o webhook não sabe mapear para plano nenhum.
+  const allowedPriceIds = Object.values(PLAN_PRICE_IDS).filter(Boolean)
   if (!priceId || !allowedPriceIds.includes(priceId)) {
     return NextResponse.json({ error: 'priceId inválido' }, { status: 400 })
   }
