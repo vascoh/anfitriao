@@ -2,6 +2,8 @@
 
 _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`. Roadmap completo em `docs/02-ROADMAP.md` / `docs/SAAS_ARCHITECTURE.md` §12._
 
+> ⚠️ **2026-08-02** — `docs/DOSSIE-ESTRATEGICO-2026-08.md` substitui a tese central do `PLANO-ESTRATEGICO-2026.md`. Três correções que alteram prioridades: (1) a conformidade PT **não** é um fosso vazio — EazyAL e Hostkit já a entregam; (2) o **SIBA tem web service público** e as credenciais são do anfitrião, obtidas no portal em 1–3 dias úteis — a "pendência AIMA" abaixo é falsa; (3) a landing v2 promete caixa de entrada unificada e contrato eletrónico, que não existem.
+
 ## Fase 0 — Planeamento ✅ (2026-07-26)
 - [x] Auditoria completa do projeto existente
 - [x] `docs/SAAS_ARCHITECTURE.md` (arquitetura funcional e técnica completa)

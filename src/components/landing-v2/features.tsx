@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { Calendar, MessageSquare, FileText, TrendingUp, type LucideIcon } from 'lucide-react'
+import { Calendar, ShieldCheck, FileText, TrendingUp, type LucideIcon } from 'lucide-react'
 import type { Variants } from 'motion/react'
 import { staggerContainer, fadeInUp, VIEWPORT, EASE_OUT } from '@/lib/landing-animations'
 
@@ -21,26 +21,33 @@ type Feature = {
   descricao: string
 }
 
+/**
+ * Regra desta lista: **só entra o que já está no produto hoje**.
+ *
+ * Uma funcionalidade prometida aqui e ausente lá dentro custa mais do que
+ * ganha — converte pior (quem conhece o mercado deteta) e churna muito pior
+ * (quem assina descobre). Se for preciso escrever "em breve", não entra.
+ */
 const FEATURES: Feature[] = [
   {
     icon: Calendar,
     titulo: 'Calendário unificado',
-    descricao: 'Sincroniza Airbnb, Booking e Vrbo, com atualização contínua.',
+    descricao: 'Airbnb, Booking e Vrbo no mesmo calendário, sincronizados todos os dias — ou à mão, quando não podes esperar.',
   },
   {
-    icon: MessageSquare,
-    titulo: 'Mensagens centralizadas',
-    descricao: 'Todas as conversas numa única caixa de entrada.',
+    icon: ShieldCheck,
+    titulo: 'Conformidade portuguesa',
+    descricao: 'Boletins do SIBA prontos a entregar, taxa turística calculada por concelho, mapa do INE e alertas de seguro e RNAL.',
   },
   {
     icon: FileText,
-    titulo: 'Documentos e check-in',
-    descricao: 'Check-in digital, contrato eletrónico e fotografias.',
+    titulo: 'Check-in online',
+    descricao: 'O hóspede preenche os dados e fotografa o documento antes de chegar. Chega com o boletim já feito.',
   },
   {
     icon: TrendingUp,
-    titulo: 'Análise e finanças',
-    descricao: 'Ocupação, receita e retorno por propriedade.',
+    titulo: 'Receita e despesas',
+    descricao: 'Ocupação, RevPAR, comissões retidas pelas plataformas e lucro líquido por alojamento.',
   },
 ]
 

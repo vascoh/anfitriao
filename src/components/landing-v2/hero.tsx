@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
 import { Sparkles, ArrowRight, PlayCircle } from 'lucide-react'
 import { wordContainer, wordReveal, slideUp, EASE_OUT } from '@/lib/landing-animations'
+import { TRIAL_DIAS } from '@/lib/planos'
 import { HeroVisual } from './hero-visual'
 
 const TITULO = ['Centraliza', 'tudo.', 'Hospeda', 'melhor.']
@@ -71,8 +72,9 @@ export function Hero() {
             animate="visible"
             className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300 sm:text-xl"
           >
-            Tens as propriedades, as reservas e os hóspedes num só lugar.
-            Aumenta a ocupação. Reduz os custos operacionais.
+            Os alojamentos, as reservas e os hóspedes num só lugar — com o
+            check-in online feito e as obrigações legais portuguesas tratadas
+            no mesmo sítio.
           </motion.p>
 
           <motion.div
@@ -86,7 +88,7 @@ export function Hero() {
                 href="/sign-up"
                 className="group inline-flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-cyan-500 px-7 py-3.5 text-base font-semibold text-slate-950 shadow-lg shadow-cyan-500/25 transition-shadow hover:shadow-xl hover:shadow-cyan-500/50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-400 sm:w-auto"
               >
-                Teste grátis (14 dias)
+                Teste grátis ({TRIAL_DIAS} dias)
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
             </motion.div>

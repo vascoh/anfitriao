@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
 import { ArrowRight } from 'lucide-react'
 import { fadeInUp, VIEWPORT } from '@/lib/landing-animations'
+import { TRIAL_DIAS } from '@/lib/planos'
 
 export function CTASection() {
   const reduced = useReducedMotion()
@@ -27,7 +28,7 @@ export function CTASection() {
             Pronto para simplificar a gestão?
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-lg text-slate-900/80">
-            14 dias grátis. Sem cartão de crédito. Sem compromisso.
+            {TRIAL_DIAS} dias grátis. Sem cartão de crédito. Sem compromisso.
           </p>
 
           <motion.div

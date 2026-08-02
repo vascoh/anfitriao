@@ -13,9 +13,14 @@ export const PERGUNTAS = [
       'Não. Podes começar com uma só — o Airbnb, por exemplo — e ligas as restantes quando quiseres. A sincronização é feita por iCal, o formato que todas as grandes plataformas suportam.',
   },
   {
+    pergunta: 'De quanto em quanto tempo sincroniza?',
+    resposta:
+      'A sincronização automática corre uma vez por dia, e podes forçá-la a qualquer momento com um toque. É importante saberes porquê: o iCal — o formato que o Airbnb e o Booking usam para partilhar calendários — não é instantâneo em plataforma nenhuma. Por isso não prometemos eliminar as duplas reservas: reduzimos muito o risco e avisamos-te quando um calendário falha ou fica sem sincronizar há mais de 48 horas.',
+  },
+  {
     pergunta: 'Quanto tempo poupo por mês?',
     resposta:
-      'Depende do número de propriedades e do volume de reservas. Os anfitriões que centralizam calendário, mensagens e check-in costumam reduzir de forma significativa o tempo gasto em tarefas administrativas repetidas.',
+      'Depende do número de propriedades e do volume de reservas. O tempo sai sobretudo de três sítios: deixar de saltar entre os extranets das plataformas, o hóspede preencher sozinho os dados do check-in, e as obrigações legais — boletins, taxa turística, INE — deixarem de ser feitas de memória.',
   },
   {
     pergunta: 'Posso ter várias propriedades?',

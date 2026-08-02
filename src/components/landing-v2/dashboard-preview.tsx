@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import { motion, useScroll, useTransform } from 'motion/react'
-import { Calendar, Inbox, Building2, TrendingUp } from 'lucide-react'
+import { Calendar, ShieldCheck, Building2 } from 'lucide-react'
 import { fadeInUp, scaleIn, VIEWPORT } from '@/lib/landing-animations'
 
 const PROPRIEDADES = [
@@ -11,10 +11,16 @@ const PROPRIEDADES = [
   { nome: 'Loft Ribeira', ocupacao: 85, estado: 'Check-in hoje' },
 ]
 
-const MENSAGENS = [
-  { nome: 'Marta S.', canal: 'Airbnb', texto: 'A que horas posso chegar?' },
-  { nome: 'Tiago R.', canal: 'Booking', texto: 'Há estacionamento perto?' },
-  { nome: 'Ana L.', canal: 'Direto', texto: 'Obrigada, correu tudo bem!' },
+/**
+ * O painel ilustrado tem de mostrar apenas ecrãs que existem. A versão
+ * anterior desta secção mostrava uma caixa de entrada com mensagens do Airbnb
+ * e do Booking — funcionalidade que o produto não tem. Foi substituída pela
+ * conformidade, que existe (`/conformidade`, `/documentos`).
+ */
+const CONFORMIDADE = [
+  { titulo: 'Boletins do SIBA', detalhe: '2 prontos a entregar', estado: 'aviso' as const },
+  { titulo: 'Taxa turística · julho', detalhe: 'Mapa calculado', estado: 'ok' as const },
+  { titulo: 'Seguro de responsabilidade civil', detalhe: 'Válido até 14/03/2027', estado: 'ok' as const },
 ]
 
 export function DashboardPreview() {
@@ -46,8 +52,8 @@ export function DashboardPreview() {
             Tudo o que precisas num único lugar
           </h2>
           <p className="mt-4 text-lg text-slate-400">
-            Calendário, caixa de entrada e propriedades — no mesmo ecrã, atualizados
-            ao mesmo tempo.
+            Calendário, obrigações legais e alojamentos no mesmo ecrã. O que tens
+            de fazer hoje aparece primeiro.
           </p>
         </motion.div>
 
@@ -110,23 +116,24 @@ export function DashboardPreview() {
               </div>
             </div>
 
-            {/* Caixa de entrada */}
+            {/* Conformidade */}
             <div className="rounded-xl border border-white/10 bg-slate-950/50 p-5">
               <div className="flex items-center gap-2">
-                <Inbox className="size-4 text-cyan-400" aria-hidden />
-                <h3 className="text-sm font-semibold text-white">Caixa de entrada</h3>
+                <ShieldCheck className="size-4 text-cyan-400" aria-hidden />
+                <h3 className="text-sm font-semibold text-white">Conformidade</h3>
               </div>
               <ul className="mt-4 space-y-3">
-                {MENSAGENS.map((m) => (
-                  <li key={m.nome} className="rounded-lg bg-white/[0.04] p-3">
+                {CONFORMIDADE.map((c) => (
+                  <li key={c.titulo} className="rounded-lg bg-white/[0.04] p-3">
                     <div className="flex items-center gap-2">
-                      <span className="grid size-6 place-items-center rounded-full bg-cyan-500/20 text-[10px] font-bold text-cyan-300">
-                        {m.nome.charAt(0)}
-                      </span>
-                      <span className="text-xs font-medium text-white">{m.nome}</span>
-                      <span className="ml-auto text-[10px] text-slate-400">{m.canal}</span>
+                      <span
+                        className={`size-2 shrink-0 rounded-full ${
+                          c.estado === 'ok' ? 'bg-emerald-400' : 'bg-amber-400'
+                        }`}
+                      />
+                      <span className="text-xs font-medium text-white">{c.titulo}</span>
                     </div>
-                    <p className="mt-1.5 truncate text-xs text-slate-400">{m.texto}</p>
+                    <p className="mt-1.5 truncate text-xs text-slate-400">{c.detalhe}</p>
                   </li>
                 ))}
               </ul>
@@ -136,10 +143,11 @@ export function DashboardPreview() {
             <div className="rounded-xl border border-white/10 bg-slate-950/50 p-5 lg:col-span-3">
               <div className="flex items-center gap-2">
                 <Building2 className="size-4 text-cyan-400" aria-hidden />
-                <h3 className="text-sm font-semibold text-white">Propriedades</h3>
-                <span className="ml-auto flex items-center gap-1 text-xs text-emerald-400">
-                  <TrendingUp className="size-3.5" aria-hidden /> +12% ocupação
-                </span>
+                <h3 className="text-sm font-semibold text-white">Alojamentos</h3>
+                {/* Sem métrica de resultado: um "+12% ocupação" sem cliente que
+                    o sustente é uma alegação comercial não comprovável
+                    (Diretiva Omnibus), não um detalhe decorativo. */}
+                <span className="ml-auto text-xs text-slate-400">3 alojamentos</span>
               </div>
               <ul className="mt-4 grid gap-3 sm:grid-cols-3">
                 {PROPRIEDADES.map((p) => (
@@ -164,6 +172,10 @@ export function DashboardPreview() {
             </div>
           </div>
         </motion.div>
+
+        <p className="mt-4 text-center text-xs text-slate-400">
+          Ilustração do painel com dados de exemplo.
+        </p>
       </div>
     </section>
   )
