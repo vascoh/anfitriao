@@ -556,6 +556,27 @@ Só depois de 100 clientes em Portugal. O motor é o mesmo; muda a tabela de obr
 
 ---
 
+## Anexo — executado a 2026-08-02/03, logo após esta auditoria
+
+| # | Item | Estado |
+|---|---|---|
+| 0.1 | Copy enganosa da landing corrigida (caixa de entrada, contrato eletrónico, "atualização contínua", "+12 %") e FAQ nova sobre a latência do iCal | ✅ em produção |
+| 1.1 | **SIBA por web service** — `siba-xml.ts` (MovimentoBAL + SOAP + leitura da resposta), `siba-mapping.ts` (tradução dos dados da app), `siba-api.ts` (3 tentativas, recuo exponencial), migrações 030/031, formulário em `/conformidade`, `pais_residencia` no check-in | ✅ em produção, à espera de credenciais |
+| 1.2 | **I1 — prova de submissão**: tabela `siba_submissoes` com o SHA-256 do que foi enviado e a resposta em bruto | ✅ |
+| 0.5 (parcial) | `crypto.ts` (AES-256-GCM) — a chave de acesso ao SIBA é guardada encriptada; sem `APP_ENCRYPTION_KEY` a app **recusa** gravar em vez de guardar em claro. Mesma base para os campos de documento | ✅ |
+| — | `/api/properties` deixou de devolver a chave encriptada ao browser | ✅ |
+| D2 | Índices compostos `(owner_id, …)` em `bookings` e `expenses` (migração 032) | ✅ aplicado |
+| T5 | ID de modelo sem sufixo de data (`claude-haiku-4-5`) | ✅ |
+
+**Testes: 345 → 435.** Typecheck, ESLint e build limpos.
+
+### Duas correções de facto encontradas ao executar
+
+1. **Deriva de esquema.** `properties.id`, `bookings.id` e `guests.id` são `text` em produção, apesar de a migração 001 os declarar `UUID`. As migrações não são a fonte de verdade da base — quem escrever DDL a partir dos ficheiros vai falhar, como falhou aqui à primeira. Vale um `schema.sql` gerado da produção.
+2. **Taxa turística: não expandida, deliberadamente.** A fonte primária do projeto (guia da ALerta) cobre exatamente os 5 concelhos já implementados, e confirma que **Lagos não cobra taxa**. Para Faro, Portimão e Funchal só encontrei blogues, com valores em desacordo entre si — e uma das fontes dava **Cascais a €1** quando o valor correto é **€4 desde janeiro de 2025** (o código está certo). Publicar um valor errado aqui cobra dinheiro a mais a hóspedes reais. Fica por fazer até haver leitura dos regulamentos municipais.
+
+---
+
 ## Nota final
 
 O plano de julho estava certo em quase tudo menos na coisa mais importante: **não há um fosso vazio à espera**. Há dois portugueses a cavá-lo desde antes deste projeto começar, e ambos já entregam aquilo que a landing do Anfitrião promete.
