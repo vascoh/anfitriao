@@ -3,26 +3,38 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
 import { checkRateLimit } from '@/lib/rate-limit'
-import {
-  getInvoicingAdapter, isFaturacaoConfigurada, decomporReserva, pedidoDaReserva,
-} from '@/lib/faturacao'
-import { regraPara, calcularTmt } from '@/lib/taxa-turistica'
-import type { Booking, Property, Guest } from '@/lib/types'
+import { emitirFaturaDaReserva, emitirNotaCredito } from '@/lib/faturacao/emitir'
 
 const supabase = createAdminClient()
 
 /**
+ * GET /api/faturas — reservas faturáveis e já faturadas do anfitrião.
  * POST /api/faturas — emite a fatura-recibo de uma reserva.
+ * DELETE /api/faturas — anula por nota de crédito.
  *
- * Regras de segurança do fluxo:
- * - Só o dono da reserva pode emitir.
- * - Uma reserva já faturada nunca é faturada outra vez: uma fatura emitida é
- *   um documento legal com numeração sequencial e só se anula por nota de
- *   crédito, não por reemissão.
- * - O estado passa a `a_emitir` **antes** da chamada ao fornecedor e só volta
- *   atrás em caso de falha, para dois pedidos simultâneos não emitirem dois
- *   documentos.
+ * A lógica de emissão vive em `lib/faturacao/emitir.ts`, partilhada com o cron
+ * que emite sozinho no checkout.
  */
+
+export async function GET(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const url = new URL(req.url)
+  const limite = Math.min(Math.max(Number(url.searchParams.get('limite') ?? 100), 1), 200)
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('id, propriedade_id, hospede_id, check_in, check_out, estado, preco_total, fatura_estado, fatura_numero, fatura_url, fatura_total, fatura_emitida_em, fatura_erro, nota_credito_numero, nota_credito_emitida_em')
+    .eq('owner_id', userId)
+    .not('estado', 'in', '("cancelada","no_show")')
+    .order('check_out', { ascending: false })
+    .limit(limite)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
+
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
@@ -32,111 +44,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
   }
 
-  if (!isFaturacaoConfigurada()) {
-    return NextResponse.json(
-      { error: 'Faturação não configurada. Liga a tua conta de faturação certificada nas definições.' },
-      { status: 501 },
-    )
-  }
-
   const body = await req.json().catch(() => null)
   const bookingId = body && typeof body.bookingId === 'string' ? body.bookingId : ''
   if (!bookingId) return NextResponse.json({ error: 'bookingId em falta' }, { status: 400 })
 
-  const { data: booking } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('id', bookingId)
-    .maybeSingle()
-
-  if (!booking) return NextResponse.json({ error: 'Reserva não encontrada' }, { status: 404 })
-  if (booking.owner_id !== null && booking.owner_id !== userId) {
-    return NextResponse.json({ error: 'Sem permissão para esta reserva.' }, { status: 403 })
-  }
-
-  const b = booking as Booking
-  if (b.fatura_estado === 'emitida') {
-    return NextResponse.json(
-      { error: 'Esta reserva já tem fatura emitida. Para a anular, emite uma nota de crédito no teu programa de faturação.' },
-      { status: 409 },
-    )
-  }
-  if (b.fatura_estado === 'a_emitir') {
-    return NextResponse.json({ error: 'Já está a ser emitida. Aguarda.' }, { status: 409 })
-  }
-  if (b.estado === 'cancelada' || b.estado === 'no_show') {
-    return NextResponse.json({ error: 'Não se emite fatura de uma reserva cancelada.' }, { status: 400 })
-  }
-
-  const { data: propriedade } = await supabase
-    .from('properties')
-    .select('*')
-    .eq('id', b.propriedade_id)
-    .maybeSingle()
-
-  if (!propriedade) return NextResponse.json({ error: 'Alojamento não encontrado' }, { status: 404 })
-
-  const { data: hospede } = b.hospede_id
-    ? await supabase.from('guests').select('*').eq('id', b.hospede_id).maybeSingle()
-    : { data: null }
-
-  // Marca antes de chamar o fornecedor: protege de emissão dupla
-  const { data: reservado } = await supabase
-    .from('bookings')
-    .update({ fatura_estado: 'a_emitir', fatura_erro: null })
-    .eq('id', bookingId)
-    .eq('fatura_estado', b.fatura_estado)
-    .select('id')
-    .maybeSingle()
-
-  if (!reservado) {
-    return NextResponse.json({ error: 'Outro pedido está a emitir esta fatura.' }, { status: 409 })
-  }
-
-  const prop = propriedade as Property
-  const regra = regraPara(prop.cidade)
-  const taxaTuristica = regra ? calcularTmt(b, regra).valor : 0
-
-  const componentes = decomporReserva(b.preco_total, {
-    limpeza: prop.taxa_limpeza ?? 0,
-    taxaTuristica,
-  })
-
-  const resultado = await getInvoicingAdapter().emitir(
-    pedidoDaReserva(b, prop, hospede as Guest | null, componentes),
-  )
-
-  if (!resultado.sucesso) {
-    await supabase
-      .from('bookings')
-      .update({ fatura_estado: 'falhou', fatura_erro: resultado.erro ?? 'Erro desconhecido' })
-      .eq('id', bookingId)
-    return NextResponse.json({ error: resultado.erro }, { status: 502 })
-  }
-
-  const { data: atualizada } = await supabase
-    .from('bookings')
-    .update({
-      fatura_estado: 'emitida',
-      fatura_id_externo: resultado.idExterno,
-      fatura_numero: resultado.numero,
-      fatura_atcud: resultado.atcud,
-      fatura_url: resultado.urlPdf,
-      fatura_total: resultado.total,
-      fatura_emitida_em: new Date().toISOString(),
-      fatura_erro: null,
-    })
-    .eq('id', bookingId)
-    .select()
-    .maybeSingle()
+  const r = await emitirFaturaDaReserva(userId, bookingId)
+  if (!r.ok) return NextResponse.json({ error: r.erro, motivo: r.motivo }, { status: r.estado })
 
   await logAudit({
     actorId: userId,
     entidade: 'booking',
     entidadeId: bookingId,
     acao: 'fatura_emitida',
-    detalhes: { numero: resultado.numero, atcud: resultado.atcud, total: resultado.total },
+    detalhes: { numero: r.numero, atcud: r.atcud, total: r.total },
   })
 
-  return NextResponse.json(atualizada)
+  return NextResponse.json(r)
+}
+
+export async function DELETE(req: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const rl = checkRateLimit(`notas-credito:${userId}`, 10, 60_000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
+  }
+
+  const body = await req.json().catch(() => null) as { bookingId?: string; motivo?: string } | null
+  const bookingId = body?.bookingId
+  if (!bookingId) return NextResponse.json({ error: 'bookingId em falta' }, { status: 400 })
+
+  const r = await emitirNotaCredito(userId, bookingId, body?.motivo)
+  if (!r.ok) return NextResponse.json({ error: r.erro, motivo: r.motivo }, { status: r.estado })
+
+  await logAudit({
+    actorId: userId,
+    entidade: 'booking',
+    entidadeId: bookingId,
+    acao: 'nota_credito_emitida',
+    detalhes: { numero: r.numero, motivo: body?.motivo },
+  })
+
+  return NextResponse.json(r)
 }

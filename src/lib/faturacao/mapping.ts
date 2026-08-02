@@ -1,4 +1,4 @@
-import { nights, fmtDate } from '../utils'
+import { nights, fmtDate, today as todayIso } from '../utils'
 import { taxaIvaAlojamento, semIva, ISENCAO_TAXA_TURISTICA } from './iva'
 import type { LinhaFatura, PedidoFatura, ClienteFatura } from './types'
 import type { Booking, Guest, Property } from '../types'
@@ -114,7 +114,7 @@ export function pedidoDaReserva(
   propriedade: Property,
   hospede: Guest | null | undefined,
   componentes: ComponentesReserva,
-  opts?: { data?: string; enviarPorEmail?: boolean },
+  opts?: { data?: string; enviarPorEmail?: boolean; serieId?: string | null },
 ): PedidoFatura {
   return {
     tipo: 'invoice_receipt',
@@ -123,6 +123,41 @@ export function pedidoDaReserva(
     data: opts?.data ?? b.check_out,
     referencia: b.id,
     enviarPorEmail: opts?.enviarPorEmail ?? Boolean(hospede?.email),
+    ...(opts?.serieId ? { serieId: opts.serieId } : {}),
+  }
+}
+
+/**
+ * Linhas da nota de crédito que anula uma fatura.
+ *
+ * São exatamente as mesmas da fatura original: uma nota de crédito parcial
+ * exigiria decidir *o que* se devolve, e essa é uma decisão de negócio que o
+ * anfitrião tem de tomar no programa de faturação, não um valor que se
+ * adivinha a partir de um cancelamento.
+ */
+export function linhasDaNotaCredito(linhasOriginais: LinhaFatura[]): LinhaFatura[] {
+  return linhasOriginais.map(l => ({ ...l }))
+}
+
+/** Monta a nota de crédito de uma reserva já faturada. */
+export function pedidoDaNotaCredito(
+  b: Booking,
+  propriedade: Property,
+  hospede: Guest | null | undefined,
+  componentes: ComponentesReserva,
+  opts?: { data?: string; serieId?: string | null; motivo?: string },
+): PedidoFatura {
+  return {
+    tipo: 'credit_note',
+    cliente: clienteDaReserva(hospede, 'Consumidor final'),
+    linhas: linhasDaNotaCredito(
+      linhasDaReserva(componentes, propriedade.cidade, descricaoEstadia(b, propriedade)),
+    ),
+    data: opts?.data ?? todayIso(),
+    referencia: b.fatura_numero ? `Anula ${b.fatura_numero}` : b.id,
+    observacoes: opts?.motivo ?? 'Anulação por cancelamento da reserva.',
+    enviarPorEmail: false,
+    ...(opts?.serieId ? { serieId: opts.serieId } : {}),
   }
 }
 

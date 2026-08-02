@@ -1,7 +1,7 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
   Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
-  UserRound, CreditCard,
+  UserRound, CreditCard, Receipt,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -69,6 +69,7 @@ export const NAV: NavSection[] = [
     label: 'Receita',
     Icon: TrendingUp,
     children: [
+      { href: '/faturacao', label: 'Faturação', Icon: Receipt, descricao: 'Faturas certificadas e SAF-T' },
       { href: '/financeiro', label: 'Despesas e lucro', Icon: Wallet, descricao: 'Custos, comissões e lucro líquido' },
     ],
   },

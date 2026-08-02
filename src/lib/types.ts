@@ -207,6 +207,10 @@ export interface Booking {
   fatura_emitida_em?: string | null
   fatura_erro?: string | null
 
+  /** Nota de crédito que anulou a fatura desta reserva (ver lib/faturacao). */
+  nota_credito_id_externo?: string | null
+  nota_credito_numero?: string | null
+  nota_credito_emitida_em?: string | null
   /** Estado da submissão automática à AIMA/SIBA (ver lib/siba-api.ts) */
   siba_status?: 'nao_submetido' | 'a_processar' | 'submetido' | 'falhou'
   siba_submitted_at?: string | null
