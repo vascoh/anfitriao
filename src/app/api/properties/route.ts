@@ -18,10 +18,15 @@ export async function GET() {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Map casas_banho → casasBanho (property row format)
+  // Map casas_banho → casasBanho (property row format).
+  //
+  // A chave de acesso ao SIBA sai daqui em qualquer circunstância: é uma
+  // credencial do anfitrião perante a AIMA e o browser não tem nada que a
+  // receber, nem sequer encriptada. A interface só precisa de saber se
+  // existe uma guardada.
   const mapped = (data ?? []).map((row: Record<string, unknown>) => {
-    const { casas_banho, ...rest } = row
-    return { ...rest, casasBanho: casas_banho }
+    const { casas_banho, siba_chave_acesso, ...rest } = row
+    return { ...rest, casasBanho: casas_banho, siba_chave_definida: Boolean(siba_chave_acesso) }
   })
   return NextResponse.json(mapped)
 }

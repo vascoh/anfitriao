@@ -29,6 +29,8 @@ interface GuestForm {
   sexo: string
   pais_emissao: string
   data_validade_doc: string
+  pais_residencia: string
+  local_residencia: string
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -40,11 +42,16 @@ const FIELD_LABELS: Record<string, string> = {
   data_validade_doc: 'Validade',
   sexo: 'Sexo',
   pais_emissao: 'País de emissão',
+  pais_residencia: 'País de residência',
+  local_residencia: 'Localidade onde vives',
   email: 'Email',
   telefone: 'Telefone',
 }
 
-const REQUIRED = ['nome', 'nacionalidade', 'numero_documento', 'data_nascimento', 'tipo_documento']
+// O boletim de alojamento exige o país de residência. Pedi-lo aqui, ao
+// hóspede, é a diferença entre entregar o boletim e o anfitrião ter de andar
+// atrás dele depois. A localidade é facultativa no boletim, logo aqui também.
+const REQUIRED = ['nome', 'nacionalidade', 'numero_documento', 'data_nascimento', 'tipo_documento', 'pais_residencia']
 
 function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso + 'T12:00:00'))
@@ -61,6 +68,7 @@ export default function CheckinPage() {
   const [form, setForm] = useState<GuestForm>({
     nome: '', email: '', telefone: '', nacionalidade: '', numero_documento: '',
     data_nascimento: '', tipo_documento: '', sexo: '', pais_emissao: '', data_validade_doc: '',
+    pais_residencia: '', local_residencia: '',
   })
   const [preview, setPreview] = useState<string | null>(null)
   const [extracting, setExtracting] = useState(false)
@@ -87,6 +95,8 @@ export default function CheckinPage() {
             tipo_documento: d.guest?.tipo_documento ?? '',
             sexo: d.guest?.sexo ?? '',
             pais_emissao: d.guest?.pais_emissao ?? '',
+            pais_residencia: d.guest?.pais_residencia ?? '',
+            local_residencia: d.guest?.local_residencia ?? '',
             data_validade_doc: d.guest?.data_validade_doc ?? '',
           }))
         }

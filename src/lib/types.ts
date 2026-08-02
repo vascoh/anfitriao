@@ -54,6 +54,18 @@ export interface Property {
   livro_reclamacoes_registado?: boolean | null
   livro_reclamacoes_url?: string | null
   certificado_energetico_validade?: string | null
+
+  /* Registo no web service do SIBA — credenciais do anfitrião, por
+     estabelecimento. A chave nunca chega ao cliente: as rotas devolvem
+     `siba_chave_definida` no seu lugar. */
+  siba_nipc?: string | null
+  siba_estabelecimento?: string | null
+  siba_abreviatura?: string | null
+  siba_codigo_postal?: string | null
+  siba_telefone?: string | null
+  siba_nome_contacto?: string | null
+  siba_email_contacto?: string | null
+  siba_chave_definida?: boolean
 }
 
 export interface Guest {
@@ -68,6 +80,10 @@ export interface Guest {
   sexo?: string
   pais_emissao?: string
   data_validade_doc?: string
+  /** Obrigatório no boletim de alojamento (Pais_Residencia_Origem). */
+  pais_residencia?: string
+  /** Facultativo no boletim (Local_Residencia_Origem). */
+  local_residencia?: string
   tags: GuestTag[]
   notas?: string
   criado_em: string

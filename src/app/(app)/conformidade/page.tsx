@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3, Coins } from 'lucide-react'
 import Link from 'next/link'
 import { fetchProperties } from '@/lib/fetcher'
+import { abreviaturaDe } from '@/lib/siba-mapping'
 import { today, fmtDate } from '@/lib/utils'
 import {
   avaliarConformidade,
@@ -69,6 +70,15 @@ type Rascunho = {
   seguro_validade: string
   certificado_energetico_validade: string
   livro_reclamacoes_registado: boolean
+  siba_nipc: string
+  siba_estabelecimento: string
+  siba_abreviatura: string
+  siba_codigo_postal: string
+  siba_telefone: string
+  siba_nome_contacto: string
+  siba_email_contacto: string
+  /** Vazio = não mexer na que está guardada. Nunca vem preenchido do servidor. */
+  siba_chave_acesso: string
 }
 
 function paraRascunho(p: Property): Rascunho {
@@ -80,6 +90,14 @@ function paraRascunho(p: Property): Rascunho {
     seguro_validade: p.seguro_validade ?? '',
     certificado_energetico_validade: p.certificado_energetico_validade ?? '',
     livro_reclamacoes_registado: p.livro_reclamacoes_registado ?? false,
+    siba_nipc: p.siba_nipc ?? '',
+    siba_estabelecimento: p.siba_estabelecimento ?? '',
+    siba_abreviatura: p.siba_abreviatura ?? '',
+    siba_codigo_postal: p.siba_codigo_postal ?? '',
+    siba_telefone: p.siba_telefone ?? '',
+    siba_nome_contacto: p.siba_nome_contacto ?? '',
+    siba_email_contacto: p.siba_email_contacto ?? '',
+    siba_chave_acesso: '',
   }
 }
 
@@ -296,6 +314,89 @@ export default function ConformidadePage() {
                   onChange={v => setRascunho({ ...rascunho, certificado_energetico_validade: v })}
                 />
               </div>
+
+              {/* Registo no web service do SIBA — o que permite entregar os
+                  boletins sem abrir o portal. As credenciais são do anfitrião,
+                  por estabelecimento; pedem-se na área reservada do portal. */}
+              <details className="mt-4 rounded-xl border border-border bg-background">
+                <summary className="cursor-pointer list-none p-4 text-sm font-semibold">
+                  <span className="flex items-center justify-between gap-3">
+                    <span>Entrega automática de boletins (SIBA)</span>
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {p.siba_nipc && p.siba_chave_definida ? 'Ligado' : 'Por configurar'}
+                    </span>
+                  </span>
+                </summary>
+
+                <div className="border-t border-border p-4">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Para entregarmos os boletins por ti, o alojamento tem de estar registado no
+                    portal do SIBA com o modo de envio <strong>Web Service</strong>. Depois de o
+                    pedires, o SEF/AIMA envia por email o número de estabelecimento e a chave de
+                    acesso — costuma demorar 1 a 3 dias úteis.
+                  </p>
+                  <a
+                    href="https://siba.ssi.gov.pt/s"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-muted"
+                  >
+                    Abrir a área reservada do SIBA
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <Campo
+                      label="NIPC / NIF da unidade"
+                      value={rascunho.siba_nipc}
+                      onChange={v => setRascunho({ ...rascunho, siba_nipc: v })}
+                      placeholder="123456789"
+                    />
+                    <Campo
+                      label="Número de estabelecimento"
+                      value={rascunho.siba_estabelecimento}
+                      onChange={v => setRascunho({ ...rascunho, siba_estabelecimento: v })}
+                      placeholder="00"
+                      hint="O primeiro alojamento de um NIF é o 00."
+                    />
+                    <Campo
+                      label="Chave de acesso"
+                      value={rascunho.siba_chave_acesso}
+                      onChange={v => setRascunho({ ...rascunho, siba_chave_acesso: v })}
+                      placeholder={p.siba_chave_definida ? 'Guardada — escreve para substituir' : 'Só dígitos'}
+                      hint="Guardada encriptada. Nunca a mostramos outra vez."
+                    />
+                    <Campo
+                      label="Código postal"
+                      value={rascunho.siba_codigo_postal}
+                      onChange={v => setRascunho({ ...rascunho, siba_codigo_postal: v })}
+                      placeholder="4050-175"
+                    />
+                    <Campo
+                      label="Telefone"
+                      value={rascunho.siba_telefone}
+                      onChange={v => setRascunho({ ...rascunho, siba_telefone: v })}
+                    />
+                    <Campo
+                      label="Abreviatura"
+                      value={rascunho.siba_abreviatura}
+                      onChange={v => setRascunho({ ...rascunho, siba_abreviatura: v })}
+                      placeholder={abreviaturaDe(p.nome)}
+                      hint="Até 3 letras. Se deixares vazio, usamos as iniciais."
+                    />
+                    <Campo
+                      label="Nome de contacto"
+                      value={rascunho.siba_nome_contacto}
+                      onChange={v => setRascunho({ ...rascunho, siba_nome_contacto: v })}
+                    />
+                    <Campo
+                      label="Email de contacto"
+                      value={rascunho.siba_email_contacto}
+                      onChange={v => setRascunho({ ...rascunho, siba_email_contacto: v })}
+                    />
+                  </div>
+                </div>
+              </details>
 
               <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background p-4">
                 <input

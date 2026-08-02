@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
+import { encriptar, estaConfigurada as encriptacaoConfigurada } from '@/lib/crypto'
 
 const supabase = createAdminClient()
 
@@ -11,6 +12,15 @@ const CAMPOS_TEXTO = [
   'seguro_seguradora',
   'seguro_apolice',
   'livro_reclamacoes_url',
+  // Registo no web service do SIBA. A chave de acesso é tratada à parte,
+  // porque tem de ser encriptada antes de tocar na base de dados.
+  'siba_nipc',
+  'siba_estabelecimento',
+  'siba_abreviatura',
+  'siba_codigo_postal',
+  'siba_telefone',
+  'siba_nome_contacto',
+  'siba_email_contacto',
 ] as const
 
 const CAMPOS_DATA = [
@@ -89,6 +99,24 @@ export async function PATCH(req: NextRequest) {
     patch.livro_reclamacoes_registado = body.livro_reclamacoes_registado === true
   }
 
+  // Chave de acesso ao SIBA: encriptada antes de ser guardada, e nunca
+  // devolvida. String vazia significa "apagar"; ausente significa "não mexer",
+  // para que gravar o resto do formulário não obrigue a reescrever a chave.
+  if ('siba_chave_acesso' in body) {
+    const bruta = typeof body.siba_chave_acesso === 'string' ? body.siba_chave_acesso.trim() : ''
+    if (bruta === '') {
+      patch.siba_chave_acesso = null
+    } else if (!encriptacaoConfigurada()) {
+      // Guardar uma credencial do Estado em claro seria pior do que recusar.
+      return NextResponse.json(
+        { error: 'O servidor não tem chave de encriptação configurada (APP_ENCRYPTION_KEY). A chave de acesso ao SIBA não pode ser guardada em segurança.' },
+        { status: 503 },
+      )
+    } else {
+      patch.siba_chave_acesso = encriptar(bruta.slice(0, 200))
+    }
+  }
+
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'Nada para atualizar' }, { status: 400 })
   }
@@ -118,5 +146,8 @@ export async function PATCH(req: NextRequest) {
     detalhes: { nome: existing.nome, campos: Object.keys(patch) },
   })
 
-  return NextResponse.json(data)
+  // A chave encriptada nunca sai do servidor — nem sequer cifrada. O que a
+  // interface precisa de saber é apenas se existe uma.
+  const { siba_chave_acesso, ...semSegredos } = data as Record<string, unknown>
+  return NextResponse.json({ ...semSegredos, siba_chave_definida: Boolean(siba_chave_acesso) })
 }

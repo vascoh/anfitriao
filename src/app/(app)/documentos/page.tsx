@@ -85,14 +85,35 @@ export default function DocumentosPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ from: sibaFrom, to: sibaTo }),
       })
-      const json = await res.json().catch(() => ({})) as { error?: string; results?: Array<{ success: boolean }> }
+      const json = await res.json().catch(() => ({})) as {
+        error?: string
+        resultados?: Array<{ sucesso: boolean; erro?: string }>
+      }
       if (!res.ok) {
-        setSibaSubmitMsg({ tipo: 'erro', texto: json.error ?? 'Submissão automática indisponível. Usa a exportação CSV.' })
+        setSibaSubmitMsg({ tipo: 'erro', texto: json.error ?? 'Não foi possível entregar os boletins.' })
         return
       }
-      const total = json.results?.length ?? 0
-      const ok = json.results?.filter(r => r.success).length ?? 0
-      setSibaSubmitMsg({ tipo: ok === total && total > 0 ? 'ok' : 'erro', texto: `${ok}/${total} boletins submetidos com sucesso à AIMA.` })
+
+      const resultados = json.resultados ?? []
+      const total = resultados.length
+      const ok = resultados.filter(r => r.sucesso).length
+
+      if (total === 0) {
+        setSibaSubmitMsg({ tipo: 'ok', texto: 'Não há boletins por entregar neste período.' })
+        return
+      }
+      if (ok === total) {
+        setSibaSubmitMsg({ tipo: 'ok', texto: `${ok} de ${total} boletins entregues ao SIBA.` })
+        return
+      }
+
+      // O que falhou falhou por uma razão concreta — mostrá-la vale mais do
+      // que a contagem. Erros repetidos aparecem uma vez só.
+      const motivos = [...new Set(resultados.filter(r => !r.sucesso && r.erro).map(r => r.erro!))]
+      setSibaSubmitMsg({
+        tipo: 'erro',
+        texto: `${ok} de ${total} boletins entregues. ${motivos.join(' ')}`,
+      })
     } finally {
       setSibaSubmitting(false)
     }
@@ -209,7 +230,7 @@ export default function DocumentosPage() {
             <button onClick={submitSIBA} disabled={sibaSubmitting || !sibaFrom || !sibaTo}
               className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-input bg-background py-2.5 text-sm font-semibold disabled:opacity-40 active:opacity-80 transition-opacity">
               <Send className="h-4 w-4" />
-              {sibaSubmitting ? 'A submeter...' : 'Submeter à AIMA'}
+              {sibaSubmitting ? 'A entregar...' : 'Entregar ao SIBA'}
             </button>
           </div>
           {sibaSubmitMsg && (
