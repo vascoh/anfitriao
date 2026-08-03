@@ -5,7 +5,7 @@ import {
 } from './grupos'
 import type { Booking, Property } from './types'
 
-/** A Casa de Vasco, tal como está em produção: 1 + 2 + 4 = 7 pessoas. */
+/** A Casa de Vasco, tal como está em produção: 1 + 2 + 5 = 8 pessoas. */
 function quarto(id: string, nome: string, capacidade: number, preco: number): Property {
   return {
     id, nome, tipo: 'quarto', endereco: '', cidade: 'Amora',
@@ -17,14 +17,14 @@ function quarto(id: string, nome: string, capacidade: number, preco: number): Pr
 
 const CASA: Property = {
   id: 'casa', nome: 'Casa de Vasco', tipo: 'moradia', endereco: 'Rua de Bijagós 13A',
-  cidade: 'Amora', capacidade: 7, quartos: 3, casasBanho: 2, comodidades: [],
+  cidade: 'Amora', capacidade: 8, quartos: 3, casasBanho: 2, comodidades: [],
   instrucoes_checkin: '', regras_casa: '', preco_base: 80, cor: '#000',
   ativo: true, criado_em: '2026-01-01', parent_id: null,
 }
 
 const INDIVIDUAL = quarto('q-ind', 'Quarto Individual', 1, 50)
 const CASAL = quarto('q-cas', 'Quarto de Casal', 2, 80)
-const FAMILIAR = quarto('q-fam', 'Quarto Familiar', 4, 100)
+const FAMILIAR = quarto('q-fam', 'Quarto Familiar', 5, 100)
 const TODAS: Property[] = [CASA, INDIVIDUAL, CASAL, FAMILIAR]
 
 function reserva(id: string, propriedadeId: string, ci: string, co: string, extra?: Partial<Booking>): Booking {
@@ -43,7 +43,7 @@ describe('quartosDaCasa', () => {
   })
 
   it('ordena do maior para o menor', () => {
-    expect(quartosDaCasa(TODAS, 'casa').map(q => q.capacidade)).toEqual([4, 2, 1])
+    expect(quartosDaCasa(TODAS, 'casa').map(q => q.capacidade)).toEqual([5, 2, 1])
   })
 
   it('ignora quartos desativados', () => {
@@ -61,8 +61,8 @@ describe('quartosDaCasa', () => {
 })
 
 describe('capacidadeTotal', () => {
-  it('a Casa de Vasco leva 7 pessoas', () => {
-    expect(capacidadeTotal(quartosDaCasa(TODAS, 'casa'))).toBe(7)
+  it('a Casa de Vasco leva 8 pessoas', () => {
+    expect(capacidadeTotal(quartosDaCasa(TODAS, 'casa'))).toBe(8)
   })
 })
 
@@ -99,39 +99,39 @@ describe('sugerirQuartos', () => {
   const quartos = quartosDaCasa(TODAS, 'casa')
   const livre = () => disponibilidadeDosQuartos(quartos, [], '2026-08-10', '2026-08-14')
 
-  it('8 pessoas não cabem na Casa de Vasco', () => {
-    // O cenário que motivou isto: a casa leva 7, não 8. Vale mais dizê-lo
-    // antes da reserva do que descobri-lo à porta.
+  it('8 pessoas cabem, e ocupam a casa toda sem sobrar lugar', () => {
+    // O cenário que motivou isto. Cabe à justa: 5 + 2 + 1.
     const r = sugerirQuartos(livre(), 8)
-    expect(r.ok).toBe(false)
-    if (r.ok) return
-    expect(r.motivo).toBe('nao_cabe')
-    expect(r.capacidadeDisponivel).toBe(7)
-  })
-
-  it('7 pessoas cabem, e ocupam a casa toda', () => {
-    const r = sugerirQuartos(livre(), 7)
     expect(r.ok).toBe(true)
     if (!r.ok) return
     expect(r.quartos.map(q => q.id).sort()).toEqual(['q-cas', 'q-fam', 'q-ind'])
     expect(r.sobra).toBe(0)
   })
 
+  it('9 pessoas já não cabem', () => {
+    const r = sugerirQuartos(livre(), 9)
+    expect(r.ok).toBe(false)
+    if (r.ok) return
+    expect(r.motivo).toBe('nao_cabe')
+    expect(r.capacidadeDisponivel).toBe(8)
+  })
+
   it('usa o menor número de quartos possível', () => {
-    // 4 pessoas: o familiar sozinho chega. Deixar o casal livre pode valer
+    // 5 pessoas: o familiar sozinho chega. Deixar o casal livre pode valer
     // outra reserva no mesmo fim de semana.
-    const r = sugerirQuartos(livre(), 4)
+    const r = sugerirQuartos(livre(), 5)
     expect(r.ok && r.quartos.map(q => q.id)).toEqual(['q-fam'])
+    expect(r.ok && r.sobra).toBe(0)
   })
 
   it('junta quartos quando um não chega', () => {
-    const r = sugerirQuartos(livre(), 6)
+    const r = sugerirQuartos(livre(), 7)
     expect(r.ok && r.quartos.map(q => q.id)).toEqual(['q-fam', 'q-cas'])
     expect(r.ok && r.sobra).toBe(0)
   })
 
   it('diz quanta capacidade sobra, para o anfitrião saber que pode vender mais', () => {
-    const r = sugerirQuartos(livre(), 5)
+    const r = sugerirQuartos(livre(), 6)
     expect(r.ok && r.quartos.map(q => q.id)).toEqual(['q-fam', 'q-cas'])
     expect(r.ok && r.sobra).toBe(1)
   })
@@ -142,7 +142,7 @@ describe('sugerirQuartos', () => {
     const r = sugerirQuartos(d, 4)
     expect(r.ok).toBe(false)
     if (r.ok) return
-    // Sem o familiar sobram 3 lugares, não 7.
+    // Sem o familiar sobram 3 lugares, não 8.
     expect(r.capacidadeDisponivel).toBe(3)
   })
 
@@ -158,20 +158,20 @@ describe('sugerirQuartos', () => {
 
 describe('distribuirPessoas', () => {
   it('enche os maiores primeiro', () => {
-    const m = distribuirPessoas([FAMILIAR, CASAL, INDIVIDUAL], 7)
-    expect(m.get('q-fam')).toBe(4)
+    const m = distribuirPessoas([FAMILIAR, CASAL, INDIVIDUAL], 8)
+    expect(m.get('q-fam')).toBe(5)
     expect(m.get('q-cas')).toBe(2)
     expect(m.get('q-ind')).toBe(1)
   })
 
   it('não põe ninguém nos quartos que não são precisos', () => {
-    const m = distribuirPessoas([FAMILIAR, CASAL], 4)
-    expect(m.get('q-fam')).toBe(4)
+    const m = distribuirPessoas([FAMILIAR, CASAL], 5)
+    expect(m.get('q-fam')).toBe(5)
     expect(m.get('q-cas')).toBe(0)
   })
 
   it('a soma bate sempre certo com o grupo', () => {
-    for (const pessoas of [1, 2, 3, 5, 6, 7]) {
+    for (const pessoas of [1, 2, 3, 5, 6, 7, 8]) {
       const m = distribuirPessoas([FAMILIAR, CASAL, INDIVIDUAL], pessoas)
       expect([...m.values()].reduce((a, b) => a + b, 0)).toBe(pessoas)
     }
@@ -187,13 +187,13 @@ describe('agruparReservas', () => {
   it('junta as reservas do mesmo grupo numa só', () => {
     const g = 'grupo-1'
     const rs = [
-      reserva('b1', 'q-fam', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, num_hospedes: 4, preco_total: 400 }),
+      reserva('b1', 'q-fam', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, num_hospedes: 5, preco_total: 400 }),
       reserva('b2', 'q-cas', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, num_hospedes: 2, preco_total: 320 }),
       reserva('b3', 'q-ind', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, num_hospedes: 1, preco_total: 200 }),
     ]
     const grupos = agruparReservas(rs)
     expect(grupos).toHaveLength(1)
-    expect(grupos[0].numHospedes).toBe(7)
+    expect(grupos[0].numHospedes).toBe(8)
     expect(grupos[0].precoTotal).toBe(920)
     expect(eGrupo(grupos[0])).toBe(true)
   })
