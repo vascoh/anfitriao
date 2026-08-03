@@ -128,6 +128,60 @@ export function pedidoDaReserva(
 }
 
 /**
+ * Linhas de uma reserva de grupo — uma casa alugada por inteiro.
+ *
+ * Uma linha de alojamento **por quarto**, com o nome do quarto na descrição:
+ * quem pagou 920 € pela casa quer ver de onde vieram, e o contabilista
+ * também. As limpezas somam-se numa linha (é um serviço, não três) e a taxa
+ * turística também, porque é por pessoa e por noite — soma-se por natureza.
+ */
+export function linhasDoGrupo(
+  quartos: Array<{ nome: string; componentes: ComponentesReserva }>,
+  concelho: string | null | undefined,
+  descricaoEstadia: string,
+): LinhaFatura[] {
+  const taxa = taxaIvaAlojamento(concelho)
+  const linhas: LinhaFatura[] = []
+
+  for (const { nome, componentes } of quartos) {
+    if (componentes.alojamento > 0) {
+      linhas.push({
+        nome: 'Alojamento',
+        descricao: `${nome} · ${descricaoEstadia}`,
+        precoUnitario: semIva(componentes.alojamento, taxa),
+        quantidade: 1,
+        taxaIva: taxa,
+      })
+    }
+  }
+
+  const limpeza = quartos.reduce((s, q) => s + (q.componentes.limpeza ?? 0), 0)
+  if (limpeza > 0) {
+    linhas.push({
+      nome: 'Taxa de limpeza',
+      descricao: 'Limpeza final',
+      precoUnitario: semIva(limpeza, taxa),
+      quantidade: 1,
+      taxaIva: taxa,
+    })
+  }
+
+  const tmt = quartos.reduce((s, q) => s + (q.componentes.taxaTuristica ?? 0), 0)
+  if (tmt > 0) {
+    linhas.push({
+      nome: 'Taxa municipal turística',
+      descricao: 'Taxa municipal turística',
+      precoUnitario: Math.round(tmt * 100) / 100, // não sujeita a IVA
+      quantidade: 1,
+      taxaIva: 0,
+      motivoIsencao: ISENCAO_TAXA_TURISTICA,
+    })
+  }
+
+  return linhas
+}
+
+/**
  * Linhas da nota de crédito que anula uma fatura.
  *
  * São exatamente as mesmas da fatura original: uma nota de crédito parcial

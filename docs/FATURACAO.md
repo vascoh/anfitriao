@@ -109,6 +109,27 @@ turística com o alojamento inflacionaria o IVA liquidado.
 
 ---
 
+## Casa inteira: uma reserva, uma fatura
+
+Uma casa alugada por inteiro são várias reservas na base de dados — uma por
+quarto, para o calendário, o iCal e a ocupação continuarem certos — mas para
+quem a alugou foi **uma** reserva. Logo é uma fatura.
+
+O documento leva uma linha de alojamento por quarto (quem pagou 920 € quer ver
+de onde vieram, e o contabilista também), as limpezas somadas numa linha, e a
+taxa turística somada noutra — que por natureza é por pessoa e por noite.
+
+**A regra que evita um erro caro:** as três reservas ficam com o mesmo número,
+ATCUD e link, mas o `fatura_total` de cada uma guarda **a sua parte**, não o
+total. O total faturado é somado a partir das reservas; repetir 920 € em três
+linhas mostraria 2.760 € de receita que nunca existiu. O número do documento é
+partilhado, o dinheiro é repartido.
+
+Qualquer caminho de emissão — o botão numa das linhas, o cron do checkout —
+passa por `emitirFaturaDaReserva`, que deteta o grupo e reencaminha. Não há
+forma de emitir três documentos por engano. O mesmo vale para a anulação: uma
+fatura, uma nota de crédito, pelo valor todo.
+
 ## Limites conhecidos
 
 - **Um NIF por conta de anfitrião.** Quem explore alojamentos por entidades
@@ -118,4 +139,7 @@ turística com o alojamento inflacionaria o IVA liquidado.
   a partir de um cancelamento.
 - **Faturas de comissões das plataformas** (o que a Hostkit faz) ainda não
   existem: o Anfitrião só sabe estimar a comissão, não recebe o documento.
+- **Faturar só parte de um grupo** não é possível — o documento cobre a casa
+  toda. Cancelar um quarto de um grupo já faturado obriga a anular tudo e
+  emitir de novo.
 - **Séries anuais** não rodam automaticamente no dia 1 de janeiro.

@@ -31,6 +31,7 @@ interface Conta {
 
 interface LinhaReserva {
   id: string
+  reserva_grupo_id?: string | null
   check_in: string
   check_out: string
   estado: string
@@ -91,10 +92,38 @@ export default function FaturacaoPage() {
     return () => { ativo = false }
   }, [ownerId, carregar, aplicar])
 
+  /**
+   * Uma casa alugada por inteiro são várias reservas e uma fatura — a lista
+   * mostra-a como uma linha, senão o mesmo documento aparecia três vezes e
+   * parecia haver três faturas.
+   */
+  const linhas = useMemo(() => {
+    const porGrupo = new Map<string, LinhaReserva[]>()
+    for (const r of reservas) {
+      const chave = r.reserva_grupo_id ?? `solo:${r.id}`
+      const lista = porGrupo.get(chave)
+      if (lista) lista.push(r)
+      else porGrupo.set(chave, [r])
+    }
+    return [...porGrupo.values()].map(grupo => {
+      const primeira = grupo[0]
+      return {
+        ...primeira,
+        // O total do documento é a soma das partes.
+        preco_total: Math.round(grupo.reduce((s, r) => s + (r.preco_total ?? 0), 0) * 100) / 100,
+        fatura_total: grupo.some(r => r.fatura_total != null)
+          ? Math.round(grupo.reduce((s, r) => s + (r.fatura_total ?? 0), 0) * 100) / 100
+          : null,
+        quartos: grupo.length,
+      }
+    })
+  }, [reservas])
+
   const resumo = useMemo(() => {
     const emitidas = reservas.filter(r => r.fatura_estado === 'emitida')
+    const documentos = new Set(emitidas.map(r => r.fatura_numero ?? r.id))
     return {
-      emitidas: emitidas.length,
+      emitidas: documentos.size,
       porEmitir: reservas.filter(r => r.fatura_estado === 'nao_emitida' && r.check_out <= today()).length,
       falhadas: reservas.filter(r => r.fatura_estado === 'falhou').length,
       total: emitidas.reduce((s, r) => s + (r.fatura_total ?? 0), 0),
@@ -221,7 +250,7 @@ export default function FaturacaoPage() {
           <Saft />
 
           <Lista
-            reservas={reservas}
+            reservas={linhas}
             ocupado={ocupado}
             onEmitir={emitir}
             onAnular={anular}
@@ -521,7 +550,7 @@ function Saft() {
 function Lista({
   reservas, ocupado, onEmitir, onAnular,
 }: {
-  reservas: LinhaReserva[]
+  reservas: Array<LinhaReserva & { quartos?: number }>
   ocupado: string | null
   onEmitir: (id: string) => void
   onAnular: (id: string) => void
@@ -553,6 +582,11 @@ function Lista({
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {fmtMoney(r.preco_total)}
                   </span>
+                  {(r.quartos ?? 1) > 1 && (
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      casa inteira · {r.quartos} quartos
+                    </span>
+                  )}
                   <Estado estado={anulada ? 'anulada' : r.fatura_estado} />
                 </div>
 

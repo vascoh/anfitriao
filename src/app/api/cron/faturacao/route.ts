@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   for (const conta of contas ?? []) {
     const { data: reservas } = await supabase
       .from('bookings')
-      .select('id')
+      .select('id, reserva_grupo_id')
       .eq('owner_id', conta.owner_id)
       .eq('fatura_estado', 'nao_emitida')
       .lte('check_out', hoje)
@@ -60,8 +60,19 @@ export async function GET(req: NextRequest) {
 
     let ok = 0
     let ko = 0
+    /* Uma casa alugada por inteiro são várias reservas e **uma** fatura. Sem
+       isto, a segunda e a terceira linha do grupo chamavam a emissão outra
+       vez e contavam como falhas ('ja_emitida') num relatório onde nada tinha
+       falhado. */
+    const gruposFeitos = new Set<string>()
 
     for (const r of reservas ?? []) {
+      const grupo = r.reserva_grupo_id as string | null
+      if (grupo) {
+        if (gruposFeitos.has(grupo)) continue
+        gruposFeitos.add(grupo)
+      }
+
       const resultado = await emitirFaturaDaReserva(conta.owner_id, r.id)
       if (resultado.ok) {
         ok++

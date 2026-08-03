@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from('bookings')
-    .select('id, propriedade_id, hospede_id, check_in, check_out, estado, preco_total, fatura_estado, fatura_numero, fatura_url, fatura_total, fatura_emitida_em, fatura_erro, nota_credito_numero, nota_credito_emitida_em')
+    .select('id, propriedade_id, hospede_id, check_in, check_out, estado, preco_total, reserva_grupo_id, fatura_estado, fatura_numero, fatura_url, fatura_total, fatura_emitida_em, fatura_erro, nota_credito_numero, nota_credito_emitida_em')
     .eq('owner_id', userId)
     .not('estado', 'in', '("cancelada","no_show")')
     .order('check_out', { ascending: false })
