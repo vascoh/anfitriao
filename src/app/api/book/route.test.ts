@@ -111,13 +111,21 @@ describe('POST /api/book', () => {
     const json = await res.json()
     expect(json.ok).toBe(true)
 
-    expect(inserted.map(i => i.table)).toEqual(['guests', 'bookings'])
+    // A ligação hóspede↔reserva entra sempre: o boletim de alojamento é por
+    // pessoa, e esta é a primeira pessoa da reserva.
+    expect(inserted.map(i => i.table)).toEqual(['guests', 'bookings', 'reserva_hospedes'])
     const booking = inserted[1].row
     expect(booking.owner_id).toBe('owner-1')
     expect(booking.estado).toBe('pendente')
     expect(booking.origem).toBe('direto')
     expect(booking.preco_pago).toBe(0)
     expect(notifyMock).toHaveBeenCalledOnce()
+
+    const ligacao = inserted[2].row
+    expect(ligacao.booking_id).toBe(booking.id)
+    expect(ligacao.guest_id).toBe(inserted[0].row.id)
+    expect(ligacao.principal).toBe(true)
+    expect(ligacao.owner_id).toBe('owner-1')
   })
 
   it('ignores client-supplied estado/origem/owner_id (anti mass-assignment)', async () => {

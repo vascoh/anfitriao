@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
   const { data: bookings, error: bookingsError } = await supabase
     .from('bookings')
-    .select('id, check_in, check_out, hospede_id, propriedade_id, siba_status')
+    .select('id, check_in, check_out, hospede_id, propriedade_id, num_hospedes, siba_status')
     .eq('owner_id', userId)
     .gte('check_in', from)
     .lte('check_in', to)
@@ -69,8 +69,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ resultados: [], total: 0, sucesso: 0 })
   }
 
-  const guestIds = [...new Set(porEnviar.map(b => b.hospede_id).filter(Boolean))] as string[]
   const propIds = [...new Set(porEnviar.map(b => b.propriedade_id))]
+
+  /* Hóspedes por reserva.
+   *
+   * O boletim é por pessoa, não por reserva: uma reserva de 8 precisa de 8
+   * boletins. Até à migração 036 lia-se `bookings.hospede_id`, o que
+   * comunicava uma pessoa e deixava as outras sete por comunicar — a 100 a
+   * 2.000 € de coima cada. */
+  const { data: ligacoes } = await supabase
+    .from('reserva_hospedes')
+    .select('booking_id, guest_id, principal')
+    .eq('owner_id', userId)
+    .in('booking_id', porEnviar.map(b => b.id))
+
+  const porReserva = new Map<string, string[]>()
+  for (const l of ligacoes ?? []) {
+    const lista = porReserva.get(l.booking_id as string)
+    if (lista) lista.push(l.guest_id as string)
+    else porReserva.set(l.booking_id as string, [l.guest_id as string])
+  }
+
+  // Rede de segurança para reservas anteriores à tabela de ligação.
+  for (const b of porEnviar) {
+    if (!porReserva.has(b.id) && b.hospede_id) porReserva.set(b.id, [b.hospede_id])
+  }
+
+  const guestIds = [...new Set([...porReserva.values()].flat())]
 
   const [guestsRes, propsRes] = await Promise.all([
     guestIds.length > 0
@@ -132,34 +157,74 @@ export async function POST(req: NextRequest) {
       continue
     }
 
-    // Converte, separando o que está pronto do que lhe falta um campo.
+    /* Converte, separando o que está pronto do que lhe falta um campo.
+     *
+     * Um boletim por **pessoa**. Uma reserva só é dada por entregue quando
+     * todos os seus hóspedes forem aceites — entregar 5 de 8 e marcar a
+     * reserva como submetida esconderia exatamente o que se quer evitar. */
     const prontas: Array<{ booking_id: string; boletim: BoletimHospede }> = []
     for (const b of reservasDaProp) {
-      const g = guestMap.get(b.hospede_id ?? '')
-      const linha: LinhaBoletim = {
-        booking_id: b.id,
-        check_in: b.check_in,
-        check_out: b.check_out,
-        nome: (g?.nome as string) ?? '',
-        data_nascimento: g?.data_nascimento as string | null,
-        nacionalidade: g?.nacionalidade as string | null,
-        numero_documento: g?.numero_documento as string | null,
-        tipo_documento: g?.tipo_documento as string | null,
-        pais_emissao: g?.pais_emissao as string | null,
-        pais_residencia: g?.pais_residencia as string | null,
-        local_residencia: g?.local_residencia as string | null,
-      }
-      const convertido = boletimDaLinha(linha)
-      if (!convertido.ok) {
+      const idsDaReserva = porReserva.get(b.id) ?? []
+
+      if (idsDaReserva.length === 0) {
         resultados.push({
           booking_id: b.id,
           sucesso: false,
-          erro: `Faltam dados do hóspede: ${convertido.faltam.join(', ')}.`,
-          faltam: convertido.faltam,
+          erro: 'Reserva sem hóspedes identificados.',
         })
         continue
       }
-      prontas.push({ booking_id: b.id, boletim: convertido.boletim })
+
+      // Quantas pessoas dizem estar na reserva vs. quantas fichas existem.
+      const emFalta = Math.max(0, (b.num_hospedes ?? idsDaReserva.length) - idsDaReserva.length)
+      if (emFalta > 0) {
+        resultados.push({
+          booking_id: b.id,
+          sucesso: false,
+          erro: `Faltam os dados de ${emFalta} ${emFalta === 1 ? 'hóspede' : 'hóspedes'} — o boletim é por pessoa.`,
+        })
+        continue
+      }
+
+      const boletinsDaReserva: BoletimHospede[] = []
+      let incompleto: string[] | null = null
+
+      for (const gid of idsDaReserva) {
+        const g = guestMap.get(gid)
+        const linha: LinhaBoletim = {
+          booking_id: b.id,
+          check_in: b.check_in,
+          check_out: b.check_out,
+          nome: (g?.nome as string) ?? '',
+          data_nascimento: g?.data_nascimento as string | null,
+          nacionalidade: g?.nacionalidade as string | null,
+          numero_documento: g?.numero_documento as string | null,
+          tipo_documento: g?.tipo_documento as string | null,
+          pais_emissao: g?.pais_emissao as string | null,
+          pais_residencia: g?.pais_residencia as string | null,
+          local_residencia: g?.local_residencia as string | null,
+        }
+        const convertido = boletimDaLinha(linha)
+        if (!convertido.ok) {
+          incompleto = convertido.faltam
+          break
+        }
+        boletinsDaReserva.push(convertido.boletim)
+      }
+
+      if (incompleto) {
+        resultados.push({
+          booking_id: b.id,
+          sucesso: false,
+          erro: `Faltam dados de um hóspede: ${incompleto.join(', ')}.`,
+          faltam: incompleto,
+        })
+        continue
+      }
+
+      for (const boletim of boletinsDaReserva) {
+        prontas.push({ booking_id: b.id, boletim })
+      }
     }
 
     if (prontas.length === 0) continue
@@ -198,7 +263,9 @@ export async function POST(req: NextRequest) {
     })
 
     const agora = new Date().toISOString()
-    for (const p of prontas) {
+    // Uma linha de resultado por reserva, não por boletim: quem carregou no
+    // botão fez-no por reserva.
+    for (const p of [...new Set(prontas.map(x => x.booking_id))].map(booking_id => ({ booking_id }))) {
       resultados.push({
         booking_id: p.booking_id,
         sucesso: resposta.sucesso,

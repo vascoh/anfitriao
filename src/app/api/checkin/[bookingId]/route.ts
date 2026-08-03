@@ -54,6 +54,23 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     ? await supabase.from('website_settings').select('host_nome, logo_texto').eq('owner_id', propRes.data.owner_id).maybeSingle()
     : { data: null }
 
+  // Acompanhantes já registados, para reabrir o formulário sem perder o que
+  // já foi preenchido.
+  const { data: ligacoes } = await supabase
+    .from('reserva_hospedes')
+    .select('guest_id, principal')
+    .eq('booking_id', bookingId)
+
+  const idsAcompanhantes = (ligacoes ?? [])
+    .filter(l => !l.principal && l.guest_id !== booking.hospede_id)
+    .map(l => l.guest_id as string)
+
+  const { data: acompanhantes } = idsAcompanhantes.length > 0
+    ? await supabase.from('guests')
+        .select('id, nome, data_nascimento, nacionalidade, numero_documento, tipo_documento, sexo, pais_emissao, pais_residencia, local_residencia')
+        .in('id', idsAcompanhantes)
+    : { data: [] }
+
   const historico: Array<{ tipo: string; descricao: string }> = Array.isArray(booking.historico) ? booking.historico : []
   const jaSubmetido = historico.some(e => e.tipo === 'checkin_online')
 
@@ -67,6 +84,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     property: propRes.data ?? null,
     host_nome: settingsRes.data?.host_nome ?? settingsRes.data?.logo_texto ?? 'O seu anfitrião',
     guest: guestRes.data ?? null,
+    acompanhantes: acompanhantes ?? [],
     ja_submetido: jaSubmetido,
   })
 }
@@ -87,7 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   const { data: booking, error: bookingError } = await supabase
     .from('bookings')
-    .select('id, hospede_id, historico')
+    .select('id, hospede_id, historico, owner_id, num_hospedes')
     .eq('id', bookingId)
     .single()
 
@@ -120,6 +138,68 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       console.error('[checkin] guest update', gErr.message)
       return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
     }
+    // Garante a ligação de quem reservou, para reservas anteriores à 036.
+    await supabase.from('reserva_hospedes').upsert(
+      { booking_id: bookingId, guest_id: booking.hospede_id, principal: true, owner_id: booking.owner_id },
+      { onConflict: 'booking_id,guest_id' },
+    )
+  }
+
+  /* Acompanhantes.
+   *
+   * O boletim de alojamento é por pessoa: sem isto, uma reserva de 8 comunica
+   * uma e deixa sete por comunicar. Cada acompanhante é uma ficha de hóspede
+   * própria, ligada à reserva.
+   *
+   * Guardam-se apenas os que têm nome — uma linha em branco é alguém que
+   * começou a preencher e desistiu, e criar-lhe uma ficha vazia só dá
+   * trabalho a limpar depois. */
+  const acompanhantes = Array.isArray(body?.acompanhantes) ? body.acompanhantes.slice(0, 30) : []
+
+  for (const a of acompanhantes) {
+    const nomeAcomp = optText(a?.nome, 200)
+    if (!nomeAcomp) continue
+
+    const dados = {
+      nome: nomeAcomp,
+      nacionalidade: optText(a?.nacionalidade, 80),
+      numero_documento: optText(a?.numero_documento, 60),
+      data_nascimento: optDate(a?.data_nascimento),
+      tipo_documento: optText(a?.tipo_documento, 40),
+      sexo: optText(a?.sexo, 12),
+      pais_emissao: optText(a?.pais_emissao, 80),
+      pais_residencia: optText(a?.pais_residencia, 80),
+      local_residencia: optText(a?.local_residencia, 120),
+      owner_id: booking.owner_id,
+    }
+
+    // Reenviar o formulário atualiza a mesma ficha em vez de criar outra.
+    const idExistente = typeof a?.id === 'string' && a.id ? a.id : null
+
+    if (idExistente) {
+      const { error } = await supabase.from('guests').update(dados).eq('id', idExistente)
+      if (error) {
+        console.error('[checkin] acompanhante update', error.message)
+        return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+      }
+      await supabase.from('reserva_hospedes').upsert(
+        { booking_id: bookingId, guest_id: idExistente, principal: false, owner_id: booking.owner_id },
+        { onConflict: 'booking_id,guest_id' },
+      )
+      continue
+    }
+
+    const novoId = crypto.randomUUID()
+    const { error } = await supabase.from('guests').insert({
+      id: novoId, ...dados, tags: ['novo'], criado_em: new Date().toISOString(),
+    })
+    if (error) {
+      console.error('[checkin] acompanhante insert', error.message)
+      return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+    }
+    await supabase.from('reserva_hospedes').insert({
+      booking_id: bookingId, guest_id: novoId, principal: false, owner_id: booking.owner_id,
+    })
   }
 
   const now = new Date().toISOString()

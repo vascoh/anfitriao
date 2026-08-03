@@ -112,6 +112,8 @@ export default function ReservaDetailPage() {
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
   const [guest, setGuest] = useState<Guest | null>(null)
+  /** Estado dos boletins — o boletim é por pessoa, não por reserva. */
+  const [boletins, setBoletins] = useState<{ esperados: number; registados: number; prontos: number; porRegistar: number } | null>(null)
   const [prop, setProp] = useState<Property | null>(null)
   const [showNote, setShowNote] = useState(false)
   const [note, setNote] = useState('')
@@ -122,6 +124,11 @@ export default function ReservaDetailPage() {
   const [checkinCopied, setCheckinCopied] = useState(false)
 
   async function load() {
+    fetch(`/api/reservas/${id}/hospedes`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d) setBoletins(d.estado) })
+      .catch(() => {})
+
     const [bookings, guests, props] = await Promise.all([fetchBookings(), fetchGuests(), fetchProperties()])
     const b = bookings.find(x => x.id === id) ?? null
     setBooking(b)
@@ -304,7 +311,19 @@ export default function ReservaDetailPage() {
         )}
 
         {/* Guest */}
-        <Section title="Hóspede">
+        <Section title="Hóspedes">
+          {boletins && boletins.porRegistar > 0 && (
+            <div className="px-4 py-3 border-b border-border bg-amber-500/5">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                Faltam os dados de {boletins.porRegistar}{' '}
+                {boletins.porRegistar === 1 ? 'hóspede' : 'hóspedes'}
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                O boletim de alojamento é por pessoa: são precisos {boletins.esperados} e há{' '}
+                {boletins.registados} {boletins.registados === 1 ? 'registado' : 'registados'}.
+              </p>
+            </div>
+          )}
           {guest?.id ? (
             <Link href={`/hospedes/${guest.id}`} className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors border-b border-border last:border-0">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

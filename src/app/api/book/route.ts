@@ -74,6 +74,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar reserva.' }, { status: 500 })
   }
 
+  // Liga quem reservou à reserva: o boletim é por pessoa, e esta é a primeira.
+  await supabase.from('reserva_hospedes').insert({
+    booking_id: bookingId, guest_id: guestId, principal: true, owner_id,
+  })
+
   // Notificação por email server-side — falha não bloqueia a reserva
   try {
     await sendBookingNotification({

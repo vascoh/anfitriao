@@ -15,7 +15,37 @@ interface CheckinData {
   property: { nome: string; cidade: string; imagem_url?: string } | null
   host_nome: string
   guest: Record<string, string> | null
+  acompanhantes?: Array<Record<string, string>>
   ja_submetido: boolean
+}
+
+/** Um acompanhante — os campos que o boletim de alojamento exige. */
+interface Acompanhante {
+  id?: string
+  nome: string
+  data_nascimento: string
+  nacionalidade: string
+  tipo_documento: string
+  numero_documento: string
+  pais_emissao: string
+  pais_residencia: string
+}
+
+const ROTULO_ACOMPANHANTE: Record<keyof Omit<Acompanhante, 'id'>, string> = {
+  nome: 'Nome completo',
+  data_nascimento: 'Data de nascimento',
+  nacionalidade: 'Nacionalidade',
+  tipo_documento: 'Tipo de documento',
+  numero_documento: 'Nº do documento',
+  pais_emissao: 'País de emissão',
+  pais_residencia: 'País de residência',
+}
+
+function acompanhanteVazio(): Acompanhante {
+  return {
+    nome: '', data_nascimento: '', nacionalidade: '', tipo_documento: '',
+    numero_documento: '', pais_emissao: '', pais_residencia: '',
+  }
 }
 
 interface GuestForm {
@@ -70,6 +100,8 @@ export default function CheckinPage() {
     data_nascimento: '', tipo_documento: '', sexo: '', pais_emissao: '', data_validade_doc: '',
     pais_residencia: '', local_residencia: '',
   })
+  /** Um por pessoa além de quem reservou. O boletim do SIBA é por pessoa. */
+  const [acompanhantes, setAcompanhantes] = useState<Acompanhante[]>([])
   const [preview, setPreview] = useState<string | null>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
@@ -83,6 +115,22 @@ export default function CheckinPage() {
         if (d.error) { setStep('error'); return }
         setData(d)
         if (d.ja_submetido) { setStep('already'); return }
+        // Uma linha por pessoa além de quem reservou — já preenchidas com o
+        // que existir. Pré-criá-las é o que faz o hóspede perceber, sem ler
+        // nada, que são precisos os dados de todos.
+        const jaRegistados: Acompanhante[] = (d.acompanhantes ?? []).map(a => ({
+          id: a.id,
+          nome: a.nome ?? '',
+          data_nascimento: a.data_nascimento ?? '',
+          nacionalidade: a.nacionalidade ?? '',
+          tipo_documento: a.tipo_documento ?? '',
+          numero_documento: a.numero_documento ?? '',
+          pais_emissao: a.pais_emissao ?? '',
+          pais_residencia: a.pais_residencia ?? '',
+        }))
+        const emFalta = Math.max(0, (d.num_hospedes ?? 1) - 1 - jaRegistados.length)
+        setAcompanhantes([...jaRegistados, ...Array.from({ length: emFalta }, acompanhanteVazio)])
+
         if (d.guest) {
           setForm(prev => ({
             ...prev,
@@ -141,7 +189,12 @@ export default function CheckinPage() {
       const res = await fetch(`/api/checkin/${bookingId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          // Só os que têm nome — uma linha em branco é alguém que desistiu de
+          // preencher, não uma pessoa.
+          acompanhantes: acompanhantes.filter(a => a.nome.trim()),
+        }),
       })
       if (res.ok) {
         setStep('done')
@@ -378,6 +431,75 @@ export default function CheckinPage() {
                 )
               })}
             </div>
+
+            {acompanhantes.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                    Quem vem contigo
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    A lei pede um boletim de alojamento por pessoa. Preenche os dados de
+                    cada acompanhante — se não souberes algum agora, o anfitrião pode
+                    completar depois.
+                  </p>
+                </div>
+
+                {acompanhantes.map((a, i) => (
+                  <div key={i} className="rounded-xl border border-input bg-card p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold">Acompanhante {i + 1}</p>
+                      {acompanhantes.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setAcompanhantes(prev => prev.filter((_, j) => j !== i))}
+                          className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          Remover
+                        </button>
+                      )}
+                    </div>
+
+                    {(['nome', 'data_nascimento', 'nacionalidade', 'tipo_documento', 'numero_documento', 'pais_residencia'] as const).map(campo => (
+                      <div key={campo} className="flex flex-col gap-1">
+                        <label className="text-[11px] text-muted-foreground font-medium">
+                          {ROTULO_ACOMPANHANTE[campo]}
+                        </label>
+                        {campo === 'tipo_documento' ? (
+                          <select
+                            value={a[campo]}
+                            onChange={e => setAcompanhantes(prev => prev.map((x, j) => j === i ? { ...x, [campo]: e.target.value } : x))}
+                            className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-full"
+                          >
+                            <option value="">Selecionar...</option>
+                            <option value="Passaporte">Passaporte</option>
+                            <option value="Cartão de Cidadão">Cartão de Cidadão</option>
+                            <option value="BI">BI</option>
+                            <option value="Título de Residência">Título de Residência</option>
+                            <option value="Outro">Outro</option>
+                          </select>
+                        ) : (
+                          <input
+                            type={campo === 'data_nascimento' ? 'date' : 'text'}
+                            value={a[campo]}
+                            onChange={e => setAcompanhantes(prev => prev.map((x, j) => j === i ? { ...x, [campo]: e.target.value } : x))}
+                            className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-full"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setAcompanhantes(prev => [...prev, acompanhanteVazio()])}
+                  className="text-xs text-primary font-semibold py-2"
+                >
+                  + Acrescentar pessoa
+                </button>
+              </div>
+            )}
 
             <button
               type="button"

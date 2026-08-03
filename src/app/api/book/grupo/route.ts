@@ -93,6 +93,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar a reserva.' }, { status: 500 })
   }
 
+  // Quem reservou fica ligado a todas as reservas do grupo: é a mesma pessoa
+  // em todos os quartos, e é dela que já se tem a ficha.
+  await supabase.from('reserva_hospedes').insert(
+    linhas.map(l => ({ booking_id: l.id, guest_id: guestId, principal: true, owner_id })),
+  )
+
   // Uma notificação, não uma por quarto: o anfitrião recebeu um pedido.
   try {
     await sendBookingNotification({

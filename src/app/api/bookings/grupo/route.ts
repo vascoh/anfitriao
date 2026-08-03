@@ -181,6 +181,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar a reserva de grupo.' }, { status: 500 })
   }
 
+  if (body?.hospedeId) {
+    await supabase.from('reserva_hospedes').insert(
+      linhas.map(l => ({ booking_id: l.id, guest_id: body.hospedeId, principal: true, owner_id: userId })),
+    )
+  }
+
   await logAudit({
     actorId: userId,
     entidade: 'booking',
