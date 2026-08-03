@@ -196,6 +196,11 @@ export interface Booking {
   criado_em: string
   historico: BookingEvent[]
   owner_id?: string
+  /**
+   * Reservas do mesmo grupo — uma casa alugada por inteiro é uma reserva por
+   * quarto, ligadas por este id. Ver `lib/grupos.ts`.
+   */
+  reserva_grupo_id?: string | null
   // ─── Faturação certificada (migration 028) ───────────────────────────
   // O documento legal vive no fornecedor certificado; aqui só a referência.
   fatura_estado?: 'nao_emitida' | 'a_emitir' | 'emitida' | 'falhou'

@@ -8,6 +8,7 @@ import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
 import { uuid, today, addDays } from '@/lib/utils'
 import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
 import { detectConflict, calculatePriceWithRules, unidadesReservaveis } from '@/lib/reservations'
+import { quartosDaCasa, capacidadeTotal, disponibilidadeDosQuartos, sugerirQuartos } from '@/lib/grupos'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 
@@ -44,6 +45,11 @@ function NovaReservaInner() {
   const ownerId = user?.id
   const [step, setStep] = useState<Step>('propriedade')
   const [properties, setProperties] = useState<Property[]>([])
+  /** Todas, incluindo as casas-mãe — precisas para montar a reserva de grupo. */
+  const [todasProps, setTodasProps] = useState<Property[]>([])
+  /** Quando preenchido, reserva-se a casa inteira em vez de uma unidade. */
+  const [casaId, setCasaId] = useState('')
+  const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [guestSearch, setGuestSearch] = useState('')
   const [showNewGuest, setShowNewGuest] = useState(false)
@@ -69,8 +75,10 @@ function NovaReservaInner() {
   useEffect(() => {
     if (!ownerId) return
     fetchProperties().then(all => {
-      // Uma casa com quartos não se reserva: reservam-se os quartos dela.
+      // Uma casa com quartos não é uma unidade: ou se reserva um quarto, ou
+      // se reserva a casa inteira — e essa é uma reserva de grupo.
       const active = unidadesReservaveis(all)
+      setTodasProps(all)
       setProperties(active)
       const preselected = searchParams.get('propriedade')
       if (preselected && active.some(p => p.id === preselected)) {
@@ -78,6 +86,7 @@ function NovaReservaInner() {
       }
     })
     fetchGuests().then(setGuests)
+    fetchBookings().then(setBookings)
     fetch('/api/price-rules').then(r => r.json()).then(d => setPriceRules(Array.isArray(d) ? d : []))
     fetch('/api/tarifas').then(r => r.json()).then(d => setPriceTarifas(Array.isArray(d) ? d : []))
     fetch('/api/platform-rates').then(r => r.json()).then(d => setPlatformRates(Array.isArray(d) ? d : []))
@@ -85,6 +94,17 @@ function NovaReservaInner() {
   }, [ownerId])
 
   const selectedProp = properties.find(p => p.id === propId)
+
+  /** Casas com quartos — reserváveis por inteiro, nunca como unidade. */
+  const casas = todasProps.filter(p => p.ativo && quartosDaCasa(todasProps, p.id).length > 0)
+  const casaEscolhida = casas.find(c => c.id === casaId)
+  const quartosDaCasaEscolhida = casaEscolhida ? quartosDaCasa(todasProps, casaEscolhida.id) : []
+  const disponibilidade = casaEscolhida && checkIn < checkOut
+    ? disponibilidadeDosQuartos(quartosDaCasaEscolhida, bookings, checkIn, checkOut)
+    : []
+  const sugestao = casaEscolhida && disponibilidade.length > 0
+    ? sugerirQuartos(disponibilidade, numHospedes)
+    : null
   const selectedGuest = guests.find(g => g.id === guestId)
   const filteredGuests = guests.filter(g =>
     !guestSearch || g.nome.toLowerCase().includes(guestSearch.toLowerCase())
@@ -92,12 +112,20 @@ function NovaReservaInner() {
 
   // Auto-fill price when reaching details step using rule-based pricing
   useEffect(() => {
-    if (step === 'detalhes' && selectedProp && checkIn && checkOut && checkIn < checkOut && !precoTotal) {
-      const breakdown = calculatePriceWithRules(selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem)
-      const t = setTimeout(() => setPrecoTotal(String(breakdown.total)), 0)
-      return () => clearTimeout(t)
-    }
-  }, [step, selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem, precoTotal])
+    if (step !== 'detalhes' || precoTotal || !checkIn || !checkOut || checkIn >= checkOut) return
+
+    // No modo grupo o preço é a soma dos quartos, cada um com as suas regras.
+    const unidades = sugestao?.ok ? sugestao.quartos : selectedProp ? [selectedProp] : []
+    if (unidades.length === 0) return
+
+    const total = unidades.reduce(
+      (soma, u) => soma + calculatePriceWithRules(u, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem).total,
+      0,
+    )
+    const t = setTimeout(() => setPrecoTotal(String(Math.round(total * 100) / 100)), 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `sugestao` é recalculada a cada render; depende do que já está nas dependências
+  }, [step, selectedProp, casaId, numHospedes, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem, precoTotal])
 
   const STEPS: Step[] = ['propriedade', 'datas', 'hospede', 'detalhes']
 
@@ -135,9 +163,43 @@ function NovaReservaInner() {
   }
 
   async function handleSubmit() {
-    if (!propId || !guestId) return
+    if ((!propId && !casaId) || !guestId) return
     setSubmitting(true)
     setSubmitError(null)
+
+    // Casa inteira: uma reserva por quarto, criadas de uma só vez pelo
+    // servidor. Ou entram todas, ou não entra nenhuma.
+    if (casaId) {
+      try {
+        const res = await fetch('/api/bookings/grupo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            casaId,
+            checkIn,
+            checkOut,
+            numHospedes,
+            hospedeId: guestId,
+            quartoIds: sugestao?.ok ? sugestao.quartos.map(q => q.id) : undefined,
+            origem,
+            notas: notas.trim() || undefined,
+            precoTotal: parseFloat(precoTotal) || undefined,
+          }),
+        })
+        const json = await res.json()
+        if (!res.ok) {
+          setSubmitting(false)
+          setSubmitError(json.error ?? 'Não foi possível criar a reserva de grupo.')
+          return
+        }
+        router.push(`/reservas?grupo=${json.grupoId}`)
+      } catch {
+        setSubmitting(false)
+        setSubmitError('Erro ao criar a reserva. Tenta novamente.')
+      }
+      return
+    }
+
     try {
       const total = parseFloat(precoTotal) || 0
       const pago = parseFloat(precoPago) || 0
@@ -184,10 +246,43 @@ function NovaReservaInner() {
         <div className="flex flex-col flex-1">
           <StepHeader step={1} total={4} label="Qual a propriedade?" />
           <div className="flex flex-col gap-2 px-4">
+            {casas.length > 0 && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-1">
+                  Casa inteira
+                </p>
+                {casas.map(c => {
+                  const qs = quartosDaCasa(todasProps, c.id)
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => { setCasaId(c.id); setPropId(''); goNext() }}
+                      className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors ${
+                        casaId === c.id ? 'border-primary bg-primary/5' : 'border-border bg-card active:bg-muted/40'
+                      }`}
+                    >
+                      <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: c.cor + '25' }}>
+                        <span className="text-base font-bold" style={{ color: c.cor }}>{c.nome[0]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{c.nome} · casa inteira</p>
+                        <p className="text-xs text-muted-foreground">
+                          {qs.length} quartos · até {capacidadeTotal(qs)} pessoas
+                        </p>
+                      </div>
+                      {casaId === c.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+                    </button>
+                  )
+                })}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mt-3">
+                  Um quarto ou alojamento
+                </p>
+              </>
+            )}
             {properties.map(p => (
               <button
                 key={p.id}
-                onClick={() => { setPropId(p.id); goNext() }}
+                onClick={() => { setPropId(p.id); setCasaId(''); goNext() }}
                 className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors ${
                   propId === p.id ? 'border-primary bg-primary/5' : 'border-border bg-card active:bg-muted/40'
                 }`}
@@ -281,18 +376,81 @@ function NovaReservaInner() {
                 Conflito de datas: já existe uma reserva neste período para esta propriedade.
               </div>
             )}
+
+            {/* Casa inteira: quantas pessoas e que quartos. É aqui que se
+                responde a "levo um grupo de 8" antes de a reserva existir. */}
+            {casaEscolhida && disponibilidade.length > 0 && (
+              <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs text-muted-foreground font-medium">Quantas pessoas</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={numHospedes}
+                    onChange={e => setNumHospedes(Math.max(1, Number(e.target.value)))}
+                    className="w-20 rounded-lg border border-input bg-background px-3 py-2 text-sm text-right tabular-nums"
+                  />
+                </div>
+
+                {sugestao && !sugestao.ok && sugestao.motivo === 'nao_cabe' && (
+                  <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                    <strong>Não cabem.</strong> {casaEscolhida.nome} leva{' '}
+                    {sugestao.capacidadeDisponivel}{' '}
+                    {sugestao.capacidadeDisponivel === 1 ? 'pessoa' : 'pessoas'} nestas datas, e são {numHospedes}.
+                  </p>
+                )}
+
+                {sugestao && !sugestao.ok && sugestao.motivo === 'sem_quartos' && (
+                  <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                    Não há nenhum quarto livre nestas datas.
+                  </p>
+                )}
+
+                <ul className="flex flex-col gap-1.5">
+                  {disponibilidade.map(({ quarto, livre, conflito: c }) => {
+                    const usado = sugestao?.ok && sugestao.quartos.some(q => q.id === quarto.id)
+                    return (
+                      <li key={quarto.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className={livre ? '' : 'text-muted-foreground line-through'}>
+                          {quarto.nome} · {quarto.capacidade} pax
+                        </span>
+                        <span className={
+                          !livre ? 'text-muted-foreground'
+                          : usado ? 'font-semibold text-primary'
+                          : 'text-muted-foreground'
+                        }>
+                          {!livre ? (c ? 'ocupado' : 'ocupado') : usado ? 'reservado no grupo' : 'fica livre'}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+
+                {sugestao?.ok && (
+                  <p className="text-xs text-muted-foreground">
+                    {sugestao.quartos.length} {sugestao.quartos.length === 1 ? 'quarto' : 'quartos'} para {numHospedes}{' '}
+                    {numHospedes === 1 ? 'pessoa' : 'pessoas'}
+                    {sugestao.sobra > 0 && ` · sobram ${sugestao.sobra} ${sugestao.sobra === 1 ? 'lugar' : 'lugares'}`}
+                  </p>
+                )}
+              </div>
+            )}
             <button
               onClick={async () => {
                 if (!checkIn || !checkOut || checkIn >= checkOut) return
                 if (propId) {
-                  const bookings = await fetchBookings()
-                  const conflict = detectConflict(bookings, propId, checkIn, checkOut)
+                  const atuais = await fetchBookings()
+                  setBookings(atuais)
+                  const conflict = detectConflict(atuais, propId, checkIn, checkOut)
                   if (conflict) { setConflito(true); return }
                 }
                 setConflito(false)
                 goNext()
               }}
-              disabled={!checkIn || !checkOut || checkIn >= checkOut}
+              disabled={
+                !checkIn || !checkOut || checkIn >= checkOut ||
+                Boolean(casaEscolhida && !sugestao?.ok)
+              }
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity"
             >
               Continuar
@@ -382,8 +540,17 @@ function NovaReservaInner() {
           <div className="flex flex-col gap-4 px-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="px-4 py-3 border-b border-border">
-                <p className="text-xs text-muted-foreground">Propriedade</p>
-                <p className="text-sm font-semibold mt-0.5">{selectedProp?.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {casaEscolhida ? 'Casa inteira' : 'Propriedade'}
+                </p>
+                <p className="text-sm font-semibold mt-0.5">
+                  {casaEscolhida?.nome ?? selectedProp?.nome}
+                </p>
+                {casaEscolhida && sugestao?.ok && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {sugestao.quartos.map(q => q.nome).join(' · ')}
+                  </p>
+                )}
               </div>
               <div className="px-4 py-3 border-b border-border">
                 <p className="text-xs text-muted-foreground">Hóspede</p>
@@ -401,7 +568,9 @@ function NovaReservaInner() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-muted-foreground font-medium">Nº de hóspedes</label>
-                <input type="number" min={1} max={selectedProp?.capacidade ?? 20} value={numHospedes}
+                <input type="number" min={1}
+                  max={casaEscolhida ? capacidadeTotal(quartosDaCasaEscolhida) : selectedProp?.capacidade ?? 20}
+                  value={numHospedes}
                   onChange={e => setNumHospedes(Number(e.target.value))}
                   className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-28" />
               </div>

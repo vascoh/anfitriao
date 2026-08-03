@@ -7,6 +7,7 @@ import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import type { Booking, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
+import { agruparReservas, type ResumoGrupo } from '@/lib/grupos'
 import { useUser } from '@clerk/nextjs'
 
 type Filter = 'todas' | 'ativas' | 'proximas' | 'pendentes' | 'passadas'
@@ -28,6 +29,62 @@ function filterBookings(bookings: Booking[], filter: Filter): Booking[] {
     case 'passadas': return bookings.filter(b => ['checkout', 'cancelada', 'no_show'].includes(b.estado))
     default:         return bookings
   }
+}
+
+/**
+ * Uma reserva de grupo aparece como uma linha, não como uma por quarto.
+ *
+ * A base de dados tem N reservas — é o que mantém os calendários, o iCal e a
+ * ocupação corretos — mas para quem alugou a casa inteira aquilo foi uma
+ * reserva só, e a lista tem de concordar com ele.
+ */
+function GrupoRow({ grupo, guests, props }: { grupo: ResumoGrupo; guests: Guest[]; props: Property[] }) {
+  const primeira = grupo.reservas[0]
+  const guest = guests.find(g => g.id === primeira.hospede_id)
+  const quartos = grupo.reservas
+    .map(r => props.find(p => p.id === r.propriedade_id))
+    .filter(Boolean) as Property[]
+  const casa = quartos.length > 0 ? props.find(p => p.id === quartos[0].parent_id) : undefined
+  const n = nights(grupo.checkIn, grupo.checkOut)
+  const saldo = grupo.precoTotal - grupo.precoPago
+
+  return (
+    <Link href={`/reservas/${primeira.id}`}
+      className="flex items-start gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors border-b border-border last:border-0">
+
+      <div className="flex flex-col items-center pt-1 shrink-0">
+        <div className="h-7 w-1 rounded-full" style={{ backgroundColor: casa?.cor ?? quartos[0]?.cor ?? 'var(--primary)' }} />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-semibold text-sm truncate">{guest?.nome ?? '—'}</p>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className="text-sm font-semibold">{fmtMoney(grupo.precoTotal)}</span>
+            {saldo > 0 && (
+              <span className="text-[10px] font-semibold text-destructive">{fmtMoney(saldo)} em falta</span>
+            )}
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {casa ? `${casa.nome} · casa inteira` : quartos.map(q => q.nome).join(' · ')}
+        </p>
+
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_CLASS[grupo.estado]}`}>
+            {STATUS_LABEL[grupo.estado]}
+          </span>
+          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border text-muted-foreground">
+            {grupo.reservas.length} quartos · {grupo.numHospedes} pax
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            {fmtDate(grupo.checkIn)} → {fmtDate(grupo.checkOut)} · {n} {n === 1 ? 'noite' : 'noites'}
+          </span>
+        </div>
+      </div>
+    </Link>
+  )
 }
 
 function BookingRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: Property[] }) {
@@ -274,8 +331,10 @@ export default function ReservasPage() {
           </div>
         ) : (
           <div className="bg-card border-b border-border">
-            {filtered.map(b => (
-              <BookingRow key={b.id} b={b} guests={guests} props={props} />
+            {agruparReservas(filtered).map(grupo => (
+              grupo.reservas.length > 1
+                ? <GrupoRow key={grupo.grupoId} grupo={grupo} guests={guests} props={props} />
+                : <BookingRow key={grupo.reservas[0].id} b={grupo.reservas[0]} guests={guests} props={props} />
             ))}
           </div>
         )}
