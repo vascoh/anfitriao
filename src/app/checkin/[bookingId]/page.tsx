@@ -102,6 +102,9 @@ export default function CheckinPage() {
   })
   /** Um por pessoa além de quem reservou. O boletim do SIBA é por pessoa. */
   const [acompanhantes, setAcompanhantes] = useState<Acompanhante[]>([])
+  /** Índice do acompanhante cujo documento está a ser lido. */
+  const [aLerAcompanhante, setALerAcompanhante] = useState<number | null>(null)
+  const [erroAcompanhante, setErroAcompanhante] = useState<Record<number, string>>({})
   const [preview, setPreview] = useState<string | null>(null)
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState('')
@@ -152,6 +155,52 @@ export default function CheckinPage() {
       })
       .catch(() => setStep('error'))
   }, [bookingId])
+
+  /**
+   * Lê o documento de um acompanhante.
+   *
+   * Usa a mesma rota do documento de quem reserva. A diferença é só o destino
+   * dos campos — e não fazer isto obrigava a escrever à mão sete fichas num
+   * grupo de oito, que é o ponto onde qualquer pessoa desiste.
+   */
+  async function lerDocumentoAcompanhante(indice: number, file: File) {
+    setALerAcompanhante(indice)
+    setErroAcompanhante(prev => ({ ...prev, [indice]: '' }))
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/documentos/extrair', { method: 'POST', body: fd })
+      const extracted = await res.json() as Record<string, string> & { error?: string }
+
+      if (!res.ok) {
+        setErroAcompanhante(prev => ({
+          ...prev,
+          [indice]: extracted.error ?? 'Não foi possível ler. Preenche à mão.',
+        }))
+        return
+      }
+
+      setAcompanhantes(prev => prev.map((a, j) => j !== indice ? a : {
+        ...a,
+        nome: extracted.nome || a.nome,
+        data_nascimento: extracted.data_nascimento || a.data_nascimento,
+        nacionalidade: extracted.nacionalidade || a.nacionalidade,
+        numero_documento: extracted.numero_documento || a.numero_documento,
+        tipo_documento: extracted.tipo_documento || a.tipo_documento,
+        pais_emissao: extracted.pais_emissao || a.pais_emissao,
+        // O documento não diz onde a pessoa vive; herda-se de quem reservou,
+        // que é o caso esmagadoramente mais comum num grupo que viaja junto.
+        pais_residencia: a.pais_residencia || form.pais_residencia,
+      }))
+    } catch {
+      setErroAcompanhante(prev => ({
+        ...prev,
+        [indice]: 'Não foi possível ler. Preenche à mão.',
+      }))
+    } finally {
+      setALerAcompanhante(null)
+    }
+  }
 
   function handleFile(file: File) {
     setExtractError('')
@@ -459,6 +508,37 @@ export default function CheckinPage() {
                         </button>
                       )}
                     </div>
+
+                    <label className="flex items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2.5 cursor-pointer active:bg-primary/10 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="sr-only"
+                        onChange={e => {
+                          const f = e.target.files?.[0]
+                          if (f) lerDocumentoAcompanhante(i, f)
+                          e.target.value = ''
+                        }}
+                      />
+                      {aLerAcompanhante === i ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                          <span className="text-xs text-muted-foreground">A ler documento...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="h-4 w-4 text-primary shrink-0" />
+                          <span className="text-xs font-semibold">Fotografar documento</span>
+                        </>
+                      )}
+                    </label>
+
+                    {erroAcompanhante[i] && (
+                      <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                        {erroAcompanhante[i]}
+                      </p>
+                    )}
 
                     {(['nome', 'data_nascimento', 'nacionalidade', 'tipo_documento', 'numero_documento', 'pais_residencia'] as const).map(campo => (
                       <div key={campo} className="flex flex-col gap-1">

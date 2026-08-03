@@ -6,7 +6,17 @@ const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  const rl = checkRateLimit(`documentos:${ip}`, 5, 3_600_000)
+  /* 20/hora por IP.
+   *
+   * Era 5, pensado para um hóspede a fotografar um documento. Com o boletim
+   * por pessoa, um grupo de 8 faz 8 leituras a partir do mesmo telemóvel e da
+   * mesma rede — batia na parede à sexta pessoa, a meio do check-in, sem
+   * explicação que fizesse sentido para quem está do outro lado.
+   *
+   * 20 cobre um grupo grande com repetições e continua a limitar o custo de
+   * IA. ⚠️ Este limitador é em memória e não funciona em serverless (ver
+   * DOSSIE §3, S2) — o teto real só existe depois do Upstash. */
+  const rl = checkRateLimit(`documentos:${ip}`, 20, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Demasiados pedidos. Tenta mais tarde.' },
