@@ -127,9 +127,11 @@ interface Props {
   settings: WebsiteSettings
   /** Set of property IDs that are currently occupied (have an active booking today) */
   occupiedIds: Set<string>
+  /** Bloco de reserva da casa inteira, montado pelo servidor. */
+  casaInteira?: React.ReactNode
 }
 
-export default function RoomsClient({ parent, rooms, settings, occupiedIds }: Props) {
+export default function RoomsClient({ parent, rooms, settings, occupiedIds, casaInteira }: Props) {
   const availableCount = rooms.filter(r => !occupiedIds.has(r.id)).length
   const backHref = settings.slug ? `/r/${settings.slug}` : '/'
   const theme = siteTheme(settings)
@@ -172,6 +174,10 @@ export default function RoomsClient({ parent, rooms, settings, occupiedIds }: Pr
         {parent.descricao && (
           <p className="text-sm text-muted-foreground leading-relaxed">{parent.descricao}</p>
         )}
+
+        {/* Casa inteira antes dos quartos: quem chega com um grupo não devia
+            ter de somar quartos de cabeça para descobrir que dá. */}
+        {casaInteira}
 
         {/* Availability summary */}
         <div className="flex items-center justify-between">

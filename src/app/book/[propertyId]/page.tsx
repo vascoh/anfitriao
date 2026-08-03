@@ -8,6 +8,7 @@ import { today } from '@/lib/utils'
 import { getAccountByClerkId } from '@/lib/accounts'
 import BookingClient from './BookingClient'
 import RoomsClient from './RoomsClient'
+import CasaInteiraClient from './CasaInteiraClient'
 
 export default async function BookPropertyPage({ params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params
@@ -70,6 +71,17 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
         rooms={rooms}
         settings={ws}
         occupiedIds={occupiedIds}
+        casaInteira={
+          <CasaInteiraClient
+            casa={prop}
+            quartos={rooms}
+            bookings={bookings}
+            priceRules={rules}
+            tarifas={tars}
+            platformRates={rates}
+            minNoites={ws.min_noites ?? 1}
+          />
+        }
       />
     )
   }

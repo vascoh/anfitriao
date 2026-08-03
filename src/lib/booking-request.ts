@@ -122,6 +122,163 @@ export async function validateBookingRequest(
   }
 }
 
+export interface ValidatedGroupRequest {
+  guestId: string
+  grupoId: string
+  nome: string
+  email: string
+  telefone?: string
+  notas?: string
+  casa: Property & { nome: string; owner_id: string | null }
+  /** Quartos a reservar, já validados como livres, com preço e pessoas. */
+  quartos: Array<{ quarto: Property; preco: number; pessoas: number }>
+  check_in: string
+  check_out: string
+  num_hospedes: number
+  owner_id: string | null
+  preco_total: number
+}
+
+export type GroupValidationResult =
+  | { ok: true; data: ValidatedGroupRequest }
+  | { ok: false; error: string; status: number }
+
+/**
+ * Validação de um pedido de **casa inteira** vindo do site público.
+ *
+ * Reaproveita as regras do pedido normal (nome, email, datas, limites) e
+ * acrescenta o que só existe no grupo: resolver os quartos da casa, confirmar
+ * que **todos** estão livres, e calcular o preço somando quarto a quarto com
+ * as regras de cada um.
+ *
+ * Não insere nada — quem chama decide. O hóspede é a mesma pessoa em todas as
+ * reservas do grupo, por isso há um só `guestId`.
+ */
+export async function validateGroupBookingRequest(
+  payload: { guest?: Record<string, unknown>; booking?: Record<string, unknown> },
+): Promise<GroupValidationResult> {
+  const supabase = createAdminClient()
+  const guest = payload?.guest ?? {}
+  const booking = payload?.booking ?? {}
+
+  const casaId = booking.propriedade_id
+  if (typeof casaId !== 'string' || !UUID_RE.test(casaId)) {
+    return { ok: false, error: 'propriedade_id obrigatório', status: 400 }
+  }
+
+  const nome = typeof guest.nome === 'string' ? guest.nome.trim() : ''
+  if (!nome || nome.length > 200) return { ok: false, error: 'Nome do hóspede obrigatório', status: 400 }
+
+  const email = typeof guest.email === 'string' ? guest.email.trim() : ''
+  if (!email || !EMAIL_RE.test(email) || email.length > 320) {
+    return { ok: false, error: 'Email inválido', status: 400 }
+  }
+
+  const check_in = booking.check_in
+  const check_out = booking.check_out
+  if (typeof check_in !== 'string' || !DATE_RE.test(check_in) ||
+      typeof check_out !== 'string' || !DATE_RE.test(check_out) ||
+      nights(check_in, check_out) < 1) {
+    return { ok: false, error: 'Datas inválidas', status: 400 }
+  }
+  if (check_in < today() || nights(check_in, check_out) > 365) {
+    return { ok: false, error: 'Datas inválidas', status: 400 }
+  }
+
+  const num_hospedes = Number(booking.num_hospedes ?? 1)
+  if (!Number.isInteger(num_hospedes) || num_hospedes < 1 || num_hospedes > 50) {
+    return { ok: false, error: 'Número de hóspedes inválido', status: 400 }
+  }
+
+  const notas = typeof booking.notas === 'string' ? booking.notas.trim().slice(0, 2000) : undefined
+  const telefone = typeof guest.telefone === 'string' ? guest.telefone.trim().slice(0, 40) : undefined
+  const guestId = typeof guest.id === 'string' && UUID_RE.test(guest.id) ? guest.id : uuid()
+
+  const { data: casa, error: casaErr } = await supabase
+    .from('properties').select('*').eq('id', casaId).single()
+
+  if (casaErr || !casa || casa.ativo === false) {
+    return { ok: false, error: 'Alojamento não encontrado', status: 404 }
+  }
+
+  const owner_id = casa.owner_id as string | null
+
+  const { data: filhos } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('parent_id', casaId)
+    .eq('ativo', true)
+
+  const quartos = (filhos ?? []) as Property[]
+  if (quartos.length === 0) {
+    return { ok: false, error: 'Este alojamento não se reserva por quartos.', status: 400 }
+  }
+
+  const capacidade = quartos.reduce((s, q) => s + (q.capacidade ?? 0), 0)
+  if (num_hospedes > capacidade) {
+    return {
+      ok: false,
+      error: `A casa leva ${capacidade} ${capacidade === 1 ? 'pessoa' : 'pessoas'}.`,
+      status: 400,
+    }
+  }
+
+  // Todos os quartos têm de estar livres. Uma casa inteira com um quarto
+  // ocupado não é uma casa inteira — e aceitar o pedido criaria a expetativa
+  // errada num hóspede que já fez as contas às camas.
+  const { data: conflitos, error: cErr } = await supabase
+    .from('bookings')
+    .select('propriedade_id')
+    .in('propriedade_id', quartos.map(q => q.id))
+    .not('estado', 'in', '("cancelada","no_show")')
+    .lt('check_in', check_out)
+    .gt('check_out', check_in)
+
+  if (cErr) {
+    console.error('[validateGroupBookingRequest] conflict check', cErr.message)
+    return { ok: false, error: 'Erro ao verificar disponibilidade.', status: 500 }
+  }
+  if (conflitos && conflitos.length > 0) {
+    return { ok: false, error: 'Estas datas já não estão disponíveis para a casa inteira.', status: 409 }
+  }
+
+  const [rules, tarifas, rates] = await Promise.all([
+    adminGetPriceRules(owner_id ?? undefined),
+    adminGetTarifas(owner_id ?? undefined),
+    adminGetPlatformRates(owner_id ?? undefined),
+  ])
+
+  // Maiores primeiro: é a mesma ordem da app interna, para o hóspede e o
+  // anfitrião verem a mesma distribuição.
+  const ordenados = [...quartos].sort((a, b) => b.capacidade - a.capacidade)
+  let porAlojar = num_hospedes
+
+  const detalhe = ordenados.map(quarto => {
+    const pessoas = Math.min(quarto.capacidade, Math.max(porAlojar, 0))
+    porAlojar -= pessoas
+    return {
+      quarto,
+      pessoas,
+      preco: calculatePriceWithRules(quarto, check_in, check_out, rules, tarifas, rates, 'direto').total,
+    }
+  })
+
+  const preco_total = Math.round(detalhe.reduce((s, d) => s + d.preco, 0) * 100) / 100
+
+  return {
+    ok: true,
+    data: {
+      guestId,
+      grupoId: uuid(),
+      nome, email, telefone, notas,
+      casa: casa as Property & { nome: string; owner_id: string | null },
+      quartos: detalhe,
+      check_in, check_out, num_hospedes,
+      owner_id, preco_total,
+    },
+  }
+}
+
 /** Re-verifica conflito de datas — usado no preenchimento pós-pagamento, onde pode ter passado tempo desde a validação inicial. */
 export async function hasConflict(propriedade_id: string, check_in: string, check_out: string): Promise<boolean> {
   const supabase = createAdminClient()

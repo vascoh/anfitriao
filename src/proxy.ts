@@ -27,6 +27,7 @@ const isPublicRoute = createRouteMatcher([
   '/(auth)(.*)',
   // APIs públicas
   '/api/book',
+  '/api/book/grupo',
   '/api/book/checkout',
   '/api/book-checkout-fulfill',
   '/api/og(.*)',
