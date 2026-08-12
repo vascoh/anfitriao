@@ -222,6 +222,43 @@ describe('agruparReservas', () => {
     expect(agruparReservas(rs)[0].estado).toBe('pendente')
   })
 
+  it('um quarto cancelado não cancela o grupo inteiro', () => {
+    // Cancelar um dos três quartos mostrava o grupo como "Cancelada" na lista,
+    // com o hóspede a chegar na mesma aos outros dois.
+    const g = 'grupo-1'
+    const rs = [
+      reserva('b1', 'q-fam', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'cancelada' }),
+      reserva('b2', 'q-cas', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'confirmada' }),
+      reserva('b3', 'q-ind', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'pendente' }),
+    ]
+    expect(agruparReservas(rs)[0].estado).toBe('pendente')
+  })
+
+  it('o dinheiro do quarto cancelado sai da conta do grupo', () => {
+    // O hóspede não deve o quarto que já não vai ocupar — a mesma regra que a
+    // faturação já aplicava (`ativas`), e que a lista contradizia.
+    const g = 'grupo-1'
+    const rs = [
+      reserva('b1', 'q-fam', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'cancelada', preco_total: 300, num_hospedes: 4 }),
+      reserva('b2', 'q-cas', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'confirmada', preco_total: 200, num_hospedes: 2 }),
+    ]
+    const grupo = agruparReservas(rs)[0]
+    expect(grupo.precoTotal).toBe(200)
+    expect(grupo.numHospedes).toBe(2)
+    expect(grupo.reservas).toHaveLength(2) // continua a mostrar as duas linhas
+  })
+
+  it('um grupo todo cancelado mostra-se como cancelado, com os seus valores', () => {
+    const g = 'grupo-1'
+    const rs = [
+      reserva('b1', 'q-fam', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'cancelada', preco_total: 300 }),
+      reserva('b2', 'q-cas', '2026-08-10', '2026-08-14', { reserva_grupo_id: g, estado: 'cancelada', preco_total: 200 }),
+    ]
+    const grupo = agruparReservas(rs)[0]
+    expect(grupo.estado).toBe('cancelada')
+    expect(grupo.precoTotal).toBe(500)
+  })
+
   it('o intervalo do grupo cobre todas as reservas', () => {
     const g = 'grupo-1'
     const rs = [

@@ -181,10 +181,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar a reserva de grupo.' }, { status: 500 })
   }
 
+  /* Um quarto só, não todos: `reserva_hospedes` é a origem dos boletins, e o
+   * boletim é por pessoa e por cama. Ver a nota em /api/book/grupo. */
   if (body?.hospedeId) {
-    await supabase.from('reserva_hospedes').insert(
-      linhas.map(l => ({ booking_id: l.id, guest_id: body.hospedeId, principal: true, owner_id: userId })),
-    )
+    await supabase.from('reserva_hospedes').insert({
+      booking_id: linhas[0].id, guest_id: body.hospedeId, principal: true, owner_id: userId,
+    })
   }
 
   await logAudit({

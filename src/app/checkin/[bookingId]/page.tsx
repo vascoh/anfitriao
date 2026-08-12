@@ -16,6 +16,8 @@ interface CheckinData {
   host_nome: string
   guest: Record<string, string> | null
   acompanhantes?: Array<Record<string, string>>
+  /** Falso num quarto de grupo onde quem reservou não dorme. */
+  principal_neste_quarto?: boolean
   ja_submetido: boolean
 }
 
@@ -131,7 +133,11 @@ export default function CheckinPage() {
           pais_emissao: a.pais_emissao ?? '',
           pais_residencia: a.pais_residencia ?? '',
         }))
-        const emFalta = Math.max(0, (d.num_hospedes ?? 1) - 1 - jaRegistados.length)
+        /* Quem reservou só conta como ocupante do quarto onde dorme. Num
+         * grupo, os outros quartos precisam de uma ficha por pessoa — nenhuma
+         * delas é a de quem fez a reserva. */
+        const ocupadoPeloPrincipal = d.principal_neste_quarto === false ? 0 : 1
+        const emFalta = Math.max(0, (d.num_hospedes ?? 1) - ocupadoPeloPrincipal - jaRegistados.length)
         setAcompanhantes([...jaRegistados, ...Array.from({ length: emFalta }, acompanhanteVazio)])
 
         if (d.guest) {

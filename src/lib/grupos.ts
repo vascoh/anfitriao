@@ -145,10 +145,21 @@ export interface ResumoGrupo {
   estado: Booking['estado']
 }
 
-/** Ordem de "menos avançado" para decidir o estado que representa o grupo. */
+/**
+ * Ordem de "menos avançado" para decidir o estado que representa o grupo.
+ *
+ * `cancelada` e `no_show` **não** entram: não são fases de um percurso, são
+ * saídas dele. Um quarto cancelado num grupo de três punha a lista a dizer
+ * "Cancelada" com o hóspede a chegar aos outros dois — e o valor em dívida a
+ * incluir um quarto que já não se ocupa.
+ */
 const ORDEM_ESTADO: Booking['estado'][] = [
-  'cancelada', 'no_show', 'pendente', 'confirmada', 'checkin', 'checkout',
+  'pendente', 'confirmada', 'checkin', 'checkout',
 ]
+
+function estadoTerminado(estado: Booking['estado']): boolean {
+  return estado === 'cancelada' || estado === 'no_show'
+}
 
 /**
  * Agrupa reservas soltas em grupos, para a interface poder mostrar "uma
@@ -169,18 +180,27 @@ export function agruparReservas(bookings: Booking[]): ResumoGrupo[] {
 
   return [...porGrupo.entries()].map(([grupoId, reservas]) => {
     const ordenadas = [...reservas].sort((a, b) => a.check_in.localeCompare(b.check_in))
+
+    /* As contas fazem-se sobre o que continua de pé. Um grupo inteiramente
+     * cancelado conta-se a si próprio — senão ficava sem datas nem valor. É a
+     * mesma regra que a faturação já usava (`ativas` em `faturacao/emitir.ts`);
+     * era a lista que discordava. As linhas mostradas continuam a ser todas:
+     * o quarto cancelado não desaparece do detalhe do grupo. */
+    const vivas = ordenadas.filter(b => !estadoTerminado(b.estado))
+    const base = vivas.length > 0 ? vivas : ordenadas
+
     return {
       grupoId,
       reservas: ordenadas,
       casaId: null,
-      checkIn: ordenadas[0].check_in,
-      checkOut: ordenadas.reduce((max, b) => (b.check_out > max ? b.check_out : max), ordenadas[0].check_out),
-      numHospedes: reservas.reduce((s, b) => s + (b.num_hospedes ?? 0), 0),
-      precoTotal: Math.round(reservas.reduce((s, b) => s + (b.preco_total ?? 0), 0) * 100) / 100,
-      precoPago: Math.round(reservas.reduce((s, b) => s + (b.preco_pago ?? 0), 0) * 100) / 100,
-      estado: reservas
-        .map(b => b.estado)
-        .sort((a, b) => ORDEM_ESTADO.indexOf(a) - ORDEM_ESTADO.indexOf(b))[0],
+      checkIn: base[0].check_in,
+      checkOut: base.reduce((max, b) => (b.check_out > max ? b.check_out : max), base[0].check_out),
+      numHospedes: base.reduce((s, b) => s + (b.num_hospedes ?? 0), 0),
+      precoTotal: Math.round(base.reduce((s, b) => s + (b.preco_total ?? 0), 0) * 100) / 100,
+      precoPago: Math.round(base.reduce((s, b) => s + (b.preco_pago ?? 0), 0) * 100) / 100,
+      estado: [...base]
+        .sort((a, b) => ORDEM_ESTADO.indexOf(a.estado) - ORDEM_ESTADO.indexOf(b.estado))[0]
+        .estado,
     }
   })
 }

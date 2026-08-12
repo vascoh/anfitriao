@@ -6,6 +6,17 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12d] Caça a bugs nos grupos — dois reais, um deles com consequência legal
+
+Revisão dirigida ao código mais recente e menos exercitado (grupos, boletins, faturação). Todos os bugs foram primeiro reproduzidos em teste, e só depois corrigidos.
+
+- 🚨 **A mesma pessoa era declarada N vezes ao SIBA, e os acompanhantes nenhuma.** `/api/book/grupo` e `/api/bookings/grupo` ligavam quem reservou a **todos** os quartos do grupo em `reserva_hospedes` — a tabela de onde sai um boletim por pessoa. Um grupo de 3 pessoas em 3 quartos ficava com as três reservas dadas por **completas**: um boletim repetido três vezes e duas pessoas por comunicar (100 a 2.000 € de coima cada). Passa a ligar-se a **um** quarto; os restantes ocupantes entram no check-in, que é quando se sabem os nomes. O contacto continua em `bookings.hospede_id`, em todas as reservas.
+- 🔁 **O mesmo bug tinha uma segunda porta**: a rede de segurança do check-in (`upsert` da ligação "para reservas anteriores à 036") voltava a ligar quem reservou a cada quarto onde fizesse check-in. Passa a não correr em reservas de grupo.
+- 🧮 **E uma terceira consequência, no formulário**: o check-in do segundo quarto pedia menos uma ficha do que as pessoas que lá dormem, porque assumia que quem reservou era um dos ocupantes. A rota passa a dizer `principal_neste_quarto` e o formulário conta em conformidade.
+- 💸 **Um quarto cancelado cancelava o grupo inteiro na lista.** `agruparReservas` tratava `cancelada` como "estado menos avançado", por isso um grupo com um quarto cancelado e dois confirmados aparecia como **Cancelada** — com o hóspede a chegar na mesma. E o valor mostrado (e o "em falta") incluía o quarto que já não se ocupa. As contas passam a fazer-se sobre as reservas vivas; um grupo inteiramente cancelado conta-se a si próprio. É a regra que a **faturação já usava** (`ativas` em `faturacao/emitir.ts`) — era a lista que discordava.
+- 🔍 **Verificado e sem problema** (fica dito para não se repetir o trabalho): isolamento por dono em todas as rotas de API, incluindo `/api/faturacao/saft` e `/api/notification-preferences`; nenhuma aritmética de datas fora de `lib/utils`; a anonimização RGPD continua a limpar os campos agora encriptados.
+- ✅ 578 testes (4 novos, todos escritos a falhar primeiro), typecheck 0, lint 0, build OK.
+
 ### [2026-08-12c] A calculadora que faz a conta pelo visitante, e os estados vazios que faltavam
 
 Fecha o **2.4** (em parte) e o **2.5** do roadmap.

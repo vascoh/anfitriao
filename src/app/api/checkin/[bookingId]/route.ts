@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
 
   const { data: booking, error } = await supabase
     .from('bookings')
-    .select('id, check_in, check_out, num_hospedes, estado, hospede_id, propriedade_id, historico')
+    .select('id, check_in, check_out, num_hospedes, estado, hospede_id, propriedade_id, historico, reserva_grupo_id')
     .eq('id', bookingId)
     .single()
 
@@ -82,6 +82,16 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     num_hospedes: booking.num_hospedes,
     estado: booking.estado,
     hospede_id: booking.hospede_id,
+    /* Quem reservou dorme neste quarto?
+     *
+     * Numa reserva normal, sim — é a pessoa que está a fazer o check-in. Num
+     * grupo, `hospede_id` é o mesmo em todos os quartos (é o contacto) mas a
+     * pessoa só ocupa um deles. Sem esta distinção o formulário do segundo
+     * quarto pedia menos uma ficha do que as pessoas que lá dormem, e a
+     * reserva dava-se por completa com alguém por comunicar. */
+    principal_neste_quarto: booking.reserva_grupo_id
+      ? (ligacoes ?? []).some(l => l.principal && l.guest_id === booking.hospede_id)
+      : true,
     property: propRes.data ?? null,
     host_nome: settingsRes.data?.host_nome ?? settingsRes.data?.logo_texto ?? 'O seu anfitrião',
     // O hóspede é o titular destes dados: vê-os em claro para poder corrigi-los.
@@ -107,7 +117,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   const { data: booking, error: bookingError } = await supabase
     .from('bookings')
-    .select('id, hospede_id, historico, owner_id, num_hospedes')
+    .select('id, hospede_id, historico, owner_id, num_hospedes, reserva_grupo_id')
     .eq('id', bookingId)
     .single()
 
@@ -151,11 +161,20 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       console.error('[checkin] guest update', gErr.message)
       return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
     }
-    // Garante a ligação de quem reservou, para reservas anteriores à 036.
-    await supabase.from('reserva_hospedes').upsert(
-      { booking_id: bookingId, guest_id: booking.hospede_id, principal: true, owner_id: booking.owner_id },
-      { onConflict: 'booking_id,guest_id' },
-    )
+    /* Rede de segurança para reservas anteriores à 036 — mas **não** em grupo.
+     *
+     * Num grupo, `bookings.hospede_id` é o mesmo em todos os quartos (é o
+     * contacto), e `reserva_hospedes` é quem dorme onde. Ligar aqui punha
+     * quem reservou como ocupante de todos os quartos em que fizesse
+     * check-in: a mesma pessoa declarada N vezes ao SIBA, e as reservas a
+     * darem-se por completas sem os acompanhantes. A ligação do grupo é feita
+     * uma única vez, na criação, ao primeiro quarto. */
+    if (!booking.reserva_grupo_id) {
+      await supabase.from('reserva_hospedes').upsert(
+        { booking_id: bookingId, guest_id: booking.hospede_id, principal: true, owner_id: booking.owner_id },
+        { onConflict: 'booking_id,guest_id' },
+      )
+    }
   }
 
   /* Acompanhantes.

@@ -166,6 +166,27 @@ describe('POST /api/book/grupo', () => {
     expect(inseridos).toHaveLength(0)
   })
 
+  it('quem reservou fica ligado a um quarto só — o boletim é por pessoa e por cama', async () => {
+    /* Ligá-lo aos três quartos parecia inofensivo (é a mesma pessoa) e não é:
+     * o boletim do SIBA sai por ficha ligada à reserva. Um grupo de 3 em 3
+     * quartos ficava com as três reservas "completas" — a mesma pessoa
+     * declarada três vezes e as outras duas nunca declaradas. O contacto de
+     * quem reservou vive em `bookings.hospede_id`, que continua em todas. */
+    await POST(pedido(corpoValido()))
+
+    const ligacoes = inseridos.filter(i => i.table === 'reserva_hospedes')
+    const linhas = ligacoes.flatMap(i => (Array.isArray(i.rows) ? i.rows : [i.rows])) as Array<Record<string, unknown>>
+    const reservas = inseridos.find(i => i.table === 'bookings')?.rows as Array<Record<string, unknown>>
+
+    expect(reservas.length).toBeGreaterThan(1)
+    expect(linhas).toHaveLength(1)
+    expect(linhas[0].principal).toBe(true)
+    expect(linhas[0].booking_id).toBe(reservas[0].id)
+
+    // O contacto mantém-se em todas as reservas do grupo.
+    expect(reservas.every(r => r.hospede_id === linhas[0].guest_id)).toBe(true)
+  })
+
   it('envia uma notificação ao anfitrião, não uma por quarto', async () => {
     await POST(pedido(corpoValido()))
     expect(notificacoes).toHaveLength(1)
