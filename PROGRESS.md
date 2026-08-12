@@ -6,6 +6,68 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12] Deploy de tudo o que estava só no local — e o silêncio dos emails confirmado
+
+O trabalho de 02–03/08 estava commitado mas **não pushado** (11 commits) e produção corria o build de 03/08 sem as variáveis que as funcionalidades novas exigem. Sessão de ponto de situação, sem código novo.
+
+- 🔑 **`APP_ENCRYPTION_KEY` gerada e definida em produção** (`openssl rand -base64 32`, sensível no Vercel). Só em Production — preview/development ficam de fora para dados de teste não partilharem chave com dados reais. Desbloqueia o cofre da chave SIBA **e** a criação de contas de faturação, que até aqui eram recusadas em vez de guardarem credenciais em claro. Momento certo para a fixar: 0 propriedades com chave SIBA e 0 contas de faturação, portanto nada encriptado se perde. A partir do primeiro registo, perdê-la é perder as credenciais.
+- ⬆️ **Push feito**: `origin/main` = `3180512`. Os 11 commits de 02–03/08 deixam de existir só nesta máquina.
+- 🚀 **Deploy `dpl_BcyFYGDitJjJsi3CStaZ815nBfHX`** (`npx vercel deploy --prod`, 10:08) — produção passa do build de 03/08 para `3180512`. Probe: `/`, `/sign-up`, `/robots.txt`, `/sitemap.xml` a 200. 548 testes e typecheck 0 antes do deploy.
+- 🔴 **Confirmado nos logs de arranque, e continua por resolver**: `RESEND_API_KEY` não está definida em produção — `[arranque][email] … NENHUM email é enviado (NoopProvider engole tudo)`. O diagnóstico de 30/07 está a fazer exatamente o que devia; falta a chave. Afeta pedidos e confirmações de reserva, check-in, lembretes de pagamento, fim de trial, alertas de conformidade, relatório mensal e as automações. Falta também `EMAIL_FROM` (sem ela sai de `onboarding@resend.dev`, que só entrega ao dono da conta).
+- ⚠️ **Outras variáveis em falta em produção**: `INVOICEXPRESS_PARTNER_API_KEY` (a página de faturação diz que não está disponível) e `STRIPE_EMPRESA_PRICE_ID` (o plano Empresa existe no código e na página de preços, mas o checkout não tem price ID). Dependem de valores das contas Resend/InvoiceXpress/Stripe.
+- 📊 **Base de dados em produção**: 1 conta, 4 propriedades, **0 reservas, 0 hóspedes, 0 faturas, 0 submissões SIBA**. O mês de uso real ainda não arrancou.
+
+### [2026-08-03d] Uma casa inteira, uma fatura
+
+- 🧾 Uma casa alugada por inteiro são N reservas na base (para o calendário, o iCal e a ocupação continuarem certos) mas **uma** reserva para quem pagou. Estava a gerar N faturas.
+- 📄 O documento leva uma linha de alojamento **por quarto** (quem pagou 920 € quer ver de onde vieram, e o contabilista também), as limpezas somadas numa linha e a taxa turística noutra — que por natureza é por pessoa e por noite.
+- 💣 **A regra que evita o erro caro**: as reservas partilham número, ATCUD e link, mas o `fatura_total` de cada uma guarda **a sua parte**. O total faturado é somado a partir das reservas — repetir 920 € em três linhas mostraria 2.760 € de receita que nunca existiu. O número é partilhado, o dinheiro é repartido.
+- 🔀 `emitirFaturaDaReserva` deteta o grupo e reencaminha: o botão numa das linhas e o cron do checkout dão no mesmo sítio, não há forma de emitir três documentos por engano. O cron salta os grupos já tratados na mesma execução, senão a segunda e a terceira linha contavam como falhas num relatório onde nada falhou.
+- ↩️ Uma fatura, uma nota de crédito: anula pelo valor todo e marca as N reservas.
+- ✅ 548 testes (9 novos).
+
+### [2026-08-03c] OCR em cada acompanhante, e o limite que o impedia
+
+- 📸 O boletim passou a ser por pessoa, mas a leitura do documento só existia para quem reservava — num grupo de oito eram sete fichas preenchidas à mão, no telemóvel, que é onde qualquer pessoa desiste. Cada acompanhante passa a ter o mesmo botão, com a mesma rota.
+- 🌍 O documento não diz onde a pessoa vive, por isso o país de residência **herda-se** de quem reservou (num grupo que viaja junto é o caso esmagadoramente comum) e continua editável.
+- 🚧 O limite de `/api/documentos/extrair` era 5/hora por IP, pensado para um hóspede a fotografar um documento. Um grupo de oito faz oito leituras do mesmo telemóvel e da mesma rede: batia na parede à sexta pessoa, a meio do check-in, com uma mensagem sem sentido nenhum para quem está do outro lado. Passa a 20 — cobre um grupo grande com repetições e continua a limitar o custo de IA.
+- ⚠️ Fica dito no código o que isto **não** resolve: o limitador é em memória e não funciona em serverless. O teto real só existe depois do Upstash (0.3 do roadmap).
+
+### [2026-08-03b] Um boletim por pessoa, como a lei pede — e a casa inteira ponta-a-ponta
+
+- ⚖️ **O bug com coima associada**: o boletim de alojamento é individual (Lei 23/2007), mas `bookings.hospede_id` era singular — uma reserva de 8 pessoas gerava **um** boletim e ficavam 7 por comunicar, a 100–2.000 € cada. Não era problema dos grupos: qualquer reserva de casal já comunicava metade das pessoas. Os grupos é que o tornaram impossível de adiar.
+- 🧍 `bookings.hospede_id` continua a ser **quem reservou** (o contacto, quem recebe emails, quem aparece na lista); os acompanhantes vivem na tabela nova `reserva_hospedes`. Nada do que já existe muda de significado. A migração retoma o histórico, ligando o principal de cada reserva existente, para não haver dois caminhos no código.
+- 🔢 `lib/hospedes-reserva.ts` distingue três coisas que se confundiam numa só: pessoas que a reserva diz ter, fichas criadas, e fichas completas. É a diferença entre "faltam 5 por identificar" e "a Maria não tem documento".
+- 📤 `/api/siba-submit` gera um boletim por pessoa e **só marca a reserva como entregue quando todos forem aceites** — entregar 5 de 8 e dar por feito esconderia exatamente o que se quer evitar. Recusa-se a entregar quando faltam fichas, dizendo quantas.
+- 🏠 **Grupos, dos dois lados**: `/api/bookings/grupo` (app) e `/api/book/grupo` (site público) criam N reservas ligadas por `reserva_grupo_id`, uma por quarto, **num só insert** — ou entram todas, ou não entra nenhuma; meio grupo alojado é pior do que grupo nenhum, porque só se descobre à chegada. Uma reserva na casa-mãe seria mais fácil e partiria tudo o resto: a casa não é unidade alugável, logo ocupação e RevPAR dividiriam por um denominador que não a inclui, o calendário de cada quarto não a mostraria, e o feed iCal por quarto não a exportaria — os quartos ficariam livres para toda a gente menos para nós.
+- 💬 O site público responde **antes** de pedir seja o que for: se não cabem, diz quantos cabem; se um quarto está ocupado nessas datas, diz qual e manda reservar os livres. O preço mostrado no browser é só para ver — o servidor recalcula antes de aceitar. O anfitrião recebe **uma** notificação, não três, porque recebeu um pedido, não três. Sem pagamento, como o `/api/book`: o Stripe Connect ainda não está concluído.
+- 💶 Um total fixado pelo anfitrião (desconto de casa inteira) reparte-se pelos quartos na proporção do preço de cada um, para o relatório por alojamento continuar a fazer sentido.
+- 🔧 Correção do Vasco: os testes de grupos usavam a capacidade que estava na base (4) e não a real — Quarto Familiar leva 5, a casa leva 8. Documentavam um cenário errado ("8 pessoas não cabem"; cabem, à justa: 5 + 2 + 1).
+- ✅ 526 → 539 testes.
+
+### [2026-08-03] SIBA por web service + faturação certificada + plano Empresa
+
+A sessão que fechou as duas maiores promessas por cumprir. Ambas **em produção e à espera de credenciais**, não de código.
+
+- 📡 **SIBA a sério** — `lib/siba-api.ts` era um placeholder que devolvia 501 à espera de "documentação da AIMA". A premissa estava errada: o web service é público e documentado, e as credenciais são **do anfitrião, por estabelecimento**. Contrato confirmado ao vivo contra o WSDL de produção e cruzado com `rafaelrpinto/node-siba`. `siba-xml.ts` (MovimentoBAL, envelope SOAP, leitura da resposta e as normalizações onde isto falha na prática: tipo de documento, código de país, nome partido em dois campos, CP4/CP3, datas ao meio-dia UTC), `siba-mapping.ts` (**nunca adivinha** — nacionalidade desconhecida conta como campo em falta, porque um código errado é recusado na mesma e sem explicação útil), cliente com 3 tentativas e recuo exponencial (o serviço devolve HTML em vez de SOAP quando está em baixo; não repete quando o erro é dos dados, porque repetir daria o mesmo).
+- 🔐 `lib/crypto.ts` (AES-256-GCM): sem `APP_ENCRYPTION_KEY` a app **recusa gravar**, em vez de guardar uma credencial do Estado em claro. `/api/properties` deixou de devolver a chave encriptada ao browser.
+- 🧾 **I1 — a prova** (migração 030): `siba_submissoes` guarda o SHA-256 do que foi enviado e a resposta em bruto. Todos os concorrentes vendem a submissão; o que interessa numa fiscalização é a prova. Migração 031: `pais_residencia`/`local_residencia` em `guests` — sem país de residência nenhum boletim pode ser entregue, e a app não o recolhia; passa a ser pedido no check-in ao próprio hóspede.
+- 💼 **Faturação: uma conta InvoiceXpress por anfitrião, criada com a nossa chave de parceiro.** A camada existia mas estava órfã, e a conta era única em variáveis de ambiente — errado em multi-tenant e errado na substância: a fatura tem de sair no NIF de quem presta o serviço. Uma conta única emitiria tudo em nome do Anfitrião e não serviria a contabilidade de cliente nenhum. O anfitrião **nunca vê o InvoiceXpress**: dá nome fiscal e NIF, autoriza a comunicação à AT uma vez, e as faturas aparecem sozinhas.
+- ⏰ Cron `/api/cron/faturacao` às 07:00 emite o que fez checkout — é o que separa "podes faturar aqui" de "as tuas faturas estão feitas". Anulação sempre por nota de crédito, nunca por reemissão (a numeração já foi comunicada à AT). SAF-T do mês num botão (202 = ainda a gerar, não é erro). IVA 6/5/4 % por região, taxa turística isenta M99. Migração 033 (`faturacao_contas`). `docs/FATURACAO.md` descreve fluxo e limites.
+- 🏢 **Plano Empresa** (99 €) e o limite de plano passa a contar quartos, não casas.
+- 🗂️ **D2 — índices compostos `(owner_id, …)`** em `bookings` e `expenses` (migração 032): os de coluna única obrigavam o planeador a escolher entre filtrar por dono ou por data, e toda a leitura da app começa por `owner_id` e restringe logo a seguir por período.
+- 🚫 **Taxa turística não expandida, de propósito**: a fonte primária cobre exatamente os 5 concelhos implementados e confirma que Lagos não cobra. Para os restantes só há blogues em desacordo entre si — um deles dava Cascais a 1 € quando são 4 € desde janeiro de 2025 (o código está certo). Um valor errado aqui cobra dinheiro a mais a hóspedes reais.
+- 🔍 **Deriva de esquema encontrada ao executar**: `properties.id`, `bookings.id` e `guests.id` são `text` em produção, apesar de a migração 001 os declarar `UUID`. As migrações **não** são a fonte de verdade da base — quem escrever DDL a partir dos ficheiros falha, como falhou aqui à primeira. Vale um `schema.sql` gerado da produção.
+- ✅ 345 → 470 testes.
+
+### [2026-08-02] A landing deixa de prometer o que o produto não faz + dossiê estratégico
+
+- 🚨 A landing v2 anunciava **caixa de entrada unificada** (com painel ilustrado a mostrar mensagens do Airbnb e do Booking) e **contrato eletrónico**. Nenhum dos dois existe: o Concierge gera texto para o anfitrião copiar, e não há assinatura de contrato. Dizia ainda "atualização contínua" para uma sincronização que corre 1×/dia.
+- ✍️ Trocado pelo que existe mesmo — conformidade portuguesa, check-in online com leitura de documento, receita e despesas — e o painel ilustrado passa a mostrar o cartão de conformidade, com legenda a dizer que os dados são de exemplo.
+- ⚖️ Sai o **"+12 % ocupação"**: sem cliente que o sustente é uma alegação não comprovável (Diretiva Omnibus), não um detalhe decorativo. O "14 dias" escrito à mão no hero e no CTA passa a vir de `TRIAL_DIAS`, para a copy não poder divergir do produto.
+- ❓ FAQ nova sobre a frequência de sincronização: o iCal não é instantâneo em plataforma nenhuma, e por isso não se promete eliminar as duplas reservas.
+- 📕 **`docs/DOSSIE-ESTRATEGICO-2026-08.md`** substitui a tese central do plano de julho: (1) a conformidade PT **não** é um fosso vazio — EazyAL e Hostkit já a entregam; (2) o SIBA tem web service público e as credenciais são do anfitrião, logo a "pendência AIMA" era falsa; (3) o que sobra de vantagem é **preço por conta, não por alojamento**.
+
 ### [2026-07-30] Sincronização: instruções na app + o plano para preços e restrições
 
 Contexto novo: o Vasco tem o **Amenitiz** como gestor de canais ativo. Isso muda a topologia certa e destapou uma mina.

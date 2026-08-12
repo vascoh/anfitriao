@@ -2,7 +2,62 @@
 
 _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`. Roadmap completo em `docs/02-ROADMAP.md` / `docs/SAAS_ARCHITECTURE.md` §12._
 
-> ⚠️ **2026-08-02** — `docs/DOSSIE-ESTRATEGICO-2026-08.md` substitui a tese central do `PLANO-ESTRATEGICO-2026.md`. Três correções que alteram prioridades: (1) a conformidade PT **não** é um fosso vazio — EazyAL e Hostkit já a entregam; (2) o **SIBA tem web service público** e as credenciais são do anfitrião, obtidas no portal em 1–3 dias úteis — a "pendência AIMA" abaixo é falsa; (3) a landing v2 promete caixa de entrada unificada e contrato eletrónico, que não existem.
+> ⚠️ **2026-08-02** — `docs/DOSSIE-ESTRATEGICO-2026-08.md` substitui a tese central do `PLANO-ESTRATEGICO-2026.md`. Três correções que alteram prioridades: (1) a conformidade PT **não** é um fosso vazio — EazyAL e Hostkit já a entregam; (2) o **SIBA tem web service público** e as credenciais são do anfitrião, obtidas no portal em 1–3 dias úteis — a "pendência AIMA" abaixo é falsa; (3) a landing v2 promete caixa de entrada unificada e contrato eletrónico, que não existem. As três estão **resolvidas em código** (ver Fase 0/1 do dossiê, abaixo).
+
+## 🔴 Bloqueios ativos — variáveis de ambiente em falta em produção (2026-08-12)
+
+Cada uma desliga **em silêncio** funcionalidade que já está escrita e deployada. Verificado com `npx vercel env ls production`.
+
+- [ ] **`RESEND_API_KEY` + `EMAIL_FROM`** — sem elas **não sai um único email** em produção (`NoopProvider` engole tudo; confirmado nos logs de arranque a 12/08). Afeta pedidos e confirmações de reserva, check-in, lembretes de pagamento, fim de trial, alertas de conformidade, relatório mensal e o motor de automações. `EMAIL_FROM` tem de ser um domínio verificado no Resend (ex.: `noreply@anfitrioes.pt`); sem ela sai de `onboarding@resend.dev`, que só entrega ao dono da conta
+- [ ] **`INVOICEXPRESS_PARTNER_API_KEY`** — sem ela a página de faturação diz que não está disponível (depende de H2, abrir conta de parceiro)
+- [ ] **`STRIPE_EMPRESA_PRICE_ID`** — o plano Empresa (99 €) existe no código e na página de preços, mas o checkout não tem price ID
+- [x] **`APP_ENCRYPTION_KEY`** — gerada e definida em produção a 2026-08-12 (só em Production; preview/dev ficam de fora de propósito). Desbloqueou o cofre da chave SIBA e a criação de contas de faturação. ⚠️ Perdê-la depois de haver dados encriptados é perder as credenciais SIBA e de faturação — está guardada fora do repositório
+
+**Estado do deploy (2026-08-12)**: produção em `3180512`, deployment `dpl_BcyFYGDitJjJsi3CStaZ815nBfHX`. 548 testes, typecheck 0, lint 0. Base de dados: 1 conta, 4 propriedades, 0 reservas, 0 hóspedes, 0 faturas, 0 submissões SIBA.
+
+## Fase 0 (dossiê) — sem isto não pode haver um segundo utilizador
+- [x] **0.1 Copy da landing** — removidas caixa de entrada, contrato eletrónico e "+12 %"; "atualização contínua" → sincronização diária com FAQ sobre a latência do iCal (2026-08-02)
+- [ ] **0.2 Clerk em instância de produção** — ainda em chaves de desenvolvimento. Obrigatório antes do primeiro utilizador real que não seja o Vasco
+- [ ] **0.3 Rate limit distribuído (Upstash)** — o limitador é **em memória e não funciona em serverless**: o teto real não existe. Já assumido em código no ajuste do OCR (5→20/h)
+- [ ] **0.4 Observabilidade** — sem Sentry e sem funil PostHog (registo → 1.ª propriedade → 1.º iCal → 1.ª reserva → 1.º check-in). Hoje uma falha em produção só se descobre por acaso — foi o que aconteceu com os emails
+- [~] **0.5 Encriptação em repouso + log de acesso** — a base existe (`lib/crypto.ts`, AES-256-GCM, usada na chave SIBA e nas credenciais de faturação); falta aplicá-la aos campos de documento (ANF-1.7) e o log de acesso a dados sensíveis (ANF-1.8)
+- [ ] **0.6 MFA no Clerk · PITR + restauro de ensaio**
+
+## Fase 1 (dossiê) — paridade de conformidade
+- [x] **1.1 SIBA por web service** — `siba-xml.ts` / `siba-mapping.ts` / `siba-api.ts` (3 tentativas, recuo exponencial), cofre encriptado por alojamento, migrações 030/031, formulário em `/conformidade`. **Em produção, à espera das credenciais do portal (H1)**
+- [x] **1.2 I1 — prova de submissão** — `siba_submissoes` com SHA-256 do enviado e resposta em bruto. Falta o dossiê ASAE em PDF
+- [x] **1.3 Faturação ponta-a-ponta** — uma conta InvoiceXpress por anfitrião criada com chave de parceiro, emissão manual + cron 07:00, nota de crédito, SAF-T, IVA 6/5/4 % e taxa turística isenta M99, caso "casa inteira = 1 fatura" resolvido. **Falta a conta de parceiro (H2) e a variável de ambiente**
+- [ ] **1.4 Taxa turística: 5 → 12 concelhos** — **travado de propósito**: só há blogues em desacordo para os restantes (um dava Cascais a 1 € quando são 4 €). Exige leitura dos regulamentos municipais; publicar um valor errado cobra dinheiro a mais a hóspedes reais
+- [ ] **1.5 I8 — verificador do número de registo AL** (Reg. UE 2024/1028)
+- [ ] **1.6 Mapa fiscal IRS Cat. B (0,35) vs Cat. F** + pacote para o contabilista
+
+## Fase 2 (dossiê) — preço, prova e primeiros clientes
+- [~] **2.1 Novos escalões** — plano **Empresa** (99 €) criado e o limite de plano passa a contar quartos; faltam trial de 30 dias e grandfathering
+- [ ] **2.2 Screenshots reais e vídeo de 60 s**
+- [ ] **2.3 Unificar a marca** — uma paleta e uma tipografia entre landing e app
+- [ ] **2.4 Calculadora "por conta vs por apartamento"** no topo da landing, com captura de email
+- [ ] **2.5 Checklist de ativação persistente** + estados vazios com ação
+- [ ] **2.6 Reativar `index` nos sites `/r/[slug]`** — mecanismo pronto, só falta a aprovação do site (decisão #9)
+
+## Reservas de grupo e boletins (2026-08-03) ✅
+- [x] **Um boletim por pessoa** — tabela `reserva_hospedes`; antes uma reserva de 8 comunicava 1 pessoa (100–2.000 € de coima por hóspede em falta). `/api/siba-submit` gera um boletim por pessoa e só dá a reserva por entregue quando todos forem aceites
+- [x] **Reserva de casa inteira** — app (`/api/bookings/grupo`) e site público (`/api/book/grupo`), N reservas ligadas por `reserva_grupo_id` num só insert
+- [x] **OCR em cada acompanhante** + limite de `/api/documentos/extrair` de 5 para 20/h (um grupo de oito batia na parede à sexta pessoa)
+- [x] **Uma casa inteira, uma fatura** — número/ATCUD partilhados, `fatura_total` repartido por reserva para não inflacionar a receita
+
+## Dívida técnica registada
+- [ ] **Deriva de esquema** — `properties.id`, `bookings.id`, `guests.id` são `text` em produção mas `UUID` na migração 001. As migrações não são a fonte de verdade da base; vale um `schema.sql` gerado da produção
+- [ ] **`/financeiro` filtra `!parent_id`** — mostra só casas-mãe no seletor, mas as reservas vivem nos quartos: filtrar por "Casa de Vasco" não devolve nada
+- [ ] **Código morto de RLS** — decidir entre ligar o template JWT do Clerk (RLS a nível de BD) ou remover `getSupabaseUserClient`/`getSupabaseForRequest`
+
+## Dependências humanas do dossiê (arrancar em paralelo)
+- [ ] **H1 · SIBA** — registar cada alojamento no portal em modo "Web Service" e obter NIPC + estabelecimento + chave (1–3 dias úteis). 0 propriedades configuradas. Validar primeiro contra `/bawsdev/` via `SIBA_WS_URL`
+- [ ] **H2 · InvoiceXpress** — abrir conta de parceiro (desbloqueia 1.3)
+- [ ] **H3 · API do Amenitiz** — pedir acesso (Definições → API); custa um email e destranca a fase 3 da sincronização
+- [ ] **H4 · Orçamento** — Upstash → Vercel Pro → Supabase Pro
+- [ ] **H5 · Marca** — `anfitriao.pt` vs `anfitrioes.pt`
+- [ ] **H6 · Revisão jurídica** — T&C, RGPD e a garantia de coima (I2), antes da Fase 4
+- [ ] **H7 · 5 anfitriões beta reais** fora do círculo próximo, após a Fase 0
 
 ## Fase 0 — Planeamento ✅ (2026-07-26)
 - [x] Auditoria completa do projeto existente
@@ -56,7 +111,7 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 - [x] OCR de documentos no check-in — já existia (`/api/documentos/extrair`), confirmado a funcionar; decisão: não persistir a foto (privacidade)
 - [x] Scaffolding para submissão automática SIBA/AIMA — `lib/siba-api.ts` (adapter placeholder), `lib/siba-fetch.ts` (query partilhada com o export CSV), `/api/siba-submit`, colunas `siba_status`/`siba_reference`/`siba_error` em `bookings` (migration 024), botão "Submeter à AIMA" em `/documentos`
 - [x] ~~**Pendência humana**: obter credenciais/documentação técnica oficial da API SIBA junto da AIMA~~ — **premissa errada, resolvida a 2026-08-02**. O SIBA tem web service público e documentado (`https://siba.ssi.gov.pt/baws/boletinsalojamento.asmx?WSDL`, método `EntregaBoletinsAlojamento`) e as credenciais são **do anfitrião, por estabelecimento**, não da plataforma. Implementado: `lib/siba-xml.ts` (formato `MovimentoBAL`, envelope SOAP, leitura da resposta), `lib/siba-mapping.ts` (tradução dos dados da app para os códigos do SIBA), `lib/siba-api.ts` (cliente com 3 tentativas e recuo exponencial), `lib/crypto.ts` (AES-256-GCM para a chave de acesso), migrações 030/031, formulário em `/conformidade` e prova de submissão em `siba_submissoes`. 90 testes novos.
-- [ ] **Pendência humana (a que resta)**: (1) definir `APP_ENCRYPTION_KEY` em produção (`openssl rand -base64 32`) — sem ela a app recusa guardar a chave de acesso; (2) registar cada alojamento no portal SIBA escolhendo o modo de envio "Web Service" e introduzir NIPC, número de estabelecimento e chave em `/conformidade` (o SEF/AIMA responde em 1–3 dias úteis); (3) validar contra o ambiente de testes (`SIBA_WS_URL` → `/bawsdev/`) antes do primeiro envio real
+- [ ] **Pendência humana (a que resta)**: ~~(1) definir `APP_ENCRYPTION_KEY` em produção~~ — **feito a 2026-08-12**; (2) registar cada alojamento no portal SIBA escolhendo o modo de envio "Web Service" e introduzir NIPC, número de estabelecimento e chave em `/conformidade` (o SEF/AIMA responde em 1–3 dias úteis); (3) validar contra o ambiente de testes (`SIBA_WS_URL` → `/bawsdev/`) antes do primeiro envio real
 
 ## Fase 2 (plano estratégico) — RGPD ✅ (2026-07-30)
 - [x] **2.16 / ANF-1.10, 1.11, 1.12** — retenção aplicada por código (`lib/retencao.ts` + cron diário às 03:00), exportação e apagamento a pedido (`/api/guests/[id]/dados`, art. 15.º/17.º/20.º) e registo de atividades de tratamento (`docs/RGPD-REGISTO-TRATAMENTOS.md`, art. 30.º). Anonimiza em vez de apagar — a reserva tem de ser conservada 10 anos (art. 52.º do CIVA). Migração 029 aplicada em produção.
