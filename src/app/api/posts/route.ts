@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+import { canUpsertRow } from '@/lib/ownership'
 import type { Post } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -35,6 +36,13 @@ export async function POST(req: NextRequest) {
   const slug = body.slug?.trim().toLowerCase() ?? ''
   if (!body.titulo?.trim() || !slug || !SLUG_RE.test(slug)) {
     return NextResponse.json({ error: 'Título e slug (letras minúsculas, números e hífens) são obrigatórios.' }, { status: 400 })
+  }
+
+
+  /* Guarda de IDOR: um upsert por id do cliente permitia sobrepor — e
+   * ficar com — a linha de outro anfitrião. Ver lib/ownership.ts. */
+  if (!(await canUpsertRow(supabase, 'posts', body.id, userId))) {
+    return NextResponse.json({ error: 'Sem permissão para alterar este registo.' }, { status: 403 })
   }
 
   const row = {

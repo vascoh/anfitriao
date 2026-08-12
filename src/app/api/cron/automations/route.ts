@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { today, addDays, fmtDate } from '@/lib/utils'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
-import { TRIGGER_DATE, renderAutomationMessage } from '@/lib/automations'
+import { TRIGGER_DATE, renderAutomationMessage, envioPorGrupo } from '@/lib/automations'
 import type { Automation, AutomationTrigger, Booking } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -77,8 +77,11 @@ export async function GET(req: NextRequest) {
     for (const auto of autos.filter(a => a.owner_id)) {
       const ownerBookings = bookings.filter(b => b.owner_id === auto.owner_id)
 
-      for (const booking of ownerBookings) {
-        if (alreadySent.has(`${auto.id}:${booking.id}`)) continue
+      /* Uma casa inteira são N reservas do mesmo hóspede nas mesmas datas.
+       * Sem isto, ele recebia a mesma mensagem N vezes na mesma manhã. */
+      for (const { principal: booking, cobertas } of envioPorGrupo(ownerBookings)) {
+        const jaEnviado = [booking, ...cobertas].some(b => alreadySent.has(`${auto.id}:${b.id}`))
+        if (jaEnviado) continue
         const guest = booking.hospede_id ? guestMap.get(booking.hospede_id) : null
         if (!guest?.email) continue
 
@@ -98,10 +101,20 @@ export async function GET(req: NextRequest) {
           })
           if (!result.ok) throw new Error(result.error ?? 'falha no envio')
 
-          // Idempotência: se já foi registado hoje, o UNIQUE constraint bloqueia o duplicado
+          /* Idempotência: o UNIQUE (automation_id, booking_id) bloqueia o
+           * duplicado. As reservas irmãs do grupo também ficam registadas —
+           * senão a execução seguinte achava-as por enviar e a mensagem
+           * repetia-se na mesma. */
           const { error: logError } = await supabase
             .from('automation_log')
-            .insert({ automation_id: auto.id, booking_id: booking.id, resultado: 'enviado' })
+            .insert([
+              { automation_id: auto.id, booking_id: booking.id, resultado: 'enviado' },
+              ...cobertas.map(b => ({
+                automation_id: auto.id,
+                booking_id: b.id,
+                resultado: 'coberta_pelo_grupo',
+              })),
+            ])
           if (!logError) enviados++
         } catch (err) {
           erros.push(`${auto.id}/${booking.id}: ${(err as Error).message}`)

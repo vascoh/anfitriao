@@ -6,6 +6,17 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12h] Concierge e automações — e um IDOR em seis rotas ao mesmo tempo
+
+Comecei pelo concierge e pelas automações; o IDOR apareceu pelo caminho e é o mais grave do dia.
+
+- 🔓 **IDOR sistémico: seis rotas faziam `upsert` com id vindo do cliente sem verificar o dono.** `tarifas`, `price_rules`, `platform_rates`, `automations`, `posts` e `expenses`. Qualquer anfitrião autenticado podia mandar o id de uma linha de outro e sobrepô-la — **ficando ainda com o `owner_id`**, o que faz o roubo parecer legítimo. Nas três tabelas penduradas numa propriedade dava também para escrever tarifas e comissões no alojamento de outra pessoa. O guarda (`canUpsertRow`) já existia, é usado em `/api/guests` e `/api/bookings`, e **a regra está escrita no CLAUDE.md** — faltava quem a verificasse. Acrescentado `ownsProperty` para o `property_id`.
+- 🧪 **Teste estrutural novo** (`api/upserts-com-dono.test.ts`): varre as rotas e falha se alguma faz `upsert` sem guarda, com uma lista de exceções justificadas (check-in público, subscrição de push). Verificado com as correções fora: **falha**. É o que faltava para isto não voltar.
+- 📧 **Um hóspede de casa inteira recebia a mesma mensagem três vezes.** O motor de automações é anterior aos grupos: três reservas do mesmo hóspede, nas mesmas datas, davam três "o teu check-in é amanhã" na mesma manhã. `envioPorGrupo` manda uma e regista as irmãs no `automation_log` — sem esse registo, a execução do dia seguinte achava-as por enviar e repetia à mesma.
+- ✂️ **O concierge devolvia respostas truncadas com ar de completas.** O `finally` fechava o stream mesmo quando a API falhava a meio: o anfitrião ficava com meia frase, sem erro nenhum, pronta a copiar para o hóspede. Passa a `controller.error`, com o caso do hóspede fechar o separador tratado à parte.
+- 💰 **Custo de IA atribuível**: o pedido passa a levar `signal` (fechar o separador deixa de pagar tokens até ao fim) e os tokens de entrada/saída ficam nos logs por conta. É o mínimo antes do teto por conta (ANF-11.1), que precisa de decisão.
+- ✅ 615 testes (11 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-12g] Stripe — o plano que não se reconhece virava Starter
 
 - 💸 **O pior: `priceToPlano` tinha `return 'starter'` como fallback.** Uma subscrição cujo preço a app não reconheça — e o `STRIPE_EMPRESA_PRICE_ID` **não está definido em produção** — era classificada como Starter. Um cliente pagava 99 €/mês e ficava com o limite de 3 unidades, sem ninguém dar por isso. Passa a devolver `null`: o webhook mantém a conta activa (o pagamento é real) mas **não mexe no plano nem nos limites** quando não sabe, e regista `plano_por_identificar` no `audit_log` para haver olhos humanos.

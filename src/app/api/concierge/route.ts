@@ -73,7 +73,9 @@ Use this context to give accurate, specific answers when relevant.
 `
   }
 
-  const stream = await client.messages.stream({
+  /* Se o hóspede fechar o separador, não há motivo para continuar a pagar
+   * tokens de uma resposta que ninguém vai ler. */
+  const stream = client.messages.stream({
     model: 'claude-haiku-4-5',
     max_tokens: 1500,
     messages: [
@@ -89,12 +91,16 @@ ${msg}
 ${langInstruction} ${toneInstruction} Be concise and helpful. Reply only with the message text — no quotes, no explanation, no subject line.`,
       },
     ],
-  })
+  }, { signal: req.signal })
 
   const readable = new ReadableStream({
     async start(controller) {
+      let entrada = 0
+      let saida = 0
       try {
         for await (const chunk of stream) {
+          if (chunk.type === 'message_start') entrada = chunk.message.usage.input_tokens
+          if (chunk.type === 'message_delta') saida = chunk.usage.output_tokens
           if (
             chunk.type === 'content_block_delta' &&
             chunk.delta.type === 'text_delta'
@@ -102,8 +108,22 @@ ${langInstruction} ${toneInstruction} Be concise and helpful. Reply only with th
             controller.enqueue(new TextEncoder().encode(chunk.delta.text))
           }
         }
-      } finally {
         controller.close()
+      } catch (err) {
+        /* Antes fechava-se o `controller` no `finally`, o que dava ao
+         * anfitrião uma resposta **truncada com ar de completa**: meia frase,
+         * sem erro nenhum, e ele a copiá-la para o hóspede. Falhar é melhor
+         * do que mentir a meio. */
+        if (req.signal.aborted) {
+          controller.close()
+          return
+        }
+        console.error('[concierge] stream interrompido', userId, err)
+        controller.error(err)
+      } finally {
+        // Custo de IA atribuível por conta, que é o mínimo antes de haver
+        // teto por conta (ANF-11.1). Sai nos logs, não na base de dados.
+        console.info('[concierge] uso', JSON.stringify({ userId, entrada, saida }))
       }
     },
   })

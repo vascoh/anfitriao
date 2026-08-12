@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+import { canUpsertRow } from '@/lib/ownership'
 import type { Automation } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -33,6 +34,13 @@ export async function POST(req: NextRequest) {
 
   if (!body.nome?.trim() || !body.trigger_tipo || !body.mensagem?.trim()) {
     return NextResponse.json({ error: 'Nome, gatilho e mensagem são obrigatórios.' }, { status: 400 })
+  }
+
+
+  /* Guarda de IDOR: um upsert por id do cliente permitia sobrepor — e
+   * ficar com — a linha de outro anfitrião. Ver lib/ownership.ts. */
+  if (!(await canUpsertRow(supabase, 'automations', body.id, userId))) {
+    return NextResponse.json({ error: 'Sem permissão para alterar este registo.' }, { status: 403 })
   }
 
   const row = {
