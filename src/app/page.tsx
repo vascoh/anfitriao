@@ -9,6 +9,7 @@ import { Hero } from '@/components/landing-v2/hero'
 import { ProblemSolution } from '@/components/landing-v2/problem-solution'
 import { Features } from '@/components/landing-v2/features'
 import { DashboardPreview } from '@/components/landing-v2/dashboard-preview'
+import { Calculadora } from '@/components/landing-v2/calculadora'
 import { Pricing } from '@/components/landing-v2/pricing'
 import { Testimonials } from '@/components/landing-v2/testimonials'
 import { FAQ } from '@/components/landing-v2/faq'
@@ -68,6 +69,7 @@ export default async function Home() {
         <ProblemSolution />
         <Features />
         <DashboardPreview />
+        <Calculadora />
         <Pricing />
         <Testimonials />
         <FAQ />

@@ -304,7 +304,14 @@ export default function FinanceiroPage() {
         <section className="flex flex-col gap-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Despesas registadas</p>
           {expenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Ainda não há despesas registadas.</p>
+            <div className="py-6 px-4 text-center text-sm text-muted-foreground leading-relaxed">
+              <p>Ainda não há despesas registadas.</p>
+              <p className="mt-1">
+                Sem elas, o lucro em cima é só a receita: limpezas, condomínio,
+                água e comissões saem todos deste mesmo bolo. Usa o formulário
+                acima para registar a primeira.
+              </p>
+            </div>
           ) : (
             expenses.map(e => (
               <div key={e.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">

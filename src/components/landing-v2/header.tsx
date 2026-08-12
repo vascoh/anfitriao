@@ -9,6 +9,7 @@ import { EASE_OUT } from '@/lib/landing-animations'
 const NAV = [
   { label: 'Plataforma', href: '#plataforma' },
   { label: 'Funcionalidades', href: '#funcionalidades' },
+  { label: 'Calculadora', href: '#calculadora' },
   { label: 'Preços', href: '#precos' },
   // 'Blog' sai enquanto /blog não existir — a rota manda o visitante para o login.
 ]

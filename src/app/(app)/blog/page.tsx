@@ -61,7 +61,16 @@ export default function BlogPage() {
         {posts.length === 0 ? (
           <div className="flex flex-col items-center gap-3 border-2 border-dashed border-border rounded-2xl py-14 px-6 text-center text-muted-foreground">
             <Newspaper className="h-8 w-8" />
-            <p className="text-sm">Ainda não tens posts. Cria o primeiro.</p>
+            <p className="text-sm">
+              Ainda não tens posts. Um artigo sobre a zona — praias, restaurantes,
+              como chegar — é o que traz visitas de pesquisa ao teu site.
+            </p>
+            <Link
+              href="/blog/novo"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground active:opacity-80 transition-opacity"
+            >
+              <Plus className="h-4 w-4" /> Escrever o primeiro
+            </Link>
           </div>
         ) : (
           posts.map(p => (

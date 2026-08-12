@@ -6,6 +6,19 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12c] A calculadora que faz a conta pelo visitante, e os estados vazios que faltavam
+
+Fecha o **2.4** (em parte) e o **2.5** do roadmap.
+
+- 🧮 **`lib/comparador-precos.ts` + secção na landing**, antes dos preços: a tabela responde "quanto custa", a calculadora responde "quanto custa comparado com o que já pagas", que é a pergunta que a pessoa traz. Cursor de 1 a 40 unidades, preço atual por alojamento, alternador mensal/anual, e a diferença anual em destaque.
+- 🚫 **Não se publicam preços da concorrência.** Mudam sem aviso, variam com módulos e descontos, e um número errado sobre outra empresa é uma alegação comparativa insustentável — a mesma razão que tirou o "+12 %" da landing a 02/08. O visitante escreve o que paga hoje: número que ele conhece e nós não.
+- 🙂 **Quando não compensa, diz-se.** Com um alojamento só, pagar por conta sai mais caro, e a calculadora escreve isso em vez de arredondar a favor da casa. Uma ferramenta que dá sempre a mesma resposta é um cartaz, não uma calculadora — e quem faz a conta e vê o vendedor a ganhar em todos os cenários deixa de acreditar no resto da página. Há teste para o empate (19 € contra 19 € = não compensa).
+- 🛑 **Acima de 40 unidades não inventa preço**: diz "falamos contigo". Empurrar o Empresa para uma cadeia seria vender o que não existe (não há RBAC nem portal de proprietário).
+- 🎨 **A suite apanhou uma regressão de acessibilidade**: `contraste.test.ts` reprovou o `text-slate-500` que eu tinha usado (não chega a 4.5:1 sobre o fundo escuro). Corrigido para `text-slate-400`. O teste de contraste da landing existe desde julho e serviu exatamente para o que foi feito.
+- 📭 **Estados vazios com ação** — os três que ainda eram becos sem saída: `/financeiro` ("sem despesas, o lucro em cima é só a receita"), `/automacoes` (as três receitas mais usadas, em vez de silêncio) e `/blog` (porquê escrever + botão para o primeiro post). Os grandes (`/reservas`, `/hospedes`, `/propriedades`) já estavam bem.
+- ✅ 574 testes (10 novos), typecheck 0, lint 0, build OK.
+- ⏭️ **Fica de fora, e é decisão sua**: a captura de email na calculadora. Guardar leads exige tabela nova, base legal e entrada no registo de tratamentos do art. 30.º — é uma decisão comercial com obrigações associadas, não uma linha de código.
+
 ### [2026-08-12b] Encriptação em repouso dos documentos + log de quem os leva daqui para fora
 
 Fecha o **0.5 do roadmap** (ANF-1.7 e ANF-1.8). Feito agora por uma razão de oportunidade: com **0 hóspedes na base** não há backfill, não há paragem e não há hipótese de corromper dados de alguém. Daqui a três meses seria uma migração com risco.

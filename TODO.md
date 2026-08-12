@@ -35,8 +35,8 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [~] **2.1 Novos escalões** — plano **Empresa** (99 €) criado e o limite de plano passa a contar quartos; faltam trial de 30 dias e grandfathering
 - [ ] **2.2 Screenshots reais e vídeo de 60 s**
 - [ ] **2.3 Unificar a marca** — uma paleta e uma tipografia entre landing e app
-- [ ] **2.4 Calculadora "por conta vs por apartamento"** no topo da landing, com captura de email
-- [ ] **2.5 Checklist de ativação persistente** + estados vazios com ação
+- [~] **2.4 Calculadora "por conta vs por apartamento"** — feita a 2026-08-12 (`lib/comparador-precos.ts` + secção na landing, antes dos preços; entrada no menu). **Sem captura de email**: guardar leads exige tabela nova, base legal e entrada no registo de tratamentos — decisão comercial, não técnica. O preço da concorrência é escrito pelo visitante, de propósito (ver `comparador-precos.ts`)
+- [x] **2.5 Checklist de ativação persistente** (já existia em `/hoje`, `components/onboarding-card.tsx`) + estados vazios com ação — os que faltavam (financeiro, automações, blog) fechados a 2026-08-12
 - [ ] **2.6 Reativar `index` nos sites `/r/[slug]`** — mecanismo pronto, só falta a aprovação do site (decisão #9)
 
 ## Reservas de grupo e boletins (2026-08-03) ✅

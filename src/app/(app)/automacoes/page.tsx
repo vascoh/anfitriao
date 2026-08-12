@@ -145,7 +145,14 @@ export default function AutomacoesPage() {
         <section className="flex flex-col gap-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Automações ativas</p>
           {automations.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Ainda não criaste nenhuma automação.</p>
+            <div className="py-6 px-4 text-center text-sm text-muted-foreground leading-relaxed">
+              <p>Ainda não criaste nenhuma automação.</p>
+              <p className="mt-1">
+                As mais usadas: instruções de chegada na véspera do check-in,
+                agradecimento no dia da saída e pedido de avaliação três dias
+                depois. Cria-as no formulário acima.
+              </p>
+            </div>
           ) : (
             automations.map(a => (
               <div key={a.id} className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
