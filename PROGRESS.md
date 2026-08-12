@@ -6,6 +6,14 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12e] Segunda ronda de caça a bugs — o Cartão de Cidadão ia como NIF na fatura
+
+- 🧾 **O bug mais caro dos encontrados até agora.** `clienteDaReserva` punha `guests.numero_documento` no campo do NIF, e o adaptador manda-o para o `fiscal_id` da fatura **comunicada à AT**. O número do Cartão de Cidadão não é o NIF: um passaporte com letras seria recusado, e um CC de nove dígitos passava — ficando a fatura de um hóspede comunicada contra o **NIF de um desconhecido**. Nenhuma fatura real foi emitida (0 na base), por isso não há nada a corrigir junto da AT.
+- 🧬 **O fixture escondia-o**: o hóspede de teste tinha `numero_documento: '123456789'`, que parece um NIF. Passou a ter um documento com letras (`12345678 9 ZZ4`) e um NIF à parte — a confusão deixa de caber no teste.
+- ➕ **Migração 037**: `guests.nif`, opcional, pedido no check-in ("só se quiseres a fatura em teu nome") e editável na ficha do hóspede. Sem NIF a fatura sai a **Consumidor final**, que é o que a lei prevê. O NIF é dado fiscal (10 anos) e por isso não entra nos grupos anonimizáveis — ao contrário do número do documento, que cai ao fim de 1 ano.
+- ⏳ **Retenção: o prazo dos acompanhantes contava-se da data da ficha, não da estadia.** `ultimasSaidas` só olhava para `bookings.hospede_id` — e um acompanhante nunca é quem reservou; está na reserva por `reserva_hospedes`. Desde que o boletim passou a ser por pessoa, **a maioria das pessoas de um grupo caía no fallback**, e a política escrita ("conta-se da última saída") deixou de descrever o código. Passa a olhar para os dois caminhos. Há teste para o caso que mais preocupa: ficha antiga com estadia futura já não é anonimizada.
+- ✅ 581 testes (3 novos, escritos a falhar primeiro), typecheck 0, lint 0, build OK. Migração 037 aplicada em produção (aditiva, 0 linhas afetadas).
+
 ### [2026-08-12d] Caça a bugs nos grupos — dois reais, um deles com consequência legal
 
 Revisão dirigida ao código mais recente e menos exercitado (grupos, boletins, faturação). Todos os bugs foram primeiro reproduzidos em teste, e só depois corrigidos.

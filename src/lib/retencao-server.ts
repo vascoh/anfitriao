@@ -134,29 +134,70 @@ export async function aplicarRetencao(ownerId?: string): Promise<{
   return { avaliados: hospedes.length, anonimizados, erros }
 }
 
-/** Check-out mais recente de cada hóspede, ignorando reservas sem estadia. */
+/**
+ * Check-out mais recente de cada hóspede, ignorando reservas sem estadia.
+ *
+ * Olha para os **dois** caminhos pelos quais uma pessoa está numa reserva:
+ * `bookings.hospede_id` (quem reservou) e `reserva_hospedes` (quem lá dorme).
+ * Um acompanhante nunca é o primeiro — desde que o boletim passou a ser por
+ * pessoa, a maioria das pessoas de um grupo só existe no segundo. Sem ele, o
+ * prazo caía para a data de criação da ficha e a política escrita
+ * ("conta-se da última saída") deixava de descrever o que o código faz.
+ */
 async function ultimasSaidas(guestIds: string[]): Promise<Map<string, string>> {
   const supabase = createAdminClient()
   const saidas = new Map<string, string>()
 
+  function registar(guestId: string, checkOut: string | null, estado: string) {
+    if (!checkOut || ESTADOS_SEM_ESTADIA.includes(estado)) return
+    const atual = saidas.get(guestId)
+    if (!atual || checkOut > atual) saidas.set(guestId, checkOut)
+  }
+
   // Em lotes: a lista de ids vai num `in`, que tem limite prático de tamanho.
   const LOTE = 200
   for (let i = 0; i < guestIds.length; i += LOTE) {
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('hospede_id, check_out, estado')
-      .in('hospede_id', guestIds.slice(i, i + LOTE))
+    const lote = guestIds.slice(i, i + LOTE)
 
-    if (error) {
-      console.error('[retencao] saidas', error.message)
+    const [reservasRes, ligacoesRes] = await Promise.all([
+      supabase
+        .from('bookings')
+        .select('hospede_id, check_out, estado')
+        .in('hospede_id', lote),
+      supabase
+        .from('reserva_hospedes')
+        .select('guest_id, booking_id')
+        .in('guest_id', lote),
+    ])
+
+    if (reservasRes.error) console.error('[retencao] saidas', reservasRes.error.message)
+
+    for (const b of reservasRes.data ?? []) {
+      if (b.hospede_id) registar(b.hospede_id as string, b.check_out as string, b.estado as string)
+    }
+
+    const ligacoes = ligacoesRes.data ?? []
+    if (ligacoesRes.error) console.error('[retencao] ligacoes', ligacoesRes.error.message)
+    if (ligacoes.length === 0) continue
+
+    const bookingIds = [...new Set(ligacoes.map(l => l.booking_id as string))]
+    const { data: reservasLigadas, error: erroLigadas } = await supabase
+      .from('bookings')
+      .select('id, check_out, estado')
+      .in('id', bookingIds)
+
+    if (erroLigadas) {
+      console.error('[retencao] reservas ligadas', erroLigadas.message)
       continue
     }
 
-    for (const b of data ?? []) {
-      if (!b.hospede_id || !b.check_out) continue
-      if (ESTADOS_SEM_ESTADIA.includes(b.estado)) continue
-      const atual = saidas.get(b.hospede_id)
-      if (!atual || b.check_out > atual) saidas.set(b.hospede_id, b.check_out)
+    const porId = new Map(
+      (reservasLigadas ?? []).map(b => [b.id as string, b]),
+    )
+
+    for (const l of ligacoes) {
+      const b = porId.get(l.booking_id as string)
+      if (b) registar(l.guest_id as string, b.check_out as string, b.estado as string)
     }
   }
 

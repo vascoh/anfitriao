@@ -26,9 +26,13 @@ function reserva(): Booking {
   }
 }
 
+/* O documento e o NIF são deliberadamente diferentes e o documento tem letras:
+ * é o caso normal (Cartão de Cidadão, passaporte) e o que apanha a confusão
+ * entre os dois. Um fixture com '123456789' nos dois campos escondia-a. */
 const hospede: Guest = {
   id: 'g1', nome: 'Maria Silva', email: 'maria@exemplo.pt',
-  numero_documento: '123456789', tags: [], criado_em: '2026-01-01',
+  numero_documento: '12345678 9 ZZ4', nif: '123456789',
+  tags: [], criado_em: '2026-01-01',
 }
 
 describe('regiaoDoConcelho', () => {
@@ -183,6 +187,16 @@ describe('clienteDaReserva', () => {
     expect(c.nome).toBe('Maria Silva')
     expect(c.nif).toBe('123456789')
     expect(c.email).toBe('maria@exemplo.pt')
+  })
+
+  it('nunca põe o número do documento no campo do NIF', () => {
+    /* O Cartão de Cidadão não é o NIF. O que ia para a AT era recusado — ou,
+     * pior, atribuído ao NIF de outra pessoa por acaso de nove dígitos. */
+    const semNif = { ...hospede, nif: undefined }
+    const c = clienteDaReserva(semNif, 'Consumidor final')
+
+    expect(c.nif).toBeNull()
+    expect(c.nif).not.toBe(semNif.numero_documento)
   })
 
   it('cai para consumidor final sem hóspede', () => {

@@ -75,6 +75,8 @@ export interface Guest {
   telefone?: string
   nacionalidade?: string
   numero_documento?: string
+  /** NIF para faturação. Nunca derivado do documento de identificação. */
+  nif?: string
   data_nascimento?: string
   tipo_documento?: string
   sexo?: string

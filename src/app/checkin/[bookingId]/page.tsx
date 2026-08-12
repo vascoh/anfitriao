@@ -63,6 +63,7 @@ interface GuestForm {
   data_validade_doc: string
   pais_residencia: string
   local_residencia: string
+  nif: string
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -78,6 +79,9 @@ const FIELD_LABELS: Record<string, string> = {
   local_residencia: 'Localidade onde vives',
   email: 'Email',
   telefone: 'Telefone',
+  // Opcional e separado do documento: o Cartão de Cidadão não é o NIF, e a
+  // fatura sem NIF sai a "Consumidor final", como a lei prevê.
+  nif: 'NIF (só se quiseres a fatura em teu nome)',
 }
 
 // O boletim de alojamento exige o país de residência. Pedi-lo aqui, ao
@@ -100,7 +104,7 @@ export default function CheckinPage() {
   const [form, setForm] = useState<GuestForm>({
     nome: '', email: '', telefone: '', nacionalidade: '', numero_documento: '',
     data_nascimento: '', tipo_documento: '', sexo: '', pais_emissao: '', data_validade_doc: '',
-    pais_residencia: '', local_residencia: '',
+    pais_residencia: '', local_residencia: '', nif: '',
   })
   /** Um por pessoa além de quem reservou. O boletim do SIBA é por pessoa. */
   const [acompanhantes, setAcompanhantes] = useState<Acompanhante[]>([])
@@ -154,6 +158,7 @@ export default function CheckinPage() {
             pais_emissao: d.guest?.pais_emissao ?? '',
             pais_residencia: d.guest?.pais_residencia ?? '',
             local_residencia: d.guest?.local_residencia ?? '',
+            nif: d.guest?.nif ?? '',
             data_validade_doc: d.guest?.data_validade_doc ?? '',
           }))
         }

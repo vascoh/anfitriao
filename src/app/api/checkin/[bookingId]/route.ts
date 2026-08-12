@@ -47,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
   const [propRes, guestRes] = await Promise.all([
     supabase.from('properties').select('nome, cidade, imagem_url, owner_id').eq('id', booking.propriedade_id).single(),
     booking.hospede_id
-      ? supabase.from('guests').select('nome, email, telefone, nacionalidade, numero_documento, data_nascimento, tipo_documento, sexo, pais_emissao, data_validade_doc, pais_residencia, local_residencia').eq('id', booking.hospede_id).single()
+      ? supabase.from('guests').select('nome, email, telefone, nacionalidade, numero_documento, data_nascimento, tipo_documento, sexo, pais_emissao, data_validade_doc, pais_residencia, local_residencia, nif').eq('id', booking.hospede_id).single()
       : Promise.resolve({ data: null }),
   ])
 
@@ -140,6 +140,10 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     // boletim pode ser entregue ao SIBA, por muito completo que esteja o resto.
     pais_residencia: optText(body.pais_residencia, 80),
     local_residencia: optText(body.local_residencia, 120),
+    /* NIF ≠ número do documento. Campo próprio, opcional: sem ele a fatura
+     * sai a "Consumidor final". Antes o Cartão de Cidadão ia parar ao campo
+     * do NIF na fatura comunicada à AT. */
+    nif: optText(body.nif, 20),
   }
 
   /* Campos de documento encriptados antes de tocar na base (ANF-1.7). Em

@@ -94,11 +94,21 @@ export function linhasDaReserva(
   return linhas
 }
 
+/**
+ * Cliente da fatura.
+ *
+ * **O NIF vem do campo do NIF e de mais lado nenhum.** Vinha do
+ * `numero_documento`, que é o Cartão de Cidadão ou o passaporte — coisa
+ * diferente do número de identificação fiscal. Um passaporte com letras seria
+ * recusado pela AT; um Cartão de Cidadão de nove dígitos passaria, e a fatura
+ * ficaria comunicada contra o NIF de um desconhecido. Sem NIF, a fatura sai a
+ * "Consumidor final", que é o que a lei prevê para quem não o pede.
+ */
 export function clienteDaReserva(hospede: Guest | null | undefined, fallback: string): ClienteFatura {
   return {
     nome: hospede?.nome?.trim() || fallback,
     email: hospede?.email ?? null,
-    nif: hospede?.numero_documento ?? null,
+    nif: hospede?.nif?.trim() || null,
     pais: hospede?.nacionalidade ?? null,
   }
 }

@@ -29,6 +29,7 @@ export default function HospedeDetailPage() {
   const [notas, setNotas] = useState('')
   const [tipoDocumento, setTipoDocumento] = useState('')
   const [numeroDocumento, setNumeroDocumento] = useState('')
+  const [nif, setNif] = useState('')
   const [dataNascimento, setDataNascimento] = useState('')
   const [dataValidadeDoc, setDataValidadeDoc] = useState('')
   const [sexo, setSexo] = useState('')
@@ -51,6 +52,7 @@ export default function HospedeDetailPage() {
         setNotas(g.notas ?? '')
         setTipoDocumento(g.tipo_documento ?? '')
         setNumeroDocumento(g.numero_documento ?? '')
+        setNif(g.nif ?? '')
         setDataNascimento(g.data_nascimento ?? '')
         setDataValidadeDoc(g.data_validade_doc ?? '')
         setSexo(g.sexo ?? '')
@@ -74,6 +76,7 @@ export default function HospedeDetailPage() {
       notas: notas.trim() || undefined,
       tipo_documento: tipoDocumento.trim() || undefined,
       numero_documento: numeroDocumento.trim() || undefined,
+      nif: nif.trim() || undefined,
       data_nascimento: dataNascimento.trim() || undefined,
       data_validade_doc: dataValidadeDoc.trim() || undefined,
       sexo: sexo.trim() || undefined,
@@ -136,6 +139,7 @@ export default function HospedeDetailPage() {
     setNotas(g.notas ?? '')
     setTipoDocumento(g.tipo_documento ?? '')
     setNumeroDocumento(g.numero_documento ?? '')
+    setNif(g.nif ?? '')
     setDataNascimento(g.data_nascimento ?? '')
     setDataValidadeDoc(g.data_validade_doc ?? '')
     setSexo(g.sexo ?? '')
@@ -263,6 +267,13 @@ export default function HospedeDetailPage() {
               <input type="text" value={numeroDocumento} onChange={e => setNumeroDocumento(e.target.value)} placeholder="Ex: AB123456"
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
+            <div className="flex flex-col gap-1">
+              {/* Campo à parte do documento: o Cartão de Cidadão não é o NIF, e
+                  é este valor que vai para a fatura comunicada à AT. */}
+              <label className="text-xs text-muted-foreground">NIF (para a fatura)</label>
+              <input type="text" inputMode="numeric" value={nif} onChange={e => setNif(e.target.value)} placeholder="Só se o hóspede pedir fatura em nome dele"
+                className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
             <div className="flex gap-2">
               <div className="flex flex-col gap-1 flex-1">
                 <label className="text-xs text-muted-foreground">Data de nascimento</label>
@@ -350,6 +361,7 @@ export default function HospedeDetailPage() {
             {[
               { label: 'Tipo documento', value: guest.tipo_documento },
               { label: 'Nº documento', value: guest.numero_documento },
+              { label: 'NIF', value: guest.nif },
               { label: 'Validade', value: guest.data_validade_doc },
               { label: 'Data de nascimento', value: guest.data_nascimento },
               { label: 'Sexo', value: guest.sexo },

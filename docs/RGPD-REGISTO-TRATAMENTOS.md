@@ -138,6 +138,11 @@ faltam nas páginas legais.
 | Log de consulta na app (quem abriu que ficha) | ⚠️ Não registado, por decisão — ver nota abaixo |
 | MFA nas contas de anfitrião | ❌ Por ativar no Clerk (ANF-1.9) |
 
+**Sobre o NIF.** Desde 2026-08-12 existe `guests.nif`, separado do número do
+documento de identificação. É dado fiscal (art. 52.º do CIVA, 10 anos) e por
+isso **não** entra nos grupos anonimizáveis — ao contrário do número do
+documento, que pertence ao boletim e cai ao fim de 1 ano.
+
 **Sobre a encriptação em repouso.** Encriptam-se os campos que identificam o
 documento — número e validade —, não a ficha inteira. É neles que está o dano
 de uma fuga: com nome e número de documento abre-se crédito e faz-se check-in

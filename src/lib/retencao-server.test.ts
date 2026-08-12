@@ -11,13 +11,19 @@ interface LinhaGuest {
   anonimizado_grupos: string[] | null
 }
 interface LinhaBooking {
-  hospede_id: string
+  id?: string
+  hospede_id: string | null
   check_out: string
   estado: string
+}
+interface LinhaLigacao {
+  guest_id: string
+  booking_id: string
 }
 
 let guests: LinhaGuest[] = []
 let bookings: LinhaBooking[] = []
+let ligacoes: LinhaLigacao[] = []
 const updates: Array<{ id: string; campos: Record<string, unknown> }> = []
 const auditoria: Array<Record<string, unknown>> = []
 
@@ -35,7 +41,11 @@ function thenable<T>(valor: T) {
 vi.mock('./supabase', () => ({
   createAdminClient: () => ({
     from: (table: string) => ({
-      select: () => (table === 'guests' ? thenable(guests) : thenable(bookings)),
+      select: () => {
+        if (table === 'guests') return thenable(guests)
+        if (table === 'reserva_hospedes') return thenable(ligacoes)
+        return thenable(bookings)
+      },
       update: (campos: Record<string, unknown>) => ({
         eq: async (_col: string, id: string) => {
           updates.push({ id, campos })
@@ -63,6 +73,7 @@ function hospede(over: Partial<LinhaGuest> = {}): LinhaGuest {
 beforeEach(() => {
   guests = []
   bookings = []
+  ligacoes = []
   updates.length = 0
   auditoria.length = 0
 })
@@ -93,6 +104,36 @@ describe('aplicarRetencao', () => {
     expect(campos.nome).toBeUndefined()
     expect(campos.anonimizado_grupos).toEqual(['boletim'])
     expect(campos.retencao_completa).toBe(false)
+  })
+
+  it('conta o prazo de um acompanhante pela estadia dele, não pela data da ficha', async () => {
+    /* Um acompanhante nunca é `bookings.hospede_id` — está na reserva por
+     * `reserva_hospedes`. Sem olhar para lá, a retenção caía para a data de
+     * criação da ficha, e a política documentada ("conta-se da última saída")
+     * deixava de valer para a maioria das pessoas de um grupo. */
+    guests = [hospede({ id: 'g2', criado_em: addDays(HOJE, -30) })]
+    bookings = [{
+      id: 'b1', hospede_id: 'g1', // quem reservou é outra pessoa
+      check_out: addDays(HOJE, -PRAZOS.boletim.dias), estado: 'checkout',
+    }]
+    ligacoes = [{ guest_id: 'g2', booking_id: 'b1' }]
+
+    const res = await aplicarRetencao()
+
+    expect(res.anonimizados).toBe(1)
+    expect(updates[0].campos.numero_documento).toBeNull()
+  })
+
+  it('uma estadia futura do acompanhante adia tudo', async () => {
+    // A ficha foi criada há muito, mas a pessoa ainda cá vem dormir.
+    guests = [hospede({ id: 'g2', criado_em: addDays(HOJE, -PRAZOS.contacto.dias) })]
+    bookings = [{ id: 'b1', hospede_id: 'g1', check_out: addDays(HOJE, 30), estado: 'confirmada' }]
+    ligacoes = [{ guest_id: 'g2', booking_id: 'b1' }]
+
+    const res = await aplicarRetencao()
+
+    expect(res.anonimizados).toBe(0)
+    expect(updates).toHaveLength(0)
   })
 
   it('ao fim de 3 anos apaga tudo e fecha a retenção', async () => {
