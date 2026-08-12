@@ -6,6 +6,21 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12b] Encriptação em repouso dos documentos + log de quem os leva daqui para fora
+
+Fecha o **0.5 do roadmap** (ANF-1.7 e ANF-1.8). Feito agora por uma razão de oportunidade: com **0 hóspedes na base** não há backfill, não há paragem e não há hipótese de corromper dados de alguém. Daqui a três meses seria uma migração com risco.
+
+- 🔐 **`lib/campos-sensiveis.ts`** — `numero_documento` e `data_validade_doc` passam a ser guardados em AES-256-GCM, reutilizando o `lib/crypto.ts` que já servia a chave SIBA. A coluna continua `text` e o criptograma é texto: **zero migrações**.
+- 🎯 **Só estes dois campos, e está pensado**: é neles que está o dano de uma fuga — com nome e número de documento abre-se crédito e faz-se check-in noutro sítio. Nome, nacionalidade e data de nascimento ficam legíveis porque a app filtra e ordena por eles; encriptá-los dava a mesma proteção real (quem tem a base tem os nomes na mesma, pelas reservas) ao preço de partir metade do produto.
+- 🚨 **Em produção sem chave, escrever falha.** Guardar um número de documento em claro porque a `APP_ENCRYPTION_KEY` não estava definida é exatamente o acidente que isto existe para evitar — e o silêncio é como se descobre tarde (ver o caso do `RESEND_API_KEY`). Em desenvolvimento guarda em claro com aviso, senão não havia check-in numa máquina local.
+- 🔓 **A leitura é tolerante nos dois sentidos**: valores em claro (anteriores a esta mudança) passam intactos, e um valor adulterado devolve `null` com erro no log em vez de rebentar a página. Uma linha corrompida não pode derrubar a lista de hóspedes toda.
+- 🧭 **Aplicado nas 9 fronteiras**, escrita e leitura: `/api/guests`, `/api/checkin` (quem reservou e cada acompanhante), `/api/reservas/[id]/hospedes`, `siba-fetch` (CSV + submissão), `faturacao/emitir` (o NIF da fatura é o número de documento — ia ciframento para dentro do documento fiscal), `db-admin.adminGetGuestById` e a exportação do art. 15.º, onde o titular tem direito aos dados "de forma inteligível", não ao criptograma.
+- 📝 **ANF-1.8 — regista-se o que sai, não o que se vê**: CSV do SIBA descarregado, boletins entregues e ficheiro do art. 15.º ficam no `audit_log` com ação `acesso_dados_documento`, quem, quantas pessoas e o contexto. Ver a ficha de um hóspede na app **não** fica registado, de propósito: é o trabalho normal de quem gere alojamentos, e um log que cresce a cada página aberta deixa de se conseguir ler no dia em que for preciso.
+- ✉️ **O email de check-in deixa de levar o número inteiro** — passa mascarado (`•••• 1234`). O email é um canal que não controlamos e fica arquivado para sempre na caixa do anfitrião; o número completo vê-se na app, que é onde tem de estar.
+- 🏠 **`/financeiro`, o `!parent_id`** (pendente desde 30/07): o seletor de despesa mostrava só casas-mãe, mas as reservas vivem nos quartos — não havia onde imputar uma limpeza. Passa a listar a árvore toda (`ordenarComQuartos`), quarto indentado sob a casa, órfãos no fim em vez de desaparecerem. A eletricidade é da casa, a limpeza é do quarto.
+- ✅ **564 testes** (16 novos), typecheck 0, lint 0, build OK. `docs/RGPD-REGISTO-TRATAMENTOS.md` atualizado: duas medidas do art. 32.º passam de ❌ a ✅.
+- ⏭️ **Fica em aberto**: o `schema.sql` gerado da produção (a deriva `text` vs `UUID` continua por documentar) e o MFA no Clerk, que é configuração, não código.
+
 ### [2026-08-12] Deploy de tudo o que estava só no local — e o silêncio dos emails confirmado
 
 O trabalho de 02–03/08 estava commitado mas **não pushado** (11 commits) e produção corria o build de 03/08 sem as variáveis que as funcionalidades novas exigem. Sessão de ponto de situação, sem código novo.

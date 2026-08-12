@@ -1,6 +1,7 @@
 import 'server-only'
 import { createAdminClient } from '../supabase'
 import { regraPara, calcularTmt } from '../taxa-turistica'
+import { revelarCampos } from '../campos-sensiveis'
 import { getInvoicingAdapter } from './index'
 import { contaComCredenciais, contaPronta, type ContaFaturacao } from './contas'
 import {
@@ -97,9 +98,11 @@ export async function emitirFaturaDaReserva(
     .from('properties').select('*').eq('id', b.propriedade_id).maybeSingle()
   if (!propriedade) return falha('nao_encontrada', 404, 'Alojamento não encontrado.')
 
-  const { data: hospede } = b.hospede_id
+  const { data: hospedeGuardado } = b.hospede_id
     ? await supabase.from('guests').select('*').eq('id', b.hospede_id).maybeSingle()
     : { data: null }
+  // O NIF que vai na fatura é o número de documento, guardado encriptado.
+  const hospede = revelarCampos(hospedeGuardado)
 
   // Reserva o direito de emitir antes de falar com o fornecedor.
   const { data: reservado } = await supabase
@@ -203,9 +206,10 @@ export async function emitirFaturaDoGrupo(
   const propMap = new Map(((props ?? []) as Property[]).map(p => [p.id, p]))
 
   const primeira = ativas[0]
-  const { data: hospede } = primeira.hospede_id
+  const { data: hospedeGuardado } = primeira.hospede_id
     ? await supabase.from('guests').select('*').eq('id', primeira.hospede_id).maybeSingle()
     : { data: null }
+  const hospede = revelarCampos(hospedeGuardado)
 
   // Reserva o direito de emitir em todas de uma vez: o cron e o botão em
   // simultâneo só deixam passar um.
@@ -340,9 +344,11 @@ export async function emitirNotaCredito(
     .from('properties').select('*').eq('id', b.propriedade_id).maybeSingle()
   if (!propriedade) return falha('nao_encontrada', 404, 'Alojamento não encontrado.')
 
-  const { data: hospede } = b.hospede_id
+  const { data: hospedeGuardado } = b.hospede_id
     ? await supabase.from('guests').select('*').eq('id', b.hospede_id).maybeSingle()
     : { data: null }
+  // O NIF que vai na fatura é o número de documento, guardado encriptado.
+  const hospede = revelarCampos(hospedeGuardado)
 
   const prop = propriedade as Property
   const regra = regraPara(prop.cidade)

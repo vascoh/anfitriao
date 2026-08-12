@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { Guest } from '@/lib/types'
 import { canUpsertRow } from '@/lib/ownership'
+import { protegerCampos, revelarLista } from '@/lib/campos-sensiveis'
 
 const supabase = createAdminClient()
 
@@ -17,7 +18,7 @@ export async function GET() {
     .order('criado_em', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  return NextResponse.json(revelarLista(data))
 }
 
 /**
@@ -41,7 +42,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Sem permissão para alterar este hóspede.' }, { status: 403 })
   }
 
-  const row = { ...body, owner_id: userId }
+  let row: Record<string, unknown>
+  try {
+    row = protegerCampos({ ...body, owner_id: userId })
+  } catch (err) {
+    // Só acontece em produção sem APP_ENCRYPTION_KEY. Falhar é deliberado.
+    console.error('[POST /api/guests] encriptação', err)
+    return NextResponse.json({ error: 'Erro ao guardar hóspede.' }, { status: 500 })
+  }
 
   const { error } = await supabase.from('guests').upsert(row)
   if (error) {

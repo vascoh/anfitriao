@@ -14,6 +14,7 @@ import {
   bookingsByProperty,
   occupancyForMonth,
   unidadesReservaveis,
+  ordenarComQuartos,
 } from './reservations'
 import type { Booking, Property, PriceRule, Tarifa, PlatformRate } from './types'
 
@@ -312,6 +313,35 @@ describe('occupancyForMonth', () => {
   it('excludes cancelled bookings', () => {
     const bookings = [mkBooking({ check_in: '2026-08-10', check_out: '2026-08-15', estado: 'cancelada' })]
     expect(occupancyForMonth(bookings, 'prop-1', 2026, 7).occupied).toBe(0)
+  })
+})
+
+describe('ordenarComQuartos', () => {
+  const casa: Property = { ...PROPERTY, id: 'casa', nome: 'Casa de Vasco' }
+  const outra: Property = { ...PROPERTY, id: 'outra', nome: 'T1 Amora' }
+  const quarto = (id: string, pai = 'casa'): Property =>
+    ({ ...PROPERTY, id, nome: id, parent_id: pai })
+
+  it('põe cada quarto logo a seguir à sua casa', () => {
+    const ids = ordenarComQuartos([quarto('q2'), casa, outra, quarto('q1')]).map(p => p.id)
+    expect(ids).toEqual(['casa', 'q2', 'q1', 'outra'])
+  })
+
+  it('inclui a casa e os quartos — é onde vivem despesas diferentes', () => {
+    // A eletricidade é da casa, a limpeza é do quarto. Filtrar por
+    // `!parent_id` deixava o quarto de fora e não havia onde imputar.
+    const ids = ordenarComQuartos([casa, quarto('q1')]).map(p => p.id)
+    expect(ids).toContain('casa')
+    expect(ids).toContain('q1')
+  })
+
+  it('um quarto órfão vai para o fim, nunca desaparece', () => {
+    const ids = ordenarComQuartos([casa, quarto('perdido', 'casa-que-nao-existe')]).map(p => p.id)
+    expect(ids).toEqual(['casa', 'perdido'])
+  })
+
+  it('lista vazia devolve lista vazia', () => {
+    expect(ordenarComQuartos([])).toEqual([])
   })
 })
 

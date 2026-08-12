@@ -5,7 +5,8 @@ import { submeterBoletins, explicarFalha } from '@/lib/siba-api'
 import { boletimDaLinha, unidadeDaPropriedade, type LinhaBoletim } from '@/lib/siba-mapping'
 import type { BoletimHospede } from '@/lib/siba-xml'
 import { decifrar, estaConfigurada as encriptacaoConfigurada } from '@/lib/crypto'
-import { logAudit } from '@/lib/audit'
+import { logAudit, logAcessoSensivel } from '@/lib/audit'
+import { revelarLista } from '@/lib/campos-sensiveis'
 import { today } from '@/lib/utils'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -109,7 +110,9 @@ export async function POST(req: NextRequest) {
       .in('id', propIds),
   ])
 
-  const guestMap = new Map((guestsRes.data ?? []).map(g => [g.id as string, g]))
+  // Em claro só a partir daqui: o boletim leva o número de documento tal como
+  // está no documento, e é a AIMA quem o valida.
+  const guestMap = new Map(revelarLista(guestsRes.data).map(g => [g.id as string, g]))
   const propMap = new Map((propsRes.data ?? []).map(p => [p.id as string, p]))
 
   const resultados: ResultadoPorReserva[] = []
@@ -239,6 +242,18 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
 
     const numeroFicheiro = ((ultima?.numero_ficheiro as number) ?? 0) + 1
+
+    // Dados de documento a sair para um terceiro (ANF-1.8) — registado antes
+    // do envio, para ficar registo mesmo que o web service falhe a meio.
+    await logAcessoSensivel({
+      actorId: userId,
+      via: 'submissao_siba',
+      pessoas: prontas.length,
+      detalhes: {
+        property_id: propId,
+        booking_ids: [...new Set(prontas.map(p => p.booking_id))],
+      },
+    })
 
     const resposta = await submeterBoletins({
       unidade: unidade.unidade,

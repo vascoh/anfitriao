@@ -2,6 +2,7 @@ import 'server-only'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetWebsiteSettings } from '@/lib/db-admin'
 import { emailService } from '@/lib/email'
 import { sendPushToOwner } from '@/lib/push'
+import { mascarar } from '@/lib/crypto'
 
 /**
  * Notifica o anfitrião quando um hóspede conclui o check-in online.
@@ -41,8 +42,12 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
     propertyName: prop?.nome ?? 'Alojamento',
     checkIn: booking.check_in,
     numHospedes: booking.num_hospedes,
+    /* Mascarado de propósito: o email diz ao anfitrião que o documento está
+     * lá e qual é, sem pôr o número inteiro a viajar por um canal que não
+     * controlamos e que fica arquivado na caixa de correio dele para sempre.
+     * O número completo vê-se na app, que é onde tem de estar. */
     documento: guest?.numero_documento
-      ? `${guest.tipo_documento ?? ''} ${guest.numero_documento}`.trim()
+      ? `${guest.tipo_documento ?? ''} ${mascarar(guest.numero_documento)}`.trim()
       : null,
     nacionalidade: guest?.nacionalidade ?? null,
     sibaComplete,

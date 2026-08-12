@@ -1,6 +1,7 @@
 import 'server-only'
 import { createAdminClient } from './supabase'
 import { logAudit } from './audit'
+import { revelarCampos } from './campos-sensiveis'
 import { today } from './utils'
 import {
   avaliarRetencao,
@@ -204,7 +205,9 @@ export async function exportarDadosHospede(
     .eq('owner_id', ownerId)
     .order('check_in', { ascending: true })
 
-  const { anonimizado_em, anonimizado_grupos, retencao_completa, ...dadosHospede } = hospede
+  // O titular tem direito aos dados, não ao criptograma (art. 15.º n.º 3:
+  // "de forma inteligível").
+  const { anonimizado_em, anonimizado_grupos, retencao_completa, ...dadosHospede } = revelarCampos(hospede)
   void retencao_completa // detalhe interno do varrimento, não interessa ao titular
 
   return {

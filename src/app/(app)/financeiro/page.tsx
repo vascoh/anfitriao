@@ -7,6 +7,7 @@ import { Plus, Trash2, Wallet, Download } from 'lucide-react'
 import { fetchExpenses, fetchBookings, fetchProperties, fetchPlatformRates } from '@/lib/fetcher'
 import { fmtMoney, fmtDate, today } from '@/lib/utils'
 import { SOURCE_LABEL } from '@/lib/labels'
+import { ordenarComQuartos } from '@/lib/reservations'
 import type { Expense, ExpenseCategoria, Booking, Property, PlatformRate } from '@/lib/types'
 
 const CATEGORIA_LABEL: Record<ExpenseCategoria, string> = {
@@ -73,7 +74,10 @@ export default function FinanceiroPage() {
     Promise.all([fetchExpenses(), fetchBookings(), fetchProperties(), fetchPlatformRates()]).then(([e, b, p, pr]) => {
       setExpenses(e)
       setBookings(b)
-      setProperties(p.filter(x => !x.parent_id))
+      // Casas e quartos: uma limpeza é de um quarto, a eletricidade é da casa.
+      // Filtrar por `!parent_id` deixava de fora exatamente onde as reservas
+      // vivem numa casa com quartos, e não havia forma de imputar a despesa.
+      setProperties(ordenarComQuartos(p))
       setPlatformRates(pr)
       setLoading(false)
     })
@@ -282,7 +286,11 @@ export default function FinanceiroPage() {
               <select value={propriedadeId} onChange={e => setPropriedadeId(e.target.value)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Todas / geral</option>
-                {properties.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                {properties.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.parent_id ? `  ↳ ${p.nome}` : p.nome}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

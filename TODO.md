@@ -20,7 +20,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [ ] **0.2 Clerk em instância de produção** — ainda em chaves de desenvolvimento. Obrigatório antes do primeiro utilizador real que não seja o Vasco
 - [ ] **0.3 Rate limit distribuído (Upstash)** — o limitador é **em memória e não funciona em serverless**: o teto real não existe. Já assumido em código no ajuste do OCR (5→20/h)
 - [ ] **0.4 Observabilidade** — sem Sentry e sem funil PostHog (registo → 1.ª propriedade → 1.º iCal → 1.ª reserva → 1.º check-in). Hoje uma falha em produção só se descobre por acaso — foi o que aconteceu com os emails
-- [~] **0.5 Encriptação em repouso + log de acesso** — a base existe (`lib/crypto.ts`, AES-256-GCM, usada na chave SIBA e nas credenciais de faturação); falta aplicá-la aos campos de documento (ANF-1.7) e o log de acesso a dados sensíveis (ANF-1.8)
+- [x] **0.5 Encriptação em repouso + log de acesso** (2026-08-12) — `numero_documento` e `data_validade_doc` guardados em AES-256-GCM (`lib/campos-sensiveis.ts`, ANF-1.7); saída de dados para fora do sistema (CSV do SIBA, submissão, export do art. 15.º) registada no `audit_log` (ANF-1.8). Feito com 0 hóspedes na base: sem backfill e sem risco
 - [ ] **0.6 MFA no Clerk · PITR + restauro de ensaio**
 
 ## Fase 1 (dossiê) — paridade de conformidade
@@ -47,7 +47,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 
 ## Dívida técnica registada
 - [ ] **Deriva de esquema** — `properties.id`, `bookings.id`, `guests.id` são `text` em produção mas `UUID` na migração 001. As migrações não são a fonte de verdade da base; vale um `schema.sql` gerado da produção
-- [ ] **`/financeiro` filtra `!parent_id`** — mostra só casas-mãe no seletor, mas as reservas vivem nos quartos: filtrar por "Casa de Vasco" não devolve nada
+- [x] ~~**`/financeiro` filtra `!parent_id`**~~ — corrigido a 2026-08-12: o seletor de despesa passa a listar casas **e** quartos (`ordenarComQuartos`), com o quarto indentado sob a casa
 - [ ] **Código morto de RLS** — decidir entre ligar o template JWT do Clerk (RLS a nível de BD) ou remover `getSupabaseUserClient`/`getSupabaseForRequest`
 
 ## Dependências humanas do dossiê (arrancar em paralelo)

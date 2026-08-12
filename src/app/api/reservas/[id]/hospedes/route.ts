@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { estadoDosBoletins, ordenarHospedes, type HospedeDaReserva } from '@/lib/hospedes-reserva'
+import { revelarLista } from '@/lib/campos-sensiveis'
 import type { Guest } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -48,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     ? await supabase.from('guests').select('*').in('id', ids)
     : { data: [] as Guest[] }
 
-  const porId = new Map((guests ?? []).map(g => [g.id as string, g as Guest]))
+  const porId = new Map(revelarLista(guests).map(g => [g.id as string, g as Guest]))
 
   const hospedes: HospedeDaReserva[] = registos
     .map(r => {

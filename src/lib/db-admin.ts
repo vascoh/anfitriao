@@ -5,6 +5,7 @@
  */
 
 import { createAdminClient } from './supabase'
+import { revelarCampos } from './campos-sensiveis'
 import type { Booking, Guest, Property, WebsiteSettings, Post } from './types'
 
 const DEFAULT_WEBSITE: WebsiteSettings = {
@@ -30,7 +31,8 @@ export async function adminGetBookingById(id: string): Promise<Booking | null> {
 export async function adminGetGuestById(id: string): Promise<Guest | null> {
   const { data, error } = await getSupabase().from('guests').select('*').eq('id', id).single()
   if (error || !data) return null
-  return data as Guest
+  // Acessor partilhado: quem o usa recebe a ficha legível, não o criptograma.
+  return revelarCampos(data as Record<string, unknown>) as unknown as Guest
 }
 
 export async function adminGetPropertyById(id: string): Promise<Property | null> {

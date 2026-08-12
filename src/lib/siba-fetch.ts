@@ -1,5 +1,6 @@
 import 'server-only'
 import { createAdminClient } from './supabase'
+import { revelarLista } from './campos-sensiveis'
 import type { SibaBookingRow } from './siba'
 
 export interface SibaBookingRowWithId extends SibaBookingRow {
@@ -44,7 +45,9 @@ export async function fetchSibaRowsForOwner(
     supabase.from('properties').select('id, nome').in('id', propIds),
   ])
 
-  const guestMap = new Map((guestsRes.data ?? []).map(g => [g.id, g]))
+  // Decifrados aqui, no único ponto onde o CSV e a submissão leem hóspedes:
+  // o boletim precisa do número de documento em claro para ser aceite.
+  const guestMap = new Map(revelarLista(guestsRes.data).map(g => [g.id, g]))
   const propMap = new Map((propsRes.data ?? []).map(p => [p.id, p]))
 
   const rows = bookings.map(b => {

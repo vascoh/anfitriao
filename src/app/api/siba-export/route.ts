@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { buildSibaCsv } from '@/lib/siba'
 import { fetchSibaRowsForOwner } from '@/lib/siba-fetch'
+import { logAcessoSensivel } from '@/lib/audit'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -35,6 +36,15 @@ export async function GET(req: NextRequest) {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     })
   }
+
+  // Um CSV com números de documento sai da aplicação e passa a viver no
+  // computador de quem o descarregou. Fica registado (ANF-1.8).
+  await logAcessoSensivel({
+    actorId: userId,
+    via: 'export_csv_siba',
+    pessoas: rows.length,
+    detalhes: { de: from, ate: to },
+  })
 
   const csv = buildSibaCsv(rows)
 

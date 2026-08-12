@@ -295,6 +295,34 @@ export function unidadesReservaveis(properties: Property[]): Property[] {
 }
 
 /**
+ * Casas e quartos numa lista só, cada quarto logo a seguir à sua casa.
+ *
+ * Para escolher onde imputar uma despesa não serve nem a lista de unidades
+ * alugáveis (deixaria de fora a casa, onde vive a eletricidade) nem a lista
+ * de topo (deixaria de fora os quartos, onde vivem as limpezas e as
+ * reservas). Serve a árvore inteira, por ordem de leitura.
+ *
+ * Quartos sem casa conhecida vão para o fim em vez de desaparecerem: uma
+ * lista que esconde uma propriedade é pior do que uma lista mal ordenada.
+ */
+export function ordenarComQuartos(properties: Property[]): Property[] {
+  const casas = properties.filter(p => !p.parent_id)
+  const usados = new Set<string>()
+  const ordenada: Property[] = []
+
+  for (const casa of casas) {
+    ordenada.push(casa)
+    usados.add(casa.id)
+    for (const quarto of properties.filter(p => p.parent_id === casa.id)) {
+      ordenada.push(quarto)
+      usados.add(quarto.id)
+    }
+  }
+
+  return [...ordenada, ...properties.filter(p => !usados.has(p.id))]
+}
+
+/**
  * Quantas unidades alugáveis é que uma conta ocupa — a medida do limite do
  * plano.
  *

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { sendCheckinCompleteNotification } from '@/lib/notify-checkin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { protegerCampos, revelarCampos, revelarLista } from '@/lib/campos-sensiveis'
 const supabase = createAdminClient()
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -83,8 +84,9 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     hospede_id: booking.hospede_id,
     property: propRes.data ?? null,
     host_nome: settingsRes.data?.host_nome ?? settingsRes.data?.logo_texto ?? 'O seu anfitrião',
-    guest: guestRes.data ?? null,
-    acompanhantes: acompanhantes ?? [],
+    // O hóspede é o titular destes dados: vê-os em claro para poder corrigi-los.
+    guest: revelarCampos(guestRes.data ?? null),
+    acompanhantes: revelarLista(acompanhantes),
     ja_submetido: jaSubmetido,
   })
 }
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     return NextResponse.json({ error: 'Reserva não encontrada' }, { status: 404 })
   }
 
-  const guestData = {
+  const guestDataEmClaro = {
     nome,
     email: optText(body.email, 320),
     telefone: optText(body.telefone, 40),
@@ -128,6 +130,17 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     // boletim pode ser entregue ao SIBA, por muito completo que esteja o resto.
     pais_residencia: optText(body.pais_residencia, 80),
     local_residencia: optText(body.local_residencia, 120),
+  }
+
+  /* Campos de documento encriptados antes de tocar na base (ANF-1.7). Em
+   * produção sem chave isto lança, e o check-in falha — é preferível ao
+   * número de documento ficar em claro sem ninguém dar por isso. */
+  let guestData: Record<string, unknown>
+  try {
+    guestData = protegerCampos(guestDataEmClaro)
+  } catch (err) {
+    console.error('[checkin] encriptação', err)
+    return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
   }
 
   // Propagar erros de escrita: sem isto o hóspede via "Obrigado" mesmo quando
@@ -160,7 +173,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     const nomeAcomp = optText(a?.nome, 200)
     if (!nomeAcomp) continue
 
-    const dados = {
+    const dadosEmClaro = {
       nome: nomeAcomp,
       nacionalidade: optText(a?.nacionalidade, 80),
       numero_documento: optText(a?.numero_documento, 60),
@@ -171,6 +184,14 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       pais_residencia: optText(a?.pais_residencia, 80),
       local_residencia: optText(a?.local_residencia, 120),
       owner_id: booking.owner_id,
+    }
+
+    let dados: Record<string, unknown>
+    try {
+      dados = protegerCampos(dadosEmClaro)
+    } catch (err) {
+      console.error('[checkin] encriptação acompanhante', err)
+      return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
     }
 
     // Reenviar o formulário atualiza a mesma ficha em vez de criar outra.
@@ -209,7 +230,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       id: crypto.randomUUID(),
       data: now,
       tipo: 'checkin_online',
-      descricao: `Check-in online submetido por ${guestData.nome}`,
+      descricao: `Check-in online submetido por ${guestDataEmClaro.nome}`,
     }],
   }).eq('id', bookingId)
   if (bErr) {

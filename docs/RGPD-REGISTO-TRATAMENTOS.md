@@ -133,9 +133,26 @@ faltam nas páginas legais.
 | Exportação e apagamento a pedido | ✅ `/api/guests/[id]/dados` |
 | Registo de ações sensíveis | ✅ `audit_log` |
 | Minimização no OCR (foto não persistida) | ✅ |
-| Encriptação em repouso dos campos de documento | ❌ Por fazer (ANF-1.7) |
-| Log de acesso a dados sensíveis (quem leu que boletim) | ❌ Por fazer (ANF-1.8) |
+| Encriptação em repouso dos campos de documento | ✅ AES-256-GCM em `numero_documento` e `data_validade_doc` (`src/lib/campos-sensiveis.ts`) |
+| Log de saída de dados de documento (CSV, SIBA, art. 15.º) | ✅ `audit_log`, ação `acesso_dados_documento` |
+| Log de consulta na app (quem abriu que ficha) | ⚠️ Não registado, por decisão — ver nota abaixo |
 | MFA nas contas de anfitrião | ❌ Por ativar no Clerk (ANF-1.9) |
+
+**Sobre a encriptação em repouso.** Encriptam-se os campos que identificam o
+documento — número e validade —, não a ficha inteira. É neles que está o dano
+de uma fuga: com nome e número de documento abre-se crédito e faz-se check-in
+noutro sítio. Nome, nacionalidade e data de nascimento ficam legíveis na base
+porque a aplicação filtra e ordena por eles, e encriptá-los daria a mesma
+proteção real (quem tenha a base tem os nomes na mesma, pelas reservas) ao
+preço de partir metade do produto. A chave vive em `APP_ENCRYPTION_KEY`, fora
+da base de dados: quem obtenha uma cópia do Postgres não obtém os números.
+
+**Sobre o log de acesso.** Regista-se o que **sai** do sistema — o CSV
+descarregado, os boletins entregues ao SIBA, o ficheiro do art. 15.º — e não
+cada ficha aberta na aplicação. Ver os dados dos seus hóspedes é o trabalho
+normal de um anfitrião; um registo que cresce a cada página aberta deixa de se
+conseguir ler no dia em que for preciso. O que se quer poder responder é
+"quem levou estes dados para fora, e quando".
 
 ## Transferências para fora do EEE
 

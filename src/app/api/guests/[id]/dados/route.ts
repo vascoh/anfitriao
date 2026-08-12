@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { exportarDadosHospede, anonimizarHospede } from '@/lib/retencao-server'
 import { TODOS_OS_GRUPOS } from '@/lib/retencao'
+import { logAcessoSensivel } from '@/lib/audit'
 
 const supabase = createAdminClient()
 
@@ -29,6 +30,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (error || !dados) {
     return NextResponse.json({ error: 'Erro ao exportar dados.' }, { status: 500 })
   }
+
+  await logAcessoSensivel({
+    actorId: userId,
+    via: 'export_rgpd',
+    pessoas: 1,
+    detalhes: { guest_id: id },
+  })
 
   // Ficheiro, não corpo de página: o anfitrião reencaminha-o ao hóspede.
   return new NextResponse(JSON.stringify(dados, null, 2), {
