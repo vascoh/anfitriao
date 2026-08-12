@@ -25,8 +25,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           // eslint-disable-next-line react-hooks/purity -- server component async, corre por request (não em render client)
           (new Date(account.trial_ends_at).getTime() - Date.now()) / 86400000
         )
-        // Mostrar banner quando faltam 7 dias ou menos (e trial ainda não expirou)
-        if (daysLeft >= 0 && daysLeft <= 7) {
+        /* Banner na última semana **e depois de expirar**.
+         *
+         * A condição era `daysLeft >= 0`, portanto o aviso desaparecia
+         * exatamente no dia em que passava a interessar: quem deixasse
+         * passar o prazo voltava a uma app sem sinal nenhum de que o período
+         * experimental tinha acabado, e sem caminho para escolher plano. */
+        if (daysLeft <= 7) {
           trialDaysLeft = daysLeft
         }
       }

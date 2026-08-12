@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     customer: customerId,
     mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${baseUrl}/conta/bem-vindo?plano=${plano}`,
+    success_url: `${baseUrl}/conta/bem-vindo?plano=${plano ?? ''}`,
     cancel_url:  `${baseUrl}/conta/billing?cancelled=1`,
     allow_promotion_codes: true,
     metadata: { account_id: account.id },

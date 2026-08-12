@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { stripe, priceToPlano, PLAN_LIMITS } from '@/lib/stripe'
+import { stripe, priceToPlano, estadoDaSubscricao, PLAN_LIMITS } from '@/lib/stripe'
 import {
   updateAccount,
   updateAccountByCustomerId,
@@ -9,6 +9,7 @@ import {
   syncAccountToClerk,
 } from '@/lib/accounts'
 import { fulfillCheckoutSession } from '@/lib/checkout-fulfillment'
+import { logAudit } from '@/lib/audit'
 
 // Raw body necessário para verificar assinatura do Stripe
 export async function POST(req: NextRequest) {
@@ -58,27 +59,45 @@ async function handleEvent(event: Stripe.Event) {
       const customerId  = session.customer as string
       const subId       = session.subscription as string
 
-      if (!accountId || !subId) break
+      if (!accountId || !subId) {
+        // Alguém pagou e não sabemos a quem creditar. Silêncio aqui era uma
+        // conta por activar que ninguém ia procurar.
+        console.error('[webhook] subscrição sem account_id/subscription', session.id, { accountId, subId })
+        break
+      }
 
       const sub    = await stripe.subscriptions.retrieve(subId)
       const item   = sub.items.data[0]
       const priceId = item?.price.id ?? ''
       const plano  = priceToPlano(priceId)
-      const limits = PLAN_LIMITS[plano]
       // No Stripe v22, current_period_end está no SubscriptionItem, não na Subscription
       const periodEnd = item?.current_period_end
         ? new Date(item.current_period_end * 1000).toISOString()
         : null
 
+      /* Pagou, portanto a conta fica activa. Mas se o preço não é nenhum dos
+       * nossos, não se inventa um plano: mudar `plano`/`propriedades_max` com
+       * um palpite é como se despromovia em silêncio quem comprou o mais
+       * caro. Fica activo com o que tinha, e o caso vai para a auditoria. */
       await updateAccount(accountId, {
         estado:                'activo',
-        plano,
+        ...(plano ? { plano, propriedades_max: PLAN_LIMITS[plano].propriedades_max } : {}),
         stripe_customer_id:    customerId,
         stripe_subscription_id: subId,
         stripe_price_id:       priceId,
         current_period_end:    periodEnd,
-        propriedades_max:      limits.propriedades_max,
       })
+
+      if (!plano) {
+        console.error('[webhook] price sem plano correspondente:', priceId, 'conta', accountId)
+        await logAudit({
+          actorId: null,
+          entidade: 'account',
+          entidadeId: accountId,
+          acao: 'plano_por_identificar',
+          detalhes: { price_id: priceId, subscription_id: subId },
+        })
+      }
 
       await syncClerkMetadata(customerId, plano, 'activo')
       break
@@ -91,24 +110,23 @@ async function handleEvent(event: Stripe.Event) {
       const item       = sub.items.data[0]
       const priceId    = item?.price.id ?? ''
       const plano      = priceToPlano(priceId)
-      const limits     = PLAN_LIMITS[plano]
       const periodEnd  = item?.current_period_end
         ? new Date(item.current_period_end * 1000).toISOString()
         : null
 
-      // Se cancelamento agendado mas ainda activo
-      const estado = sub.status === 'active' ? 'activo'
-        : sub.status === 'past_due'           ? 'suspenso'
-        : 'activo'
+      const estado = estadoDaSubscricao(sub.status)
 
       await updateAccountByCustomerId(customerId, {
         estado,
-        plano,
+        ...(plano ? { plano, propriedades_max: PLAN_LIMITS[plano].propriedades_max } : {}),
         stripe_subscription_id: sub.id,
         stripe_price_id:        priceId,
         current_period_end:     periodEnd,
-        propriedades_max:       limits.propriedades_max,
       })
+
+      if (!plano) {
+        console.error('[webhook] price sem plano correspondente:', priceId, 'cliente', customerId)
+      }
 
       await syncClerkMetadata(customerId, plano, estado)
       break

@@ -5,6 +5,7 @@ import { sendBookingNotification } from './notify-booking'
 import { hasConflict } from './booking-request'
 import { retrieveGuestCheckoutSession } from './stripe-connect'
 import { stripe } from './stripe'
+import { logAudit } from './audit'
 
 export type FulfillResult =
   | { ok: true; bookingId: string; alreadyFulfilled: boolean }
@@ -46,14 +47,43 @@ export async function fulfillCheckoutSession(connectAccountId: string, sessionId
   }
 
   if (await hasConflict(propriedade_id, check_in, check_out)) {
+    /* Alguém pagou umas datas que entretanto ficaram ocupadas. O reembolso é
+     * automático — mas se **ele** falhar, fica dinheiro cobrado sem reserva
+     * nenhuma, que é o pior estado possível e o único que ninguém descobre
+     * sozinho. Por isso fica no registo de auditoria, com a sessão e o
+     * `payment_intent`, tenha corrido bem ou mal. */
+    const paymentIntentId = typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : session.payment_intent?.id
+    let reembolsado = false
+    let erroReembolso: string | null = null
+
     try {
-      const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id
       if (paymentIntentId) {
         await stripe.refunds.create({ payment_intent: paymentIntentId }, { stripeAccount: connectAccountId })
+        reembolsado = true
+      } else {
+        erroReembolso = 'sessão sem payment_intent'
       }
     } catch (err) {
+      erroReembolso = err instanceof Error ? err.message : String(err)
       console.error('[fulfillCheckoutSession] falha ao reembolsar após conflito', sessionId, err)
     }
+
+    await logAudit({
+      actorId: null,
+      entidade: 'booking',
+      entidadeId: bookingId,
+      acao: reembolsado ? 'reembolso_por_conflito' : 'reembolso_por_conflito_falhou',
+      detalhes: {
+        session_id: sessionId,
+        payment_intent: paymentIntentId ?? null,
+        conta_connect: connectAccountId,
+        valor: preco_total,
+        erro: erroReembolso,
+      },
+    })
+
     return { ok: false, reason: 'conflict_refunded' }
   }
 
@@ -107,6 +137,21 @@ export async function fulfillCheckoutSession(connectAccountId: string, sessionId
     console.error('[fulfillCheckoutSession] booking insert', bErr.message)
     return { ok: false, reason: 'error' }
   }
+
+  /* Quem pagou é o primeiro hóspede da reserva.
+   *
+   * Todos os outros caminhos que criam reservas ligam quem reservou em
+   * `reserva_hospedes` — é de lá que sai um boletim por pessoa. Este, que é
+   * o das reservas **pagas**, não ligava ninguém: a reserva nascia sem um
+   * único hóspede identificado e o SIBA respondia "reserva sem hóspedes",
+   * sem forma de o anfitrião perceber porquê. */
+  const { error: rhErr } = await supabase.from('reserva_hospedes').insert({
+    booking_id: bookingId,
+    guest_id: guestId,
+    principal: true,
+    owner_id: owner_id || null,
+  })
+  if (rhErr) console.error('[fulfillCheckoutSession] ligar hóspede à reserva', rhErr.message)
 
   try {
     await sendBookingNotification({

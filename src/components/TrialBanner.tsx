@@ -11,12 +11,15 @@ export function TrialBanner({ daysLeft }: Props) {
   const [dismissed, setDismissed] = useState(false)
   if (dismissed) return null
 
+  const expirou = daysLeft < 0
   const isUrgent = daysLeft <= 2
   const bg    = isUrgent
     ? 'bg-red-600 dark:bg-red-700'
     : 'bg-amber-500 dark:bg-amber-600'
 
-  const msg = daysLeft === 0
+  const msg = expirou
+    ? 'O teu período experimental terminou. Escolhe um plano para continuares a usar o Anfitrião.'
+    : daysLeft === 0
     ? 'O teu trial expira hoje.'
     : daysLeft === 1
     ? 'O teu trial expira amanhã.'

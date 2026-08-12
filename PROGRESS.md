@@ -6,6 +6,16 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12g] Stripe — o plano que não se reconhece virava Starter
+
+- 💸 **O pior: `priceToPlano` tinha `return 'starter'` como fallback.** Uma subscrição cujo preço a app não reconheça — e o `STRIPE_EMPRESA_PRICE_ID` **não está definido em produção** — era classificada como Starter. Um cliente pagava 99 €/mês e ficava com o limite de 3 unidades, sem ninguém dar por isso. Passa a devolver `null`: o webhook mantém a conta activa (o pagamento é real) mas **não mexe no plano nem nos limites** quando não sabe, e regista `plano_por_identificar` no `audit_log` para haver olhos humanos.
+- 🚪 **`customer.subscription.updated` mandava tudo o que não fosse `past_due` para "activo"** — incluindo `canceled`, `unpaid`, `incomplete_expired` e `incomplete`. Uma subscrição cancelada deixava a conta com acesso completo, e um checkout abandonado a meio da autenticação do cartão dava conta activa sem nunca ter havido pagamento. Mapa explícito em `estadoDaSubscricao`, com um estado novo do Stripe a suspender (reversível) em vez de abrir as portas.
+- 🧍 **Uma reserva paga nascia sem hóspede identificado.** Todos os outros caminhos ligam quem reservou em `reserva_hospedes` — é de lá que sai um boletim por pessoa. O do pagamento não ligava ninguém: o SIBA respondia "reserva sem hóspedes" numa reserva que tinha nome, email e dinheiro pago.
+- 🔇 **Um reembolso falhado era invisível.** Quando as datas ficam ocupadas entre o pagamento e a confirmação, reembolsa-se automaticamente — mas se o reembolso falhasse, ficava dinheiro cobrado sem reserva nenhuma e só um `console.error` a dizê-lo. Passa a ficar no `audit_log` nos dois casos, com sessão, `payment_intent` e valor.
+- ⏳ **O aviso de fim do período experimental desaparecia no dia em que expirava** (`daysLeft >= 0`). Quem deixasse passar o prazo voltava a uma app sem sinal nenhum e sem caminho para escolher plano. O banner passa a ficar, com texto próprio.
+- ✅ 604 testes (9 novos), typecheck 0, lint 0, build OK.
+- 👤 **Duas decisões que são suas, não minhas** (deixo-as por fazer de propósito): (1) **um trial que expira não faz nada** — o `estado` continua `trial` para sempre e só o middleware bloqueia contas `suspenso`, ou seja o período experimental é ilimitado na prática; (2) **`invoice.payment_failed` suspende à primeira tentativa falhada**, quando o Stripe ainda vai tentar mais vezes ao longo de dias — um cartão que falha uma vez tranca o anfitrião a meio de uma estadia.
+
 ### [2026-08-12f] iCal — o sync só sabia somar, e havia dois syncs diferentes
 
 Quatro bugs, todos na mesma família: o calendário local não seguia o das plataformas.
