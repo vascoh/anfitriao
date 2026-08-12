@@ -15,14 +15,28 @@ function publicUid(bookingId: string): string {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params
 
-  const [{ data: prop }, { data: bookings }] = await Promise.all([
+  const [{ data: prop }, { data: quartos }] = await Promise.all([
     supabase.from('properties').select('id, nome, owner_id').eq('id', propertyId).single(),
-    supabase.from('bookings').select('id, hospede_id, check_in, check_out, estado')
-      .eq('propriedade_id', propertyId)
-      .not('estado', 'in', '("cancelada","no_show")'),
+    supabase.from('properties').select('id, ativo').eq('parent_id', propertyId),
   ])
 
   if (!prop) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
+
+  /* Numa casa com quartos, a ocupação vive nos quartos — a casa-mãe não tem
+   * reservas próprias desde que deixou de ser unidade alugável (30/07).
+   * Exportar só as dela dava um feed **sempre vazio**: quem o colasse no
+   * Amenitiz ou no Airbnb via a casa livre todos os dias e vendia por cima de
+   * reservas que existem. Uma casa está ocupada quando **qualquer** quarto
+   * seu está — é o que este feed passa a dizer. */
+  const idsOcupacao = [
+    propertyId,
+    ...(quartos ?? []).filter(q => q.ativo !== false).map(q => q.id as string),
+  ]
+
+  const { data: bookings } = await supabase
+    .from('bookings').select('id, hospede_id, check_in, check_out, estado')
+    .in('propriedade_id', idsOcupacao)
+    .not('estado', 'in', '("cancelada","no_show")')
 
   // Sem nomes de hóspedes: o feed é acessível a qualquer pessoa que conheça o
   // propertyId (visível nos URLs públicos /book) — só datas de ocupação.

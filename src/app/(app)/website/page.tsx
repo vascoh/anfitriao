@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
 import { fmtMoney, fmtDate, nights, uuid } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
-import { parseIcal, generateIcal } from '@/lib/ical'
+import { generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
@@ -72,77 +72,51 @@ export default function WebsitePage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  /**
+   * Sincroniza um feed pela rota do servidor — a mesma que o cron usa.
+   *
+   * Havia aqui uma segunda implementação, no cliente: lia o feed pelo proxy,
+   * criava um hóspede falso por evento (com o texto da plataforma como nome) e
+   * guardava o UID dentro das `notas`. A rota do servidor deduplica por
+   * `uid_externo`, portanto as duas **não se viam uma à outra**: a mesma
+   * reserva entrava duas vezes, a ocupação passava dos 100 % e o calendário
+   * mostrava duas reservas nas mesmas datas. Era o problema que a documentação
+   * atribui a ligar dois feeds — só que causado por dois caminhos nossos.
+   *
+   * Uma implementação só, do lado do servidor, é também a única que aplica
+   * cancelamentos e alterações de datas (`lib/ical-reconciliacao.ts`).
+   */
   async function syncFeed(prop: Property, feed: IcalFeed) {
     const key = `${prop.id}:${feed.id}`
     setSyncStates(s => ({ ...s, [key]: 'loading' }))
     try {
-      const res = await fetch(`/api/ical-proxy?url=${encodeURIComponent(feed.url)}`)
-      if (!res.ok) throw new Error('Fetch failed')
-      const text = await res.text()
-      const events = parseIcal(text)
+      const res = await fetch('/api/ical-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId: prop.id }),
+      })
+      if (!res.ok) throw new Error('sync falhou')
 
-      const bookings = await fetchBookings()
-      let added = 0
-
-      for (const ev of events) {
-        const exists = bookings.some(b =>
-          b.propriedade_id === prop.id &&
-          b.notas?.includes(ev.uid)
-        )
-        if (exists) continue
-
-        const guestId = uuid()
-        await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          id: guestId,
-          nome: ev.summary || `${SOURCE_LABEL[feed.source as keyof typeof SOURCE_LABEL]} Guest`,
-          tags: ['novo'],
-          criado_em: new Date().toISOString(),
-        }) })
-        await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          id: uuid(),
-          propriedade_id: prop.id,
-          hospede_id: guestId,
-          check_in: ev.start,
-          check_out: ev.end,
-          num_hospedes: 1,
-          estado: 'confirmada',
-          origem: feed.source as IcalFeed['source'],
-          preco_total: 0,
-          preco_pago: 0,
-          notas: `Importado via iCal — UID: ${ev.uid}`,
-          criado_em: new Date().toISOString(),
-          historico: [{
-            id: uuid(),
-            data: new Date().toISOString(),
-            tipo: 'criada',
-            descricao: `Importado via iCal de ${feed.nome}`,
-          }],
-        }) })
-        added++
+      const { synced = 0, results = [] } = await res.json() as {
+        synced?: number
+        results?: Array<{ feed: string; canceladas?: number; atualizadas?: number; error?: string }>
       }
+      const falhou = results.find(r => r.error)
+      if (falhou) throw new Error(falhou.error)
 
-      const updatedFeed: IcalFeed = {
-        ...feed,
-        last_sync: new Date().toISOString(),
-        last_count: events.length,
-        error: undefined,
-      }
-      const updatedProp: Property = {
-        ...prop,
-        ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
-      }
-      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedProp) })
+      const mexidas = results.reduce((s, r) => s + (r.canceladas ?? 0) + (r.atualizadas ?? 0), 0)
+
       setProps(await fetchProperties())
       setSyncStates(s => ({ ...s, [key]: 'ok' }))
-      toast.success(added > 0 ? `${added} reserva${added !== 1 ? 's' : ''} importada${added !== 1 ? 's' : ''}` : 'Sincronizado — sem novidades')
+      toast.success(
+        synced > 0
+          ? `${synced} reserva${synced !== 1 ? 's' : ''} importada${synced !== 1 ? 's' : ''}`
+          : mexidas > 0
+            ? `Sincronizado — ${mexidas} reserva${mexidas !== 1 ? 's' : ''} atualizada${mexidas !== 1 ? 's' : ''}`
+            : 'Sincronizado — sem novidades',
+      )
       setTimeout(() => setSyncStates(s => ({ ...s, [key]: 'idle' })), 2000)
     } catch {
-      const updatedFeed: IcalFeed = { ...feed, error: 'Falha ao sincronizar', last_sync: new Date().toISOString() }
-      const updatedProp: Property = {
-        ...prop,
-        ical_feeds: (prop.ical_feeds ?? []).map(f => f.id === feed.id ? updatedFeed : f),
-      }
-      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updatedProp) })
       setProps(await fetchProperties())
       setSyncStates(s => ({ ...s, [key]: 'error' }))
       toast.error('Falha ao sincronizar o feed iCal')

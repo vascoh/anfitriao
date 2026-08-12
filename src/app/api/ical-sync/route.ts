@@ -4,6 +4,11 @@ import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { fetchIcalText } from '@/lib/ical-fetch'
+import {
+  reconciliarPropriedade, uidDeOrigem,
+  type ReservaImportada, type EventoDoFeed,
+} from '@/lib/ical-reconciliacao'
+import { today } from '@/lib/utils'
 const supabase = createAdminClient()
 
 function parseIcalDate(s: string): string {
@@ -47,22 +52,43 @@ function parseIcal(text: string): Array<{ uid: string; dtstart: string; dtend: s
   return events
 }
 
+interface ResultadoFeed {
+  feed: string
+  imported: number
+  skipped: number
+  /** Reservas cujas datas mudaram do outro lado. */
+  atualizadas?: number
+  /** Reservas que desapareceram do feed — canceladas na plataforma. */
+  canceladas?: number
+  error?: string
+}
+
 async function syncProperty(
   propertyId: string,
   feeds: IcalFeed[],
   ownerId: string,
-): Promise<{ synced: number; results: Array<{ feed: string; imported: number; skipped: number; error?: string }>; updatedFeeds: IcalFeed[] }> {
-  const results: Array<{ feed: string; imported: number; skipped: number; error?: string }> = []
+): Promise<{ synced: number; results: ResultadoFeed[]; updatedFeeds: IcalFeed[] }> {
+  const results: ResultadoFeed[] = []
   const updatedFeeds: IcalFeed[] = []
 
-  // Batch-fetch all existing external UIDs for this property once — eliminates N+1
+  /* Uma leitura só das reservas já importadas: serve para não reimportar e
+   * para saber o que mudou do outro lado. */
   const { data: existingRows } = await supabase
     .from('bookings')
-    .select('uid_externo')
+    .select('id, uid_externo, check_in, check_out, estado, historico')
     .eq('propriedade_id', propertyId)
     .not('uid_externo', 'is', null)
 
-  const existingUids = new Set((existingRows ?? []).map(r => r.uid_externo as string))
+  const importadas = (existingRows ?? []) as ReservaImportada[]
+  /* Deduplicação pelo UID **de origem**, não pela chave local: o `feed.id`
+   * muda quando o anfitrião remove e volta a adicionar o mesmo calendário, e
+   * comparar pela chave local reimportava a agenda toda em duplicado. */
+  const uidsConhecidos = new Set(importadas.map(r => uidDeOrigem(r.uid_externo)))
+  const hoje = today()
+
+  const eventosDaPropriedade: EventoDoFeed[] = []
+  let todosOsFeedsOk = true
+  const contagemAnterior = feeds.reduce((s, f) => s + (f.last_count ?? 0), 0)
 
   for (const feed of feeds) {
     try {
@@ -73,11 +99,13 @@ async function syncProperty(
       let skipped = 0
 
       for (const ev of events) {
-        const uid = `${feed.id}::${ev.uid}`
-        if (existingUids.has(uid)) { skipped++; continue }
-
-        // Validate dates before inserting
+        // Datas inválidas nem contam como evento: não se importam nem contam
+        // para a reconciliação (senão cancelavam a reserva que representam).
         if (!ev.dtstart || !ev.dtend || ev.dtstart >= ev.dtend) { skipped++; continue }
+
+        eventosDaPropriedade.push({ uid: ev.uid, dtstart: ev.dtstart, dtend: ev.dtend })
+
+        if (uidsConhecidos.has(ev.uid)) { skipped++; continue }
 
         newBookings.push({
           id: crypto.randomUUID(),
@@ -92,12 +120,12 @@ async function syncProperty(
           preco_total: 0,
           preco_pago: 0,
           notas: ev.summary || `Importado de ${feed.nome}`,
-          uid_externo: uid,
+          uid_externo: `${feed.id}::${ev.uid}`,
           criado_em: new Date().toISOString(),
           historico: [],
         })
-        // Track locally so subsequent feeds don't re-insert the same UID
-        existingUids.add(uid)
+        // Marcar já, para o feed seguinte não reinserir o mesmo UID.
+        uidsConhecidos.add(ev.uid)
       }
 
       let imported = 0
@@ -125,8 +153,75 @@ async function syncProperty(
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[ical-sync] feed "${feed.nome}" failed:`, msg)
+      todosOsFeedsOk = false
       updatedFeeds.push({ ...feed, last_sync: new Date().toISOString(), error: msg })
       results.push({ feed: feed.nome, imported: 0, skipped: 0, error: msg })
+    }
+  }
+
+  /* Seguir o outro lado, não só somar-lhe.
+   *
+   * O gestor de canais é a fonte de verdade do calendário: uma reserva
+   * cancelada lá tem de libertar a data cá, e uma data alterada tem de ser
+   * aplicada. Feito uma vez por propriedade, contra a união dos eventos de
+   * todos os feeds — as travas estão em `lib/ical-reconciliacao.ts`. */
+  const { paraAtualizar, paraCancelar } = reconciliarPropriedade({
+    locais: importadas,
+    eventos: eventosDaPropriedade,
+    hoje,
+    contagemAnterior,
+    todosOsFeedsOk,
+  })
+
+  /* O que a sincronização muda fica escrito no histórico da reserva, e as
+   * notas não se tocam: são o texto que a plataforma mandou. Sem isto o
+   * anfitrião via a data mudar sozinha e não tinha como saber porquê. */
+  const historicoDe = (id: string) => {
+    const atual = importadas.find(r => r.id === id)?.historico
+    return Array.isArray(atual) ? atual : []
+  }
+
+  for (const alt of paraAtualizar) {
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        check_in: alt.check_in,
+        check_out: alt.check_out,
+        historico: [...historicoDe(alt.id), {
+          id: crypto.randomUUID(),
+          data: new Date().toISOString(),
+          tipo: 'sincronizacao',
+          descricao: `Datas alteradas na plataforma: ${alt.antes} → ${alt.check_in} → ${alt.check_out}`,
+        }],
+      })
+      .eq('id', alt.id)
+      .eq('owner_id', ownerId)
+    if (error) console.error('[ical-sync] atualizar datas', alt.id, error.message)
+  }
+
+  for (const canc of paraCancelar) {
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        estado: 'cancelada',
+        historico: [...historicoDe(canc.id), {
+          id: crypto.randomUUID(),
+          data: new Date().toISOString(),
+          tipo: 'cancelada',
+          descricao: 'Deixou de constar no calendário da plataforma — cancelada do outro lado.',
+        }],
+      })
+      .eq('id', canc.id)
+      .eq('owner_id', ownerId)
+    if (error) console.error('[ical-sync] cancelar', canc.id, error.message)
+  }
+
+  if (paraAtualizar.length > 0 || paraCancelar.length > 0) {
+    for (const r of results) {
+      if (r.error) continue
+      r.atualizadas = paraAtualizar.length
+      r.canceladas = paraCancelar.length
+      break
     }
   }
 

@@ -29,6 +29,41 @@ Individual, Quarto de Casal, Quarto Familiar. A Casa de Vasco não leva nenhum.
 
 ---
 
+### O que a sincronização faz, desde 2026-08-12
+
+Até aqui só **somava**: importava eventos novos e ignorava tudo o resto. Uma
+reserva cancelada na plataforma ficava confirmada cá para sempre — o quarto
+bloqueado, reservas diretas recusadas para datas livres, ocupação inflacionada
+— e uma alteração de datas nunca chegava, que é a receita para uma dupla
+reserva.
+
+Agora o calendário local **segue** o do gestor de canais:
+
+| O que acontece lá | O que acontece cá |
+|---|---|
+| Reserva nova | Importada (como antes) |
+| Datas alteradas (mesmo UID) | Datas aplicadas, com nota no histórico da reserva |
+| Reserva desaparece do feed | Marcada como cancelada, com nota no histórico |
+
+Com quatro travões, cada um deles uma forma conhecida de perder reservas
+(`src/lib/ical-reconciliacao.ts`):
+
+1. Só se toca no que veio de feeds — reservas criadas à mão ou vindas do site
+   nunca são mexidas.
+2. Nada que já terminou é cancelado: as plataformas deixam de publicar eventos
+   antigos, e sem esta regra o histórico inteiro caía na primeira execução.
+3. Um feed que vem vazio quando ontem tinha reservas não cancela nada — é
+   quase sempre uma falha do outro lado, não um dia em que toda a gente
+   cancelou.
+4. Se algum feed da propriedade falhou, não se cancela nada nessa execução.
+
+A comparação é feita pelo **UID de origem** e por propriedade, não por feed:
+o `feed.id` muda quando se remove e volta a adicionar o mesmo calendário — o
+que estes guias mandam fazer quando o endereço muda — e comparar por feed
+reimportava a agenda toda em duplicado.
+
+---
+
 ## 2. O muro: o iCal não transporta preços nem restrições
 
 Não é uma limitação desta aplicação nem do Amenitiz. **O formato iCal só

@@ -6,6 +6,18 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-12f] iCal — o sync só sabia somar, e havia dois syncs diferentes
+
+Quatro bugs, todos na mesma família: o calendário local não seguia o das plataformas.
+
+- 🔒 **Cancelamentos nunca chegavam.** Uma reserva cancelada no Airbnb desaparece do feed, e a reserva local ficava confirmada **para sempre**: quarto bloqueado no calendário, reservas diretas recusadas para datas livres, ocupação inflacionada. Passa a ser marcada como cancelada, com nota no histórico.
+- 📅 **Alterações de datas também não.** O UID mantém-se, as datas mudam, e a reserva local ficava com as antigas — a receita para vender por cima de uma reserva que existe. Passam a ser aplicadas.
+- 🧷 **Quatro travões, cada um uma forma conhecida de perder reservas** (`lib/ical-reconciliacao.ts`): não se toca no que não veio de feeds; não se cancela nada que já terminou (as plataformas deixam de publicar eventos antigos — sem isto o histórico inteiro caía na primeira execução); um feed que vem vazio quando ontem tinha reservas não cancela nada; e se **algum** feed da propriedade falhou, não se cancela nada nessa execução.
+- 🔁 **Comparação pelo UID de origem, por propriedade, não por feed.** O `feed.id` muda quando se remove e volta a adicionar o mesmo calendário — o que os próprios guias da app mandam fazer quando o endereço muda — e a chave local era `${feed.id}::${uid}`: reimportava a agenda toda em duplicado e deixava as reservas antigas órfãs, nunca mais atualizadas.
+- 🧨 **Havia dois syncs diferentes, e não se viam um ao outro.** O `/website` tinha uma segunda implementação **no cliente**: lia o feed pelo proxy, criava um **hóspede falso por evento** (com o texto da plataforma como nome) e guardava o UID dentro das `notas`. A rota do servidor deduplica por `uid_externo` — logo a mesma reserva entrava **duas vezes**, a ocupação passava dos 100 % e o calendário mostrava duas reservas nas mesmas datas. É o problema que a documentação atribui a ligar dois feeds, causado por dois caminhos nossos. O `/website` passa a chamar a rota do servidor.
+- 🏠 **O feed exportado de uma casa com quartos saía vazio.** A app oferece URL de subscrição para **todas** as propriedades, mas a ocupação vive nos quartos desde 30/07. Quem colasse o endereço da casa no Amenitiz ou no Airbnb via-a livre todos os dias e vendia por cima de reservas reais. O export passa a agregar os quartos ativos: a casa está ocupada quando qualquer quarto seu está.
+- ✅ 595 testes (14 novos), typecheck 0, lint 0, build OK. `docs/SINCRONIZACAO.md` descreve o comportamento novo.
+
 ### [2026-08-12e] Segunda ronda de caça a bugs — o Cartão de Cidadão ia como NIF na fatura
 
 - 🧾 **O bug mais caro dos encontrados até agora.** `clienteDaReserva` punha `guests.numero_documento` no campo do NIF, e o adaptador manda-o para o `fiscal_id` da fatura **comunicada à AT**. O número do Cartão de Cidadão não é o NIF: um passaporte com letras seria recusado, e um CC de nove dígitos passava — ficando a fatura de um hóspede comunicada contra o **NIF de um desconhecido**. Nenhuma fatura real foi emitida (0 na base), por isso não há nada a corrigir junto da AT.
