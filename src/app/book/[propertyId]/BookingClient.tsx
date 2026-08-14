@@ -300,14 +300,13 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const guestId = uuid()
-      const bookingId = uuid()
       const bookRes = await fetch('/api/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          /* Sem ids: quem os atribui é o servidor, e devolve-os na resposta.
+             Ver a nota em lib/booking-request.ts. */
           guest: {
-            id: guestId,
             nome: nome.trim(),
             email: email.trim(),
             telefone: telefone.trim() || undefined,
@@ -316,9 +315,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
             criado_em: new Date().toISOString(),
           },
           booking: {
-            id: bookingId,
             propriedade_id: prop.id,
-            hospede_id: guestId,
             check_in: checkIn,
             check_out: checkOut,
             num_hospedes: numHospedes,
@@ -347,7 +344,8 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
         return
       }
       // Email de notificação é enviado server-side por /api/book
-      router.push(`/book/${prop.id}/confirmacao?b=${bookingId}&nome=${encodeURIComponent(nome)}`)
+      const criada = await bookRes.json().catch(() => null) as { bookingId?: string } | null
+      router.push(`/book/${prop.id}/confirmacao?b=${criada?.bookingId ?? ''}&nome=${encodeURIComponent(nome)}`)
     } catch {
       setSubmitting(false)
       setSubmitError('Ocorreu um erro ao enviar o pedido. Tenta novamente.')
@@ -360,21 +358,18 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
     setSubmitting(true)
     setSubmitError(null)
     try {
-      const guestId = uuid()
-      const bookingId = uuid()
       const res = await fetch('/api/book/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Sem ids: quem os atribui é o servidor (ver lib/booking-request.ts).
           guest: {
-            id: guestId,
             nome: nome.trim(),
             email: email.trim(),
             telefone: telefone.trim() || undefined,
             notas: notas.trim() || undefined,
           },
           booking: {
-            id: bookingId,
             propriedade_id: prop.id,
             check_in: checkIn,
             check_out: checkOut,

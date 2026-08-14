@@ -93,7 +93,7 @@ const VALID = {
   },
 }
 
-const PROPERTY = { id: 'prop-1', owner_id: 'owner-1', nome: 'Casa do Mar', preco_base: 100, taxa_limpeza: 0, ativo: true }
+const PROPERTY = { id: 'prop-1', owner_id: 'owner-1', nome: 'Casa do Mar', preco_base: 100, taxa_limpeza: 0, ativo: true, capacidade: 4 }
 
 beforeEach(() => {
   inserted.length = 0
@@ -126,6 +126,48 @@ describe('POST /api/book', () => {
     expect(ligacao.guest_id).toBe(inserted[0].row.id)
     expect(ligacao.principal).toBe(true)
     expect(ligacao.owner_id).toBe('owner-1')
+  })
+
+  it('ignora os ids que o cliente mandar — a chave primária é do servidor', async () => {
+    /* Aceitava-se o id vindo do browser. No caminho pago isso era grave: o
+     * `fulfillCheckoutSession` faz upsert do hóspede, portanto quem soubesse
+     * o id de uma ficha (o `hospede_id` vai no payload do check-in, e o link
+     * anda por email) reescrevia-a com o nome e o email dele. */
+    const alheio = '11111111-1111-4111-8111-111111111111'
+    const res = await POST(makeReq({
+      guest: { ...VALID.guest, id: alheio },
+      booking: { ...VALID.booking, id: alheio },
+    }))
+
+    expect(res.status).toBe(200)
+    expect(inserted[0].row.id).not.toBe(alheio)
+    expect(inserted[1].row.id).not.toBe(alheio)
+
+    const json = await res.json()
+    expect(json.guestId).toBe(inserted[0].row.id)
+    expect(json.bookingId).toBe(inserted[1].row.id)
+  })
+
+  it('recusa mais pessoas do que o alojamento leva', async () => {
+    // O caminho de grupo já validava a capacidade; este aceitava 50 pessoas
+    // num T0 — e o número vai para `num_hospedes`, que é quantos boletins o
+    // SIBA vai esperar.
+    const res = await POST(makeReq({
+      guest: VALID.guest,
+      booking: { ...VALID.booking, num_hospedes: 5 },
+    }))
+
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('4 pessoas')
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('aceita exatamente a capacidade', async () => {
+    const res = await POST(makeReq({
+      guest: VALID.guest,
+      booking: { ...VALID.booking, num_hospedes: 4 },
+    }))
+    expect(res.status).toBe(200)
   })
 
   it('ignores client-supplied estado/origem/owner_id (anti mass-assignment)', async () => {

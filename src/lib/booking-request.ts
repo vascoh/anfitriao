@@ -72,8 +72,17 @@ export async function validateBookingRequest(
   const notas = typeof booking.notas === 'string' ? booking.notas.trim().slice(0, 2000) : undefined
   const telefone = typeof guest.telefone === 'string' ? guest.telefone.trim().slice(0, 40) : undefined
 
-  const guestId = typeof guest.id === 'string' && UUID_RE.test(guest.id) ? guest.id : uuid()
-  const bookingId = typeof booking.id === 'string' && UUID_RE.test(booking.id) ? booking.id : uuid()
+  /* Os ids são do servidor, sempre.
+   *
+   * Aceitava-se o id que o browser mandasse, e isso deixava um visitante
+   * escolher a chave primária de linhas que a app depois escreve. O caminho
+   * pago é o pior: `fulfillCheckoutSession` faz `upsert` do hóspede, portanto
+   * quem soubesse o id de uma ficha — o `hospede_id` vai no payload do
+   * check-in, e o link do check-in anda por email — reescrevia-a com o nome e
+   * o email dele, e mudava-lhe o dono. Não há razão nenhuma para o lado
+   * público escolher ids: quem precisa deles recebe-os na resposta. */
+  const guestId = uuid()
+  const bookingId = uuid()
 
   const { data: prop, error: propErr } = await supabase
     .from('properties')
@@ -86,6 +95,18 @@ export async function validateBookingRequest(
   }
 
   const owner_id = prop.owner_id as string | null
+
+  /* Cabem? O caminho de grupo já validava a capacidade; este não validava
+   * nada, e aceitava um pedido de 50 pessoas para um T0. O número vai para
+   * `num_hospedes`, que é quantos boletins o SIBA vai esperar. */
+  const capacidade = Number(prop.capacidade) || 0
+  if (capacidade > 0 && num_hospedes > capacidade) {
+    return {
+      ok: false,
+      error: `Este alojamento leva ${capacidade} ${capacidade === 1 ? 'pessoa' : 'pessoas'}.`,
+      status: 400,
+    }
+  }
 
   const { data: conflicts, error: cErr } = await supabase
     .from('bookings')
@@ -192,7 +213,8 @@ export async function validateGroupBookingRequest(
 
   const notas = typeof booking.notas === 'string' ? booking.notas.trim().slice(0, 2000) : undefined
   const telefone = typeof guest.telefone === 'string' ? guest.telefone.trim().slice(0, 40) : undefined
-  const guestId = typeof guest.id === 'string' && UUID_RE.test(guest.id) ? guest.id : uuid()
+  // Ver a nota em `validateBookingRequest`: o id é do servidor, sempre.
+  const guestId = uuid()
 
   const { data: casa, error: casaErr } = await supabase
     .from('properties').select('*').eq('id', casaId).single()

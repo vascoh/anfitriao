@@ -6,6 +6,13 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14f] Pedido público de reserva — quem escolhia as chaves primárias era o browser
+
+- 🔑 **Os ids vinham do cliente.** `validateBookingRequest` aceitava `guest.id` e `booking.id` se fossem UUIDs válidos. No caminho **pago** isso é grave: o `fulfillCheckoutSession` faz `upsert` do hóspede, portanto quem soubesse o id de uma ficha reescrevia-a com o nome e o email dele — e mudava-lhe o dono. E o id não é secreto: o `hospede_id` ia no payload do check-in, cujo link anda por email (a outra correção de hoje fechou a janela, mas os links já partilhados continuam a existir). Passam a ser gerados no servidor, sempre; quem precisa deles recebe-os na resposta, que já os devolvia.
+- 👥 **Ninguém verificava a capacidade.** O caminho de grupo validava (`capacidadeTotal`), o caminho de uma propriedade não validava nada: aceitava um pedido de 50 pessoas para um T0. O número vai para `num_hospedes`, que é **quantos boletins o SIBA vai esperar** — um número inventado ali estraga a conformidade sem ninguém perceber porquê.
+- 🧪 3 testes novos na suite da rota pública; verificados contra o código antigo: falham.
+- ✅ 651 testes, typecheck 0, lint 0, build OK.
+
 ### [2026-08-14e] Crons — o lembrete de pagamento chegava quatro vezes, e a triplicar
 
 - 📨 **Quatro emails, não um.** A janela apanha os check-ins dos **próximos 3 dias** e o guarda de repetição só olhava para "já enviei hoje". Resultado: o mesmo hóspede recebia o mesmo lembrete quatro dias seguidos — incluindo depois de já ter pago por transferência, enquanto o anfitrião não registasse o valor. Passa a ser uma vez por reserva, que é o que o comentário da rota sempre disse ser a intenção.
