@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14b] Check-in — o link era uma janela permanente para o documento do hóspede
+
+- 🪟 **O URL do check-in é o id da reserva, e é partilhado por email e WhatsApp.** Fica para sempre em caixas de correio, cópias reencaminhadas e telemóveis emprestados — e enquanto respondesse com a ficha completa, era uma janela **permanente** para o número do documento, a data de nascimento e a morada de quem lá dormiu. Meses depois da estadia, quem tivesse o link continuava a ler tudo. O próprio código já reconhecia o risco noutro sítio: o feed iCal público troca o id real por um hash *precisamente* para não dar acesso a esta rota.
+- ⏱️ **A janela passa a fechar-se** (`lib/checkin-acesso.ts`) quando o link cumpriu o que tinha a fazer: check-in submetido, ou estadia terminada. Depois disso a reserva continua a responder (datas, alojamento, anfitrião) para a página se explicar — o que deixa de sair são as pessoas. É a mesma ideia da retenção: cumprido o fim, acaba o fundamento. O dia do check-out ainda conta, que é quando alguém pode estar a acabar de preencher.
+- ✍️ **O mesmo do lado da escrita.** O POST não tinha janela nenhuma: com um link antigo dava para reescrever a ficha meses depois, apagar dados de um boletim já entregue e voltar a disparar o email de check-in ao anfitrião. Corrigir uma gralha antes de sair continua a ser possível.
+- 🆔 **`property.owner_id` deixou de ir no payload** — identificador interno da conta, sem nada que fazer no browser de um hóspede.
+- 💸 **`/api/documentos/extrair` estava aberto a toda a gente.** É uma rota pública que chama um modelo pago (tem de ser pública: é o hóspede que fotografa o documento). "Pública" não pode querer dizer "aberta": qualquer pessoa na internet podia gastar o orçamento de IA, e o limitador por IP é em memória — não funciona em serverless. Passa a exigir **uma de duas provas**: sessão de anfitrião, ou o id de uma reserva com o check-in aberto — um UUID que só quem recebeu o link tem.
+- ✅ 631 testes (6 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14] Páginas públicas — a ficha completa do alojamento estava no código-fonte
 
 O pior achado da série, e estava **live**.

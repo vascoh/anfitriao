@@ -180,6 +180,7 @@ export default function CheckinPage() {
     try {
       const fd = new FormData()
       fd.append('file', file)
+      fd.append('bookingId', bookingId)
       const res = await fetch('/api/documentos/extrair', { method: 'POST', body: fd })
       const extracted = await res.json() as Record<string, string> & { error?: string }
 
@@ -219,6 +220,7 @@ export default function CheckinPage() {
     setExtracting(true)
     const fd = new FormData()
     fd.append('file', file)
+    fd.append('bookingId', bookingId)
     fetch('/api/documentos/extrair', { method: 'POST', body: fd })
       .then(r => r.json())
       .then((extracted: Record<string, string>) => {

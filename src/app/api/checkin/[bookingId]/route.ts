@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase'
 import { sendCheckinCompleteNotification } from '@/lib/notify-checkin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { protegerCampos, revelarCampos, revelarLista } from '@/lib/campos-sensiveis'
+import { janelaDeCheckin } from '@/lib/checkin-acesso'
+import { today } from '@/lib/utils'
 const supabase = createAdminClient()
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -75,6 +77,15 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
   const historico: Array<{ tipo: string; descricao: string }> = Array.isArray(booking.historico) ? booking.historico : []
   const jaSubmetido = historico.some(e => e.tipo === 'checkin_online')
 
+  /* O link é partilhado e fica para sempre em caixas de correio: os dados
+   * pessoais só saem enquanto houver alguma coisa para preencher. Ver
+   * lib/checkin-acesso.ts. */
+  const janela = janelaDeCheckin({
+    jaSubmetido,
+    checkOut: booking.check_out as string,
+    hoje: today(),
+  })
+
   return NextResponse.json({
     id: booking.id,
     check_in: booking.check_in,
@@ -92,11 +103,16 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     principal_neste_quarto: booking.reserva_grupo_id
       ? (ligacoes ?? []).some(l => l.principal && l.guest_id === booking.hospede_id)
       : true,
-    property: propRes.data ?? null,
+    /* Sem `owner_id`: é o identificador interno da conta do anfitrião e não
+     * tem nada que fazer no browser de um hóspede. */
+    property: propRes.data
+      ? { nome: propRes.data.nome, cidade: propRes.data.cidade, imagem_url: propRes.data.imagem_url }
+      : null,
     host_nome: settingsRes.data?.host_nome ?? settingsRes.data?.logo_texto ?? 'O seu anfitrião',
-    // O hóspede é o titular destes dados: vê-os em claro para poder corrigi-los.
-    guest: revelarCampos(guestRes.data ?? null),
-    acompanhantes: revelarLista(acompanhantes),
+    // O hóspede é o titular destes dados: vê-os em claro para poder
+    // corrigi-los — enquanto a janela estiver aberta.
+    guest: janela.mostraDados ? revelarCampos(guestRes.data ?? null) : null,
+    acompanhantes: janela.mostraDados ? revelarLista(acompanhantes) : [],
     ja_submetido: jaSubmetido,
   })
 }
@@ -117,12 +133,29 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   const { data: booking, error: bookingError } = await supabase
     .from('bookings')
-    .select('id, hospede_id, historico, owner_id, num_hospedes, reserva_grupo_id')
+    .select('id, hospede_id, historico, owner_id, num_hospedes, reserva_grupo_id, check_out, estado')
     .eq('id', bookingId)
     .single()
 
   if (bookingError || !booking) {
     return NextResponse.json({ error: 'Reserva não encontrada' }, { status: 404 })
+  }
+
+  if (booking.estado === 'cancelada') {
+    return NextResponse.json({ error: 'Esta reserva foi cancelada' }, { status: 410 })
+  }
+
+  /* A mesma janela do GET, do lado da escrita.
+   *
+   * Sem isto, quem tivesse o link — que anda por emails reencaminhados —
+   * podia reescrever a ficha do hóspede meses depois da estadia, apagar os
+   * dados do boletim já entregue e voltar a disparar o email de check-in ao
+   * anfitrião. Corrigir uma gralha antes de sair continua a ser possível. */
+  if (!janelaDeCheckin({ jaSubmetido: false, checkOut: booking.check_out as string, hoje: today() }).mostraDados) {
+    return NextResponse.json(
+      { error: 'Esta estadia já terminou. Fala com o teu anfitrião se for preciso corrigir alguma coisa.' },
+      { status: 410 },
+    )
   }
 
   const guestDataEmClaro = {

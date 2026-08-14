@@ -1,8 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { auth } from '@clerk/nextjs/server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { createAdminClient } from '@/lib/supabase'
+import { janelaDeCheckin } from '@/lib/checkin-acesso'
+import { today } from '@/lib/utils'
 
 const client = new Anthropic()
+
+/**
+ * A leitura do documento é feita por um modelo pago e a rota é pública — tem
+ * de o ser, é o hóspede que fotografa o documento no telemóvel dele.
+ *
+ * "Pública" não pode querer dizer "aberta a toda a gente": sem prova nenhuma
+ * de que quem chama tem alguma coisa a ver com uma reserva, qualquer pessoa
+ * na internet podia gastar o orçamento de IA da conta, e o limitador por IP é
+ * em memória (não funciona em serverless). Passa a ser preciso **um dos
+ * dois**: sessão de anfitrião, ou o id de uma reserva com o check-in aberto —
+ * um UUID que só quem recebeu o link tem.
+ */
+async function podeUsarOcr(req: NextRequest, bookingId: string | null): Promise<boolean> {
+  const { userId } = await auth()
+  if (userId) return true
+  if (!bookingId) return false
+
+  const { data } = await createAdminClient()
+    .from('bookings')
+    .select('check_out, estado')
+    .eq('id', bookingId)
+    .maybeSingle()
+
+  if (!data || data.estado === 'cancelada') return false
+  return janelaDeCheckin({
+    jaSubmetido: false,
+    checkOut: data.check_out as string,
+    hoje: today(),
+  }).mostraDados
+}
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
@@ -27,6 +61,14 @@ export async function POST(req: NextRequest) {
   try {
     const form = await req.formData()
     const file = form.get('file') as File | null
+    const bookingId = typeof form.get('bookingId') === 'string' ? String(form.get('bookingId')) : null
+
+    if (!(await podeUsarOcr(req, bookingId))) {
+      return NextResponse.json(
+        { error: 'Leitura de documento indisponível para esta reserva.' },
+        { status: 403 },
+      )
+    }
 
     if (!file) {
       return NextResponse.json({ error: 'Ficheiro em falta' }, { status: 400 })
