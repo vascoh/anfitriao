@@ -97,6 +97,28 @@ describe('contarUnidadesReservaveis', () => {
     expect(contarUnidadesReservaveis([casa, quarto(1), quarto(2)])).toBe(2)
   })
 
+  it('reativar um quarto desativado acrescenta uma unidade', () => {
+    /* É o caminho que a verificação de limite não via: só corria ao criar,
+     * portanto quem chegasse ao teto desativava um quarto, criava outro e
+     * reativava o primeiro — ficando com mais unidades do que o plano dá. */
+    const comDesativado = [casa, quarto(1), { id: 'q2', parent_id: 'casa', ativo: false }]
+    const reativado = [casa, quarto(1), quarto(2)]
+
+    expect(contarUnidadesReservaveis(comDesativado)).toBe(1)
+    expect(contarUnidadesReservaveis(reativado)).toBe(2)
+  })
+
+  it('passar um quarto a alojamento independente também acrescenta', () => {
+    const antes = [casa, quarto(1), quarto(2)]
+    const depois = [casa, quarto(1), { id: 'q2', parent_id: null, ativo: true }]
+
+    expect(contarUnidadesReservaveis(antes)).toBe(2)
+    expect(contarUnidadesReservaveis(depois)).toBe(2)
+    // A casa passa a ter um só quarto, logo continua a contar como contentor;
+    // o antigo quarto passa a contar por si. O total mantém-se — mas a conta
+    // tem de ser feita, e era isso que não acontecia nas alterações.
+  })
+
   it('ignora o que está inativo', () => {
     expect(contarUnidadesReservaveis([
       { id: 'a', parent_id: null, ativo: true },

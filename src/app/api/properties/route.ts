@@ -5,6 +5,7 @@ import { getAccountByClerkId } from '@/lib/accounts'
 import { logAudit } from '@/lib/audit'
 import type { Property } from '@/lib/types'
 import { contarUnidadesReservaveis } from '@/lib/reservations'
+import { ownsProperty } from '@/lib/ownership'
 const supabase = createAdminClient()
 
 export async function GET() {
@@ -74,19 +75,33 @@ export async function POST(req: NextRequest) {
    * estrutura e não de uma soma: acrescentar o **primeiro** quarto a uma casa
    * não gasta unidade nenhuma — a casa deixa de ser alugável no mesmo momento
    * em que o quarto passa a sê-lo. */
-  if (!existing) {
+  {
     const { data: atuais } = await supabase
       .from('properties')
       .select('id, parent_id, ativo')
       .eq('owner_id', userId)
 
-    const antes = contarUnidadesReservaveis(atuais ?? [])
+    const lista = atuais ?? []
+    const idNovo = (typeof body.id === 'string' && body.id) ? body.id : '__nova__'
+    const depoisDaEscrita = {
+      id: idNovo,
+      parent_id: body.parent_id ?? null,
+      ativo: body.ativo !== false,
+    }
+
+    /* A verificação corre também nas **alterações**, não só nas criações.
+     *
+     * Só olhava para `!existing`, portanto reativar um quarto desativado
+     * — ou passar um quarto a alojamento independente — acrescentava
+     * unidades alugáveis sem passar pelo limite. Quem chegasse ao teto
+     * desativava um quarto, criava outro e reativava o primeiro. */
+    const antes = contarUnidadesReservaveis(lista)
     const depois = contarUnidadesReservaveis([
-      ...(atuais ?? []),
-      { id: '__nova__', parent_id: body.parent_id ?? null, ativo: body.ativo !== false },
+      ...lista.filter(p => p.id !== idNovo),
+      depoisDaEscrita,
     ])
 
-    if (depois > antes && antes >= account.propriedades_max) {
+    if (depois > antes && depois > account.propriedades_max) {
       const rotulo = body.parent_id ? 'quartos' : 'alojamentos'
       return NextResponse.json(
         {
@@ -98,6 +113,16 @@ export async function POST(req: NextRequest) {
         { status: 403 },
       )
     }
+  }
+
+  /* A casa-mãe é minha?
+   *
+   * Sem isto, um alojamento podia declarar-se quarto da casa de outra pessoa.
+   * A casa passaria a ter um "quarto" que não é dela — e o feed iCal que ela
+   * exporta agrega os quartos, portanto o intruso injetava datas ocupadas no
+   * calendário que ela publica nas plataformas. */
+  if (!(await ownsProperty(supabase, body.parent_id, userId))) {
+    return NextResponse.json({ error: 'Alojamento principal não encontrado.' }, { status: 404 })
   }
 
   // Normalizar casasBanho → casas_banho (padrão do DB)

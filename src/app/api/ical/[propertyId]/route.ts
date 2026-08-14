@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pro
 
   const [{ data: prop }, { data: quartos }] = await Promise.all([
     supabase.from('properties').select('id, nome, owner_id').eq('id', propertyId).single(),
-    supabase.from('properties').select('id, ativo').eq('parent_id', propertyId),
+    supabase.from('properties').select('id, ativo, owner_id').eq('parent_id', propertyId),
   ])
 
   if (!prop) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
@@ -30,7 +30,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pro
    * seu está — é o que este feed passa a dizer. */
   const idsOcupacao = [
     propertyId,
-    ...(quartos ?? []).filter(q => q.ativo !== false).map(q => q.id as string),
+    ...(quartos ?? [])
+      .filter(q => q.ativo !== false)
+      // Só quartos do mesmo dono: um `parent_id` apontado de fora não injeta
+      // datas no calendário que este anfitrião publica nas plataformas.
+      .filter(q => q.owner_id === prop.owner_id)
+      .map(q => q.id as string),
   ]
 
   const { data: bookings } = await supabase

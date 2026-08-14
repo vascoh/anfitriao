@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { Booking } from '@/lib/types'
-import { canUpsertRow } from '@/lib/ownership'
+import { canUpsertRow, ownsProperty } from '@/lib/ownership'
 
 const supabase = createAdminClient()
 
@@ -39,6 +39,24 @@ export async function POST(req: NextRequest) {
 
   if (!(await canUpsertRow(supabase, 'bookings', body.id, userId))) {
     return NextResponse.json({ error: 'Sem permissão para alterar esta reserva.' }, { status: 403 })
+  }
+
+  /* A reserva é minha, mas o alojamento é de quem?
+   *
+   * O id de uma propriedade é público — está no URL de `/book/[id]` e nos
+   * links do site do anfitrião. Sem esta verificação, qualquer pessoa com
+   * conta podia criar reservas no alojamento de outra: `hasConflict` procura
+   * por propriedade e não por dono, portanto o site do vizinho passava a
+   * responder "datas ocupadas" a todos os hóspedes — e ele não via nada, pois
+   * o calendário dele só mostra as reservas com o `owner_id` dele. */
+  if (!(await ownsProperty(supabase, body.propriedade_id, userId))) {
+    return NextResponse.json({ error: 'Alojamento não encontrado.' }, { status: 404 })
+  }
+
+  // O mesmo para a ficha do hóspede: uma reserva não empresta o acesso aos
+  // dados de alguém que é cliente de outro anfitrião.
+  if (!(await canUpsertRow(supabase, 'guests', body.hospede_id, userId))) {
+    return NextResponse.json({ error: 'Hóspede não encontrado.' }, { status: 404 })
   }
 
   const row = { ...body, owner_id: userId }

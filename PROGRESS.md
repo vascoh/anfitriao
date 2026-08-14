@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14c] Reservas e propriedades — bloquear o calendário do vizinho custava uma conta grátis
+
+- 🚫 **O bug mais explorável desta série.** `POST /api/bookings` verificava se a **reserva** era minha, mas nunca se o **alojamento** era. E o id de uma propriedade é público — está no URL de `/book/[id]` e nos links do site de cada anfitrião. Bastava uma conta grátis para criar reservas confirmadas no alojamento de outra pessoa: `hasConflict` procura **por propriedade, não por dono**, portanto o site do vizinho passava a responder "datas ocupadas" a todos os hóspedes. E ele não via nada: o calendário dele só mostra reservas com o `owner_id` dele. Um bloqueio invisível do negócio de outro, sem deixar rasto onde ele o procurasse. Também no fluxo pago: o `fulfillCheckoutSession` reverifica o conflito e **reembolsava** reservas legítimas já pagas.
+- 🧍 **O mesmo para o `hospede_id`**: uma reserva não empresta acesso à ficha de quem é cliente de outro anfitrião.
+- 🏠 **`parent_id` sem dono validado** — um alojamento podia declarar-se quarto da casa de outra pessoa. Como o feed iCal que ela exporta agrega os quartos (correção de 12/08), o intruso injetava datas ocupadas no calendário que ela publica nas plataformas. Corrigido na escrita **e** no export, que passa a filtrar quartos pelo dono da casa.
+- 💳 **Limite de plano só corria ao criar.** Quem chegasse ao teto desativava um quarto, criava outro e reativava o primeiro — ficando com mais unidades do que o plano dá. A verificação passa a correr também nas alterações.
+- 🧪 `lib/ownership.test.ts` (10 testes) — o guarda aceita o cliente como argumento, por isso testa-se sem base de dados. Inclui a diferença que interessa: `canUpsertRow` deixa passar um id que não existe (é uma linha nova), `ownsProperty` recusa (uma referência tem de apontar para alguma coisa real).
+- ✅ 643 testes (12 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14b] Check-in — o link era uma janela permanente para o documento do hóspede
 
 - 🪟 **O URL do check-in é o id da reserva, e é partilhado por email e WhatsApp.** Fica para sempre em caixas de correio, cópias reencaminhadas e telemóveis emprestados — e enquanto respondesse com a ficha completa, era uma janela **permanente** para o número do documento, a data de nascimento e a morada de quem lá dormiu. Meses depois da estadia, quem tivesse o link continuava a ler tudo. O próprio código já reconhecia o risco noutro sítio: o feed iCal público troca o id real por um hash *precisamente* para não dar acesso a esta rota.
