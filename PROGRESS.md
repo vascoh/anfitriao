@@ -6,6 +6,17 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14] Páginas públicas — a ficha completa do alojamento estava no código-fonte
+
+O pior achado da série, e estava **live**.
+
+- 🔓 **Tudo o que é prop de um componente `'use client'` vai serializado no HTML.** A página pública `/book/[id]` passava o objeto `Property` inteiro, vindo de um `select('*')`. Qualquer pessoa que abrisse o código-fonte lia: **credenciais do SIBA** (`siba_nipc`, `siba_estabelecimento`, `siba_chave_acesso`, contactos), **os endereços iCal privados** do Airbnb/Booking/Amenitiz — que dão o calendário de reservas completo a quem os tenha —, a **morada** (mesmo com `mostrar_morada_publica` a falso, que é a definição que existe para isso não acontecer), o RNAL, a apólice do seguro e o certificado energético.
+- 🔍 **Confirmado em produção antes de corrigir**: `\"endereco\":\"Rua de Bijagós 13A\"` estava no HTML servido. Os campos do SIBA saíam vazios **só porque ainda não há credenciais configuradas** — no dia em que forem introduzidas (pendência H1), passavam a sair todas. A encriptação em repouso de 12/08 protegia a base de dados enquanto a página as publicava ao lado.
+- 📋 **A casa inteira recebia `bookings`** — todas as reservas do anfitrião: datas, `hospede_id`, preços, `notas` (que no iCal trazem o nome de quem reservou), estado do boletim, referências de fatura e do Stripe. Para calcular disponibilidade bastam as datas ocupadas.
+- ✅ **`lib/property-publica.ts` é uma lista de permitidos, não de proibidos**: um campo novo na tabela não passa a público por descuido, e há teste que o garante (`segredo_futuro` não sai). As definições do site também deixam de levar `owner_id`, email de reservas e assinatura.
+- 🧱 **As funções puras de disponibilidade e preço passam a pedir só os campos que usam** (`QuartoParaGrupo`, `Ocupacao`, `{ id, preco_base, taxa_limpeza }`) em vez de `Property`/`Booking` inteiros — é o que evita que a linha completa volte a entrar no browser pela porta do lado, porque agora o tipo não deixa.
+- ✅ 625 testes (10 novos), typecheck 0, lint 0, build OK. **Verificado em produção depois do deploy**: `siba_*`, `ical_feeds`, `rnal_numero`, `seguro_apolice`, `owner_id` e a morada dão todos **0 ocorrências**, e a página continua a mostrar a casa, os quartos e o bloco de casa inteira.
+
 ### [2026-08-12h] Concierge e automações — e um IDOR em seis rotas ao mesmo tempo
 
 Comecei pelo concierge e pelas automações; o IDOR apareceu pelo caminho e é o mais grave do dia.
