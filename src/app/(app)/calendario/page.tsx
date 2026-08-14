@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
-import { occupancyForMonth } from '@/lib/reservations'
+import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
 import { addDays, today as localToday } from '@/lib/utils'
 import type { Booking, Property } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/labels'
@@ -45,7 +45,14 @@ function TimelineView({
 
   const windowEnd = days[days.length - 1]
 
-  const activeProps = properties.filter(p => p.ativo)
+  /* Só o que se aluga.
+   *
+   * Filtrava-se por `ativo`, o que punha a casa-mãe de uma casa com quartos
+   * a ocupar uma linha **sempre livre** — as reservas vivem nos quartos desde
+   * 30/07. O anfitrião olhava para uma faixa vazia e via disponibilidade que
+   * não existe. É a mesma correção que o `/hoje` levou nesse dia e o feed
+   * iCal a 12/08; faltava o calendário. */
+  const activeProps = unidadesReservaveis(properties)
 
   const bookingsForProp = useMemo(() => {
     const map = new Map<string, Booking[]>()
@@ -312,7 +319,13 @@ function GridView({
     return days
   }, [year, month])
 
-  const activeProps = useMemo(() => properties.filter(p => p.ativo), [properties])
+  /* A ocupação divide-se pelas unidades **alugáveis**.
+   *
+   * Com 3 quartos e a casa-mãe, o denominador era 4 em vez de 3 e a ocupação
+   * do mês aparecia ~25% abaixo da real. É o mesmo erro que foi corrigido a
+   * 30/07 em seis sítios — o `/hoje`, os `/relatorios` e o email mensal —,
+   * e que aqui ficou. */
+  const activeProps = useMemo(() => unidadesReservaveis(properties), [properties])
 
   const monthOccupancy = useMemo(() => {
     if (activeProps.length === 0) return 0

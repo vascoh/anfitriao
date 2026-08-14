@@ -6,6 +6,7 @@ import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
 import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
+import { calcularRevPar } from '@/lib/revpar'
 import { fmtMoney, nights, today as localToday, addDays } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
 import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
@@ -125,38 +126,6 @@ function statsBySource(
     .sort((a, b) => b[1].revenue - a[1].revenue)
 }
 
-// RevPAR = Revenue / Available Room Nights
-function calcRevPAR(
-  bookings: Booking[],
-  properties: Property[],
-  year: number,
-  month?: number, // undefined = full year
-): number {
-  const activeProps = unidadesReservaveis(properties)
-  if (activeProps.length === 0) return 0
-
-  const isCurrentYear = year === new Date().getFullYear()
-  const daysInPeriod = month !== undefined
-    ? new Date(year, month + 1, 0).getDate()
-    : isCurrentYear
-      ? new Date().getDate() + (new Date().getMonth() > 0
-          ? Array.from({ length: new Date().getMonth() }, (_, m) => new Date(year, m + 1, 0).getDate()).reduce((a, b) => a + b, 0)
-          : 0)
-      : 365 + (year % 4 === 0 ? 1 : 0)
-
-  const availableNights = activeProps.length * daysInPeriod
-
-  const revenue = bookings
-    .filter(b => {
-      if (!isActive(b)) return false
-      if (month !== undefined) return b.check_in.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)
-      return b.check_in.startsWith(String(year))
-    })
-    .reduce((sum, b) => sum + b.preco_total, 0)
-
-  return availableNights > 0 ? Math.round(revenue / availableNights) : 0
-}
-
 // Average Length of Stay
 function calcAvgLOS(bookings: Booking[], year: number): number {
   const activeBookings = bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year)))
@@ -251,7 +220,10 @@ export default function RelatoriosPage() {
   )
 
   const adr = totalNights > 0 ? Math.round(totalRevenue / totalNights) : 0
-  const revpar = useMemo(() => calcRevPAR(bookings, properties, year), [bookings, properties, year])
+  const revpar = useMemo(
+    () => calcularRevPar({ bookings, properties, ano: year, hoje: localToday() }),
+    [bookings, properties, year],
+  )
   const avgLOS = useMemo(() => calcAvgLOS(bookings, year), [bookings, year])
   const cancellationRate = useMemo(() => calcCancellationRate(bookings, year), [bookings, year])
   const collectionRate = useMemo(() => calcCollectionRate(bookings, year), [bookings, year])

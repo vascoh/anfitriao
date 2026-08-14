@@ -6,6 +6,14 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14i] Relatórios e calendário — o RevPAR inflacionado e o erro de 30/07 que sobreviveu
+
+- 📈 **O RevPAR misturava dois períodos.** O denominador do ano em curso contava os **dias já passados** (bem visto), mas o numerador somava **todas as reservas do ano**, incluindo as que ainda vão acontecer. Em janeiro, uma reserva de dezembro já paga entrava a dividir por 20 dias: um RevPAR várias vezes acima do real, precisamente no mês em que o anfitrião está a decidir os preços da época. Extraído para `lib/revpar.ts` com 13 testes — a fórmula que decide preços não devia viver dentro de um componente de 700 linhas.
+- 🗓️ **`ano % 4`** dizia que 1900 foi bissexto. Irrelevante para o produto, uma linha a corrigir, e evita que a fórmula errada seja copiada para outro sítio.
+- 🏠 **O erro de 30/07 tinha um sétimo sítio.** A ocupação mensal do calendário dividia pelas propriedades ativas **incluindo a casa-mãe**: com 3 quartos e 1 casa, o denominador era 4 em vez de 3 e a ocupação aparecia ~25% abaixo da real. Foi corrigido em seis sítios nesse dia; o calendário ficou de fora.
+- 👻 **E mostrava a casa-mãe como uma linha sempre livre** na vista de timeline — as reservas vivem nos quartos. O anfitrião olhava para uma faixa vazia e via disponibilidade que não existe. Mesma correção do `/hoje` (30/07) e do feed iCal (12/08).
+- ✅ 667 testes (13 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14h] Emails — o que prometem e a autoridade que já não existe
 
 - ↩️ **"Podes responder a este email" nem sempre era verdade.** O `replyTo` é o email do alojamento (`email_reservas || email`), e uma conta que ainda não o preencheu envia sem ele — a resposta do hóspede vai para o `noreply` da plataforma e ninguém a lê. A frase passa a aparecer só quando há mesmo para onde responder, no pedido de reserva e no lembrete de pagamento.
