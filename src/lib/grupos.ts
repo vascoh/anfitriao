@@ -29,11 +29,29 @@ import type { Booking, Property } from './types'
  * não um conceito novo no modelo.
  */
 
-export interface QuartoDisponivel {
-  quarto: Property
+/* Estas funções pedem só o que usam, e não `Property`/`Booking` inteiros: são
+ * chamadas do browser na página pública, onde receber a linha completa levaria
+ * para lá credenciais do SIBA e a lista de reservas do anfitrião
+ * (ver `lib/property-publica.ts`). */
+export interface QuartoParaGrupo {
+  id: string
+  nome: string
+  capacidade: number
+}
+
+export interface Ocupacao {
+  propriedade_id: string
+  check_in: string
+  check_out: string
+  estado?: string
+  id?: string
+}
+
+export interface QuartoDisponivel<Q extends QuartoParaGrupo = QuartoParaGrupo> {
+  quarto: Q
   livre: boolean
-  /** Reserva que ocupa o quarto, quando não está livre. */
-  conflito: Booking | null
+  /** Ocupação que impede o quarto, quando não está livre. */
+  conflito: Ocupacao | null
 }
 
 /** Quartos ativos de uma casa. */
@@ -49,25 +67,25 @@ export function temQuartos(propriedades: Property[], casaId: string): boolean {
 }
 
 /** Quantas pessoas leva a casa toda, somando os quartos. */
-export function capacidadeTotal(quartos: Property[]): number {
+export function capacidadeTotal(quartos: Array<{ capacidade: number }>): number {
   return quartos.reduce((s, q) => s + (q.capacidade ?? 0), 0)
 }
 
 /** Estado de cada quarto para um intervalo de datas. */
-export function disponibilidadeDosQuartos(
-  quartos: Property[],
-  bookings: Booking[],
+export function disponibilidadeDosQuartos<Q extends QuartoParaGrupo>(
+  quartos: Q[],
+  bookings: Ocupacao[],
   checkIn: string,
   checkOut: string,
-): QuartoDisponivel[] {
+): Array<QuartoDisponivel<Q>> {
   return quartos.map(quarto => {
     const conflito = detectConflict(bookings, quarto.id, checkIn, checkOut)
     return { quarto, livre: conflito === null, conflito }
   })
 }
 
-export type Sugestao =
-  | { ok: true; quartos: Property[]; capacidade: number; sobra: number }
+export type Sugestao<Q extends QuartoParaGrupo = QuartoParaGrupo> =
+  | { ok: true; quartos: Q[]; capacidade: number; sobra: number }
   | { ok: false; motivo: 'sem_quartos' | 'nao_cabe'; capacidadeDisponivel: number }
 
 /**
@@ -81,7 +99,10 @@ export type Sugestao =
  * Devolve o motivo quando não dá, porque "não cabe" e "não há quartos livres
  * nessas datas" levam o anfitrião a fazer coisas diferentes.
  */
-export function sugerirQuartos(disponiveis: QuartoDisponivel[], pessoas: number): Sugestao {
+export function sugerirQuartos<Q extends QuartoParaGrupo>(
+  disponiveis: Array<QuartoDisponivel<Q>>,
+  pessoas: number,
+): Sugestao<Q> {
   const livres = disponiveis.filter(d => d.livre).map(d => d.quarto)
   const capacidadeDisponivel = capacidadeTotal(livres)
 
@@ -92,7 +113,7 @@ export function sugerirQuartos(disponiveis: QuartoDisponivel[], pessoas: number)
     return { ok: false, motivo: 'nao_cabe', capacidadeDisponivel }
   }
 
-  const escolhidos: Property[] = []
+  const escolhidos: Q[] = []
   let porAlojar = pessoas
 
   for (const quarto of [...livres].sort((a, b) => b.capacidade - a.capacidade)) {
@@ -112,7 +133,10 @@ export function sugerirQuartos(disponiveis: QuartoDisponivel[], pessoas: number)
  * certo — sem isso a ocupação por quarto mentiria, e os boletins do SIBA não
  * saberiam quantas pessoas dormiram em cada sítio.
  */
-export function distribuirPessoas(quartos: Property[], pessoas: number): Map<string, number> {
+export function distribuirPessoas(
+  quartos: Array<{ id: string; capacidade: number }>,
+  pessoas: number,
+): Map<string, number> {
   const mapa = new Map<string, number>()
   let restantes = pessoas
 

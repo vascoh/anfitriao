@@ -12,9 +12,10 @@ import {
 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights, today as localToday } from '@/lib/utils'
 import { addDays, calculatePriceWithRules } from '@/lib/reservations'
-import type { Property, WebsiteSettings, PriceRule, Tarifa, PlatformRate } from '@/lib/types'
+import type { PriceRule, Tarifa, PlatformRate } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { siteTheme } from '@/lib/site-theme'
+import type { PropriedadePublica, DefinicoesPublicas } from '@/lib/property-publica'
 
 const AMENITY_ICON: Record<string, React.ReactNode> = {
   wifi:            <Wifi className="h-4 w-4" />,
@@ -221,8 +222,8 @@ function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, r
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface Props {
-  prop: Property
-  settings: WebsiteSettings
+  prop: PropriedadePublica
+  settings: DefinicoesPublicas
   blocked: string[]
   priceRules: PriceRule[]
   tarifas: Tarifa[]

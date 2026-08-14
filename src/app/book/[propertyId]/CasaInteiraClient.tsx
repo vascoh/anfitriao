@@ -5,7 +5,8 @@ import { Home, Users, Check, Loader2 } from 'lucide-react'
 import { fmtMoney, today, addDays, nights } from '@/lib/utils'
 import { calculatePriceWithRules } from '@/lib/reservations'
 import { disponibilidadeDosQuartos, capacidadeTotal } from '@/lib/grupos'
-import type { Property, Booking, PriceRule, Tarifa, PlatformRate } from '@/lib/types'
+import type { PriceRule, Tarifa, PlatformRate } from '@/lib/types'
+import type { PropriedadePublica, OcupacaoPublica } from '@/lib/property-publica'
 
 /**
  * Reservar a casa inteira, do lado do hóspede.
@@ -19,11 +20,12 @@ import type { Property, Booking, PriceRule, Tarifa, PlatformRate } from '@/lib/t
  * cliente, não um facto.
  */
 export default function CasaInteiraClient({
-  casa, quartos, bookings, priceRules, tarifas, platformRates, minNoites,
+  casa, quartos, ocupacoes, priceRules, tarifas, platformRates, minNoites,
 }: {
-  casa: Property
-  quartos: Property[]
-  bookings: Booking[]
+  casa: PropriedadePublica
+  quartos: PropriedadePublica[]
+  /** Só datas ocupadas — as reservas não saem do servidor. */
+  ocupacoes: OcupacaoPublica[]
   priceRules: PriceRule[]
   tarifas: Tarifa[]
   platformRates: PlatformRate[]
@@ -46,8 +48,8 @@ export default function CasaInteiraClient({
   const noites = datasValidas ? nights(checkIn, checkOut) : 0
 
   const disponibilidade = useMemo(
-    () => (datasValidas ? disponibilidadeDosQuartos(quartos, bookings, checkIn, checkOut) : []),
-    [quartos, bookings, checkIn, checkOut, datasValidas],
+    () => (datasValidas ? disponibilidadeDosQuartos(quartos, ocupacoes, checkIn, checkOut) : []),
+    [quartos, ocupacoes, checkIn, checkOut, datasValidas],
   )
 
   const todosLivres = disponibilidade.length > 0 && disponibilidade.every(d => d.livre)

@@ -6,6 +6,7 @@ import {
 import { blockedDates } from '@/lib/reservations'
 import { today } from '@/lib/utils'
 import { getAccountByClerkId } from '@/lib/accounts'
+import { propriedadePublica, propriedadesPublicas, ocupacoesPublicas, definicoesPublicas } from '@/lib/property-publica'
 import BookingClient from './BookingClient'
 import RoomsClient from './RoomsClient'
 import CasaInteiraClient from './CasaInteiraClient'
@@ -67,15 +68,15 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
 
     return (
       <RoomsClient
-        parent={prop}
-        rooms={rooms}
-        settings={ws}
+        parent={propriedadePublica(prop)}
+        rooms={propriedadesPublicas(rooms)}
+        settings={definicoesPublicas(ws)}
         occupiedIds={occupiedIds}
         casaInteira={
           <CasaInteiraClient
-            casa={prop}
-            quartos={rooms}
-            bookings={bookings}
+            casa={propriedadePublica(prop)}
+            quartos={propriedadesPublicas(rooms)}
+            ocupacoes={ocupacoesPublicas(bookings)}
             priceRules={rules}
             tarifas={tars}
             platformRates={rates}
@@ -91,8 +92,8 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
 
   return (
     <BookingClient
-      prop={prop}
-      settings={ws}
+      prop={propriedadePublica(prop)}
+      settings={definicoesPublicas(ws)}
       blocked={[...blocked]}
       priceRules={rules}
       tarifas={tars}

@@ -30,13 +30,19 @@ export function blockedDates(bookings: Booking[], propertyId: string, excludeId?
   return set
 }
 
-export function detectConflict(
-  bookings: Booking[],
+export function detectConflict<B extends {
+  propriedade_id: string
+  check_in: string
+  check_out: string
+  estado?: string
+  id?: string
+}>(
+  bookings: B[],
   propertyId: string,
   checkIn: string,
   checkOut: string,
   excludeId?: string
-): Booking | null {
+): B | null {
   return bookings.find(b =>
     b.propriedade_id === propertyId &&
     b.estado !== 'cancelada' &&
@@ -127,7 +133,7 @@ function findBestTarifa(tarifas: Tarifa[], origem: BookingSource, numNights: num
 }
 
 export function calculatePriceWithRules(
-  property: Property,
+  property: { id: string; preco_base: number; taxa_limpeza?: number },
   checkIn: string,
   checkOut: string,
   rules: PriceRule[] = [],

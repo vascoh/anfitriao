@@ -4,9 +4,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, BedDouble, Bath, Users, MapPin } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
-import type { Property, WebsiteSettings } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { siteTheme } from '@/lib/site-theme'
+import type { PropriedadePublica, DefinicoesPublicas } from '@/lib/property-publica'
 
 const AMENITY_LABEL: Record<string, string> = {
   wifi: 'Wi-Fi', ar_condicionado: 'A/C', estacionamento: 'Parque',
@@ -15,7 +15,7 @@ const AMENITY_LABEL: Record<string, string> = {
 }
 
 interface RoomCardProps {
-  room: Property
+  room: PropriedadePublica
   isOccupied: boolean
 }
 
@@ -122,9 +122,9 @@ function RoomCard({ room, isOccupied }: RoomCardProps) {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 interface Props {
-  parent: Property
-  rooms: Property[]
-  settings: WebsiteSettings
+  parent: PropriedadePublica
+  rooms: PropriedadePublica[]
+  settings: DefinicoesPublicas
   /** Set of property IDs that are currently occupied (have an active booking today) */
   occupiedIds: Set<string>
   /** Bloco de reserva da casa inteira, montado pelo servidor. */
