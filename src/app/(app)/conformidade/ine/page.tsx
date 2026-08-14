@@ -201,12 +201,16 @@ export default function IneePage() {
       <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
         <div className="text-xs leading-relaxed text-muted-foreground">
-          <p className="font-semibold text-foreground">Confirma o país antes de submeter</p>
+          <p className="font-semibold text-foreground">De onde vem o país desta tabela</p>
           <p className="mt-1">
             O INE pede o <strong>país de residência</strong>, que nem sempre coincide com a
-            nacionalidade. O Anfitrião só recolhe a nacionalidade, porque é esse o campo do boletim
-            de alojamento — usamo-la como aproximação. Se tens hóspedes a residir num país
-            diferente do da nacionalidade, corrige no WebInq.
+            nacionalidade — e é isso que esta tabela mostra, a partir do que cada hóspede indicou
+            no check-in online. Em fichas antigas, ou preenchidas à mão sem residência, usa-se a
+            nacionalidade como aproximação.
+          </p>
+          <p className="mt-1">
+            Uma coisa a confirmar: conta-se a residência de <strong>quem reservou</strong> para
+            todas as pessoas da reserva. Se vieram de países diferentes, corrige no WebInq.
           </p>
         </div>
       </div>

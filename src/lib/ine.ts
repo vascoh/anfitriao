@@ -16,15 +16,39 @@ import type { Booking, Guest, Property } from './types'
  *   noites com 2 pessoas são 6 dormidas, repartidas pelo mês em que cada
  *   noite ocorre.
  *
- * ⚠️ O INE pede **país de residência**, que não é o mesmo que nacionalidade.
- * A aplicação só recolhe nacionalidade (é o campo do boletim SIBA), por isso
- * é usada como aproximação e a interface diz isso ao anfitrião. Quem tem
- * hóspedes residentes num país diferente do da nacionalidade tem de corrigir
- * à mão antes de submeter.
+ * ## País de residência, não nacionalidade
+ *
+ * O INE pede o **país de residência**, que não é o mesmo que nacionalidade —
+ * um português a viver em Londres conta como residente no Reino Unido.
+ *
+ * Este mapa usava a nacionalidade "porque é o único campo que a app recolhe".
+ * Deixou de ser verdade a 3 de agosto: o `pais_residencia` passou a ser
+ * recolhido no check-in, e é **obrigatório**, porque sem ele nenhum boletim
+ * pode ser entregue ao SIBA. O dado certo estava na mesma tabela, ao lado do
+ * que se usava.
+ *
+ * Passa a usar-se a residência, com a nacionalidade como recurso para fichas
+ * antigas — e só depois "Não especificado".
+ *
+ * ⚠️ Limite conhecido: conta-se a residência de **quem reservou** para todas
+ * as pessoas da reserva. Desde que o boletim é por pessoa, cada acompanhante
+ * tem a sua própria residência em `reserva_hospedes`, mas este mapa ainda não
+ * a lê — uma família com duas residências diferentes vai toda na de quem
+ * reservou.
  */
 
-/** Rótulo usado quando não há nacionalidade registada. */
+/** Rótulo usado quando não há residência nem nacionalidade registadas. */
 export const PAIS_DESCONHECIDO = 'Não especificado'
+
+/**
+ * País a declarar ao INE para um hóspede: residência primeiro, nacionalidade
+ * como recurso. Ver a nota no topo do ficheiro.
+ */
+export function paisDoHospede(hospede: Guest | undefined | null): string {
+  return hospede?.pais_residencia?.trim()
+    || hospede?.nacionalidade?.trim()
+    || PAIS_DESCONHECIDO
+}
 
 export interface LinhaIne {
   pais: string
@@ -109,7 +133,7 @@ export function gerarMapaIne(
     if (b.check_in >= fim || b.check_out <= inicio) continue
 
     const hospede = guests.find(g => g.id === b.hospede_id)
-    const pais = hospede?.nacionalidade?.trim() || PAIS_DESCONHECIDO
+    const pais = paisDoHospede(hospede)
     const pessoas = Math.max(1, b.num_hospedes || 1)
     const l = linha(pais)
 

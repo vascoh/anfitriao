@@ -30,8 +30,8 @@ function reserva(
   }
 }
 
-function hospede(id: string, nacionalidade?: string): Guest {
-  return { id, nome: `H ${id}`, nacionalidade, tags: [], criado_em: '2026-01-01' }
+function hospede(id: string, nacionalidade?: string, pais_residencia?: string): Guest {
+  return { id, nome: `H ${id}`, nacionalidade, pais_residencia, tags: [], criado_em: '2026-01-01' }
 }
 
 function propriedade(id: string): Property {
@@ -113,6 +113,28 @@ describe('gerarMapaIne', () => {
       PROPS, ANO, JULHO,
     )
     expect(m.linhas.map(l => l.pais)).toEqual(['Alemanha', 'Espanha'])
+  })
+
+  it('declara o país de residência, não a nacionalidade', () => {
+    /* O INE pede residência: um português a viver em Londres conta como
+     * residente no Reino Unido. O mapa usava a nacionalidade "porque era o
+     * único campo recolhido" — deixou de ser verdade quando o check-in passou
+     * a exigir `pais_residencia` para o boletim do SIBA. */
+    const m = gerarMapaIne(
+      [reserva('2026-07-01', '2026-07-04', 2, 'g1')],
+      [hospede('g1', 'Portugal', 'Reino Unido')],
+      PROPS, ANO, JULHO,
+    )
+    expect(m.linhas.map(l => l.pais)).toEqual(['Reino Unido'])
+  })
+
+  it('cai na nacionalidade quando a ficha é anterior à residência', () => {
+    const m = gerarMapaIne(
+      [reserva('2026-07-01', '2026-07-04', 2, 'g1')],
+      [hospede('g1', 'França')],
+      PROPS, ANO, JULHO,
+    )
+    expect(m.linhas.map(l => l.pais)).toEqual(['França'])
   })
 
   it('usa "Não especificado" quando falta a nacionalidade', () => {

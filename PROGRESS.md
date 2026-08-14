@@ -6,6 +6,13 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14g] INE — o mapa declarava nacionalidade onde o INE pede residência
+
+- 🌍 **O dado certo estava na mesma tabela, ao lado do que se usava.** O IPHH pede **país de residência** (um português a viver em Londres conta como residente no Reino Unido) e o mapa usava a nacionalidade, com um aviso na interface a dizer que "o Anfitrião só recolhe a nacionalidade". Isso deixou de ser verdade a **3 de agosto**: o `pais_residencia` passou a ser recolhido no check-in e é **obrigatório**, porque sem ele nenhum boletim pode ser entregue ao SIBA. Passa a usar-se a residência, com a nacionalidade como recurso para fichas antigas.
+- 📋 **O aviso da página passou a dizer a verdade** — de "só recolhemos nacionalidade" para "isto vem do que cada hóspede indicou no check-in; em fichas antigas usa-se a nacionalidade".
+- ⚠️ **Limite que fica escrito, no código e na interface**: conta-se a residência de **quem reservou** para todas as pessoas da reserva. Desde que o boletim é por pessoa, cada acompanhante tem a sua em `reserva_hospedes` — mas o mapa ainda não a lê, e uma família com duas residências vai toda na de quem reservou. Ler as fichas por reserva exige uma rota nova; fica identificado.
+- ✅ 653 testes (2 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14f] Pedido público de reserva — quem escolhia as chaves primárias era o browser
 
 - 🔑 **Os ids vinham do cliente.** `validateBookingRequest` aceitava `guest.id` e `booking.id` se fossem UUIDs válidos. No caminho **pago** isso é grave: o `fulfillCheckoutSession` faz `upsert` do hóspede, portanto quem soubesse o id de uma ficha reescrevia-a com o nome e o email dele — e mudava-lhe o dono. E o id não é secreto: o `hospede_id` ia no payload do check-in, cujo link anda por email (a outra correção de hoje fechou a janela, mas os links já partilhados continuam a existir). Passam a ser gerados no servidor, sempre; quem precisa deles recebe-os na resposta, que já os devolvia.
