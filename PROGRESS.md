@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14d] Admin — suspender uma conta não suspendia nada
+
+- 🚨 **A ação mais consequente do painel não fazia efeito.** O middleware lê `estado` do `publicMetadata` do Clerk (JWT) para não ir à base de dados em cada pedido. O webhook do Stripe sincroniza isso à mão a seguir a cada `updateAccount`; o painel de administração **não**. Resultado: suspender uma conta escrevia `suspenso` na base, mostrava-a suspensa no painel — e o utilizador continuava a entrar normalmente até um evento do Stripe passar por ali. O mesmo para mudanças de plano feitas à mão.
+- 🔁 **A sincronização passou para dentro do `updateAccount`**, onde nenhum caminho lhe pode escapar, em vez de ficar à responsabilidade de quem chama. É idempotente: o webhook pode continuar a chamá-la também. Uma alteração que não mexe no acesso (uma nota interna) não chama o Clerk.
+- 🧪 5 testes com o Clerk e a base simulados. Verificado com a correção fora: **3 falham**.
+- 🛡️ **Validação no formulário de admin**: `estado` e `plano` iam para a base como texto livre e a coluna não tem restrição nenhuma — um valor fora do conjunto ficava gravado e a app passava a comparar contra uma palavra que nenhum ramo do código trata. `propriedades_max` vinha de um `Number()` que aceita `NaN`.
+- ✅ **Verificado e correto** (fica dito): o guarda de admin está no layout **e** na server action, e o middleware deixa o admin passar — nenhuma das páginas depende só do layout para autorizar escritas.
+- ✅ 648 testes (5 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14c] Reservas e propriedades — bloquear o calendário do vizinho custava uma conta grátis
 
 - 🚫 **O bug mais explorável desta série.** `POST /api/bookings` verificava se a **reserva** era minha, mas nunca se o **alojamento** era. E o id de uma propriedade é público — está no URL de `/book/[id]` e nos links do site de cada anfitrião. Bastava uma conta grátis para criar reservas confirmadas no alojamento de outra pessoa: `hasConflict` procura **por propriedade, não por dono**, portanto o site do vizinho passava a responder "datas ocupadas" a todos os hóspedes. E ele não via nada: o calendário dele só mostra reservas com o `owner_id` dele. Um bloqueio invisível do negócio de outro, sem deixar rasto onde ele o procurasse. Também no fluxo pago: o `fulfillCheckoutSession` reverifica o conflito e **reembolsava** reservas legítimas já pagas.

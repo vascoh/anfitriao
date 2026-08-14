@@ -160,10 +160,30 @@ export async function updateAccount(
   >>,
   actorId: string | null = null,
 ): Promise<void> {
-  const before = (updates.estado || updates.plano) ? await getAccountById(id) : null
+  const mudaAcesso = Boolean(updates.estado || updates.plano)
+  const before = mudaAcesso ? await getAccountById(id) : null
 
   const { error } = await getClient().from('accounts').update(updates).eq('id', id)
   if (error) throw new Error(`[updateAccount] ${error.message}`)
+
+  /* Quem manda no acesso é o JWT, não a base de dados.
+   *
+   * O middleware lê `estado` do `publicMetadata` do Clerk para não fazer uma
+   * chamada à base em cada pedido. O webhook do Stripe sincronizava isso à
+   * mão a seguir a cada `updateAccount`; o painel de administração **não** —
+   * portanto suspender uma conta escrevia `suspenso` na base, mostrava-a
+   * suspensa no painel, e o utilizador continuava a entrar como se nada
+   * fosse até um evento do Stripe passar por ali.
+   *
+   * A sincronização passa a viver aqui, onde nenhum caminho lhe pode
+   * escapar. É idempotente: o webhook pode continuar a chamá-la também. */
+  if (mudaAcesso && before?.clerk_user_id) {
+    await syncAccountToClerk(before.clerk_user_id, {
+      plano:  updates.plano ?? before.plano,
+      estado: updates.estado ?? before.estado,
+      ...(before.trial_ends_at ? { trial_ends_at: before.trial_ends_at } : {}),
+    })
+  }
 
   await logAccountChange(id, actorId, before, updates)
 }
