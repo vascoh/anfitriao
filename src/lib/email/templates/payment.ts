@@ -28,7 +28,11 @@ export function paymentReminderEmail(p: {
       ['Já pago', fmtMoney(p.pago)],
       ['Valor em falta', fmtMoney(p.saldo)],
     ], theme, { title: p.propertyName, highlightLast: true })}
-    ${paragraph('Por favor entra em contacto para combinar o pagamento antes da chegada. Podes responder diretamente a este email.')}
+    ${paragraph(
+      p.identity.replyTo
+        ? 'Por favor entra em contacto para combinar o pagamento antes da chegada. Podes responder diretamente a este email.'
+        : 'Por favor entra em contacto com o anfitrião para combinar o pagamento antes da chegada.',
+    )}
     ${hostFooter(p.identity.displayName, p.identity.contact, theme)}
   `)
 }

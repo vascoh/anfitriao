@@ -38,7 +38,11 @@ export function reservationRequestEmail(p: StayDetails & {
     ${paragraph(`Olá ${escHtml(firstName)}, o teu pedido de reserva em <strong>${escHtml(p.propertyName)}</strong> foi recebido com sucesso. O anfitrião irá confirmar em breve.`)}
     ${detailsTable(stayRows(p), theme, { title: p.propertyName, highlightLast: true })}
     ${p.notas ? noteBox('As tuas notas', p.notas, theme) : ''}
-    ${paragraph('O anfitrião irá confirmar a reserva e combinar o pagamento diretamente contigo. Podes responder a este email para falar com ele.')}
+    ${paragraph(
+      p.identity.replyTo
+        ? 'O anfitrião irá confirmar a reserva e combinar o pagamento diretamente contigo. Podes responder a este email para falar com ele.'
+        : 'O anfitrião irá confirmar a reserva e combinar o pagamento diretamente contigo.',
+    )}
     ${hostFooter(p.identity.displayName, p.identity.contact, theme)}
   `)
 }
@@ -59,7 +63,7 @@ export function reservationConfirmedEmail(p: StayDetails & {
     ${detailsTable(stayRows(p), theme, { title: p.propertyName, highlightLast: true })}
     ${p.instrucoes ? noteBox('Instruções de check-in', p.instrucoes, theme) : ''}
     ${ctaButton('Fazer check-in online →', p.checkinLink, theme)}
-    ${finePrint('Demora menos de 1 minuto. Obrigatório por lei (SIBA/SEF).', theme)}
+    ${finePrint('Demora menos de 1 minuto. Obrigatório por lei (boletim de alojamento, SIBA/AIMA).', theme)}
     ${hostFooter(p.identity.displayName, p.identity.contact, theme)}
   `)
 }

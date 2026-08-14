@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   description: 'Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada. O assistente de Alojamento Local feito para Portugal.',
   keywords: [
     'alojamento local', 'AL Portugal', 'gestão AL', 'airbnb gestão',
-    'booking gestão', 'SIBA SEF', 'check-in online', 'reservas diretas',
+    'booking gestão', 'SIBA AIMA', 'check-in online', 'reservas diretas',
     'gestão alojamento local portugal', 'software alojamento local',
   ],
   authors: [{ name: 'Anfitrião' }],

@@ -119,6 +119,22 @@ describe('emailService', () => {
     expect(provider.sent[0].html).toContain('/checkin/bk-1')
   })
 
+  it('só convida a responder quando há mesmo para onde responder', async () => {
+    /* O `replyTo` é o email do alojamento; sem ele a resposta do hóspede vai
+     * para o `noreply` da plataforma e ninguém a lê. Prometer "podes
+     * responder a este email" nesse caso é mandar a pessoa falar sozinha. */
+    await emailService.sendReservationRequest({ ...STAY, notas: null })
+    expect(provider.sent[0].html).toContain('Podes responder a este email')
+
+    settingsMock.mockResolvedValue({ ...SETTINGS, email: '', email_reservas: '' })
+    provider.sent.length = 0
+    await emailService.sendReservationRequest({ ...STAY, notas: null })
+
+    expect(provider.sent[0].replyTo).toBeUndefined()
+    expect(provider.sent[0].html).not.toContain('Podes responder a este email')
+    expect(provider.sent[0].html).toContain('O anfitrião irá confirmar a reserva')
+  })
+
   it('conteúdo do hóspede é escapado (sem injeção de HTML)', async () => {
     await emailService.sendReservationRequest({ ...STAY, guestName: '<script>x</script> Mal', notas: null })
     expect(provider.sent[0].html).not.toContain('<script>')

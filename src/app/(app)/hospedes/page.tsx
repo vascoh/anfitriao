@@ -102,7 +102,7 @@ export default function HospedesPage() {
             {guests.length > 0 && (
               <button
                 onClick={exportSiba}
-                title="Exportar dados SIBA/SEF"
+                title="Exportar dados do boletim (SIBA)"
                 className="flex items-center gap-1.5 border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-border/80 transition-colors">
                 <Download className="h-3.5 w-3.5" /> SIBA
               </button>

@@ -332,7 +332,7 @@ export default function ConformidadePage() {
                   <p className="text-xs leading-relaxed text-muted-foreground">
                     Para entregarmos os boletins por ti, o alojamento tem de estar registado no
                     portal do SIBA com o modo de envio <strong>Web Service</strong>. Depois de o
-                    pedires, o SEF/AIMA envia por email o número de estabelecimento e a chave de
+                    pedires, a AIMA envia por email o número de estabelecimento e a chave de
                     acesso — costuma demorar 1 a 3 dias úteis.
                   </p>
                   <a

@@ -6,6 +6,13 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14h] Emails — o que prometem e a autoridade que já não existe
+
+- ↩️ **"Podes responder a este email" nem sempre era verdade.** O `replyTo` é o email do alojamento (`email_reservas || email`), e uma conta que ainda não o preencheu envia sem ele — a resposta do hóspede vai para o `noreply` da plataforma e ninguém a lê. A frase passa a aparecer só quando há mesmo para onde responder, no pedido de reserva e no lembrete de pagamento.
+- 🏛️ **O SEF foi extinto em 2023** e o texto da app continuava a mandar dados para lá. Corrigido em tudo o que é visível a quem usa: **política de privacidade** dos sites dos clientes (onde nomear mal a autoridade que recebe dados pessoais é matéria do art. 13.º do RGPD), página de check-in, exportação de documentos, lista de hóspedes, metadados do site e a ajuda da conformidade. Passa a dizer **boletim de alojamento · SIBA · AIMA**. Ficaram por mudar três referências internas (um comentário sobre a origem histórica da tabela de códigos e o prompt do OCR), onde "SEF" é factualmente correto.
+- ✅ **Verificado e correto** (fica dito): os templates **escapam HTML em todo o lado** — nome, email, telefone, notas do hóspede, assunto e mensagem das automações passam por `escHtml`, incluindo o `noteBox` das notas, que é o campo livre que vem do formulário público. Não há injeção de links num email que o anfitrião confia. O `replyTo` está corretamente ligado da identidade até ao provider, e o `propertyFrom` já sanitiza header injection.
+- ✅ 654 testes (1 novo), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14g] INE — o mapa declarava nacionalidade onde o INE pede residência
 
 - 🌍 **O dado certo estava na mesma tabela, ao lado do que se usava.** O IPHH pede **país de residência** (um português a viver em Londres conta como residente no Reino Unido) e o mapa usava a nacionalidade, com um aviso na interface a dizer que "o Anfitrião só recolhe a nacionalidade". Isso deixou de ser verdade a **3 de agosto**: o `pais_residencia` passou a ser recolhido no check-in e é **obrigatório**, porque sem ele nenhum boletim pode ser entregue ao SIBA. Passa a usar-se a residência, com a nacionalidade como recurso para fichas antigas.

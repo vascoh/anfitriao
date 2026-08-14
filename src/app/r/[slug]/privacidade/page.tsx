@@ -32,7 +32,7 @@ export default async function PrivacidadePage({ params }: { params: Promise<{ sl
       <LegalPage title="Política de Privacidade">
         <p>Esta política descreve como <strong>{settings.nome}</strong> trata os dados pessoais recolhidos através deste site e do processo de reserva.</p>
         <h2>Dados recolhidos</h2>
-        <p>Ao efetuar uma reserva ou check-in online, recolhemos nome, contacto, datas de estadia e, quando legalmente exigido, dados do documento de identificação para cumprimento das obrigações de comunicação às autoridades (SEF/SIBA).</p>
+        <p>Ao efetuar uma reserva ou check-in online, recolhemos nome, contacto, datas de estadia e, quando legalmente exigido, dados do documento de identificação para cumprimento das obrigações de comunicação às autoridades (boletim de alojamento, entregue através do SIBA, sob a tutela da AIMA).</p>
         <h2>Finalidade</h2>
         <p>Os dados são usados exclusivamente para gerir a reserva, comunicar contigo sobre a estadia e cumprir obrigações legais de registo de hóspedes.</p>
         <h2>Partilha de dados</h2>

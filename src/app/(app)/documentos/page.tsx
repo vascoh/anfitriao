@@ -208,7 +208,7 @@ export default function DocumentosPage() {
             <Download className="h-4 w-4 text-primary shrink-0" />
             <p className="text-sm font-semibold">Export SIBA</p>
           </div>
-          <p className="text-xs text-muted-foreground">Exporta os dados dos hóspedes no formato CSV para submissão ao portal SEF.</p>
+          <p className="text-xs text-muted-foreground">Exporta os dados dos hóspedes no formato CSV para submissão no portal SIBA.</p>
           <div className="flex gap-2 flex-wrap">
             <div className="flex flex-col gap-1 flex-1 min-w-28">
               <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">De</label>

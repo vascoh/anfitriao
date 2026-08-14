@@ -604,7 +604,7 @@ export default function CheckinPage() {
             </button>
 
             <p className="text-xs text-muted-foreground text-center">
-              Os teus dados são usados exclusivamente para cumprimento do registo obrigatório de hóspedes (SIBA/SEF).
+              Os teus dados são usados exclusivamente para cumprimento do registo obrigatório de hóspedes (boletim de alojamento, SIBA/AIMA).
             </p>
           </>
         )}
