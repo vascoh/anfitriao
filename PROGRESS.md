@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-14e] Crons — o lembrete de pagamento chegava quatro vezes, e a triplicar
+
+- 📨 **Quatro emails, não um.** A janela apanha os check-ins dos **próximos 3 dias** e o guarda de repetição só olhava para "já enviei hoje". Resultado: o mesmo hóspede recebia o mesmo lembrete quatro dias seguidos — incluindo depois de já ter pago por transferência, enquanto o anfitrião não registasse o valor. Passa a ser uma vez por reserva, que é o que o comentário da rota sempre disse ser a intenção.
+- 🏠 **E multiplicado pelos quartos.** Numa casa alugada por inteiro, cada quarto mandava o seu lembrete com o seu saldo parcial: três emails, três valores, nenhum deles o que a pessoa deve. Passa a um email com o total do grupo, com o nome da casa-mãe e "casa inteira (N quartos)" em vez do nome de um quarto ao acaso. Combinado com o de cima: de **12 emails** para **1**.
+- 🐛 **Um erro meu, apanhado antes de sair**: o `select` da rota não trazia `reserva_grupo_id`, portanto o agrupamento que acabara de escrever não agrupava nada. Verificados também os outros crons — `automations` e `relatorio-mensal` usam `select('*')`, `faturacao` pede o campo explicitamente.
+- ✅ **Verificado e correto** (fica dito, para não se repetir a busca): os 9 crons do `vercel.json` existem todos em código e nenhum ficou órfão; `compliance-alerts` avisa por marcos (30/15/7/0 dias e repetição periódica depois de expirar), não todos os dias; `relatorio-mensal` já conta unidades alugáveis e exclui canceladas; `certificado_energetico_validade` existe mesmo com esse nome — o nome truncado que eu tinha visto era artefacto do meu próprio dump, não uma coluna errada.
+- 👤 **Fica por decidir**: um alojamento **sem** RNAL ou sem seguro registados nunca é avisado — os alertas são de expiração, e um item em falta não tem data para expirar. Alertar todos os dias seria spam; a periodicidade certa é decisão de produto.
+- ✅ 648 testes, typecheck 0, lint 0, build OK.
+
 ### [2026-08-14d] Admin — suspender uma conta não suspendia nada
 
 - 🚨 **A ação mais consequente do painel não fazia efeito.** O middleware lê `estado` do `publicMetadata` do Clerk (JWT) para não ir à base de dados em cada pedido. O webhook do Stripe sincroniza isso à mão a seguir a cada `updateAccount`; o painel de administração **não**. Resultado: suspender uma conta escrevia `suspenso` na base, mostrava-a suspensa no painel — e o utilizador continuava a entrar normalmente até um evento do Stripe passar por ali. O mesmo para mudanças de plano feitas à mão.
