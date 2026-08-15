@@ -12,7 +12,7 @@ export async function generateMetadata(
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   return {
-    title: settings ? `Política de Cookies — ${settings.nome}` : 'Cookies',
+    title: { absolute: settings ? `Política de Cookies — ${settings.nome}` : 'Cookies' },
     alternates: { canonical: `${APP_URL}/r/${slug}/cookies` },
     robots: { index: false, follow: false },
   }

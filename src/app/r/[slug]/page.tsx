@@ -27,7 +27,10 @@ export async function generateMetadata(
   const ogImage = `${APP_URL}/api/og?title=${encodeURIComponent(title)}`
 
   return {
-    title,
+    /* `absolute` porque o layout da raiz tem `template: '%s · Anfitrião'`.
+     * Este é o site **do cliente**: o separador do browser não leva o nome da
+     * plataforma, tal como um site feito à medida não levaria o da agência. */
+    title: { absolute: title },
     description,
     openGraph: {
       type: 'website',

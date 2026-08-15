@@ -12,7 +12,7 @@ export async function generateMetadata(
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   return {
-    title: settings ? `Localização — ${settings.nome}` : 'Localização',
+    title: { absolute: settings ? `Localização — ${settings.nome}` : 'Localização' },
     alternates: { canonical: `${APP_URL}/r/${slug}/localizacao` },
     robots: { index: false, follow: false },
   }

@@ -14,7 +14,7 @@ export async function generateMetadata(
   const { slug, postSlug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   const post = settings?.owner_id ? await adminGetPublishedPostBySlug(settings.owner_id, postSlug) : null
-  if (!post) return { title: 'Blog', robots: { index: false, follow: false } }
+  if (!post) return { title: { absolute: 'Blog' }, robots: { index: false, follow: false } }
 
   const title = `${post.titulo} — ${settings?.nome}`
   return {

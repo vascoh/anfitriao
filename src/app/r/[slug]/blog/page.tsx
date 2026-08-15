@@ -14,7 +14,7 @@ export async function generateMetadata(
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   return {
-    title: settings ? `Blog — ${settings.nome}` : 'Blog',
+    title: { absolute: settings ? `Blog — ${settings.nome}` : 'Blog' },
     alternates: { canonical: `${APP_URL}/r/${slug}/blog` },
     robots: { index: false, follow: false },
   }

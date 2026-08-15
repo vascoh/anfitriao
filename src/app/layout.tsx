@@ -75,28 +75,6 @@ export const viewport: Viewport = {
   themeColor: '#C2714F',
 }
 
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'Anfitrião',
-  url: APP_URL,
-  description: 'Gestão de Alojamento Local para anfitriões portugueses. Sincroniza Airbnb e Booking.com, check-in online SIBA, relatórios e IA Concierge.',
-  applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Web',
-  inLanguage: 'pt-PT',
-  offers: [
-    { '@type': 'Offer', name: 'Trial', price: '0', priceCurrency: 'EUR', description: '14 dias grátis, sem cartão de crédito' },
-    { '@type': 'Offer', name: 'Starter', price: '19', priceCurrency: 'EUR', description: 'Até 3 propriedades, reservas ilimitadas' },
-    { '@type': 'Offer', name: 'Pro', price: '39', priceCurrency: 'EUR', description: 'Até 10 propriedades, relatórios avançados' },
-  ],
-  provider: {
-    '@type': 'Organization',
-    name: 'Anfitrião',
-    url: APP_URL,
-    contactPoint: { '@type': 'ContactPoint', email: 'suporte@anfitrioes.pt', contactType: 'customer support', availableLanguage: 'Portuguese' },
-  },
-}
-
 // Inline script to apply theme before first paint (prevents flash)
 const themeScript = `
   (function() {
@@ -124,10 +102,6 @@ export default function RootLayout({
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="dns-prefetch" href="https://nnbqfrszukkzoqwssjvg.supabase.co" />
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-          />
         </head>
         <body className="h-full bg-background text-foreground">
           {children}

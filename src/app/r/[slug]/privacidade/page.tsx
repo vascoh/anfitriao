@@ -12,7 +12,7 @@ export async function generateMetadata(
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   return {
-    title: settings ? `Política de Privacidade — ${settings.nome}` : 'Privacidade',
+    title: { absolute: settings ? `Política de Privacidade — ${settings.nome}` : 'Privacidade' },
     alternates: { canonical: `${APP_URL}/r/${slug}/privacidade` },
     robots: { index: false, follow: false },
   }

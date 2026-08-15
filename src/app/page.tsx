@@ -14,6 +14,7 @@ import { Pricing } from '@/components/landing-v2/pricing'
 import { Testimonials } from '@/components/landing-v2/testimonials'
 import { FAQ } from '@/components/landing-v2/faq'
 import { PERGUNTAS } from '@/components/landing-v2/faq-data'
+import { APP_URL } from '@/lib/config'
 import { CTASection } from '@/components/landing-v2/cta-section'
 import { Footer } from '@/components/landing-v2/footer'
 
@@ -31,6 +32,36 @@ export const metadata: Metadata = {
     canonical: '/',
   },
 }
+
+/* Dados estruturados **da plataforma**.
+ *
+ * Estavam no layout da raiz, portanto iam em todas as páginas — incluindo o
+ * site público de cada cliente, que passava a anunciar aos motores de busca
+ * que era uma aplicação de software com planos de 19 € e 39 €. O site do
+ * cliente tem os seus próprios dados (`LodgingBusiness`); estes pertencem
+ * aqui, à página que vende o produto. */
+const plataformaJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Anfitrião',
+  url: APP_URL,
+  description: 'Gestão de Alojamento Local para anfitriões portugueses. Sincroniza Airbnb e Booking.com, check-in online SIBA, relatórios e IA Concierge.',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'pt-PT',
+  offers: [
+    { '@type': 'Offer', name: 'Trial', price: '0', priceCurrency: 'EUR', description: '14 dias grátis, sem cartão de crédito' },
+    { '@type': 'Offer', name: 'Starter', price: '19', priceCurrency: 'EUR', description: 'Até 3 propriedades, reservas ilimitadas' },
+    { '@type': 'Offer', name: 'Pro', price: '39', priceCurrency: 'EUR', description: 'Até 10 propriedades, relatórios avançados' },
+  ],
+  provider: {
+    '@type': 'Organization',
+    name: 'Anfitrião',
+    url: APP_URL,
+    contactPoint: { '@type': 'ContactPoint', email: 'suporte@anfitrioes.pt', contactType: 'customer support', availableLanguage: 'Portuguese' },
+  },
+}
+
 
 // FAQPage structured data — derivado de faq-data.ts para nunca divergir do acordeão
 const faqJsonLd = {
@@ -54,6 +85,10 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
 
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(plataformaJsonLd) }}
+      />
       <SmoothScroll />
 
       <a
