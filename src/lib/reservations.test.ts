@@ -316,6 +316,48 @@ describe('occupancyForMonth', () => {
   })
 })
 
+describe('preços nunca ficam negativos', () => {
+  const prop = { id: 'p1', preco_base: 100, taxa_limpeza: 20 }
+
+  function regra(over: Partial<PriceRule> = {}): PriceRule {
+    return {
+      id: 'r1', property_id: 'p1', nome: 'Regra', tipo: 'custom',
+      prioridade: 10, ativo: true, criado_em: '2026-01-01', ...over,
+    } as PriceRule
+  }
+
+  it('um desconto de -150% não paga ao hóspede para ficar', () => {
+    /* A atualização em massa aceitava escrever isto e a API guardava sem
+     * olhar. O fluxo pago recusa total <= 0, mas o pedido de reserva sem
+     * pagamento aceitava — ficava uma reserva a dever dinheiro ao hóspede, e
+     * a envenenar receita, RevPAR e o mapa do IVA. */
+    const r = calculatePriceWithRules(prop, '2026-07-01', '2026-07-04', [regra({ desconto_pct: -150 })])
+    expect(r.preco_noite).toBe(0)
+    expect(r.total).toBeGreaterThanOrEqual(0)
+  })
+
+  it('um preço por noite negativo também é travado', () => {
+    const r = calculatePriceWithRules(prop, '2026-07-01', '2026-07-04', [regra({ preco_noite: -50 })])
+    expect(r.preco_noite).toBe(0)
+    expect(r.total).toBeGreaterThanOrEqual(0)
+  })
+
+  it('um desconto normal continua a funcionar', () => {
+    const r = calculatePriceWithRules(prop, '2026-07-01', '2026-07-04', [regra({ desconto_pct: -20 })])
+    expect(r.preco_noite).toBe(80)
+    expect(r.total).toBe(80 * 3 + 20)
+  })
+
+  it('o preço do dia no calendário também não desce abaixo de zero', () => {
+    const preco = getPriceForDay(
+      { ...PROPERTY, id: 'p1', preco_base: 100 },
+      '2026-07-01',
+      [regra({ desconto_pct: -300 })],
+    )
+    expect(preco.preco).toBe(0)
+  })
+})
+
 describe('ordenarComQuartos', () => {
   const casa: Property = { ...PROPERTY, id: 'casa', nome: 'Casa de Vasco' }
   const outra: Property = { ...PROPERTY, id: 'outra', nome: 'T1 Amora' }

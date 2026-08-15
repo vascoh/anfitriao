@@ -10,6 +10,7 @@ import {
 import { fetchProperties } from '@/lib/fetcher'
 import { getPriceForDay } from '@/lib/reservations'
 import { fmtMoney, uuid, today as localToday } from '@/lib/utils'
+import { validarRegraPreco } from '@/lib/validacao-precos'
 import type {
   Property, PriceRule, PriceRuleTipo, Tarifa, TarifaTipo,
   PlatformRate, BookingSource,
@@ -1270,6 +1271,9 @@ function TabMassa({
       if (operacao === 'pct') depois = Math.round(antes * (1 + v / 100))
       else if (operacao === 'fixo') depois = Math.round(antes + v)
       else if (operacao === 'novo') depois = Math.round(v)
+      // O cálculo nunca deixa um preço abaixo de zero; a pré-visualização
+      // mostra o mesmo, senão prometia um número que não vai acontecer.
+      depois = Math.max(0, depois)
       return { prop: prop.nome, antes, depois }
     })
     setPreview(p)
@@ -1288,8 +1292,26 @@ function TabMassa({
 
   async function applyMassa() {
     if (selectedProps.length === 0 || !nome.trim()) return
-    setApplying(true)
+
+    /* Validar antes de escrever em N propriedades de uma vez.
+     *
+     * A operação percentual aceitava −150, o que dava preços negativos, e um
+     * intervalo invertido criava em cada alojamento uma regra que nunca se
+     * aplica — o anfitrião ficava a pensar que a promoção estava a correr. */
     const v = parseFloat(valor) || 0
+    const problema = validarRegraPreco({
+      desconto_pct: operacao === 'pct' ? v : undefined,
+      preco_noite: operacao === 'novo' ? v : undefined,
+      data_inicio: dataInicio || undefined,
+      data_fim: dataFim || undefined,
+      dias_semana: diasSemana.length > 0 ? diasSemana : undefined,
+    })
+    if (problema) {
+      showToast(problema.mensagem, false)
+      return
+    }
+
+    setApplying(true)
     try {
       for (const pid of selectedProps) {
         const rule: PriceRule = {

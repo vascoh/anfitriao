@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { canUpsertRow, ownsProperty } from '@/lib/ownership'
+import { validarComissao, validarMultiplicador } from '@/lib/validacao-precos'
 import type { PlatformRate } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -33,6 +34,13 @@ export async function POST(req: NextRequest) {
   }
   if (!(await ownsProperty(supabase, (body as { property_id?: unknown }).property_id, userId))) {
     return NextResponse.json({ error: 'Alojamento não encontrado.' }, { status: 404 })
+  }
+
+  const problema =
+    validarComissao((body as { comissao_pct?: unknown }).comissao_pct)
+    ?? validarMultiplicador((body as { multiplicador?: unknown }).multiplicador)
+  if (problema) {
+    return NextResponse.json({ error: problema.mensagem, campo: problema.campo }, { status: 400 })
   }
 
   const row = { ...body, owner_id: userId }

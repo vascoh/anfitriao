@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-15] Preços — um desconto de −150 % dava reservas a preço negativo
+
+- 💸 **A atualização em massa aceitava escrevê-lo a partir da interface**, e a API guardava `{ ...body, owner_id }` sem olhar para número nenhum. `calculatePriceWithRules` multiplicava por `(1 + pct/100)` sem piso: preço por noite negativo, total negativo. O fluxo pago recusa `preco_total <= 0`, mas o **pedido de reserva sem pagamento aceitava** — ficava uma reserva a dever dinheiro ao hóspede, e a envenenar receita, RevPAR e o mapa do IVA.
+- 🧱 **Duas defesas, porque são dois problemas.** Piso de zero em `calculatePriceWithRules` e em `getPriceForDay` — é por lá que passam **todos** os caminhos de preço, incluindo os que ainda não existem. E `lib/validacao-precos.ts` nas rotas de regras, tarifas e plataformas, para o disparate não entrar na base: percentagens fora de −100…+500, preços negativos ou absurdos, `NaN` (que é o que sai de um campo vazio passado por `Number()`), noites mínimas maiores que as máximas, dias da semana fora de 0–6.
+- 📅 **Datas invertidas não davam erro nenhum** — davam uma regra que nunca se aplica. O anfitrião criava a promoção de verão com as datas trocadas e ficava a pensar que estava a correr, sem nada que lho dissesse. Passa a ser recusada, na interface e na API.
+- 🧮 **Comissão de plataforma acima de 100 %** dava lucro líquido negativo no `/financeiro`; **multiplicador 0** zerava o preço de todas as reservas dessa plataforma. Ambos recusados.
+- 👀 A pré-visualização da atualização em massa mostrava um preço que o cálculo nunca produziria — passa a mostrar o mesmo que vai acontecer.
+- ✅ 685 testes (18 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-14i] Relatórios e calendário — o RevPAR inflacionado e o erro de 30/07 que sobreviveu
 
 - 📈 **O RevPAR misturava dois períodos.** O denominador do ano em curso contava os **dias já passados** (bem visto), mas o numerador somava **todas as reservas do ano**, incluindo as que ainda vão acontecer. Em janeiro, uma reserva de dezembro já paga entrava a dividir por 20 dias: um RevPAR várias vezes acima do real, precisamente no mês em que o anfitrião está a decidir os preços da época. Extraído para `lib/revpar.ts` com 13 testes — a fórmula que decide preços não devia viver dentro de um componente de 700 linhas.

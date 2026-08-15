@@ -146,6 +146,16 @@ export function calculatePriceWithRules(
   const tarifa = findBestTarifa(tarifas.filter(t => t.property_id === property.id), origem, numNoites)
   const platformRate = platformRates.find(r => r.property_id === property.id && r.plataforma === origem && r.ativo)
 
+  /* Nenhum preço desce abaixo de zero.
+   *
+   * Um desconto de −150 % — que a atualização em massa aceitava escrever, e
+   * que a API guardava sem olhar — dava um preço por noite negativo, e daí um
+   * total negativo. O fluxo pago recusa `preco_total <= 0`, mas o pedido de
+   * reserva sem pagamento aceitava-o: ficava uma reserva a *dever* dinheiro
+   * ao hóspede, e a envenenar receita, RevPAR e o mapa do IVA.
+   *
+   * O limite fica aqui, no cálculo, além da validação na API: é o único sítio
+   * por onde passam todos os caminhos de preço. */
   // Base nightly rate
   let precoNoite = rule?.preco_noite ?? property.preco_base
 
@@ -158,6 +168,7 @@ export function calculatePriceWithRules(
   // Cleaning fee
   const taxaLimpeza = rule?.taxa_limpeza ?? property.taxa_limpeza ?? 0
 
+  precoNoite = Math.max(0, precoNoite)
   const subtotalNoites = precoNoite * numNoites
 
   // Tariff adjustment
@@ -170,7 +181,7 @@ export function calculatePriceWithRules(
   const baseBeforePlatform = subtotalNoites + ajusteValor + taxaLimpeza
   const plataformaAjuste = baseBeforePlatform * (multiplicador - 1)
 
-  const total = Math.round((baseBeforePlatform + plataformaAjuste) * 100) / 100
+  const total = Math.max(0, Math.round((baseBeforePlatform + plataformaAjuste) * 100) / 100)
 
   return {
     preco_noite: Math.round(precoNoite * 100) / 100,
@@ -197,7 +208,7 @@ export function getPriceForDay(
   const rule = findBestRule(propRules, date, 1)
   let preco = rule?.preco_noite ?? property.preco_base
   if (rule?.desconto_pct) preco = preco * (1 + rule.desconto_pct / 100)
-  return { preco: Math.round(preco), regra: rule?.nome }
+  return { preco: Math.max(0, Math.round(preco)), regra: rule?.nome }
 }
 
 export const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
