@@ -1,4 +1,5 @@
 import { occupancyForMonth, unidadesReservaveis } from './reservations'
+import { agruparReservas } from './grupos'
 import type { Booking, Property } from './types'
 
 /**
@@ -82,7 +83,11 @@ export function resumoMensal(
     ocupacaoPct: noitesDisponiveis === 0 ? 0 : Math.round((noites / noitesDisponiveis) * 100),
     adr: noites === 0 ? 0 : Math.round(receita / noites),
     revpar: noitesDisponiveis === 0 ? 0 : Math.round(receita / noitesDisponiveis),
-    reservas: doMes.length,
+    /* Uma casa alugada por inteiro são N linhas na base e **uma** reserva
+     * para quem a fez. A lista de reservas na app já a mostra assim; o email
+     * dizia "3 reservas" onde o anfitrião via uma, e os dois números eram
+     * dele. Receita, noites e ocupação continuam por quarto, como devem. */
+    reservas: agruparReservas(doMes).length,
     porOrigem: [...porOrigemMap.entries()]
       .map(([origem, valor]) => ({ origem, valor }))
       .filter(o => o.valor > 0)

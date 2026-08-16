@@ -10,6 +10,7 @@ import { generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { WebsitePreview } from '@/components/website-preview'
+import { normalizarSlug, validarSlug } from '@/lib/slug'
 import { useUser } from '@clerk/nextjs'
 
 function useOrigin() {
@@ -56,11 +57,16 @@ export default function WebsitePage() {
 
   async function save() {
     if (!settings) return
-    if (settings.slug && settings.slug.length < 3) {
-      toast.error('O slug deve ter pelo menos 3 caracteres')
+    /* Mesma regra do servidor (lib/slug.ts): o vazio é ausência de endereço,
+     * não uma cadeia vazia — que colidiria no UNIQUE com outra conta. */
+    const slug = normalizarSlug(settings.slug)
+    const problema = validarSlug(slug)
+    if (problema) {
+      toast.error(problema)
       return
     }
-    const res = await fetch('/api/website-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) })
+    if (slug !== settings.slug) update('slug', slug ?? undefined)
+    const res = await fetch('/api/website-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...settings, slug }) })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       toast.error(data.error ?? 'Erro ao guardar configurações')

@@ -66,6 +66,33 @@ describe('resumoMensal', () => {
     expect(r.reservas).toBe(2)
   })
 
+  it('uma casa alugada por inteiro conta como uma reserva, não três', () => {
+    /* A app já mostra o grupo como uma linha na lista de reservas. O email
+     * dizia "3 reservas" para a mesma estadia, e os dois números do mesmo
+     * mês desmentiam-se um ao outro. Receita e noites continuam por quarto. */
+    const grupo = { reserva_grupo_id: 'g1' }
+    const r = resumoMensal(
+      [
+        reserva('2026-07-05', '2026-07-08', 300, grupo),
+        reserva('2026-07-05', '2026-07-08', 200, grupo),
+        reserva('2026-07-05', '2026-07-08', 100, grupo),
+      ],
+      [propriedade('p1')],
+      ANO, JULHO,
+    )
+    expect(r.reservas).toBe(1)
+    expect(r.receita).toBe(600)
+  })
+
+  it('reservas soltas continuam a contar uma a uma', () => {
+    const r = resumoMensal(
+      [reserva('2026-07-05', '2026-07-08', 300), reserva('2026-07-10', '2026-07-12', 200)],
+      [propriedade('p1')],
+      ANO, JULHO,
+    )
+    expect(r.reservas).toBe(2)
+  })
+
   it('ignora reservas canceladas e no_show', () => {
     const r = resumoMensal(
       [

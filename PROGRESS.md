@@ -6,6 +6,20 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-16] Pré-visualização do site + quatro bugs à volta dela
+
+**A pré-visualização** (`components/website-preview.tsx`): duas colunas em `/website`, o site à direita fixo no ecrã enquanto o formulário rola, com alternador telemóvel/computador. É **o site verdadeiro num iframe**, não uma imitação com os valores do formulário — uma imitação atualizaria a cada tecla e mentiria no dia em que o site mudasse e ela não. O preço é não ver as alterações antes de guardar; a resposta é o aviso de "alterações por guardar" e o recarregamento automático ao gravar.
+
+Bugs encontrados a fazer isto e a verificar o resultado:
+
+- 🖼️ **O `frame-src` da CSP não tinha `'self'`** — o iframe do nosso próprio site era bloqueado pelo browser e a pré-visualização ficaria uma caixa vazia, sem erro visível.
+- 🔤 **Os três domínios do Clerk na CSP diziam `clerk.anfitriao.pt`**, sem o "es". Hoje não se nota porque a instância é de desenvolvimento e serve por `*.clerk.accounts.dev`; ia rebentar o login **no dia da migração para produção** (passo 0.2 do roadmap), sem ligação aparente à causa.
+- 🏷️ **O site do cliente anunciava a nossa plataforma**: separador do browser "Casa de Vasco · Anfitrião" (template do layout raiz) e os dados estruturados `SoftwareApplication` **com os nossos planos de 19 € e 39 €** injetados em todas as páginas do tenant. O site de um alojamento dizia ao Google que era uma aplicação de software. Título passa a absoluto; os dados da plataforma passam a viver só na landing.
+- 🔗 **Slug vazio gravado como `''` numa coluna `UNIQUE`.** Dois `NULL` não colidem em Postgres; duas cadeias vazias colidem. O **segundo cliente** que apagasse o endereço deixava de conseguir gravar a página inteira, com um "Erro ao guardar" sem relação com o que estava a fazer. `lib/slug.ts` normaliza (minúsculas, sem acentos, sem barras — `a/b` dava um site inacessível) e devolve `null` para o vazio, dos dois lados. A rota passa também a ter lista de campos permitidos, em vez de escrever o que o browser mandar.
+- 🖥️ **`/api/og` sem limite nem cache**: público, sem sessão, a desenhar texto de fora na nossa infraestrutura — 3.000 caracteres davam uma imagem de 94 KB, a cada pedido. Limite de 120 caracteres e cache de um dia.
+- 📊 **O email mensal contava 3 reservas onde a app mostra 1** — uma casa alugada por inteiro. Os dois números do mesmo mês desmentiam-se. Receita, noites e ocupação continuam por quarto, como devem.
+- ✅ 697 testes (12 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-15] Preços — um desconto de −150 % dava reservas a preço negativo
 
 - 💸 **A atualização em massa aceitava escrevê-lo a partir da interface**, e a API guardava `{ ...body, owner_id }` sem olhar para número nenhum. `calculatePriceWithRules` multiplicava por `(1 + pct/100)` sem piso: preço por noite negativo, total negativo. O fluxo pago recusa `preco_total <= 0`, mas o **pedido de reserva sem pagamento aceitava** — ficava uma reserva a dever dinheiro ao hóspede, e a envenenar receita, RevPAR e o mapa do IVA.

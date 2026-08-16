@@ -1,9 +1,31 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
 
+/** Um título de cartão social; acima disto é abuso, não um nome de alojamento. */
+const MAX_TITULO = 120
+
+/**
+ * Imagem de partilha (Open Graph).
+ *
+ * Rota pública e sem sessão — tem de o ser, é o Facebook e o WhatsApp que a
+ * pedem. Duas defesas, porque é a **nossa** infraestrutura a desenhar texto
+ * que vem de fora:
+ *
+ * - **limite de tamanho**: sem ele, qualquer pessoa mandava 3.000 caracteres
+ *   e nós desenhávamos tudo, a cada pedido;
+ * - **cache**: sem ela, cada visita voltava a renderizar. Com ela, o mesmo
+ *   título é desenhado uma vez e servido do lado da CDN — o que tira o
+ *   interesse a quem quisesse usar isto como moinho de CPU.
+ *
+ * O que fica por resolver, e não tem solução técnica limpa: o texto aparece
+ * numa imagem servida do nosso domínio, e serve para quem quiser fabricar um
+ * cartão com ar oficial. É o mesmo que acontece em qualquer serviço com OG
+ * dinâmico; a alternativa era assinar os pedidos, e nem o Facebook o faz.
+ */
 export function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const title = searchParams.get('title') ?? 'Gestão de Alojamento Local sem papelada'
+  const title = (searchParams.get('title') ?? 'Gestão de Alojamento Local sem papelada')
+    .slice(0, MAX_TITULO)
 
   return new ImageResponse(
     (
@@ -134,6 +156,13 @@ export function GET(req: NextRequest) {
         </div>
       </div>
     ),
-    { width: 1200, height: 630 },
+    {
+      width: 1200,
+      height: 630,
+      headers: {
+        // O mesmo título dá sempre a mesma imagem: desenha-se uma vez.
+        'Cache-Control': 'public, max-age=86400, s-maxage=604800, immutable',
+      },
+    },
   )
 }
