@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-16b] Publicar exige nome, contacto e uma foto
+
+- 🚦 **A app deixava publicar um site sem nada.** Sem nome próprio, sem foto e sem contacto — e a prova é a primeira conta real, que está no ar a chamar-se **"Reservas Diretas"**, o valor por omissão da coluna, há meses, sem nada que o assinalasse.
+- ✅ **Quatro essenciais**, em `lib/prontidao-site.ts`: endereço (sem ele não há URL para partilhar), nome próprio (o valor de fábrica **não conta** — um site com ele parece abandonado), contacto (email **ou** telefone: um hóspede sem para onde ligar vai reservar no Airbnb, que é o que este site existe para evitar) e uma foto (ninguém reserva às cegas). Descrição e apresentação do anfitrião ficam como conselho, não como barreira.
+- 🔒 **Verificado nos dois lados**, com a mesma função. No browser para explicar; na API porque é a que vale.
+- 🧭 **Só na passagem para publicado.** Um site já no ar continua a poder ser guardado como está: apertar a regra sobre o que já existe trancaria o anfitrião fora das suas próprias definições por causa de uma regra que ele não sabia que existia. E a verificação corre sobre o **estado final** (o que está gravado + o que vem no pedido), senão um envio parcial faria parecer que falta o que já lá está.
+- 📋 **A lista aparece na página** enquanto houver alguma coisa por fazer, com o que falta e porquê, e desaparece sozinha quando estiver tudo. Ao lado da pré-visualização, é a diferença entre "17 campos" e "faltam-te três coisas".
+- ✅ 710 testes (13 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-16] Pré-visualização do site + quatro bugs à volta dela
 
 **A pré-visualização** (`components/website-preview.tsx`): duas colunas em `/website`, o site à direita fixo no ecrã enquanto o formulário rola, com alternador telemóvel/computador. É **o site verdadeiro num iframe**, não uma imitação com os valores do formulário — uma imitação atualizaria a cada tecla e mentiria no dia em que o site mudasse e ela não. O preço é não ver as alterações antes de guardar; a resposta é o aviso de "alterações por guardar" e o recarregamento automático ao gravar.

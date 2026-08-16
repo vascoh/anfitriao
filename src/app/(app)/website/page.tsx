@@ -11,6 +11,7 @@ import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { WebsitePreview } from '@/components/website-preview'
 import { normalizarSlug, validarSlug } from '@/lib/slug'
+import { prontidaoDoSite, motivoParaNaoPublicar } from '@/lib/prontidao-site'
 import { useUser } from '@clerk/nextjs'
 
 function useOrigin() {
@@ -48,6 +49,10 @@ export default function WebsitePage() {
   }, [ownerId])
 
   const publicUrl = settings?.slug ? `${origin}/r/${settings.slug}` : `${origin}/book`
+
+  /* O que falta para o site valer a pena ser visto. Regra em
+   * lib/prontidao-site.ts, para a interface e a API não discordarem. */
+  const prontidao = prontidaoDoSite(settings, props)
 
   function update<K extends keyof WebsiteSettings>(key: K, val: WebsiteSettings[K]) {
     setSettings(prev => prev ? { ...prev, [key]: val } : prev)
@@ -223,13 +228,71 @@ export default function WebsitePage() {
                 : 'O website está desativado. Os hóspedes não conseguem aceder.'}
             </p>
           </div>
-          <button onClick={() => update('enabled', !settings.enabled)}
+          <button
+            onClick={() => {
+              // Despublicar é sempre permitido; publicar exige o essencial.
+              if (!settings.enabled && !prontidao.podePublicar) {
+                toast.error(motivoParaNaoPublicar(prontidao.emFalta))
+                return
+              }
+              update('enabled', !settings.enabled)
+            }}
             className={`shrink-0 transition-colors ${settings.enabled ? 'text-primary' : 'text-muted-foreground'}`}>
             {settings.enabled
               ? <ToggleRight className="h-8 w-8" />
               : <ToggleLeft className="h-8 w-8" />}
           </button>
         </div>
+
+        {/* O que falta — só aparece enquanto houver alguma coisa por fazer */}
+        {prontidao.feitos < prontidao.total && (
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm font-semibold">Antes de mostrar isto a hóspedes</p>
+              <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                {prontidao.feitos}/{prontidao.total}
+              </span>
+            </div>
+
+            <ul className="flex flex-col gap-2">
+              {prontidao.itens.map(item => (
+                <li key={item.chave} className="flex items-start gap-2.5">
+                  <span
+                    aria-hidden="true"
+                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${
+                      item.feito
+                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                        : item.essencial
+                          ? 'border-amber-500 text-amber-600'
+                          : 'border-border text-muted-foreground'
+                    }`}
+                  >
+                    {item.feito ? '✓' : ''}
+                  </span>
+                  <div className="min-w-0">
+                    <p className={`text-sm ${item.feito ? 'text-muted-foreground line-through' : 'font-medium'}`}>
+                      {item.titulo}
+                      {!item.essencial && !item.feito && (
+                        <span className="ml-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                          opcional
+                        </span>
+                      )}
+                    </p>
+                    {!item.feito && (
+                      <p className="text-xs text-muted-foreground leading-relaxed">{item.ajuda}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {!prontidao.podePublicar && (
+              <p className="text-xs text-muted-foreground border-t border-border pt-3">
+                Os três primeiros são precisos para publicar. O resto podes deixar para depois.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Public URL */}
         <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">

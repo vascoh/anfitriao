@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase'
 import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import type { WebsiteSettings } from '@/lib/types'
 import { normalizarSlug, validarSlug } from '@/lib/slug'
+import { prontidaoDoSite, motivoParaNaoPublicar } from '@/lib/prontidao-site'
+import { adminGetProperties } from '@/lib/db-admin'
 
 /* Lista de permitidos.
  *
@@ -59,9 +61,35 @@ export async function POST(req: NextRequest) {
 
   const { data: existing } = await supabase
     .from('website_settings')
-    .select('id')
+    .select('*')
     .eq('owner_id', userId)
     .maybeSingle()
+
+  /* Publicar exige o essencial: endereço, nome próprio, contacto e uma foto.
+   *
+   * Só se verifica na **passagem** de despublicado para publicado. Um site já
+   * no ar continua a poder ser guardado como está — apertar a regra sobre o
+   * que já existe seria trancar o anfitrião fora das suas próprias definições
+   * por causa de uma regra que ele não sabia que existia.
+   *
+   * A interface faz a mesma verificação; esta é a que vale, porque a outra
+   * corre no browser. */
+  const vaiPublicar = (row as Record<string, unknown>).enabled === true && existing?.enabled !== true
+  if (vaiPublicar) {
+    /* Sobre o estado **final**, não só sobre o que veio no pedido: um envio
+     * parcial (sem o nome, por exemplo) não pode parecer que o nome falta
+     * quando ele já está gravado. */
+    const prontidao = prontidaoDoSite(
+      { ...(existing ?? {}), ...row, slug } as Parameters<typeof prontidaoDoSite>[0],
+      await adminGetProperties(userId),
+    )
+    if (!prontidao.podePublicar) {
+      return NextResponse.json(
+        { error: motivoParaNaoPublicar(prontidao.emFalta), emFalta: prontidao.emFalta.map(i => i.chave) },
+        { status: 400 },
+      )
+    }
+  }
 
   // 23505 pode ser por slug duplicado (esperado, mensagem específica) ou por
   // outra constraint (ex.: PK) — mapear tudo para "URL em uso" mascarava bugs
