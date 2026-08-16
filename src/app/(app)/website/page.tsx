@@ -9,6 +9,7 @@ import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/li
 import { generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
+import { WebsitePreview } from '@/components/website-preview'
 import { useUser } from '@clerk/nextjs'
 
 function useOrigin() {
@@ -28,6 +29,10 @@ export default function WebsitePage() {
   const [allGuests, setAllGuests] = useState<import('@/lib/types').Guest[]>([])
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(false)
+  /** Há alterações no formulário que ainda não foram para o servidor. */
+  const [porGuardar, setPorGuardar] = useState(false)
+  /** Muda a cada gravação para a pré-visualização recarregar o site real. */
+  const [versaoPreview, setVersaoPreview] = useState(0)
   const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({})
   const [subscribeCopied, setSubscribeCopied] = useState<Record<string, boolean>>({})
   const [newFeedUrl, setNewFeedUrl] = useState<Record<string, string>>({})
@@ -46,6 +51,7 @@ export default function WebsitePage() {
   function update<K extends keyof WebsiteSettings>(key: K, val: WebsiteSettings[K]) {
     setSettings(prev => prev ? { ...prev, [key]: val } : prev)
     setSaved(false)
+    setPorGuardar(true)
   }
 
   async function save() {
@@ -61,6 +67,9 @@ export default function WebsitePage() {
       return
     }
     setSaved(true)
+    setPorGuardar(false)
+    // O site já mudou do lado do servidor: recarregar o que está à direita.
+    setVersaoPreview(v => v + 1)
     toast.success('Configurações guardadas')
     setTimeout(() => setSaved(false), 2000)
   }
@@ -196,7 +205,8 @@ export default function WebsitePage() {
         </div>
       </header>
 
-      <div className="flex flex-col gap-6 p-4 lg:p-8 max-w-3xl">
+      <div className="flex flex-col gap-8 p-4 lg:flex-row lg:items-start lg:p-8">
+        <div className="flex min-w-0 flex-1 flex-col gap-6 lg:max-w-3xl">
         {/* Enable toggle */}
         <div className="rounded-xl border border-border bg-card p-4 flex items-center gap-4">
           <div className="flex-1">
@@ -622,6 +632,24 @@ export default function WebsitePage() {
             </div>
           </div>
         )}
+        </div>
+
+        {/* Pré-visualização — o site verdadeiro, não uma imitação dele.
+            Sticky no ecrã grande: o formulário rola, o site fica à vista. */}
+        <aside className="lg:sticky lg:top-24 lg:w-[460px] xl:w-[520px] shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              O teu site
+            </p>
+          </div>
+          <WebsitePreview
+            key={versaoPreview}
+            url={publicUrl}
+            activo={Boolean(settings.enabled)}
+            temSlug={Boolean(settings.slug)}
+            porGuardar={porGuardar}
+          />
+        </aside>
       </div>
     </div>
   )
