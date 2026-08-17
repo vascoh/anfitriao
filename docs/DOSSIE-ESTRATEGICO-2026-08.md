@@ -8,6 +8,56 @@
 
 ---
 
+> ## ⚠️ Correção de 2026-08-17 — a tese de preço também caiu
+>
+> Este dossiê corrigiu, a 2 de agosto, a tese de julho ("a conformidade PT é um
+> fosso vazio"). A tese que a substituiu — **"a vantagem que sobra é o preço por
+> conta, e nenhum concorrente a pode copiar"** — é, ela própria, **falsa**.
+>
+> **O TalkGuest cobra por conta.** É português, tem 1000+ clientes de 1 a 250+
+> unidades, e o plano de entrada custa **€13,50/mês** — menos de metade do
+> Starter do Anfitrião. Faz **SIBA por web service** (o mesmo mecanismo que
+> construímos), faturação certificada, TMT, channel manager por **API** (Airbnb,
+> Booking, Vrbo, Expedia — calendários **e preços**), owner portal, tarefas,
+> BI, apps iOS/Android e pricing dinâmico. O site de reservas próprio existe,
+> mas só no plano Enterprise (€71,10).
+>
+> Verificado a 2026-08-17 em [talkguest.com/pricing](https://talkguest.com/pricing),
+> [talkguest.pt/todas-as-funcionalidades](https://www.talkguest.pt/todas-as-funcionalidades)
+> e na [ajuda deles sobre o modo Web Service do SIBA](https://talkguest.zendesk.com/hc/pt-pt/articles/360002657198-Como-alterar-o-m%C3%A9todo-de-envio-no-SIBA).
+>
+> **É a segunda vez que o fosso presumido aparece ocupado.** O padrão é o mesmo
+> das duas vezes: olhou-se para o mercado internacional (Guesty, Hostaway,
+> Lodgify, PriceLabs) e para os especialistas de conformidade (EazyAL, Hostkit),
+> e não para o **PMS português com preço por conta** que já servia mil clientes.
+> A lição operacional: antes de escrever "nenhum concorrente pode copiar isto",
+> procurar quem já o faz — e escrever a data e a fonte ao lado.
+>
+> **O que isto invalida:** M1 ponto 3, a frase de posicionamento (§9.1), o
+> racional de preços (§13.2) e a conclusão competitiva (§6.4).
+>
+> **O que isto não invalida:** o caminho de execução. A conformidade continua a
+> ser bilhete de entrada, o SIBA por web service continua desbloqueado, e a
+> estratégia de **camada, não substituição** (§9.2) fica **mais** válida, não
+> menos — porque agora é claro que não somos alternativa a um PMS com channel
+> manager por API.
+>
+> **Onde sobra vantagem defensável** (tudo já construído, ver `PROGRESS.md`):
+> conformidade **com prova** (SHA-256 do XML enviado e resposta arquivada em
+> `siba_submissoes` — todos vendem o envio, ninguém vende a evidência para uma
+> fiscalização de 100 a 10.000 € por boletim), **boletim por pessoa** com recusa
+> de submissão incompleta, **RGPD aplicado por código** (retenção diária,
+> encriptação em repouso, registo de saída de dados), e **casa inteira modelada
+> a sério** (N reservas ligadas, uma fatura, um email, disponibilidade atómica).
+>
+> **Onde estamos atrás, e convém dizê-lo:** sem channel manager por API (o iCal
+> só transporta datas), sem owner portal, sem app móvel, sem tarefas de limpeza,
+> sem pricing dinâmico, sem caixa de entrada — e com um cliente contra mil.
+
+---
+
+---
+
 ## 0. Sumário executivo — as três coisas que mudaram desde 27 de julho
 
 ### M1 — O fosso escolhido já está ocupado. Por dois portugueses.
@@ -24,7 +74,7 @@ Consequências diretas:
 
 1. **A headline de conformidade recomendada em julho já não diferencia.** "SIBA, faturas e taxa turística tratados sozinhos" é literalmente o que a EazyAL e a Hostkit vendem — e elas *entregam*, enquanto o Anfitrião devolve 501.
 2. **A conformidade passou de fosso a bilhete de entrada.** É obrigatória para competir e insuficiente para ganhar. Continua a ser prioridade máxima de execução — mas como *paridade*, não como *posicionamento*.
-3. **A vantagem estrutural que sobra é o preço por conta.** EazyAL, Hostkit, Lodgify, Uplisting e PriceLabs cobram **por alojamento**. Um anfitrião com 4 unidades paga €40+/mês só de conformidade na EazyAL. O Anfitrião a €29–59 por *conta* é 2 a 5× mais barato à medida que o portfólio cresce — e essa é a única mensagem comercial que nenhum deles pode copiar sem destruir a própria receita.
+3. ~~**A vantagem estrutural que sobra é o preço por conta.**~~ **Corrigido a 2026-08-17: falso.** EazyAL, Hostkit, Lodgify, Uplisting e PriceLabs cobram por alojamento — mas o **TalkGuest cobra por conta, desde €13,50/mês, e é português**. O preço por conta continua a ser melhor do que o preço por unidade; deixa de ser um diferenciador, porque há quem o faça mais barato e com mais funcionalidades. Ver a correção no topo deste documento.
 
 ### M2 — O SIBA automático **está desbloqueado**. A dependência humana H1 era falsa.
 
@@ -203,6 +253,7 @@ Auditei rotas, middleware, ownership, rate limiting e tratamento de PII.
 | **EazyAL** | €10+/alojamento/mês | SIBA automático, INE WebInq, TMT com isenções, faturação Vendus, feito por um host da Madeira (credibilidade), **SEO dominante** em PT/EN | Não é PMS (a conectividade é "coming soon"), preço por alojamento explode com portfólio, sem revenue management | Atingir paridade de conformidade e bater no preço por conta. Não competir em SEO de raiz — competir em **profundidade** (ver §8) |
 | **Hostkit** | por alojamento, modular | Faturação à AT incluindo **comissões**, Modelo 30, fechaduras, e **integra-se por cima de qualquer channel manager** | UI datada, modular = carrinho de compras, sem produto de operação diária | Copiar o *modelo de distribuição* (camada por cima do que já usas), não o produto |
 | **Chekin** | por reserva | Multi-país (PT/ES/IT/FR/GR), integração certificada SIBA, conteúdo massivo | Nicho de check-in, caro por volume | Referência para a expansão europeia |
+| **TalkGuest** (Porto) | **€13,50–71,10/mês, por conta** (6 ou 12 meses) | **PMS português completo e por conta**: SIBA por web service, faturação certificada, TMT, channel manager por API (Airbnb, Booking, Vrbo, Expedia — calendários e preços), owner portal, tarefas/staff, BI, apps iOS/Android, pricing dinâmico. **1000+ clientes**, de 1 a 250+ unidades | Site de reservas próprio só no Enterprise (€71,10). Não comunica conformidade como argumento central — a página de preços nem menciona SIBA | **É o concorrente direto, não a EazyAL.** Não competir em amplitude nem em preço: competir em **profundidade de conformidade com prova** e no modelo de camada (§9.2) |
 | **GuestGrow / SIBAGO / vezpa** | nicho | SEO de cauda longa em SIBA | Ferramentas de um só truque | Ignorar |
 
 ### 6.2 Camada B — PMS e channel managers (o campo onde o Anfitrião *parece* competir)
@@ -244,7 +295,11 @@ Turno (limpezas)             €0–40
                              €150–260/mês
 ```
 
-**O Anfitrião pode oferecer 80 % disto por €59/mês, por conta.** Essa é a proposta. Não é "somos os únicos que fazemos SIBA" — é **"és o único sítio onde isto tudo cabe, e não pagas por apartamento"**.
+~~**O Anfitrião pode oferecer 80 % disto por €59/mês, por conta.**~~
+
+**Corrigido a 2026-08-17.** A conta acima é verdadeira para quem monta o *stack* com ferramentas internacionais — mas não é o que um anfitrião português informado faz hoje. O **TalkGuest** entrega PMS + channel manager por API + SIBA + faturação certificada + owner portal **por conta, desde €13,50/mês**. A proposta "tudo isto cabe aqui e não pagas por apartamento" **já existe, mais barata**.
+
+O que sobra, e é verdadeiro: **ninguém vende conformidade com prova.** Todos comunicam ao SIBA; nenhum arquiva o que foi enviado e o que o Estado respondeu, nem se recusa a submeter uma reserva incompleta dizendo quantas fichas faltam. Com coimas de 100 a 10.000 € **por boletim**, é a diferença entre uma funcionalidade e um seguro — e é a única frase deste dossiê que resiste a uma verificação de mercado.
 
 ## 7. Regulação — a janela de 2026
 
@@ -306,10 +361,14 @@ Turno (limpezas)             €0–40
 
 ### 9.1 A frase
 
-> **"Tudo o que o teu Alojamento Local precisa. Por conta, não por apartamento."**
-> *sub:* Boletins do SIBA, faturas certificadas, taxa turística e IRS tratados sozinhos. Ligado ao que já usas — Airbnb, Booking ou o teu channel manager. Feito em Portugal, para a lei portuguesa.
+~~**"Tudo o que o teu Alojamento Local precisa. Por conta, não por apartamento."**~~ — **substituída a 2026-08-17**: o TalkGuest cobra por conta desde €13,50, portanto a segunda metade da frase deixou de distinguir seja o que for.
 
-Porquê esta e não a de julho: a de julho ("SIBA, faturas e taxa turística. Tratados sozinhos.") descreve **exatamente** o que a EazyAL e a Hostkit já vendem. Esta mantém a conformidade como prova e coloca o diferenciador — **preço por conta** — na primeira linha, onde nenhum concorrente pode responder.
+> **"A tua conformidade, com prova."**
+> *sub:* Boletins do SIBA entregues por pessoa, com o comprovativo do que foi enviado e do que o Estado respondeu. Faturas no teu NIF. Retenção de dados cumprida sozinha. Ligado ao que já usas — não substitui o teu channel manager.
+
+Porquê esta: é a única afirmação que sobreviveu a duas verificações de mercado. A de julho descrevia o que a EazyAL e a Hostkit vendem; a de agosto descrevia o que o TalkGuest vende mais barato. Esta descreve o que **nenhum deles** vende — e que já está construído (`siba_submissoes`, `reserva_hospedes`, `lib/retencao.ts`, `lib/campos-sensiveis.ts`).
+
+O preço por conta continua a ser uma vantagem sobre a EazyAL e a Hostkit; passa a ser um **argumento de segunda linha**, não a manchete.
 
 ### 9.2 A estratégia de entrada: **camada, não substituição**
 
@@ -467,6 +526,14 @@ EN/ES no produto · **Espanha** (SES.HOSPEDAJES, IVA, taxas autonómicas) · **I
 
 ### 13.2 Racional
 
+> **Nota de 2026-08-17.** Os escalões abaixo foram desenhados contra concorrentes
+> que cobram por unidade. Com o TalkGuest a €13,50–71,10 **por conta**, o
+> Essencial a 29 € deixa de ser óbvio: entrega menos (sem channel manager por
+> API, sem owner portal, sem app) por mais do dobro do plano de entrada deles.
+> Antes de mexer nos preços, decidir o posicionamento (§9.1) — se a venda passa
+> a ser conformidade com prova, o preço compara-se com o risco de uma coima, não
+> com o preço de um PMS.
+
 - **Trial de 30 dias**, não 14: o negócio é sazonal e 14 dias em janeiro não provam nada.
 - Subir €19→€29 mantém-se abaixo de Smoobu e sinaliza qualidade. O €39 atual, para 10 propriedades, sinaliza "barato".
 - **"Ilimitado" no Negócio a €119** é a arma contra o preço por listing: 20 unidades custam €200/mês só na EazyAL, e mais €400 na PriceLabs.
@@ -581,7 +648,9 @@ Só depois de 100 clientes em Portugal. O motor é o mesmo; muda a tabela de obr
 
 O plano de julho estava certo em quase tudo menos na coisa mais importante: **não há um fosso vazio à espera**. Há dois portugueses a cavá-lo desde antes deste projeto começar, e ambos já entregam aquilo que a landing do Anfitrião promete.
 
-O que existe, e é real, é uma janela de 12 a 18 meses e três vantagens que nenhum deles tem: **preço por conta**, **amplitude de produto** (nenhum concorrente PT tem operação diária, reservas diretas e IA no mesmo sítio) e **velocidade de execução**.
+~~O que existe, e é real, é uma janela de 12 a 18 meses e três vantagens que nenhum deles tem: **preço por conta**, **amplitude de produto** e **velocidade de execução**.~~
+
+**Corrigido a 2026-08-17.** Das três, só a terceira resiste. O preço por conta é do TalkGuest também, e mais barato; a amplitude é dele também, e maior (channel manager por API, owner portal, app móvel, tarefas). A velocidade de execução mantém-se — e nestes quinze dias produziu conformidade com prova, boletim por pessoa, RGPD por código e faturação no NIF do anfitrião, que é onde a vantagem verdadeiramente está.
 
 Nada disso conta enquanto a página inicial prometer uma caixa de entrada que não existe e o SIBA devolver 501. **O caminho mais curto para o mercado é fechar essa distância entre o que se diz e o que se faz — e o web service do SIBA, que se pensava bloqueado, é a peça que a fecha.**
 

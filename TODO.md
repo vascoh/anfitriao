@@ -4,6 +4,16 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 
 > ⚠️ **2026-08-02** — `docs/DOSSIE-ESTRATEGICO-2026-08.md` substitui a tese central do `PLANO-ESTRATEGICO-2026.md`. Três correções que alteram prioridades: (1) a conformidade PT **não** é um fosso vazio — EazyAL e Hostkit já a entregam; (2) o **SIBA tem web service público** e as credenciais são do anfitrião, obtidas no portal em 1–3 dias úteis — a "pendência AIMA" abaixo é falsa; (3) a landing v2 promete caixa de entrada unificada e contrato eletrónico, que não existem. As três estão **resolvidas em código** (ver Fase 0/1 do dossiê, abaixo).
 
+> 🔴 **2026-08-17 — a tese de preço caiu também.** O **TalkGuest** (português, 1000+ clientes) cobra **por conta, desde €13,50/mês**, com SIBA por web service, faturação certificada, **channel manager por API**, owner portal, app móvel e pricing dinâmico. "Preço por conta que ninguém pode copiar" era falso, tal como "a conformidade é um fosso vazio" tinha sido em julho.
+>
+> **O que muda nas prioridades abaixo:**
+> - **2.1 (escalões novos) fica em suspenso** até haver decisão de posicionamento — os preços foram desenhados contra concorrência que cobra por unidade.
+> - **2.3 e 2.4** (marca e calculadora "por conta vs por apartamento") perdem força: a calculadora compara-nos bem com a EazyAL, e mal com o TalkGuest.
+> - **1.2 (dossiê ASAE em PDF) sobe de prioridade** — a prova de submissão é a única vantagem que resistiu a duas verificações de mercado.
+> - Nada muda na Fase 0: Clerk de produção, Upstash, observabilidade e MFA continuam a ser o que impede um segundo utilizador.
+>
+> Frase de posicionamento proposta (§9.1 do dossiê): **"A tua conformidade, com prova."** Ver a correção no topo do dossiê para o que sobra de vantagem defensável e onde estamos atrás.
+
 ## 🔴 Bloqueios ativos — variáveis de ambiente em falta em produção (2026-08-12)
 
 Cada uma desliga **em silêncio** funcionalidade que já está escrita e deployada. Verificado com `npx vercel env ls production`.
@@ -56,6 +66,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [ ] **H3 · API do Amenitiz** — pedir acesso (Definições → API); custa um email e destranca a fase 3 da sincronização
 - [ ] **H4 · Orçamento** — Upstash → Vercel Pro → Supabase Pro
 - [ ] **H5 · Marca** — `anfitriao.pt` vs `anfitrioes.pt`
+- [ ] **Posicionamento (novo, 2026-08-17)** — decidir se a venda passa a ser "conformidade com prova" em vez de "tudo por conta". Bloqueia 2.1 (preços), 2.3 (marca) e 2.4 (calculadora)
 - [ ] **H6 · Revisão jurídica** — T&C, RGPD e a garantia de coima (I2), antes da Fase 4
 - [ ] **H7 · 5 anfitriões beta reais** fora do círculo próximo, após a Fase 0
 
