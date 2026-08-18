@@ -94,3 +94,43 @@ describe('nenhuma rota autenticada escreve sem saber de quem é', () => {
     expect(semFiltro).toEqual([])
   })
 })
+
+/**
+ * Quinta pergunta da série: **o que acontece à segunda vez?**
+ *
+ * A faturação já sabia responder — reserva o estado com um compare-and-set
+ * antes de emitir, e uma segunda chamada leva 409. O checkout do Stripe também
+ * — a sessão é UNIQUE em `bookings`. Os crons de aviso é que não sabiam: não
+ * guardavam rasto nenhum do que tinham enviado, e uma segunda execução no
+ * mesmo dia repetia o email a toda a gente.
+ *
+ * A mesma classe de código, com a lição aprendida num lado e não no outro.
+ */
+describe('quem envia avisos automáticos envia uma vez só', () => {
+  const ENVIA_EMAIL = /emailService\./
+
+  it('todo o cron que envia email reserva antes de enviar', () => {
+    const semReserva = rotas()
+      .filter(r => r.nome.startsWith('cron/'))
+      .filter(r => ENVIA_EMAIL.test(r.codigo))
+      // `automations` tem a sua própria trava: UNIQUE (automation_id, booking_id).
+      .filter(r => !r.codigo.includes('automation_log'))
+      // `payment-reminders` marca no histórico da própria reserva.
+      .filter(r => !r.codigo.includes('pagamento_lembrete'))
+      .filter(r => !r.codigo.includes('reservarEnvio'))
+      .map(r => r.nome)
+
+    expect(semReserva).toEqual([])
+  })
+
+  it('quem reserva também liberta quando o envio falha', () => {
+    /* Sem libertar, um Resend em baixo às 10:00 não repetia o email — deixava
+     * de o mandar para sempre, que é a falha pior e a mais silenciosa. */
+    const semLibertar = rotas()
+      .filter(r => r.codigo.includes('reservarEnvio'))
+      .filter(r => !r.codigo.includes('libertarEnvio'))
+      .map(r => r.nome)
+
+    expect(semLibertar).toEqual([])
+  })
+})

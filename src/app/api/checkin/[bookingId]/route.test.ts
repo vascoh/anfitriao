@@ -222,3 +222,74 @@ describe('POST /api/checkin/[bookingId]', () => {
     expect(res.status).toBe(429)
   })
 })
+
+/**
+ * Quinta pergunta da série: **o que acontece à segunda vez?**
+ *
+ * O acompanhante só traz `id` quando o formulário foi reaberto. Na primeira
+ * vez não traz nenhum — e dois toques seguidos no botão, ou uma resposta
+ * perdida com o hóspede a insistir, criavam a mesma pessoa outra vez: duas
+ * fichas, duas ligações e, no fim da cadeia, **dois boletins para o mesmo
+ * hóspede** entregues ao SIBA.
+ */
+describe('POST duas vezes — acompanhantes', () => {
+  const COM_ACOMPANHANTE = {
+    ...FICHA,
+    acompanhantes: [{ nome: 'João Silva', nacionalidade: 'Portugal', data_nascimento: '1990-01-01' }],
+  }
+
+  it('a segunda submissão atualiza a ficha em vez de criar outra', async () => {
+    await POST(pedidoPost(COM_ACOMPANHANTE), { params: params('b1') })
+
+    // O que a primeira submissão deixou na base, agora visível à segunda.
+    tabelas.guests.push({ id: 'g2', nome: 'João Silva' })
+    tabelas.reserva_hospedes.push({ booking_id: 'b1', guest_id: 'g2', principal: false })
+    escritas.length = 0
+
+    await POST(pedidoPost(COM_ACOMPANHANTE), { params: params('b1') })
+
+    const criados = escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')
+    expect(criados).toHaveLength(0)
+    const atualizados = escritas.filter(e => e.tabela === 'guests' && e.tipo === 'update')
+    expect(atualizados.length).toBeGreaterThan(0)
+  })
+
+  it('reconhece o nome escrito de outra maneira', async () => {
+    tabelas.guests.push({ id: 'g2', nome: 'João Silva' })
+    tabelas.reserva_hospedes.push({ booking_id: 'b1', guest_id: 'g2', principal: false })
+
+    await POST(pedidoPost({
+      ...FICHA,
+      acompanhantes: [{ nome: '  joao   SILVA ', nacionalidade: 'Portugal' }],
+    }), { params: params('b1') })
+
+    expect(escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')).toHaveLength(0)
+  })
+
+  it('duas pessoas com o mesmo nome continuam a ser duas pessoas', async () => {
+    /* Pai e filho na mesma reserva são dois boletins. Se a defesa contra
+     * duplicados juntasse os dois, ficava uma pessoa por comunicar — que é o
+     * erro caro, ao contrário do duplicado. */
+    tabelas.guests.push({ id: 'g2', nome: 'João Silva' })
+    tabelas.reserva_hospedes.push({ booking_id: 'b1', guest_id: 'g2', principal: false })
+
+    await POST(pedidoPost({
+      ...FICHA,
+      acompanhantes: [{ nome: 'João Silva' }, { nome: 'João Silva' }],
+    }), { params: params('b1') })
+
+    // O primeiro reaproveita a ficha existente; o segundo é gente nova.
+    expect(escritas.filter(e => e.tabela === 'guests' && e.tipo === 'update')).toHaveLength(2) // titular + acompanhante
+    expect(escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')).toHaveLength(1)
+  })
+
+  it('quem reservou nunca é confundido com um acompanhante do mesmo nome', async () => {
+    await POST(pedidoPost({
+      ...FICHA,
+      acompanhantes: [{ nome: 'Maria Silva' }],
+    }), { params: params('b1') })
+
+    const inseridos = escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')
+    expect(inseridos).toHaveLength(1)
+  })
+})

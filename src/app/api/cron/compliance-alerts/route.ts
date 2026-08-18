@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
+import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { sendPushToOwner } from '@/lib/push'
 import { today } from '@/lib/utils'
 import { avaliarConformidade, itensParaAlertar } from '@/lib/compliance'
@@ -78,6 +79,12 @@ export async function GET(req: NextRequest) {
     const conta = porId.get(ownerId)
     if (!conta?.email) continue
 
+    /* Um alerta por anfitrião por dia. Os marcos já limitam o email a dias
+     * certos; o que faltava era a garantia de que **duas execuções no mesmo
+     * dia** não o mandam duas vezes. */
+    const chave = chaveDeEnvio('conformidade', ownerId, hoje)
+    if (!await reservarEnvio(chave)) continue
+
     const res = await emailService.sendComplianceAlert({
       to: conta.email,
       firstName: conta.nome?.split(' ')[0] ?? 'Olá',
@@ -85,6 +92,7 @@ export async function GET(req: NextRequest) {
       temExpirado,
     })
     if (res.ok) emails++ // um email falhado não pode abortar o cron
+    else await libertarEnvio(chave)
   }
 
   return NextResponse.json({ ok: true, notificados: porAnfitriao.size, emails, pushes })

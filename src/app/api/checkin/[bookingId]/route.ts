@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { sendCheckinCompleteNotification } from '@/lib/notify-checkin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { protegerCampos, revelarCampos, revelarLista } from '@/lib/campos-sensiveis'
+import { chaveDeNome } from '@/lib/nomes'
 import { janelaDeCheckin } from '@/lib/checkin-acesso'
 import { today } from '@/lib/utils'
 const supabase = createAdminClient()
@@ -225,6 +226,39 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
    * trabalho a limpar depois. */
   const acompanhantes = Array.isArray(body?.acompanhantes) ? body.acompanhantes.slice(0, 30) : []
 
+  /* Quem já está ligado a esta reserva, por nome.
+   *
+   * O `id` do acompanhante só volta no corpo do pedido quando o formulário foi
+   * reaberto — na primeira vez não existe. Dois toques seguidos no botão (ou
+   * uma resposta perdida e o hóspede a insistir) criavam a mesma pessoa duas
+   * vezes: duas fichas, duas linhas em `reserva_hospedes` e, no fim da cadeia,
+   * **dois boletins para o mesmo hóspede** no SIBA. A identidade de uma pessoa
+   * não pode depender de o cliente se lembrar de um id — tem de ser verificada
+   * aqui. */
+  const { data: jaLigados } = await supabase
+    .from('reserva_hospedes')
+    .select('guest_id')
+    .eq('booking_id', bookingId)
+
+  const idsLigados = (jaLigados ?? [])
+    .map(l => l.guest_id as string)
+    .filter(id => id && id !== booking.hospede_id)
+
+  const { data: fichasLigadas } = idsLigados.length > 0
+    ? await supabase.from('guests').select('id, nome').in('id', idsLigados)
+    : { data: [] }
+
+  /* Uma fila de ids por nome, e não um id só: pai e filho com o mesmo nome na
+   * mesma reserva são duas pessoas e dois boletins. Cada nome repetido no
+   * formulário consome a sua ficha; esgotada a fila, cria-se ficha nova. É a
+   * diferença entre reaproveitar e apagar alguém — e apagar alguém aqui é uma
+   * pessoa por comunicar. */
+  const porNome = new Map<string, string[]>()
+  for (const g of fichasLigadas ?? []) {
+    const chave = chaveDeNome((g.nome as string) ?? '')
+    porNome.set(chave, [...(porNome.get(chave) ?? []), g.id as string])
+  }
+
   for (const a of acompanhantes) {
     const nomeAcomp = optText(a?.nome, 200)
     if (!nomeAcomp) continue
@@ -250,8 +284,11 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
     }
 
-    // Reenviar o formulário atualiza a mesma ficha em vez de criar outra.
-    const idExistente = typeof a?.id === 'string' && a.id ? a.id : null
+    /* Reenviar o formulário atualiza a mesma ficha em vez de criar outra: pelo
+     * id quando o cliente o tem, pelo nome quando não tem. */
+    const idExistente = typeof a?.id === 'string' && a.id
+      ? a.id
+      : porNome.get(chaveDeNome(nomeAcomp))?.shift() ?? null
 
     if (idExistente) {
       const { error } = await supabase.from('guests').update(dados).eq('id', idExistente)

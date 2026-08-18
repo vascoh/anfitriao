@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
+import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { sendPushToOwner } from '@/lib/push'
 import { today, fmtDate } from '@/lib/utils'
 import { detetarNoitesOrfas, descontoSugerido, HORIZONTE_DIAS } from '@/lib/noites-orfas'
@@ -98,12 +99,17 @@ export async function GET(req: NextRequest) {
     const conta = porId.get(ownerId)
     if (!conta?.email) continue
 
+    // Uma sugestão por anfitrião por execução semanal.
+    const chave = chaveDeEnvio('noites_orfas', ownerId, hoje)
+    if (!await reservarEnvio(chave)) continue
+
     const res = await emailService.sendNoitesOrfas({
       to: conta.email,
       firstName: conta.nome?.split(' ')[0] ?? 'Olá',
       linhas,
     })
     if (res.ok) emails++
+    else await libertarEnvio(chave)
   }
 
   return NextResponse.json({ ok: true, notificados: porAnfitriao.size, emails, pushes })

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
+import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { today, fmtMoney } from '@/lib/utils'
 import { resumoMensal, mesAnterior, variacaoPct, nomeMes } from '@/lib/relatorio-mensal'
 import { SOURCE_LABEL } from '@/lib/labels'
@@ -87,6 +88,11 @@ export async function GET(req: NextRequest) {
       fmtMoney(o.valor),
     ])
 
+    /* Um relatório por anfitrião por mês. Duas execuções no dia 1 mandavam
+     * dois relatórios iguais. */
+    const chave = chaveDeEnvio('relatorio', ownerId, `${ano}-${String(mes).padStart(2, '0')}`)
+    if (!await reservarEnvio(chave)) continue
+
     const res = await emailService.sendRelatorioMensal({
       to: conta.email,
       firstName: conta.nome?.split(' ')[0] ?? 'Olá',
@@ -101,6 +107,7 @@ export async function GET(req: NextRequest) {
       porOrigem,
     })
     if (res.ok) enviados++
+    else await libertarEnvio(chave)
   }
 
   return NextResponse.json({ ok: true, mes: mesLabel, enviados })

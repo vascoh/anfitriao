@@ -22,7 +22,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       // Calcular dias de trial restantes para o banner
       const account = await getAccountByClerkId(user.id)
       if (account?.estado === 'trial' && account.trial_ends_at) {
-        // eslint-disable-next-line react-hooks/purity -- server component async, corre por request (não em render client)
         const daysLeft = diasDeTrial(account.trial_ends_at) ?? 0
         /* Banner na última semana **e depois de expirar**.
          *

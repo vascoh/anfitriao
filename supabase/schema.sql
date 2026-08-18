@@ -110,6 +110,11 @@ CREATE TABLE public.bookings (
   reserva_grupo_id text
 );
 
+CREATE TABLE public.envios_unicos (
+  chave text NOT NULL,
+  criado_em timestamp with time zone NOT NULL DEFAULT now()
+);
+
 CREATE TABLE public.expenses (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   owner_id text,

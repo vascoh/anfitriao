@@ -1,3 +1,5 @@
+import { semAcentos } from './nomes'
+
 /**
  * Endereço do site de cada anfitrião: `anfitrioes.pt/r/<slug>`.
  *
@@ -28,10 +30,10 @@ export const SLUG_MAX = 40
 export function normalizarSlug(valor: unknown): string | null {
   if (typeof valor !== 'string') return null
 
-  const limpo = valor
+  const limpo = semAcentos(valor)
     .trim()
     .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '') // acentos: "praça" → "praca"
+    // acentos: "praça" → "praca"
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
