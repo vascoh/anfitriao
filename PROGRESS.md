@@ -6,6 +6,14 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18d] Stripe — o dinheiro passa a ter rede
+
+- 💳 **Preenchimento da reserva paga (11 testes)** — corre duas vezes de propósito (webhook **e** página de confirmação, para o hóspede não esperar), portanto a idempotência é a propriedade central: a segunda chamada devolve a mesma reserva, e uma corrida com o webhook (23505 no `UNIQUE` da sessão) não duplica. Testado também: quem pagou fica **ligado à reserva** (o boletim é por pessoa), metadata incompleta não vira reserva a metade, e o email ao anfitrião não pode fazer falhar a reserva.
+- 🔁 **O pior estado possível tem teste próprio**: datas ocupadas entre o pagamento e a confirmação → reembolso automático e nenhuma reserva. E quando o **reembolso falha** — dinheiro cobrado sem reserva, o único estado que ninguém descobre sozinho — fica no `audit_log` com sessão, `payment_intent`, valor e o erro. Antes era só um `console.error`.
+- 🧾 **Webhook (10 testes)** — os dois bugs de 12/08 ficam presos: um **preço desconhecido não vira Starter** (a conta fica activa porque o pagamento é real, mas o plano e os limites não se inventam, e o caso vai para a auditoria), e **`canceled`/`incomplete` deixam de virar "activo"**. Mais: assinatura inválida recusada, o Clerk sincronizado (é de lá que o middleware lê o estado), o pagamento de hóspede encaminhado sem tocar em contas, e um evento não tratado a responder 200 — devolver erro faria o Stripe repetir para sempre.
+- 🔧 **Duas armadilhas de teste resolvidas**: `vi.hoisted` para o estado dos duplos (as fábricas de `vi.mock` sobem para o topo do ficheiro), e uma **chave de fachada** para o módulo real do Stripe — queria-se o ficheiro verdadeiro, porque é lá que vivem o `priceToPlano` e o `estadoDaSubscricao` que se estão a testar; substituí-lo todo testaria o duplo.
+- ✅ **832 testes** (21 novos). Rotas com teste: 12 → 13 em 47, e o caminho do dinheiro está coberto ponta a ponta. Typecheck 0, lint 0, build OK.
+
 ### [2026-08-18c] Crons — o que corre sozinho de madrugada passa a ter rede
 
 - 🧾 **Cron de faturação (10 testes)** — emite só o que fez checkout, com valor e não cancelado; **uma casa inteira dá uma chamada, não três** (senão a segunda e a terceira contavam como falhas num relatório onde nada falhou); só contas com emissão automática, ativas e com a AT ligada; uma falha não trava as outras; e **sem o segredo do cron não faz nada**.
