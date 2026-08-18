@@ -6,6 +6,16 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18b] Testes onde um erro custa dinheiro: check-in, SIBA e faturação
+
+As três áreas onde eu tinha dito que o risco sério se concentra passam a ter rede.
+
+- 🔑 **Check-in (17 testes)** — a janela de acesso fecha depois de submetido e depois de a estadia acabar, mas continua no dia do check-out; o `owner_id` não vai no payload; o POST recusa 410 fora da janela; acompanhantes viram fichas próprias e linhas em branco não criam fichas vazias; **num grupo não se volta a ligar quem reservou ao quarto**, que era a terceira porta do bug dos boletins.
+- 🛂 **SIBA (10 testes)** — um boletim por pessoa; recusa entregar quando faltam fichas **e diz quantas**; recusa sem país de residência; a **prova fica guardada nos dois casos**, sucesso e recusa, com o hash do que foi enviado e a resposta em bruto; o número de ficheiro continua a série da propriedade.
+- 🧾 **Faturação (12 testes)** — não emite duas vezes (transição de estado condicionada), não emite canceladas nem valor zero nem reservas de outro anfitrião; uma falha do fornecedor deixa `falhou` com o erro, não `emitida`; o **NIF vem do campo do NIF, nunca do documento**; a nota de crédito só anula o que foi emitido.
+- 🔍 **Dois enganos meus apanhados pelo duplo de base de dados**, que respeita filtros: um fixture sem `owner_id` nas ligações (a rota filtra por ele — o duplo lasso teria escondido) e um adaptador de faturação inventado. O adaptador real tem **um** método `emitir` que despacha pelo `tipo` do documento; o meu duplo tinha um `notaCredito` que não existe. O produto estava certo — o teste é que testava uma API imaginária.
+- ✅ **780 testes** (39 novos). Rotas com teste: 3 → 9 em 47. Typecheck 0, lint 0, build OK.
+
 ### [2026-08-18] Testes das rotas e página de saúde — tapar o buraco onde os bugs vivem
 
 **O buraco, medido**: 47 rotas de API, **44 sem um único teste**. As bibliotecas puras têm 43 ficheiros de teste e deram pouquíssimos bugs; praticamente todos os ~30 desta série viviam nas rotas e nas páginas — a camada sem rede.
