@@ -54,6 +54,8 @@ export default function DocumentosPage() {
   const [sibaTo, setSibaTo] = useState(today())
   const [sibaExporting, setSibaExporting] = useState(false)
   const [sibaSubmitting, setSibaSubmitting] = useState(false)
+  const [sibaMarcando, setSibaMarcando] = useState(false)
+  const [exportou, setExportou] = useState(false)
   const [sibaSubmitMsg, setSibaSubmitMsg] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
 
   async function exportSIBA() {
@@ -71,8 +73,41 @@ export default function DocumentosPage() {
       a.href = URL.createObjectURL(blob)
       a.download = `siba-${sibaFrom}-${sibaTo}.csv`
       a.click()
+      setExportou(true)
     } finally {
       setSibaExporting(false)
+    }
+  }
+
+  /* Fecha o circuito do caminho que está em uso: quem exporta o CSV e o
+   * carrega no portal precisa de o poder registar, senão a app continua a
+   * dizer que está tudo por comunicar. */
+  async function marcarEntregue() {
+    setSibaMarcando(true)
+    setSibaSubmitMsg(null)
+    try {
+      const res = await fetch('/api/siba-marcar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: sibaFrom, to: sibaTo }),
+      })
+      const json = await res.json().catch(() => ({})) as {
+        error?: string; marcadas?: number; pessoas?: number
+      }
+      if (!res.ok) {
+        setSibaSubmitMsg({ tipo: 'erro', texto: json.error ?? 'Não foi possível marcar.' })
+        return
+      }
+      if (!json.marcadas) {
+        setSibaSubmitMsg({ tipo: 'ok', texto: 'Não há reservas neste período.' })
+        return
+      }
+      setSibaSubmitMsg({
+        tipo: 'ok',
+        texto: `${json.marcadas} ${json.marcadas === 1 ? 'reserva marcada' : 'reservas marcadas'} como entregues no portal (${json.pessoas} ${json.pessoas === 1 ? 'boletim' : 'boletins'}).`,
+      })
+    } finally {
+      setSibaMarcando(false)
     }
   }
 
@@ -233,6 +268,13 @@ export default function DocumentosPage() {
               {sibaSubmitting ? 'A entregar...' : 'Entregar ao SIBA'}
             </button>
           </div>
+          {exportou && (
+            <button onClick={marcarEntregue} disabled={sibaMarcando}
+              className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400 disabled:opacity-40 active:opacity-80 transition-opacity">
+              <Check className="h-4 w-4" />
+              {sibaMarcando ? 'A marcar...' : 'Já carreguei no portal — marcar como comunicados'}
+            </button>
+          )}
           {sibaSubmitMsg && (
             <p className={`text-xs rounded-lg px-3 py-2 ${sibaSubmitMsg.tipo === 'ok' ? 'text-emerald-700 bg-emerald-500/10 border border-emerald-500/20' : 'text-destructive bg-destructive/5 border border-destructive/20'}`}>
               {sibaSubmitMsg.texto}

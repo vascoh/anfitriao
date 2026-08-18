@@ -6,10 +6,11 @@ import Link from 'next/link'
 import {
   ArrowLeft, Users, MapPin, Phone, Mail, Edit2,
   CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink,
-  MessageCircle, CreditCard, Check, Link2
+  MessageCircle, CreditCard, Check, Link2, ShieldCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { fmtDate, fmtMoney, nights, uuid } from '@/lib/utils'
+import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
+import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
@@ -379,6 +380,33 @@ export default function ReservaDetailPage() {
 
         {/* Guest */}
         <Section title="Hóspedes">
+          {(() => {
+            /* O estado da comunicação existia na base desde o início e não
+             * aparecia em ecrã nenhum: o anfitrião não tinha como saber, no
+             * dia seguinte, o que tinha sido comunicado. É a obrigação legal
+             * mais cara desta aplicação — 100 a 2.000 € por boletim em falta. */
+            const siba = estadoSiba(booking)
+            const atrasado = estaEmAtraso(booking, today())
+            const cor = siba.tom === 'bom'
+              ? 'text-emerald-700 dark:text-emerald-400'
+              : atrasado || siba.tom === 'mau'
+                ? 'text-destructive'
+                : 'text-muted-foreground'
+            return (
+              <div className="px-4 py-2.5 border-b border-border flex items-start gap-2">
+                <ShieldCheck className={`h-4 w-4 shrink-0 mt-0.5 ${cor}`} />
+                <div className="min-w-0">
+                  <p className={`text-xs font-semibold ${cor}`}>
+                    Boletim de alojamento: {siba.texto.toLowerCase()}
+                    {atrasado && ' — fora do prazo de 24 h'}
+                  </p>
+                  {siba.detalhe && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">{siba.detalhe}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
           {boletins && boletins.porRegistar > 0 && (
             <div className="px-4 py-3 border-b border-border bg-amber-500/5">
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">

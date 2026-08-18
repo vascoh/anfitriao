@@ -218,11 +218,21 @@ export interface Booking {
   nota_credito_id_externo?: string | null
   nota_credito_numero?: string | null
   nota_credito_emitida_em?: string | null
-  /** Estado da submissão automática à AIMA/SIBA (ver lib/siba-api.ts) */
-  siba_status?: 'nao_submetido' | 'a_processar' | 'submetido' | 'falhou'
+  /**
+   * Estado da comunicação do boletim (ver `lib/estado-siba.ts`, que traduz
+   * isto para linguagem de anfitrião).
+   *
+   * Havia aqui um quarto valor, `a_processar`, que nunca foi escrito por
+   * código nenhum: a submissão é síncrona, responde sim ou não. Um estado que
+   * o modelo declara e nada produz é uma promessa de comportamento que não
+   * existe — e o mapa de rótulos que o esquecesse mostrava uma etiqueta vazia.
+   */
+  siba_status?: 'nao_submetido' | 'submetido' | 'falhou'
   siba_submitted_at?: string | null
   siba_reference?: string | null
   siba_error?: string | null
+  /** Por que caminho foi comunicado: web service da AIMA ou CSV no portal. */
+  siba_metodo?: 'webservice' | 'csv' | null
 }
 
 // --- Sistema de preços ---

@@ -95,6 +95,7 @@ CREATE TABLE public.bookings (
   siba_submitted_at timestamp with time zone,
   siba_reference text,
   siba_error text,
+  siba_metodo text,
   fatura_estado text NOT NULL DEFAULT 'nao_emitida'::text,
   fatura_id_externo text,
   fatura_numero text,

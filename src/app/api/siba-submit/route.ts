@@ -287,14 +287,24 @@ export async function POST(req: NextRequest) {
         erro: resposta.sucesso ? undefined : explicarFalha(resposta),
       })
 
+      /* Uma tentativa falhada não apaga a entrega anterior. A versão de antes
+       * punha `siba_submitted_at` e `siba_reference` a null em qualquer falha:
+       * bastava uma retentativa infeliz para a reserva deixar de ter prova de
+       * uma comunicação que **tinha sido feita**, e o anfitrião comunicava a
+       * mesma estadia outra vez. A prova acumula-se; só o estado é que muda. */
       const { error: updateError } = await supabase
         .from('bookings')
-        .update({
-          siba_status: resposta.sucesso ? 'submetido' : 'falhou',
-          siba_submitted_at: resposta.sucesso ? agora : null,
-          siba_reference: resposta.sucesso ? resposta.hashEnvio.slice(0, 16) : null,
-          siba_error: resposta.sucesso ? null : explicarFalha(resposta),
-        })
+        .update(
+          resposta.sucesso
+            ? {
+                siba_status: 'submetido',
+                siba_metodo: 'webservice',
+                siba_submitted_at: agora,
+                siba_reference: resposta.hashEnvio.slice(0, 16),
+                siba_error: null,
+              }
+            : { siba_status: 'falhou', siba_error: explicarFalha(resposta) },
+        )
         .eq('id', p.booking_id)
         .eq('owner_id', userId)
 

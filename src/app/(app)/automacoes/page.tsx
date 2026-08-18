@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Plus, Trash2, Zap, Eye } from 'lucide-react'
 import { fetchAutomations } from '@/lib/fetcher'
+import { fmtDate } from '@/lib/utils'
 import { TRIGGER_LABEL, renderAutomationMessage, PREVIEW_VARS } from '@/lib/automations'
 import type { Automation, AutomationTrigger } from '@/lib/types'
 
@@ -14,6 +15,9 @@ export default function AutomacoesPage() {
   const { user } = useUser()
   const ownerId = user?.id
   const [automations, setAutomations] = useState<Automation[]>([])
+  /* O que já saiu, por automação. Sem isto o anfitrião não tinha como
+   * responder a "o hóspede diz que não recebeu o código". */
+  const [historico, setHistorico] = useState<Record<string, { enviados: number; ultimo: string | null }>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -25,6 +29,10 @@ export default function AutomacoesPage() {
   useEffect(() => {
     if (!ownerId) return
     fetchAutomations().then(a => { setAutomations(a); setLoading(false) })
+    fetch('/api/automacoes/historico')
+      .then(r => (r.ok ? r.json() : {}))
+      .then(setHistorico)
+      .catch(() => {})
   }, [ownerId])
 
   async function handleAdd() {
@@ -159,6 +167,19 @@ export default function AutomacoesPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{a.nome}</p>
                   <p className="text-xs text-muted-foreground">{TRIGGER_LABEL[a.trigger_tipo]} · email ao hóspede</p>
+                  {(() => {
+                    const h = historico[a.id]
+                    if (!h) return null
+                    if (h.enviados === 0) {
+                      return <p className="text-[11px] text-muted-foreground/70 mt-0.5">ainda não enviou nenhuma vez</p>
+                    }
+                    return (
+                      <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                        {h.enviados} {h.enviados === 1 ? 'envio' : 'envios'}
+                        {h.ultimo && ` · último a ${fmtDate(h.ultimo.slice(0, 10))}`}
+                      </p>
+                    )
+                  })()}
                 </div>
                 <button onClick={() => toggleAtivo(a)}
                   className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors ${a.ativo ? 'bg-primary' : 'bg-muted'}`}>

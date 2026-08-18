@@ -149,7 +149,24 @@ onde um hóspede real desiste.
 
 ---
 
-## 6. SIBA — só quando tiveres as credenciais
+## 6. SIBA
+
+### Sem credenciais de web service — o caminho de hoje
+
+Enquanto o web service não estiver ligado, a comunicação faz-se à mão e continua
+a valer legalmente:
+
+- [ ] Em `/documentos`, escolher o período e **Exportar CSV**.
+- [ ] Carregar o ficheiro no portal SIBA.
+- [ ] De volta à app, carregar em **"Já carreguei no portal — marcar como
+      comunicados"**.
+
+O último passo não é cosmético: sem ele as reservas ficam eternamente por
+comunicar, o `/hoje` acusa boletins fora do prazo que já foram entregues, e um
+alerta que mente todos os dias deixa de ser lido. A marcação guarda o resumo
+(SHA-256) do ficheiro entregue — a prova é o conteúdo, não o carregar do botão.
+
+### Com credenciais — envio automático
 
 **Como as obter** (1–3 dias úteis, começa por aqui se quiseres incluir):
 

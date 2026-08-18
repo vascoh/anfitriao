@@ -10,6 +10,7 @@ import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/li
 import { transitionBooking, canTransition, unidadesReservaveis } from '@/lib/reservations'
 import type { Booking, BookingStatus, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
+import { estaEmAtraso } from '@/lib/estado-siba'
 import { OnboardingCard } from '@/components/onboarding-card'
 
 function useTodayLabel() {
@@ -244,7 +245,19 @@ export default function HojePage() {
       .reduce((sum, b) => sum + b.preco_total, 0)
   }, [bookings, t])
 
-  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0
+  /* Boletins fora do prazo legal das 24 h. É o alerta mais caro que faltava
+   * aqui: 100 a 2.000 € por boletim, e o estado estava guardado na base sem
+   * nunca chegar a ecrã nenhum. Só entram estadias reais — uma reserva
+   * cancelada não tem boletim a comunicar. */
+  const boletinsEmAtraso = useMemo(() =>
+    bookings
+      .filter(b => !['cancelada', 'no_show', 'pendente'].includes(b.estado))
+      .filter(b => estaEmAtraso(b, t))
+      .slice(0, 5),
+    [bookings, t]
+  )
+
+  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0 || boletinsEmAtraso.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
   const semPropriedades = loaded && props.length === 0
 
@@ -397,6 +410,19 @@ export default function HojePage() {
                   </p>
                 </div>
                 <ArrowRight className="h-3.5 w-3.5 text-orange-600 mt-0.5 shrink-0" />
+              </Link>
+            ))}
+            {boletinsEmAtraso.map(b => (
+              <Link key={`siba-${b.id}`} href="/documentos"
+                className="flex items-start gap-3 bg-red-50 border-b border-red-100 px-4 lg:px-8 py-3 active:bg-red-100 transition-colors">
+                <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-destructive">Boletim por comunicar ao SIBA</p>
+                  <p className="text-xs text-destructive/75 truncate">
+                    {guestName(guests, b.hospede_id)} · entrou {fmtDate(b.check_in)} · prazo de 24 h ultrapassado
+                  </p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
               </Link>
             ))}
           </div>
