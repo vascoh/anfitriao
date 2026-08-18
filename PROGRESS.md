@@ -6,6 +6,16 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18h] Que verificações existem num sítio e não noutro?
+
+Matriz de todas as 47 rotas — sessão, limitador, filtro por dono no DELETE, auditoria — e depois olhar para os buracos. Nenhum era uma decisão: eram sítios por onde a regra não passou.
+
+- 📝 **Apagar uma reserva não ficava registado.** Apagar uma **propriedade** vai para o `audit_log` desde julho; a reserva não — e leva com ela o histórico, os pagamentos registados e a ligação aos hóspedes. Passa a registar datas, estado, valor e alojamento.
+- 🚦 **Três rotas que gastam dinheiro ou incomodam terceiros não tinham teto**, enquanto rotas equivalentes tinham: `notify-confirmation` (manda email de um domínio cuja reputação é partilhada por todos os anfitriões), `ical-sync` manual (**cada chamada dispara um pedido por feed ao Airbnb e ao Booking** — carregar o botão repetidamente pode fazer com que limitem o feed *do anfitrião*, um castigo que ele leva sem perceber porquê) e `upload` (8 MB por ficheiro, guardados para sempre e pagos por nós).
+- 🧪 **Três guardas estruturais novas**: quem envia email, chama IA, guarda ficheiros ou chama terceiros tem limitador (com os crons como exceção justificada — correm uma vez por dia com segredo); o que elimina entidades principais regista; e **todo o `DELETE` autenticado filtra por dono** ou delega em código que o faz. Esta última não corrigiu nada — nenhuma rota falhava — mas é o erro mais fácil de cometer numa rota nova e o mais caro de descobrir depois.
+- ✅ **Verificado que apanham**: com as quatro correções revertidas, as guardas acusam `ical-sync`, `upload`, `notify-confirmation` e `bookings`.
+- ✅ 842 testes, typecheck 0, lint 0, build OK.
+
 ### [2026-08-18g] Varrimento: que outras correções ficaram a meio?
 
 Depois de descobrir que o boletim por pessoa só tinha sido aplicado ao web service e não ao CSV, verifiquei **cada correção desta série contra todos os caminhos**.

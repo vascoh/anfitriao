@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { Booking } from '@/lib/types'
 import { canUpsertRow, ownsProperty } from '@/lib/ownership'
+import { logAudit } from '@/lib/audit'
 
 const supabase = createAdminClient()
 
@@ -77,10 +78,38 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
 
+  /* Guardar o que se vai apagar, para o registo dizer alguma coisa.
+   *
+   * Apagar uma reserva é irreversível e leva com ela o histórico, os
+   * pagamentos registados e a ligação aos hóspedes. Apagar uma **propriedade**
+   * já ficava no `audit_log` desde julho; apagar uma reserva não — e é a
+   * mesma classe de ação. A assimetria não tinha razão de ser. */
+  const { data: existente } = await supabase
+    .from('bookings')
+    .select('check_in, check_out, preco_total, estado, hospede_id, propriedade_id')
+    .eq('id', id)
+    .eq('owner_id', userId)
+    .maybeSingle()
+
   const { error } = await supabase.from('bookings').delete().eq('id', id).eq('owner_id', userId)
   if (error) {
     console.error('[DELETE /api/bookings]', error.message)
     return NextResponse.json({ error: 'Erro ao eliminar.' }, { status: 500 })
+  }
+
+  if (existente) {
+    await logAudit({
+      actorId: userId,
+      entidade: 'booking',
+      entidadeId: id,
+      acao: 'eliminada',
+      detalhes: {
+        datas: `${existente.check_in} → ${existente.check_out}`,
+        estado: existente.estado,
+        valor: existente.preco_total,
+        propriedade_id: existente.propriedade_id,
+      },
+    })
   }
 
   return NextResponse.json({ ok: true })

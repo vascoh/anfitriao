@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { fetchIcalText } from '@/lib/ical-fetch'
+import { checkRateLimit } from '@/lib/rate-limit'
 import {
   reconciliarPropriedade, uidDeOrigem,
   type ReservaImportada, type EventoDoFeed,
@@ -234,6 +235,19 @@ async function syncProperty(
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  /* Cada chamada dispara um pedido por feed a servidores de terceiros. Sem
+   * teto, um botão carregado repetidamente pode fazer o Airbnb ou o Booking
+   * limitarem o **feed do anfitrião** — um castigo que ele leva sem perceber
+   * porquê. O cron diário continua a passar por aqui sem limitação, porque
+   * usa o outro handler. */
+  const rl = checkRateLimit(`ical-sync:${userId}`, 12, 60_000)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Demasiadas sincronizações seguidas. Espera um minuto.' },
+      { status: 429 },
+    )
+  }
 
   try {
     const body = await req.json()

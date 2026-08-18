@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById } from '@/lib/db-admin'
 import { emailService } from '@/lib/email'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { nights } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  /* Manda um email a um hóspede: sem teto, um clique repetido vira spam
+   * enviado do nosso domínio, o que gasta reputação de envio que é partilhada
+   * por todos os anfitriões. As outras rotas que enviam já têm limitador. */
+  const rl = checkRateLimit(`notify-confirmation:${userId}`, 20, 60_000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
+  }
 
   const { bookingId } = await req.json()
   if (!bookingId) return NextResponse.json({ ok: false, error: 'missing bookingId' }, { status: 400 })
