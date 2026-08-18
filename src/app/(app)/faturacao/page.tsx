@@ -7,6 +7,7 @@ import {
   Receipt, ShieldCheck, CircleAlert, Download, ExternalLink, Loader2, Ban, Zap,
 } from 'lucide-react'
 import { fmtDate, fmtMoney, today } from '@/lib/utils'
+import { emissaoPresa } from '@/lib/faturacao/estado-fatura'
 
 /**
  * Faturação.
@@ -37,6 +38,7 @@ interface LinhaReserva {
   estado: string
   preco_total: number
   fatura_estado: 'nao_emitida' | 'a_emitir' | 'emitida' | 'falhou'
+  fatura_reservada_em?: string | null
   fatura_numero: string | null
   fatura_url: string | null
   fatura_total: number | null
@@ -587,7 +589,7 @@ function Lista({
                       casa inteira · {r.quartos} quartos
                     </span>
                   )}
-                  <Estado estado={anulada ? 'anulada' : r.fatura_estado} />
+                  <Estado estado={anulada ? 'anulada' : emissaoPresa(r) ? 'presa' : r.fatura_estado} />
                 </div>
 
                 {r.fatura_numero && (
@@ -600,6 +602,19 @@ function Lista({
 
                 {r.fatura_erro && (
                   <p className="mt-1 text-xs text-red-600 dark:text-red-400">{r.fatura_erro}</p>
+                )}
+
+                {emissaoPresa(r) && (
+                  /* Antes ficava "A emitir" com uma roda a girar, para sempre.
+                   * A app não pode decidir sozinha: se a fatura chegou a sair
+                   * no fornecedor, emitir outra duplica um documento legal que
+                   * depois só se anula por nota de crédito. Quem tem como
+                   * verificar é o anfitrião, na conta dele. */
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                    Esta emissão ficou a meio. Vê na tua conta de faturação se a fatura chegou a
+                    sair: se saiu, avisa-nos para a ligarmos a esta reserva; se não saiu, podes
+                    emitir outra vez daqui a pouco.
+                  </p>
                 )}
               </div>
 
@@ -648,12 +663,13 @@ function Lista({
   )
 }
 
-function Estado({ estado }: { estado: LinhaReserva['fatura_estado'] | 'anulada' }) {
+function Estado({ estado }: { estado: LinhaReserva['fatura_estado'] | 'anulada' | 'presa' }) {
   const mapa = {
     emitida: { texto: 'Emitida', classe: 'text-emerald-600 dark:text-emerald-400', Icon: ShieldCheck },
     anulada: { texto: 'Anulada', classe: 'text-muted-foreground', Icon: Ban },
     falhou: { texto: 'Falhou', classe: 'text-red-600 dark:text-red-400', Icon: CircleAlert },
     a_emitir: { texto: 'A emitir', classe: 'text-muted-foreground', Icon: Loader2 },
+    presa: { texto: 'Emissão a meio', classe: 'text-red-600 dark:text-red-400', Icon: CircleAlert },
     nao_emitida: { texto: 'Por emitir', classe: 'text-amber-600 dark:text-amber-400', Icon: Receipt },
   } as const
 

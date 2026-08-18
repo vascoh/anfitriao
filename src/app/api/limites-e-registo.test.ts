@@ -134,3 +134,26 @@ describe('quem envia avisos automáticos envia uma vez só', () => {
     expect(semLibertar).toEqual([])
   })
 })
+
+/**
+ * Sexta pergunta da série: **o que fica para trás quando falha a meio?**
+ *
+ * Uma variante da mesma pergunta é o que fica para trás quando *corre bem*: um
+ * DELETE que a base propaga em cascata apaga muito mais do que aquilo em que o
+ * anfitrião carregou. `bookings.propriedade_id` tem ON DELETE CASCADE, portanto
+ * apagar um alojamento leva com ele as reservas — e o número da fatura, o ATCUD
+ * e a data de comunicação ao SIBA vivem nessas linhas.
+ */
+describe('eliminações que arrastam registos com prazo legal', () => {
+  it('apagar um alojamento verifica primeiro o que vai atrás', () => {
+    const rota = rotas().find(r => r.nome === 'properties')!
+    const corpo = rota.codigo.slice(rota.codigo.indexOf('export async function DELETE'))
+
+    // Tem de olhar para as reservas antes de apagar, e recusar se houver
+    // documentos que a lei manda conservar.
+    expect(corpo).toMatch(/from\('bookings'\)/)
+    expect(corpo).toMatch(/fatura_numero/)
+    expect(corpo).toMatch(/siba_status/)
+    expect(corpo).toMatch(/409/)
+  })
+})

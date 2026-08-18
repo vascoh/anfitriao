@@ -147,6 +147,40 @@ export async function DELETE(req: NextRequest) {
 
   const { data: existing } = await supabase.from('properties').select('nome').eq('id', id).maybeSingle()
 
+  /* O que vai atrás sem ninguém dizer.
+   *
+   * `bookings.propriedade_id` tem ON DELETE CASCADE: apagar um alojamento
+   * apaga **todas as reservas dele** — e com elas o número da fatura, o ATCUD
+   * e a data de comunicação ao SIBA, que vivem nas linhas das reservas. A
+   * fatura continua a existir no fornecedor certificado e a coima por não
+   * conseguir apresentar registos continua a existir na lei; o que desaparece
+   * é a única ligação entre as duas coisas.
+   *
+   * Documentos com prazo legal de conservação não se apagam com dois toques
+   * num botão. Quem quer deixar de ver um alojamento desativa-o — a app já
+   * trata alojamentos inativos como se não existissem, sem perder nada. */
+  const { data: comHistoria } = await supabase
+    .from('bookings')
+    .select('id, fatura_numero, siba_status')
+    .eq('propriedade_id', id)
+    .eq('owner_id', userId)
+
+  const comFatura = (comHistoria ?? []).filter(b => b.fatura_numero).length
+  const comBoletim = (comHistoria ?? []).filter(b => b.siba_status === 'submetido').length
+
+  if (comFatura > 0 || comBoletim > 0) {
+    const partes = [
+      comFatura > 0 ? `${comFatura} ${comFatura === 1 ? 'fatura emitida' : 'faturas emitidas'}` : null,
+      comBoletim > 0 ? `${comBoletim} ${comBoletim === 1 ? 'boletim comunicado' : 'boletins comunicados'}` : null,
+    ].filter(Boolean).join(' e ')
+
+    return NextResponse.json({
+      error: `Este alojamento tem ${partes}. Esses registos têm prazo legal de conservação e apagá-lo levava-os com ele. Desativa-o em vez de o eliminar: deixa de aparecer em todo o lado e não se perde nada.`,
+    }, { status: 409 })
+  }
+
+  const reservasQueVaoAtras = (comHistoria ?? []).length
+
   const { error } = await supabase.from('properties').delete().eq('id', id).eq('owner_id', userId)
   if (error) {
     console.error('[DELETE /api/properties]', error.message)
@@ -158,7 +192,9 @@ export async function DELETE(req: NextRequest) {
     entidade: 'property',
     entidadeId: id,
     acao: 'eliminada',
-    detalhes: { nome: existing?.nome ?? null },
+    // Fica o que foi arrastado: sem isto, o registo diz que se apagou um
+    // alojamento e cala que se apagaram doze reservas com ele.
+    detalhes: { nome: existing?.nome ?? null, reservas_eliminadas: reservasQueVaoAtras },
   })
 
   return NextResponse.json({ ok: true })

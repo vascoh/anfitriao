@@ -50,7 +50,24 @@ async function handleEvent(event: Stripe.Event) {
       const session = event.data.object as Stripe.Checkout.Session
       if (session.mode === 'payment' && event.account) {
         const result = await fulfillCheckoutSession(event.account, session.id)
-        if (!result.ok) console.error('[webhook] fulfillCheckoutSession falhou', session.id, result.reason)
+        if (!result.ok) {
+          console.error('[webhook] fulfillCheckoutSession falhou', session.id, result.reason)
+          /* O hóspede pagou. Se a reserva não chegou a ser criada por uma falha
+           * passageira — a base indisponível, um tempo esgotado — responder
+           * "recebido" ao Stripe fecha a porta: o Stripe só repete o evento
+           * quando não lhe respondem bem, e a única memória de que houve um
+           * pagamento sem reserva ficava numa linha de consola que ninguém lê.
+           * Dinheiro cobrado e calendário vazio, em silêncio.
+           *
+           * Falhar aqui de propósito faz o Stripe voltar durante três dias, e
+           * a criação é idempotente pela sessão — repetir não duplica nada.
+           * Os motivos definitivos (metadados inválidos, conflito já
+           * reembolsado) não entram: repeti-los seria pedir ao Stripe que
+           * tentasse para sempre uma coisa que nunca vai correr bem. */
+          if (result.reason === 'error') {
+            throw new Error(`fulfillment falhou para a sessão ${session.id}`)
+          }
+        }
         break
       }
       if (session.mode !== 'subscription') break

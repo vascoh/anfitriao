@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
 import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
@@ -80,7 +81,17 @@ export default function PropriedadeDetailPage() {
       setTimeout(() => setConfirmDelete(false), 3000)
       return
     }
-    await fetch(`/api/properties?id=${id}`, { method: 'DELETE' })
+    /* A resposta era deitada fora e a página seguia para a lista: uma recusa
+     * do servidor — o alojamento tem faturas ou boletins — parecia uma
+     * eliminação feita, e o anfitrião só percebia que não tinha acontecido
+     * nada ao ver o alojamento ainda lá. */
+    const res = await fetch(`/api/properties?id=${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({})) as { error?: string }
+      setConfirmDelete(false)
+      toast.error(json.error ?? 'Não foi possível eliminar este alojamento.', { duration: 10_000 })
+      return
+    }
     router.push('/propriedades')
   }
 

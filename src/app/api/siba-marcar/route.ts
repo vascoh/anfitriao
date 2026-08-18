@@ -53,6 +53,41 @@ export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const agora = new Date().toISOString()
 
+  /* A prova primeiro, a marcação depois.
+   *
+   * Guarda-se o resumo do ficheiro entregue para se poder demonstrar mais
+   * tarde **o que** foi comunicado, e não apenas que alguém carregou num
+   * botão. `numero_ficheiro` fica a 0 porque a numeração pertence ao protocolo
+   * do web service; aqui quem numera é o portal.
+   *
+   * A ordem não é indiferente: marcar antes de guardar a prova deixava, se a
+   * segunda escrita falhasse, um conjunto de reservas a dizerem-se comunicadas
+   * sem nada que o sustente — precisamente o estado que não serve de nada numa
+   * fiscalização, e que ninguém iria procurar porque a app diz que está feito.
+   * Assim, uma falha deixa tudo por comunicar: recuperável carregando outra
+   * vez, que é como deve ser. */
+  const csv = buildSibaCsv(rows)
+  const { error: erroProva } = await supabase.from('siba_submissoes').insert({
+    owner_id: userId,
+    property_id: null,
+    booking_ids: ids,
+    numero_ficheiro: 0,
+    hash_envio: createHash('sha256').update(csv, 'utf-8').digest('hex'),
+    sucesso: true,
+    codigo_retorno: 'CSV',
+    mensagem: `Entrega manual no portal SIBA (${from} a ${to})`,
+    resposta_bruta: null,
+    tentativas: 1,
+  })
+
+  if (erroProva) {
+    console.error('[siba-marcar] prova', erroProva.message)
+    return NextResponse.json(
+      { error: 'Não foi possível guardar o comprovativo. Nada foi marcado — tenta outra vez.' },
+      { status: 500 },
+    )
+  }
+
   const { error: erroEscrita } = await supabase
     .from('bookings')
     .update({
@@ -67,25 +102,6 @@ export async function POST(req: NextRequest) {
   if (erroEscrita) {
     return NextResponse.json({ error: erroEscrita.message }, { status: 500 })
   }
-
-  /* A prova é o conteúdo, não a marcação: guarda-se o resumo do ficheiro que
-   * foi entregue, para que mais tarde se possa demonstrar **o que** foi
-   * comunicado e não apenas que alguém carregou num botão. `numero_ficheiro`
-   * fica a 0 porque a numeração pertence ao protocolo do web service; aqui
-   * quem numera é o portal. */
-  const csv = buildSibaCsv(rows)
-  await supabase.from('siba_submissoes').insert({
-    owner_id: userId,
-    property_id: null,
-    booking_ids: ids,
-    numero_ficheiro: 0,
-    hash_envio: createHash('sha256').update(csv, 'utf-8').digest('hex'),
-    sucesso: true,
-    codigo_retorno: 'CSV',
-    mensagem: `Entrega manual no portal SIBA (${from} a ${to})`,
-    resposta_bruta: null,
-    tentativas: 1,
-  })
 
   await logAudit({
     actorId: userId,

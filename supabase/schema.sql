@@ -103,6 +103,7 @@ CREATE TABLE public.bookings (
   fatura_url text,
   fatura_total numeric(10,2),
   fatura_emitida_em timestamp with time zone,
+  fatura_reservada_em timestamp with time zone,
   fatura_erro text,
   nota_credito_id_externo text,
   nota_credito_numero text,

@@ -223,3 +223,56 @@ describe('emitirNotaCredito', () => {
     expect(pedidos).toHaveLength(0)
   })
 })
+
+/**
+ * Sexta pergunta da série: **o que fica para trás quando falha a meio?**
+ *
+ * A reserva de estado protegia contra emissão dupla, mas nada a libertava: uma
+ * falha entre reservar e guardar o resultado deixava a reserva em `a_emitir`
+ * para sempre — o botão a responder "aguarda" durante meses e o cron a saltá-la
+ * por a confundir com uma corrida normal.
+ */
+describe('emissões que ficaram a meio', () => {
+  it('uma emissão a decorrer diz para aguardar', async () => {
+    tabelas.bookings = [reserva({
+      fatura_estado: 'a_emitir',
+      fatura_reservada_em: new Date().toISOString(),
+    })]
+    const r = await emitirFaturaDaReserva('user_1', 'b1')
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.motivo).toBe('a_emitir')
+  })
+
+  it('uma emissão parada há muito diz outra coisa', async () => {
+    tabelas.bookings = [reserva({
+      fatura_estado: 'a_emitir',
+      fatura_reservada_em: new Date(Date.now() - 60 * 60_000).toISOString(),
+    })]
+    const r = await emitirFaturaDaReserva('user_1', 'b1')
+    expect(r.ok).toBe(false)
+    if (!r.ok) {
+      expect(r.motivo).toBe('presa')
+      // A mensagem manda verificar antes de repetir: a fatura pode ter saído.
+      expect(r.erro).toMatch(/fornecedor/i)
+    }
+  })
+
+  it('a hora da reserva fica guardada ao reservar', async () => {
+    await emitirFaturaDaReserva('user_1', 'b1')
+    const reservou = escritas.find(e => e.dados.fatura_estado === 'a_emitir')
+    expect(reservou?.dados.fatura_reservada_em).toBeTruthy()
+  })
+
+  it('emitida com sucesso, a hora da reserva é limpa', async () => {
+    await emitirFaturaDaReserva('user_1', 'b1')
+    const emitiu = escritas.find(e => e.dados.fatura_estado === 'emitida')
+    expect(emitiu?.dados.fatura_reservada_em).toBeNull()
+  })
+
+  it('recusada pelo fornecedor, também é limpa — senão ficava presa na mesma', async () => {
+    respostaFornecedor = { sucesso: false, erro: 'NIF inválido' }
+    await emitirFaturaDaReserva('user_1', 'b1')
+    const falhou = escritas.find(e => e.dados.fatura_estado === 'falhou')
+    expect(falhou?.dados.fatura_reservada_em).toBeNull()
+  })
+})

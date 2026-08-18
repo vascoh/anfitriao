@@ -2,6 +2,8 @@ import 'server-only'
 import { createAdminClient } from '../supabase'
 import { regraPara, calcularTmt } from '../taxa-turistica'
 import { revelarCampos } from '../campos-sensiveis'
+import { logAudit } from '../audit'
+import { emissaoPresa } from './estado-fatura'
 import { getInvoicingAdapter } from './index'
 import { contaComCredenciais, contaPronta, type ContaFaturacao } from './contas'
 import {
@@ -21,7 +23,8 @@ import type { Booking, Property, Guest } from '../types'
  */
 
 export type MotivoFalha =
-  | 'sem_conta' | 'conta_incompleta' | 'ja_emitida' | 'a_emitir'
+  | 'sem_conta' | 'conta_incompleta' | 'ja_emitida' | 'a_emitir' | 'presa'
+  | 'emitida_sem_registo'
   | 'cancelada' | 'sem_valor' | 'nao_encontrada' | 'sem_permissao' | 'fornecedor'
 
 export interface FalhaEmissao {
@@ -46,6 +49,8 @@ const MENSAGENS: Record<MotivoFalha, string> = {
   conta_incompleta: 'A faturação ainda não está pronta: falta ligar as credenciais da AT.',
   ja_emitida: 'Esta reserva já tem fatura. Uma fatura emitida só se anula por nota de crédito.',
   a_emitir: 'Já está a ser emitida. Aguarda.',
+  presa: 'Ficou uma emissão a meio. Confirma no teu fornecedor de faturação se a fatura chegou a sair antes de tentar outra vez.',
+  emitida_sem_registo: 'A fatura foi emitida no fornecedor mas não conseguimos guardá-la aqui. Aponta o número e fala connosco antes de emitir outra.',
   cancelada: 'Não se emite fatura de uma reserva cancelada.',
   sem_valor: 'A reserva não tem valor registado. Preenche o preço antes de faturar.',
   nao_encontrada: 'Reserva não encontrada.',
@@ -90,7 +95,10 @@ export async function emitirFaturaDaReserva(
 
   const b = booking as Booking
   if (b.fatura_estado === 'emitida') return falha('ja_emitida', 409)
-  if (b.fatura_estado === 'a_emitir') return falha('a_emitir', 409)
+  // Uma emissão parada há muito não é uma emissão a decorrer: diz-se outra coisa.
+  if (b.fatura_estado === 'a_emitir') {
+    return falha(emissaoPresa(b) ? 'presa' : 'a_emitir', 409)
+  }
   if (b.estado === 'cancelada' || b.estado === 'no_show') return falha('cancelada', 400)
   if (!b.preco_total || b.preco_total <= 0) return falha('sem_valor', 400)
 
@@ -107,7 +115,11 @@ export async function emitirFaturaDaReserva(
   // Reserva o direito de emitir antes de falar com o fornecedor.
   const { data: reservado } = await supabase
     .from('bookings')
-    .update({ fatura_estado: 'a_emitir', fatura_erro: null })
+    .update({
+      fatura_estado: 'a_emitir',
+      fatura_erro: null,
+      fatura_reservada_em: new Date().toISOString(),
+    })
     .eq('id', bookingId)
     .eq('fatura_estado', b.fatura_estado)
     .select('id')
@@ -132,12 +144,21 @@ export async function emitirFaturaDaReserva(
   if (!resultado.sucesso) {
     await supabase
       .from('bookings')
-      .update({ fatura_estado: 'falhou', fatura_erro: resultado.erro ?? 'Erro desconhecido' })
+      .update({
+        fatura_estado: 'falhou',
+        fatura_erro: resultado.erro ?? 'Erro desconhecido',
+        fatura_reservada_em: null,
+      })
       .eq('id', bookingId)
     return falha('fornecedor', 502, resultado.erro)
   }
 
-  await supabase
+  /* O documento já existe e é legal. Se a escrita aqui falhar, a app fica a
+   * dizer que a fatura está a ser emitida enquanto ela está emitida na AT — e
+   * a tentativa seguinte emitiria uma segunda. Por isso o erro **não** se
+   * ignora: o número vai no erro, que é o sítio onde o anfitrião o consegue
+   * ler e apontar. */
+  const { error: erroRegisto } = await supabase
     .from('bookings')
     .update({
       fatura_estado: 'emitida',
@@ -148,8 +169,25 @@ export async function emitirFaturaDaReserva(
       fatura_total: resultado.total,
       fatura_emitida_em: new Date().toISOString(),
       fatura_erro: null,
+      fatura_reservada_em: null,
     })
     .eq('id', bookingId)
+
+  if (erroRegisto) {
+    console.error('[faturacao] fatura emitida sem registo', bookingId, resultado.numero, erroRegisto.message)
+    await logAudit({
+      actorId: ownerId,
+      entidade: 'booking',
+      entidadeId: bookingId,
+      acao: 'fatura_emitida_sem_registo',
+      detalhes: { numero: resultado.numero, id_externo: resultado.idExterno, erro: erroRegisto.message },
+    })
+    return falha(
+      'emitida_sem_registo',
+      500,
+      `A fatura ${resultado.numero ?? ''} foi emitida no fornecedor mas não conseguimos guardá-la aqui. Aponta este número antes de tentar outra vez.`.trim(),
+    )
+  }
 
   return {
     ok: true,
@@ -193,7 +231,11 @@ export async function emitirFaturaDoGrupo(
   if (grupo.length === 0) return falha('nao_encontrada', 404)
 
   if (grupo.some(b => b.fatura_estado === 'emitida')) return falha('ja_emitida', 409)
-  if (grupo.some(b => b.fatura_estado === 'a_emitir')) return falha('a_emitir', 409)
+  // Mesma distinção do caminho individual: presa não é o mesmo que em curso.
+  const emCurso = grupo.filter(b => b.fatura_estado === 'a_emitir')
+  if (emCurso.length > 0) {
+    return falha(emCurso.every(b => emissaoPresa(b)) ? 'presa' : 'a_emitir', 409)
+  }
 
   const ativas = grupo.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show')
   if (ativas.length === 0) return falha('cancelada', 400)
@@ -215,7 +257,11 @@ export async function emitirFaturaDoGrupo(
   // simultâneo só deixam passar um.
   const { data: reservadas } = await supabase
     .from('bookings')
-    .update({ fatura_estado: 'a_emitir', fatura_erro: null })
+    .update({
+      fatura_estado: 'a_emitir',
+      fatura_erro: null,
+      fatura_reservada_em: new Date().toISOString(),
+    })
     .eq('owner_id', ownerId)
     .eq('reserva_grupo_id', grupoId)
     .eq('fatura_estado', 'nao_emitida')
@@ -233,7 +279,7 @@ export async function emitirFaturaDoGrupo(
   const alojamento = (casa ?? primeiroQuarto) as Property | undefined
   if (!alojamento) {
     await supabase.from('bookings')
-      .update({ fatura_estado: 'nao_emitida' })
+      .update({ fatura_estado: 'nao_emitida', fatura_reservada_em: null })
       .eq('reserva_grupo_id', grupoId).eq('owner_id', ownerId)
     return falha('nao_encontrada', 404, 'Alojamento não encontrado.')
   }
@@ -265,27 +311,62 @@ export async function emitirFaturaDoGrupo(
   if (!resultado.sucesso) {
     await supabase
       .from('bookings')
-      .update({ fatura_estado: 'falhou', fatura_erro: resultado.erro ?? 'Erro desconhecido' })
+      .update({
+        fatura_estado: 'falhou',
+        fatura_erro: resultado.erro ?? 'Erro desconhecido',
+        fatura_reservada_em: null,
+      })
       .eq('owner_id', ownerId)
       .eq('reserva_grupo_id', grupoId)
     return falha('fornecedor', 502, resultado.erro)
   }
 
   const agora = new Date().toISOString()
+
+  /* Primeiro o que é igual para todas, numa escrita só.
+   *
+   * O ciclo escrevia reserva a reserva: uma falha ao terceiro quarto deixava
+   * dois a saber da fatura e os outros presos em 'a_emitir' — uma fatura, duas
+   * versões da verdade, e a soma do painel a não bater certo com o documento.
+   * Feita de uma vez, ou toda a gente do grupo sabe que a fatura existe, ou
+   * ninguém sabe. */
+  const { error: erroRegisto } = await supabase
+    .from('bookings')
+    .update({
+      fatura_estado: 'emitida',
+      fatura_id_externo: resultado.idExterno,
+      fatura_numero: resultado.numero,
+      fatura_atcud: resultado.atcud,
+      fatura_url: resultado.urlPdf,
+      fatura_emitida_em: agora,
+      fatura_erro: null,
+      fatura_reservada_em: null,
+    })
+    .in('id', ativas.map(b => b.id))
+
+  if (erroRegisto) {
+    console.error('[faturacao] fatura de grupo emitida sem registo', grupoId, resultado.numero, erroRegisto.message)
+    await logAudit({
+      actorId: ownerId,
+      entidade: 'booking',
+      entidadeId: grupoId,
+      acao: 'fatura_emitida_sem_registo',
+      detalhes: { numero: resultado.numero, id_externo: resultado.idExterno, erro: erroRegisto.message },
+    })
+    return falha(
+      'emitida_sem_registo',
+      500,
+      `A fatura ${resultado.numero ?? ''} foi emitida no fornecedor mas não conseguimos guardá-la aqui. Aponta este número antes de tentar outra vez.`.trim(),
+    )
+  }
+
+  /* Só depois a parte de cada quarto no total. Se isto falhar, o pior que
+   * acontece é uma linha sem valor guardado — o documento continua a ser um só
+   * e toda a gente sabe qual é. */
   for (const b of ativas) {
     await supabase
       .from('bookings')
-      .update({
-        fatura_estado: 'emitida',
-        fatura_id_externo: resultado.idExterno,
-        fatura_numero: resultado.numero,
-        fatura_atcud: resultado.atcud,
-        fatura_url: resultado.urlPdf,
-        // A parte desta reserva, não o total do documento.
-        fatura_total: b.preco_total,
-        fatura_emitida_em: agora,
-        fatura_erro: null,
-      })
+      .update({ fatura_total: b.preco_total })
       .eq('id', b.id)
   }
 
