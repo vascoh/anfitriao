@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
+import { guardar, eliminar } from '@/lib/guardar'
 import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
@@ -158,7 +159,9 @@ export default function ReservaDetailPage() {
   async function applyTransition(to: BookingStatus, nota?: string) {
     if (!booking || !canTransition(booking.estado, to)) return
     const updated = transitionBooking(booking, to, nota)
-    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    /* Sem olhar para a resposta, uma recusa do servidor aparecia como
+     * "Reserva confirmada" — e a reserva ficava por confirmar. */
+    if (!await guardar('/api/bookings', updated)) return
     setBooking(updated)
     const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
       confirmada: 'Reserva confirmada',
@@ -184,7 +187,7 @@ export default function ReservaDetailPage() {
       notas: note.trim(),
       historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: `Nota: ${note.trim()}` }],
     }
-    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    if (!await guardar('/api/bookings', updated)) return
     setBooking(updated)
     setNote('')
     setShowNote(false)
@@ -206,7 +209,9 @@ export default function ReservaDetailPage() {
         descricao: `Pagamento registado: ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)}`,
       }],
     }
-    await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    // Um pagamento dado como registado e não guardado é a pior das versões:
+    // ninguém volta a conferir um recibo que a app diz ter aceite.
+    if (!await guardar('/api/bookings', updated)) return
     setBooking(updated)
     setPaymentAmount('')
     setPaymentSaved(true)
@@ -228,7 +233,7 @@ export default function ReservaDetailPage() {
   async function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); setTimeout(() => setConfirmDelete(false), 3000); return }
     if (!booking) return
-    await fetch(`/api/bookings?id=${booking.id}`, { method: 'DELETE' })
+    if (!await eliminar(`/api/bookings?id=${booking.id}`)) { setConfirmDelete(false); return }
     router.push('/reservas')
   }
 

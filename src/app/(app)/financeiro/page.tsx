@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Plus, Trash2, Wallet, Download } from 'lucide-react'
 import { fetchExpenses, fetchBookings, fetchProperties, fetchPlatformRates } from '@/lib/fetcher'
+import { eliminar } from '@/lib/guardar'
 import { fmtMoney, fmtDate, today } from '@/lib/utils'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { ordenarComQuartos } from '@/lib/reservations'
@@ -155,7 +156,8 @@ export default function FinanceiroPage() {
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/expenses?id=${id}`, { method: 'DELETE' })
+    // A despesa desaparecia do ecrã e voltava ao recarregar a página.
+    if (!await eliminar(`/api/expenses?id=${id}`)) return
     setExpenses(prev => prev.filter(e => e.id !== id))
   }
 

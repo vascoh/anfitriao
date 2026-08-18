@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, RefreshCw, Download, Plus, Trash2, AlertCircle, CheckCircle2, Rss } from 'lucide-react'
 import { fmtMoney, fmtDate, nights, uuid } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
+import { guardar } from '@/lib/guardar'
 import { generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
@@ -156,7 +157,7 @@ export default function WebsitePage() {
       nome: SOURCE_LABEL[source],
     }
     const updated: Property = { ...prop, ical_feeds: [...(prop.ical_feeds ?? []), feed] }
-    await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    if (!await guardar('/api/properties', updated)) return
     setProps(await fetchProperties())
     setNewFeedUrl(s => ({ ...s, [prop.id]: '' }))
     setNewFeedSource(s => ({ ...s, [prop.id]: '' }))
@@ -164,7 +165,7 @@ export default function WebsitePage() {
 
   async function removeFeed(prop: Property, feedId: string) {
     const updated: Property = { ...prop, ical_feeds: (prop.ical_feeds ?? []).filter(f => f.id !== feedId) }
-    await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    if (!await guardar('/api/properties', updated)) return
     setProps(await fetchProperties())
   }
 

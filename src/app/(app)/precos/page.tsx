@@ -17,6 +17,7 @@ import type {
 } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
+import { guardar, eliminar } from '@/lib/guardar'
 
 // ─── label maps ────────────────────────────────────────────────────────────────
 
@@ -174,7 +175,10 @@ function TabVisao({
       taxa_limpeza: parseFloat(newLimpeza) || 0,
     }
     try {
-      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      /* O `try/catch` só apanhava falhas de rede. Uma recusa do servidor —
+        * limite do plano, sem permissão — chega como resposta normal, e o
+        * ecrã dizia "Preço atualizado" na mesma. */
+      if (!await guardar('/api/properties', updated)) return
       fetch('/api/price-change-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ propertyId: p.id, tipo: 'base_price_changed', descricao: `Preço base alterado de €${p.preco_base} para €${updated.preco_base}`, dadosAnteriores: prev, dadosNovos: { preco_base: updated.preco_base, taxa_limpeza: updated.taxa_limpeza } }) }).catch(() => {})
       showToast('Preço atualizado')
       onReload()
@@ -652,7 +656,7 @@ function TabRegras({
 
   async function handleSave(r: PriceRule) {
     try {
-      await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) })
+      if (!await guardar('/api/price-rules', r)) return
       showToast('Regra guardada')
       onReload()
     } catch {
@@ -664,7 +668,7 @@ function TabRegras({
 
   async function handleDelete(r: PriceRule) {
     try {
-      await fetch(`/api/price-rules?id=${r.id}`, { method: 'DELETE' })
+      if (!await eliminar(`/api/price-rules?id=${r.id}`)) return
       showToast('Regra eliminada')
       onReload()
     } catch {
@@ -674,7 +678,7 @@ function TabRegras({
 
   async function toggleActive(r: PriceRule) {
     try {
-      await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...r, ativo: !r.ativo }) })
+      if (!await guardar('/api/price-rules', { ...r, ativo: !r.ativo })) return
       showToast(r.ativo ? 'Regra desativada' : 'Regra ativada')
       onReload()
     } catch {
@@ -951,7 +955,7 @@ function TabTarifas({
 
   async function handleSave(t: Tarifa) {
     try {
-      await fetch('/api/tarifas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(t) })
+      if (!await guardar('/api/tarifas', t)) return
       showToast('Tarifa guardada')
       onReload()
     } catch { showToast('Erro ao guardar', false) }
@@ -960,7 +964,7 @@ function TabTarifas({
 
   async function handleDelete(t: Tarifa) {
     try {
-      await fetch(`/api/tarifas?id=${t.id}`, { method: 'DELETE' })
+      if (!await eliminar(`/api/tarifas?id=${t.id}`)) return
       showToast('Tarifa eliminada')
       onReload()
     } catch { showToast('Erro ao eliminar', false) }
@@ -968,7 +972,7 @@ function TabTarifas({
 
   async function toggleActive(t: Tarifa) {
     try {
-      await fetch('/api/tarifas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...t, ativo: !t.ativo }) })
+      if (!await guardar('/api/tarifas', { ...t, ativo: !t.ativo })) return
       showToast(t.ativo ? 'Tarifa desativada' : 'Tarifa ativada')
       onReload()
     } catch { showToast('Erro', false) }
@@ -1119,7 +1123,7 @@ function TabPlataformas({
       criado_em: existing?.criado_em ?? new Date().toISOString(),
     }
     try {
-      await fetch('/api/platform-rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rate) })
+      if (!await guardar('/api/platform-rates', rate)) return
       showToast(`${SOURCE_LABEL[plat]} atualizado`)
       onReload()
     } catch { showToast('Erro ao guardar', false) }
@@ -1333,7 +1337,9 @@ function TabMassa({
           const prop = props.find(p => p.id === pid)!
           rule.preco_noite = prop.preco_base + v
         }
-        await fetch('/api/price-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) })
+        // Numa atualização em massa, uma regra recusada em silêncio deixa um
+        // alojamento com o preço antigo enquanto o anfitrião pensa que mudou.
+        if (!await guardar('/api/price-rules', rule)) return
         fetch('/api/price-change-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ propertyId: pid, tipo: 'bulk_update', descricao: `Atualização em massa: ${nome.trim()}`, dadosNovos: { rule } }) }).catch(() => {})
       }
       showToast(`${selectedProps.length} propriedade(s) atualizadas`)

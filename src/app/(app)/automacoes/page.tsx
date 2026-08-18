@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import { Plus, Trash2, Zap, Eye } from 'lucide-react'
 import { fetchAutomations } from '@/lib/fetcher'
+import { guardar, eliminar } from '@/lib/guardar'
 import { fmtDate } from '@/lib/utils'
 import { TRIGGER_LABEL, renderAutomationMessage, PREVIEW_VARS } from '@/lib/automations'
 import type { Automation, AutomationTrigger } from '@/lib/types'
@@ -59,16 +60,14 @@ export default function AutomacoesPage() {
   }
 
   async function toggleAtivo(a: Automation) {
-    await fetch('/api/automations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...a, ativo: !a.ativo }),
-    })
+    /* O interruptor mudava de lado quer o servidor aceitasse quer não: uma
+     * automação continuava a enviar emails com o botão a dizer "desligada". */
+    if (!await guardar('/api/automations', { ...a, ativo: !a.ativo })) return
     setAutomations(prev => prev.map(x => x.id === a.id ? { ...x, ativo: !x.ativo } : x))
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/automations?id=${id}`, { method: 'DELETE' })
+    if (!await eliminar(`/api/automations?id=${id}`)) return
     setAutomations(prev => prev.filter(a => a.id !== id))
   }
 

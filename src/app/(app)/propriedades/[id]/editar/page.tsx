@@ -10,6 +10,7 @@ import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType, IcalFeed, BookingSource } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { GUIAS, GUIA_AMENITIZ, AVISO_FONTE_DUPLICADA, deveAvisarDuplicacao, eGestorDeCanais } from '@/lib/ical-guias'
+import { guardar } from '@/lib/guardar'
 
 const ICAL_SOURCES: { value: BookingSource; label: string }[] = [
   { value: 'outro', label: 'Amenitiz ou outro gestor de canais' },
@@ -212,7 +213,10 @@ export default function EditarPropriedadePage() {
         instrucoes_checkin: instrucoesCheckin.trim(), regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
       }
-      await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+      /* Guardar antes de sincronizar: se a gravação for recusada, os feeds
+       * que se querem sincronizar ainda não existem no servidor — sincronizar
+       * a seguir dava um resultado sobre o alojamento antigo. */
+      if (!await guardar('/api/properties', updated)) return
       const res = await fetch('/api/ical-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -259,8 +263,11 @@ export default function EditarPropriedadePage() {
         regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
       }
-      const saveRes = await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-      if (!saveRes.ok) throw new Error()
+      /* Verificava o `ok` — e deitava fora o motivo. O servidor sabe dizer
+       * "limite do plano atingido (3/3 alojamentos)"; o ecrã respondia "Erro
+       * ao guardar. Tenta novamente.", que manda a pessoa repetir uma coisa
+       * que vai falhar exatamente da mesma maneira. */
+      if (!await guardar('/api/properties', updated)) return
       toast.success('Propriedade atualizada')
       router.push(`/propriedades/${id}`)
     } catch {

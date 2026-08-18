@@ -11,6 +11,7 @@ import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/li
 import type { Property, Booking, Guest } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { occupancyForMonth } from '@/lib/reservations'
+import { guardar } from '@/lib/guardar'
 
 const AMENITY_LABELS: Record<string, string> = {
   wifi: 'Wi-Fi',
@@ -71,7 +72,10 @@ export default function PropriedadeDetailPage() {
   async function toggleActive() {
     if (!prop) return
     const updated = { ...prop, ativo: !prop.ativo }
-    await fetch('/api/properties', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
+    /* Reativar é onde o limite do plano é verificado: quem está no teto leva
+     * um 403 com o motivo. Sem o ler, o interruptor mudava de lado e o
+     * alojamento continuava desativado — com a app a dizer que não. */
+    if (!await guardar('/api/properties', updated)) return
     setProp(updated)
   }
 

@@ -11,6 +11,7 @@ import { detectConflict, calculatePriceWithRules, unidadesReservaveis } from '@/
 import { quartosDaCasa, capacidadeTotal, disponibilidadeDosQuartos, sugerirQuartos } from '@/lib/grupos'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
+import { guardar } from '@/lib/guardar'
 
 type Step = 'propriedade' | 'datas' | 'hospede' | 'detalhes'
 
@@ -154,7 +155,8 @@ function NovaReservaInner() {
       criado_em: new Date().toISOString(),
       owner_id: ownerId,
     }
-    await fetch('/api/guests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(g) })
+    // Sem hóspede guardado, o passo seguinte da reserva fica sem ninguém.
+    if (!await guardar('/api/guests', g)) return
     setGuests(await fetchGuests())
     setGuestId(g.id)
     setShowNewGuest(false)
