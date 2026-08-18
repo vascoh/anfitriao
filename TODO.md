@@ -14,6 +14,10 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 >
 > Frase de posicionamento proposta (§9.1 do dossiê): **"A tua conformidade, com prova."** Ver a correção no topo do dossiê para o que sobra de vantagem defensável e onde estamos atrás.
 
+## ▶️ Primeira reserva real
+
+`docs/PRIMEIRA-RESERVA-REAL.md` — guião de 20 minutos para atravessar o fluxo completo uma vez, com o que verificar em cada passo e onde olhar quando falha. **Só depende de um bloqueio: a `RESEND_API_KEY`.** SIBA e faturação são secções opcionais do mesmo guião.
+
 ## 🔴 Bloqueios ativos — variáveis de ambiente em falta em produção (2026-08-12)
 
 Cada uma desliga **em silêncio** funcionalidade que já está escrita e deployada. Verificado com `npx vercel env ls production`.
