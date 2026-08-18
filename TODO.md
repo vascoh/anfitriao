@@ -56,7 +56,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [x] **Uma casa inteira, uma fatura** — número/ATCUD partilhados, `fatura_total` repartido por reserva para não inflacionar a receita
 
 ## Dívida técnica registada
-- [ ] **Deriva de esquema** — `properties.id`, `bookings.id`, `guests.id` são `text` em produção mas `UUID` na migração 001. As migrações não são a fonte de verdade da base; vale um `schema.sql` gerado da produção
+- [x] ~~**Deriva de esquema**~~ — documentada a 2026-08-18: `supabase/schema.sql` é uma fotografia da produção (colunas, tipos e omissões), com `scripts/schema-dump.sql` para regenerar. Os `id` continuam `text` em produção e `UUID` na migração 001 — o ficheiro serve para se ler **antes** de escrever DDL novo, que foi o erro de 03/08
 - [x] ~~**`/financeiro` filtra `!parent_id`**~~ — corrigido a 2026-08-12: o seletor de despesa passa a listar casas **e** quartos (`ordenarComQuartos`), com o quarto indentado sob a casa
 - [ ] **Código morto de RLS** — decidir entre ligar o template JWT do Clerk (RLS a nível de BD) ou remover `getSupabaseUserClient`/`getSupabaseForRequest`
 

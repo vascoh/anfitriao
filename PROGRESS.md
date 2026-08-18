@@ -6,6 +6,12 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18e] O detalhe da reserva aprende os grupos, e o esquema fica documentado
+
+- 🏠 **Quem abria uma reserva de casa inteira via um terço do valor.** A lista já mostra o grupo como uma linha e liga ao primeiro quarto — mas a página de detalhe não sabia que os grupos existem: mostrava 300 € de 920 €, sem nada que dissesse que havia mais dois quartos. Passa a haver um cartão com o nome da casa, o **total do grupo**, o que já foi pago, e a lista dos quartos com estado e valor — cada um clicável, o atual em destaque, os cancelados riscados. E diz o que não é óbvio: **cancelar ali cancela só aquele quarto, mas a fatura é uma só para o grupo**.
+- 🗂️ **`supabase/schema.sql`** — fotografia das 20 tabelas de produção (colunas, tipos, `NOT NULL`, defaults), com `scripts/schema-dump.sql` para regenerar. Fecha uma dívida registada duas vezes: as migrações **não são a fonte de verdade** (a 001 declara os `id` como `UUID`, em produção são `text`), e escrever DDL a partir delas já falhou à primeira a 03/08. O ficheiro diz também o que **não** inclui — índices, chaves estrangeiras e RLS — para ninguém o tomar por completo.
+- ✅ 832 testes, typecheck 0, lint 0, build OK.
+
 ### [2026-08-18d] Stripe — o dinheiro passa a ter rede
 
 - 💳 **Preenchimento da reserva paga (11 testes)** — corre duas vezes de propósito (webhook **e** página de confirmação, para o hóspede não esperar), portanto a idempotência é a propriedade central: a segunda chamada devolve a mesma reserva, e uma corrida com o webhook (23505 no `UNIQUE` da sessão) não duplica. Testado também: quem pagou fica **ligado à reserva** (o boletim é por pessoa), metadata incompleta não vira reserva a metade, e o email ao anfitrião não pode fazer falhar a reserva.
