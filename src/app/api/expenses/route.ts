@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
-import { canUpsertRow } from '@/lib/ownership'
+import { canUpsertRow, ownsProperty } from '@/lib/ownership'
 import { today } from '@/lib/utils'
 import type { Expense } from '@/lib/types'
 
@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
    * ficar com — a linha de outro anfitrião. Ver lib/ownership.ts. */
   if (!(await canUpsertRow(supabase, 'expenses', body.id, userId))) {
     return NextResponse.json({ error: 'Sem permissão para alterar este registo.' }, { status: 403 })
+  }
+
+  // A despesa aponta para um alojamento: tem de ser um dos meus.
+  if (!(await ownsProperty(supabase, body.propriedade_id, userId))) {
+    return NextResponse.json({ error: 'Alojamento não encontrado.' }, { status: 404 })
   }
 
   const row = {

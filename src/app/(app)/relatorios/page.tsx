@@ -7,6 +7,7 @@ import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
 import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
 import { calcularRevPar } from '@/lib/revpar'
+import { agruparReservas } from '@/lib/grupos'
 import { fmtMoney, nights, today as localToday, addDays } from '@/lib/utils'
 import { SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
 import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
@@ -134,12 +135,16 @@ function calcAvgLOS(bookings: Booking[], year: number): number {
   return Math.round((totalNights / activeBookings.length) * 10) / 10
 }
 
-// Cancellation rate
+/* Taxa de cancelamento, por reserva e não por quarto.
+ *
+ * Um grupo de três quartos cancelado contava três cancelamentos: com uma
+ * reserva de grupo cancelada e três reservas soltas mantidas, a taxa dava
+ * 50 % onde o anfitrião contaria 25 %. */
 function calcCancellationRate(bookings: Booking[], year: number): number {
-  const yearBookings = bookings.filter(b => b.check_in.startsWith(String(year)))
-  if (yearBookings.length === 0) return 0
-  const cancelled = yearBookings.filter(b => b.estado === 'cancelada' || b.estado === 'no_show').length
-  return Math.round((cancelled / yearBookings.length) * 100)
+  const doAno = agruparReservas(bookings.filter(b => b.check_in.startsWith(String(year))))
+  if (doAno.length === 0) return 0
+  const canceladas = doAno.filter(g => g.estado === 'cancelada' || g.estado === 'no_show').length
+  return Math.round((canceladas / doAno.length) * 100)
 }
 
 // Payment collection rate
@@ -207,8 +212,11 @@ export default function RelatoriosPage() {
 
   const topGuestsList = useMemo(() => topGuests(bookings, guests, year), [bookings, guests, year])
 
+  /* Uma casa alugada por inteiro são N linhas na base e **uma** reserva para
+   * quem a fez. A lista de reservas e o email mensal já contam assim; esta
+   * página contava por quarto, e os dois números do mesmo ano desmentiam-se. */
   const totalBookings = useMemo(() =>
-    bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year))).length,
+    agruparReservas(bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year)))).length,
     [bookings, year]
   )
 

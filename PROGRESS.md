@@ -6,6 +6,16 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18g] Varrimento: que outras correções ficaram a meio?
+
+Depois de descobrir que o boletim por pessoa só tinha sido aplicado ao web service e não ao CSV, verifiquei **cada correção desta série contra todos os caminhos**.
+
+- ✅ **Completas, verificadas uma a uma**: encriptação em repouso (as únicas leituras sem `revelarCampos` são as que só pedem `id, nome, email` — não têm nada a decifrar); piso de zero nos preços; normalização do slug; sanitização do payload público (`/api/book-confirmation` devolve só datas, preço e contacto — o `owner_id` é lido e não sai).
+- 🔢 **A meio: contagem de reservas.** O email mensal passou a contar um grupo como uma reserva; a página de **relatórios** continuava a contar por quarto — no total do ano e na **taxa de cancelamento**, onde um grupo de três quartos cancelado dava 50 % de cancelamentos com uma reserva cancelada em quatro. E as "reservas diretas" do `/website` contavam três onde a lista mostra uma. Os mesmos números, em três sítios, a desmentirem-se.
+- 🔓 **A meio: o guarda de propriedade.** `/api/expenses` (imputar uma despesa ao alojamento de outro) e `/api/price-change-log` (escrever no histórico de preços de outro) ficaram de fora. Baixo impacto — o dono não vê a linha — mas é a mesma classe do IDOR, por uma porta que o meu próprio teste estrutural não via: **só olhava para `upsert`, e estas usam `insert`**.
+- 🧪 **O teste estrutural passa a cobrir referências**, não só a linha própria. E teve de aprender a distinguir duas coisas que se parecem no código: um `property_id` **vindo do cliente** (precisa de guarda) e um **vindo da base já filtrada por dono** (não precisa). Sem essa distinção dava quatro falsos positivos — `ical-sync`, `siba-submit` e as duas rotas de grupo estão seguras por esse segundo mecanismo. Verificado que apanha o bug real: com as correções revertidas, acusa `expenses` e `price-change-log`.
+- ✅ 839 testes, typecheck 0, lint 0, build OK.
+
 ### [2026-08-18f] O CSV do SIBA comunicava uma pessoa por reserva
 
 O bug de 3 de agosto — um boletim por reserva em vez de um por pessoa — foi corrigido **só no caminho do web service**. O do **CSV** ficou como estava. E o CSV é o que está em uso **hoje**, porque as credenciais de web service ainda não existem: era por ali que os boletins seriam realmente comunicados, com uma reserva de oito a declarar uma pessoa e sete por comunicar, a 100 a 2.000 € cada.

@@ -10,6 +10,7 @@ import { generateIcal } from '@/lib/ical'
 import type { WebsiteSettings, Property, IcalFeed } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { WebsitePreview } from '@/components/website-preview'
+import { agruparReservas } from '@/lib/grupos'
 import { normalizarSlug, validarSlug } from '@/lib/slug'
 import { prontidaoDoSite, motivoParaNaoPublicar } from '@/lib/prontidao-site'
 import { useUser } from '@clerk/nextjs'
@@ -313,7 +314,8 @@ export default function WebsitePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Reservas diretas</p>
-            <p className="text-2xl font-bold mt-0.5">{directBookings.length}</p>
+            {/* Uma casa inteira é uma reserva, não três — como na lista. */}
+            <p className="text-2xl font-bold mt-0.5">{agruparReservas(directBookings).length}</p>
           </div>
           <div className="rounded-xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Receita direta</p>
