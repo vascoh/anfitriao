@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18c] Crons — o que corre sozinho de madrugada passa a ter rede
+
+- 🧾 **Cron de faturação (10 testes)** — emite só o que fez checkout, com valor e não cancelado; **uma casa inteira dá uma chamada, não três** (senão a segunda e a terceira contavam como falhas num relatório onde nada falhou); só contas com emissão automática, ativas e com a AT ligada; uma falha não trava as outras; e **sem o segredo do cron não faz nada**.
+- 📧 **Cron de lembretes de pagamento (8 testes)** — um email com o **total do grupo** e o nome da casa, não três com saldos parciais; **não repete em execuções seguintes** (a janela apanha 3 dias, e sem a guarda o mesmo hóspede recebia o mesmo email quatro dias seguidos); o registo vai a todas as reservas do grupo, senão amanhã olhava para outra e repetia.
+- 🤖 **Cron de automações (9 testes)** — variáveis substituídas, ignora automações desativadas e reservas de outro anfitrião, **uma mensagem por grupo** e as irmãs registadas no log.
+- 🔒 **Guarda estrutural dos crons** (`crons-fechados.test.ts`): nenhuma rota responde sem `checkCronAuth`, a verificação vem **antes** de tocar na base de dados, todas as rotas agendadas no `vercel.json` existem em código, e nenhuma rota ficou sem agendamento. São URLs públicos que apagam dados pessoais, emitem faturas comunicadas à AT e mandam emails a pessoas reais — um esquecimento não dá erro, dá uma rota que funciona *bem de mais*.
+- 🔍 **Falso positivo meu, corrigido antes de entrar**: a regra "guarda antes da primeira query" tropeçava em funções auxiliares definidas acima do handler. Passou a olhar só para dentro do `GET` — um teste estrutural que dá falsos positivos ensina a ignorá-lo, que é pior do que não existir.
+- ✅ **811 testes** (31 novos). Rotas com teste: 9 → 12 em 47, e os quatro crons com lógica própria estão cobertos. Typecheck 0, lint 0, build OK.
+
 ### [2026-08-18b] Testes onde um erro custa dinheiro: check-in, SIBA e faturação
 
 As três áreas onde eu tinha dito que o risco sério se concentra passam a ter rede.
