@@ -49,15 +49,28 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json() as Record<string, unknown>
 
-  /* O endereço em forma canónica, e `null` quando não há nenhum — nunca `''`,
-   * que colide no UNIQUE entre contas diferentes. Ver lib/slug.ts. */
-  const slug = normalizarSlug(body.slug)
-  const problemaSlug = validarSlug(slug)
-  if (problemaSlug) {
-    return NextResponse.json({ error: problemaSlug }, { status: 400 })
+  /* O endereço em forma canónica, e `null` quando o anfitrião o apaga — nunca
+   * `''`, que colide no UNIQUE entre contas diferentes. Ver lib/slug.ts.
+   *
+   * Só se mexe no `slug` quando o pedido **traz** o campo. Normalizar um campo
+   * ausente dava `null`, ou seja: um envio parcial — `{ enabled: true }` —
+   * apagava o endereço do site e deixava-o inacessível, sem ninguém pedir
+   * nada disso. */
+  const mexeNoSlug = 'slug' in body
+  const slug = mexeNoSlug ? normalizarSlug(body.slug) : undefined
+
+  if (mexeNoSlug) {
+    const problemaSlug = validarSlug(slug ?? null)
+    if (problemaSlug) {
+      return NextResponse.json({ error: problemaSlug }, { status: 400 })
+    }
   }
 
-  const row = { ...apenasCamposConhecidos(body), slug, owner_id: userId }
+  const row = {
+    ...apenasCamposConhecidos(body),
+    ...(mexeNoSlug ? { slug } : {}),
+    owner_id: userId,
+  }
 
   const { data: existing } = await supabase
     .from('website_settings')
@@ -80,7 +93,7 @@ export async function POST(req: NextRequest) {
      * parcial (sem o nome, por exemplo) não pode parecer que o nome falta
      * quando ele já está gravado. */
     const prontidao = prontidaoDoSite(
-      { ...(existing ?? {}), ...row, slug } as Parameters<typeof prontidaoDoSite>[0],
+      { ...(existing ?? {}), ...row } as Parameters<typeof prontidaoDoSite>[0],
       await adminGetProperties(userId),
     )
     if (!prontidao.podePublicar) {

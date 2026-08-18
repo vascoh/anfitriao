@@ -1,4 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <span className="text-muted-foreground text-xs">·</span>
         <span className="text-muted-foreground text-xs">Painel de controlo</span>
         <div className="flex-1" />
+        <Link
+          href="/admin/contas"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Contas
+        </Link>
+        <Link
+          href="/admin/saude"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Saúde
+        </Link>
         <a
           href="/hoje"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"

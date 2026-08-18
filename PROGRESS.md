@@ -6,6 +6,15 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18] Testes das rotas e página de saúde — tapar o buraco onde os bugs vivem
+
+**O buraco, medido**: 47 rotas de API, **44 sem um único teste**. As bibliotecas puras têm 43 ficheiros de teste e deram pouquíssimos bugs; praticamente todos os ~30 desta série viviam nas rotas e nas páginas — a camada sem rede.
+
+- 🧪 **Três rotas críticas passam a ter testes** (`bookings`, `properties`, `website-settings`), com um duplo de base de dados que **respeita os filtros**: um duplo que devolve sempre a mesma linha faria os testes de propriedade passar sem provar nada, porque o guarda existe precisamente para distinguir a linha de um anfitrião da de outro.
+- 🐛 **E apanharam um bug meu, de ontem.** Um envio parcial — `{ enabled: true }` sem o `slug` — **apagava o endereço do site**: `normalizarSlug(undefined)` dá `null`, e o `null` ia para a base. O site ficava inacessível sem ninguém pedir nada disso. Só se mexe no `slug` quando o pedido traz o campo. É a demonstração exata do argumento: escrevi o código com cuidado, passou no typecheck, no lint e em 710 testes — e estava errado.
+- 🩺 **`/admin/saude`** (`lib/saude.ts`): configuração (email, chave de encriptação, faturação, Stripe, Clerk de desenvolvimento) e operação dos últimos dias (feeds iCal com erro ou sem sincronizar, boletins SIBA em atraso ou falhados, faturas em erro, último envio das automações). **Pergunta pelo que devia ter acontecido e não aconteceu** — é assim que as falhas deste produto se manifestam: por ausência, não por erro. Os emails estiveram semanas desligados; o `robots.txt` esteve meses bloqueado; a sincronização nunca aplicou um cancelamento. Nenhuma dessas coisas dá erro.
+- ✅ 741 testes (31 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-16b] Publicar exige nome, contacto e uma foto
 
 - 🚦 **A app deixava publicar um site sem nada.** Sem nome próprio, sem foto e sem contacto — e a prova é a primeira conta real, que está no ar a chamar-se **"Reservas Diretas"**, o valor por omissão da coluna, há meses, sem nada que o assinalasse.
