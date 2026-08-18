@@ -6,6 +6,18 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18i] Fórmulas duplicadas — a mesma conta em sítios diferentes
+
+Terceira pergunta da mesma família: **que coisas são calculadas em dois sítios com fórmulas diferentes?** Sete cópias, três com comportamento divergente.
+
+- 📊 **A ocupação do mês estava copiada linha por linha** de `occupancyForMonth` para a página da propriedade. Idêntica hoje; garantidamente diferente no dia em que uma for corrigida — foi exatamente assim que a ocupação passou a excluir a casa-mãe em seis sítios e ficou errada num sétimo.
+- ⏳ **O trial tinha quatro contas**, e uma **divergia**: a página de faturação fazia `Math.max(0, …)`, portanto um período terminado há cinco dias aparecia ali como **"0 dias restantes"** enquanto o banner da app dizia que tinha acabado. `diasDeTrial` em `lib/planos.ts` devolve negativo de propósito — quem mostra é que decide o que fazer com isso; a aritmética é uma só.
+- 🗓️ **`nights` reimplementado três vezes** (calendário, check-in, `/hoje`), com variações de fuso entre elas. Todas apontam agora para `lib/utils`.
+- ✅ **Zero fórmulas de datas em linha** fora das bibliotecas — verificado por varrimento de `86400000`.
+- ✅ 846 testes (4 novos), typecheck 0, lint 0, build OK.
+
+**O padrão, ao fim de três passagens:** este código foi escrito por cópia, e a cópia propaga a fórmula mas não as correções futuras. As três perguntas — *o que ficou a meio*, *o que existe num sítio e não noutro*, *o que é calculado duas vezes* — encontraram, juntas, mais do que ler ficheiros à procura de erros.
+
 ### [2026-08-18h] Que verificações existem num sítio e não noutro?
 
 Matriz de todas as 47 rotas — sessão, limitador, filtro por dono no DELETE, auditoria — e depois olhar para os buracos. Nenhum era uma decisão: eram sítios por onde a regra não passou.

@@ -5,6 +5,7 @@ import { GlobalSearch } from '@/components/global-search'
 import { TrialBanner } from '@/components/TrialBanner'
 import { currentUser } from '@clerk/nextjs/server'
 import { ensureAccount, getAccountByClerkId } from '@/lib/accounts'
+import { diasDeTrial } from '@/lib/planos'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   let trialDaysLeft: number | null = null
@@ -21,10 +22,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       // Calcular dias de trial restantes para o banner
       const account = await getAccountByClerkId(user.id)
       if (account?.estado === 'trial' && account.trial_ends_at) {
-        const daysLeft = Math.ceil(
-          // eslint-disable-next-line react-hooks/purity -- server component async, corre por request (não em render client)
-          (new Date(account.trial_ends_at).getTime() - Date.now()) / 86400000
-        )
+        // eslint-disable-next-line react-hooks/purity -- server component async, corre por request (não em render client)
+        const daysLeft = diasDeTrial(account.trial_ends_at) ?? 0
         /* Banner na última semana **e depois de expirar**.
          *
          * A condição era `daysLeft >= 0`, portanto o aviso desaparecia

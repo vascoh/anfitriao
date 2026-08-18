@@ -453,7 +453,7 @@ export default function HojePage() {
                 const prop = props.find(p => p.id === b.propriedade_id)
                 const guest = guests.find(g => g.id === b.hospede_id)
                 const n = nights(b.check_in, b.check_out)
-                const daysUntil = Math.round((new Date(b.check_in).getTime() - new Date(t).getTime()) / 86400000)
+                const daysUntil = nights(t, b.check_in) // a mesma conta que o resto da app
                 const checkinDone = b.historico.some(e => e.tipo === 'checkin_online')
                 return (
                   <Link key={b.id} href={`/reservas/${b.id}`}

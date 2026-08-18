@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { EditAccountForm } from './EditAccountForm'
 import type { AccountEstado, AccountPlano } from '@/lib/accounts'
 import { PLAN_PRICE_EUR, limiteDeUnidades } from '@/lib/planos'
+import { diasDeTrial } from '@/lib/planos'
 
 const supabase = createAdminClient()
 
@@ -37,8 +38,7 @@ function fmtDatetime(iso: string) {
 function trialInfo(trialEndsAt: string | null) {
   if (!trialEndsAt) return null
   const d = new Date(trialEndsAt)
-  const daysLeft = Math.ceil((d.getTime() - Date.now()) / 86400000)
-  return { date: d.toLocaleDateString('pt-PT'), daysLeft }
+  return { date: d.toLocaleDateString('pt-PT'), daysLeft: diasDeTrial(trialEndsAt) ?? 0 }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

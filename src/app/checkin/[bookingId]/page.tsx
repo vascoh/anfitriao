@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Camera, FileText, Check, AlertCircle, RotateCcw, ChevronRight, Loader2, Home } from 'lucide-react'
+import { nights } from '@/lib/utils'
 
 type Step = 'loading' | 'info' | 'camera' | 'review' | 'submitting' | 'done' | 'error' | 'already'
 
@@ -93,9 +94,7 @@ function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso + 'T12:00:00'))
 }
 
-function nights(a: string, b: string) {
-  return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86400000)
-}
+
 
 export default function CheckinPage() {
   const { bookingId } = useParams<{ bookingId: string }>()

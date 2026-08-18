@@ -2,6 +2,7 @@ import { listAllAccounts } from '@/lib/accounts'
 import type { AccountEstado, AccountPlano } from '@/lib/accounts'
 import { PLAN_PRICE_EUR } from '@/lib/stripe'
 import Link from 'next/link'
+import { diasDeTrial } from '@/lib/planos'
 
 // ─── Helpers de UI ────────────────────────────────────────────────────────────
 
@@ -37,11 +38,6 @@ function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso))
 }
 
-function trialDaysLeft(trialEndsAt: string | null): number | null {
-  if (!trialEndsAt) return null
-  const diff = new Date(trialEndsAt).getTime() - Date.now()
-  return Math.ceil(diff / 86400000)
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -104,7 +100,7 @@ export default async function ContasPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {contas.map(conta => {
-                const daysLeft = trialDaysLeft(conta.trial_ends_at)
+                const daysLeft = diasDeTrial(conta.trial_ends_at)
                 const trialExpired = daysLeft !== null && daysLeft < 0
 
                 return (

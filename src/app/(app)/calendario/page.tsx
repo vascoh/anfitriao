@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
+import { nights } from '@/lib/utils'
 import { addDays, today as localToday } from '@/lib/utils'
 import type { Booking, Property } from '@/lib/types'
 import { STATUS_LABEL } from '@/lib/labels'
@@ -20,9 +21,9 @@ function isoDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-function daysBetween(a: string, b: string): number {
-  return Math.round((new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000)
-}
+/* `nights` de `lib/utils` faz exatamente esta conta, com o mesmo tratamento
+ * de fuso — era uma terceira cópia da mesma fórmula. */
+const daysBetween = nights
 
 // ─── Timeline View ────────────────────────────────────────────────────────────
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   PLAN_LIMITS, PLAN_PRICE_EUR, PLAN_PRICE_EUR_ANUAL, PLANOS_PAGOS, PLAN_NOME,
   precoMensal, precoPorUnidade, limiteDeUnidades, limiteDeUnidadesCapitalizado,
+  diasDeTrial,
 } from './planos'
 import { contarUnidadesReservaveis } from './reservations'
 
@@ -155,5 +156,33 @@ describe('contarUnidadesReservaveis', () => {
       { id: 'q3', parent_id: 'casa2', ativo: true },
       { id: 'q4', parent_id: 'casa2', ativo: true },
     ])).toBe(4)
+  })
+})
+
+describe('diasDeTrial', () => {
+  const FIM = '2026-08-20T12:00:00Z'
+
+  it('conta os dias que faltam', () => {
+    const agora = new Date('2026-08-17T12:00:00Z').getTime()
+    expect(diasDeTrial(FIM, agora)).toBe(3)
+  })
+
+  it('devolve negativo depois de expirar — não zero', () => {
+    /* Uma das quatro versões fazia Math.max(0, …): um trial terminado há
+     * cinco dias aparecia como "0 dias restantes" na faturação, enquanto o
+     * banner da app dizia que tinha terminado. */
+    const agora = new Date('2026-08-25T12:00:00Z').getTime()
+    expect(diasDeTrial(FIM, agora)).toBe(-5)
+  })
+
+  it('sem data não há conta a fazer', () => {
+    expect(diasDeTrial(null)).toBeNull()
+    expect(diasDeTrial(undefined)).toBeNull()
+    expect(diasDeTrial('não é uma data')).toBeNull()
+  })
+
+  it('arredonda para cima: umas horas ainda contam como um dia', () => {
+    const agora = new Date('2026-08-20T06:00:00Z').getTime()
+    expect(diasDeTrial(FIM, agora)).toBe(1)
   })
 })

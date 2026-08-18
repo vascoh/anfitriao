@@ -63,6 +63,28 @@ export const DESCONTO_ANUAL_LABEL = '−20%'
 /** Duração do período experimental, em dias. */
 export const TRIAL_DIAS = 14
 
+/**
+ * Dias que faltam até ao fim do período experimental. **Negativo quando já
+ * passou** — e é de propósito.
+ *
+ * Havia quatro versões desta conta, e uma delas (a página de faturação)
+ * fazia `Math.max(0, …)`: um trial terminado há cinco dias aparecia como
+ * "0 dias restantes" ali, enquanto o banner da app dizia "o teu período
+ * experimental terminou". A mesma conta em dois sítios a dizer coisas
+ * diferentes é uma escolha de apresentação disfarçada de aritmética.
+ *
+ * Quem mostra decide o que fazer com o negativo; o cálculo é um só.
+ */
+export function diasDeTrial(
+  trialEndsAt: string | null | undefined,
+  agora: number = Date.now(),
+): number | null {
+  if (!trialEndsAt) return null
+  const fim = new Date(trialEndsAt).getTime()
+  if (Number.isNaN(fim)) return null
+  return Math.ceil((fim - agora) / 86_400_000)
+}
+
 /** Nome comercial de cada plano. */
 export const PLAN_NOME: Record<AccountPlano, string> = {
   trial:   'Trial',

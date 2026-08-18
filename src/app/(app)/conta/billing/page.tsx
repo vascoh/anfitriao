@@ -5,13 +5,10 @@ import { PLAN_PRICE_IDS } from '@/lib/stripe'
 import { PLAN_NOME, PLAN_PRICE_EUR, limiteDeUnidadesCapitalizado } from '@/lib/planos'
 import { UpgradeButton } from './UpgradeButton'
 import type { AccountEstado } from '@/lib/accounts'
+import { diasDeTrial } from '@/lib/planos'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function trialDaysLeft(trialEndsAt: string | null): number {
-  if (!trialEndsAt) return 0
-  return Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86400000))
-}
 
 function fmtDate(iso: string) {
   return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso))
@@ -97,7 +94,7 @@ export default async function BillingPage({
   const account = await getAccountByClerkId(userId)
   if (!account) redirect('/hoje')
 
-  const daysLeft   = trialDaysLeft(account.trial_ends_at)
+  const daysLeft   = diasDeTrial(account.trial_ends_at) ?? 0
   const isTrial    = account.estado === 'trial'
   const isActivo   = account.estado === 'activo'
   const banner     = estadoBanner[account.estado]

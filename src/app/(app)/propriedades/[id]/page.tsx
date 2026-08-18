@@ -9,6 +9,7 @@ import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { occupancyForMonth } from '@/lib/reservations'
 
 const AMENITY_LABELS: Record<string, string> = {
   wifi: 'Wi-Fi',
@@ -103,19 +104,18 @@ export default function PropriedadeDetailPage() {
     .filter(b => b.estado === 'confirmada' && b.check_in >= t)
     .sort((a, b) => a.check_in.localeCompare(b.check_in))[0]
 
-  const monthStart = t.slice(0, 8) + '01'
-  const year = parseInt(t.slice(0, 4))
-  const month = parseInt(t.slice(5, 7)) // 1-based
-  const daysInMonth = new Date(year, month, 0).getDate()
-  const nextMonthStart = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`
-  const occupiedDays = bookings
-    .filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show' && b.check_in < nextMonthStart && b.check_out > monthStart)
-    .reduce((acc, b) => {
-      const start = b.check_in > monthStart ? b.check_in : monthStart
-      const end = b.check_out < nextMonthStart ? b.check_out : nextMonthStart
-      return acc + Math.max(0, Math.round((new Date(end + 'T00:00:00').getTime() - new Date(start + 'T00:00:00').getTime()) / 86400000))
-    }, 0)
-  const occupancyPct = Math.round((occupiedDays / daysInMonth) * 100)
+  /* Ocupação do mês pela função da biblioteca, que é a mesma que o `/hoje`,
+   * os relatórios, o calendário e o email mensal usam.
+   *
+   * Estava aqui uma cópia da fórmula, linha por linha. Duas cópias da mesma
+   * conta não ficam iguais para sempre: corrige-se uma, esquece-se a outra, e
+   * a mesma percentagem passa a depender da página onde se olha. */
+  const { pct: occupancyPct } = occupancyForMonth(
+    bookings,
+    id,
+    parseInt(t.slice(0, 4)),
+    parseInt(t.slice(5, 7)) - 1, // a função conta os meses de 0 a 11
+  )
 
   return (
     <div className="flex flex-col min-h-full pb-8">
