@@ -2,61 +2,31 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { Search, Plus, Download, ShieldCheck, ShieldAlert } from 'lucide-react'
-import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
-import type { Guest, Booking, Property, GuestTag } from '@/lib/types'
+import { fetchGuests, fetchBookings } from '@/lib/fetcher'
+import type { Guest, Booking, GuestTag } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
 import { today } from '@/lib/utils'
 import { useUser } from '@clerk/nextjs'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
-function buildSibaCsv(guests: Guest[], bookings: Booking[], props: Property[]) {
-  const cols = [
-    'Nome', 'Data Nascimento', 'Sexo', 'Nacionalidade',
-    'Tipo Documento', 'Nº Documento', 'Validade Documento', 'País Emissão',
-    'Check-in', 'Check-out', 'Nº Noites', 'Propriedade',
-  ]
-  const rows: string[][] = []
-  const activeBookings = bookings.filter(b => b.estado !== 'cancelada' && b.estado !== 'no_show')
-  for (const b of activeBookings) {
-    const g = guests.find(x => x.id === b.hospede_id)
-    if (!g) continue
-    const p = props.find(x => x.id === b.propriedade_id)
-    const noites = Math.round((new Date(b.check_out).getTime() - new Date(b.check_in).getTime()) / 86400000)
-    rows.push([
-      g.nome ?? '',
-      g.data_nascimento ?? '',
-      g.sexo ?? '',
-      g.nacionalidade ?? '',
-      g.tipo_documento ?? '',
-      g.numero_documento ?? '',
-      g.data_validade_doc ?? '',
-      g.pais_emissao ?? '',
-      b.check_in,
-      b.check_out,
-      String(noites),
-      p?.nome ?? '',
-    ])
-  }
-  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`
-  return [cols.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))].join('\n')
-}
-
 export default function HospedesPage() {
   const { user } = useUser()
   const ownerId = user?.id
   const [guests, setGuests] = useState<Guest[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
-  const [props, setProps] = useState<Property[]>([])
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchGuests(), fetchBookings(), fetchProperties()])
-      .then(([g, b, p]) => { setGuests(g); setBookings(b); setProps(p) })
+    // Já não se carregam as propriedades: eram só para o CSV que esta página
+    // construía à mão, e que passou a ser feito no servidor.
+    Promise.all([fetchGuests(), fetchBookings()])
+      .then(([g, b]) => { setGuests(g); setBookings(b) })
       .finally(() => setLoaded(true))
   }, [ownerId])
 
@@ -84,13 +54,31 @@ export default function HospedesPage() {
     return bookings.filter(b => b.hospede_id === guestId && (b.estado === 'checkout' || b.estado === 'checkin')).length
   }
 
-  function exportSiba() {
-    const csv = buildSibaCsv(guests, bookings, props)
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  /**
+   * Exportação do boletim, pela rota do servidor.
+   *
+   * Havia aqui uma segunda implementação do mesmo CSV, e divergia da do
+   * servidor em duas coisas que importam: exportava **uma pessoa por
+   * reserva** (o boletim é por pessoa desde 03/08 — uma reserva de oito
+   * comunicava uma), e **não deixava rasto** no registo de acessos, quando o
+   * ficheiro leva números de documento para fora da aplicação.
+   *
+   * Uma implementação só, do lado do servidor, que decifra, junta os
+   * acompanhantes e regista a saída (ANF-1.8).
+   */
+  async function exportSiba() {
+    const ano = new Date().getFullYear()
+    const res = await fetch(`/api/siba-export?from=${ano}-01-01&to=${ano}-12-31`)
+    if (!res.ok) {
+      toast.error('Não foi possível exportar. Tenta mais tarde.')
+      return
+    }
+    const blob = await res.blob()
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `siba-hospedes-${today()}.csv`
     a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   return (

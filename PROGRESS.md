@@ -6,6 +6,16 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-08-18f] O CSV do SIBA comunicava uma pessoa por reserva
+
+O bug de 3 de agosto — um boletim por reserva em vez de um por pessoa — foi corrigido **só no caminho do web service**. O do **CSV** ficou como estava. E o CSV é o que está em uso **hoje**, porque as credenciais de web service ainda não existem: era por ali que os boletins seriam realmente comunicados, com uma reserva de oito a declarar uma pessoa e sete por comunicar, a 100 a 2.000 € cada.
+
+- 🛂 **`fetchSibaRowsForOwner` passa a devolver uma linha por pessoa**, lendo `reserva_hospedes`, com o documento de cada um. Reservas anteriores à tabela de ligação entram na mesma pelo `hospede_id` — desaparecerem do ficheiro seria pior do que aparecerem incompletas.
+- 🧨 **E havia duas implementações do mesmo CSV.** A página `/hospedes` construía o seu, no browser, que divergia do servidor em duas coisas: exportava uma pessoa por reserva **e não deixava rasto** no registo de acessos, quando o ficheiro leva números de documento para fora da aplicação — contradizendo o que está escrito no registo de tratamentos. Passa a chamar `/api/siba-export`, que decifra, junta os acompanhantes e regista a saída (ANF-1.8). É o mesmo padrão do iCal: duas implementações que não se viam uma à outra.
+- 🧹 A página deixa de carregar as propriedades (eram só para o CSV local) — menos um pedido por visita.
+- 🔍 **Um erro meu, apanhado a meio**: ao remover a função local cortei código a mais e o carregamento dos dados ficou em risco. Verificado contra o ficheiro em `HEAD` antes de continuar.
+- ✅ 838 testes (6 novos), typecheck 0, lint 0, build OK.
+
 ### [2026-08-18e] O detalhe da reserva aprende os grupos, e o esquema fica documentado
 
 - 🏠 **Quem abria uma reserva de casa inteira via um terço do valor.** A lista já mostra o grupo como uma linha e liga ao primeiro quarto — mas a página de detalhe não sabia que os grupos existem: mostrava 300 € de 920 €, sem nada que dissesse que havia mais dois quartos. Passa a haver um cartão com o nome da casa, o **total do grupo**, o que já foi pago, e a lista dos quartos com estado e valor — cada um clicável, o atual em destaque, os cancelados riscados. E diz o que não é óbvio: **cancelar ali cancela só aquele quarto, mas a fatura é uma só para o grupo**.
