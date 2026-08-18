@@ -25,12 +25,22 @@ export default function TaxaTuristicaPage() {
   /** Hóspedes isentos declarados pelo anfitrião, por reserva. */
   const [isentos, setIsentos] = useState<Record<string, number>>({})
 
+  /* Só o mês que se está a declarar.
+   *
+   * Vinha tudo — e "tudo" para o PostgREST são as 1000 linhas mais recentes,
+   * sem aviso de que há mais. Num alojamento com movimento, declarar um mês de
+   * há um ano dava uma tabela vazia ou pela metade, e o valor entregue à
+   * câmara saía por baixo do devido. */
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchBookings(), fetchProperties()]).then(([b, p]) => {
+    /* Sem `setLoading(true)` ao mudar de mês: a tabela do mês anterior fica no
+     * ecrã até chegar a nova, em vez de piscar para vazio. */
+    const de = `${ano}-${String(mes + 1).padStart(2, '0')}-01`
+    const ate = mes === 11 ? `${ano + 1}-01-01` : `${ano}-${String(mes + 2).padStart(2, '0')}-01`
+    Promise.all([fetchBookings({ de, ate }), fetchProperties()]).then(([b, p]) => {
       setBookings(b); setProps(p); setLoading(false)
     })
-  }, [ownerId])
+  }, [ownerId, ano, mes])
 
   const mapa = useMemo(() => {
     const inicio = `${ano}-${String(mes + 1).padStart(2, '0')}-01`

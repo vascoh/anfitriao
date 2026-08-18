@@ -26,12 +26,17 @@ export default function IneePage() {
   const [ano, setAno] = useState(inicial.ano)
   const [mes, setMes] = useState(inicial.mes)
 
+  // Só o mês declarado: ver a nota em /conformidade/taxa-turistica.
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchBookings(), fetchGuests(), fetchProperties()]).then(([b, g, p]) => {
+    /* Sem `setLoading(true)` ao mudar de mês: a tabela do mês anterior fica no
+     * ecrã até chegar a nova, em vez de piscar para vazio. */
+    const de = `${ano}-${String(mes + 1).padStart(2, '0')}-01`
+    const ate = mes === 11 ? `${ano + 1}-01-01` : `${ano}-${String(mes + 2).padStart(2, '0')}-01`
+    Promise.all([fetchBookings({ de, ate }), fetchGuests(), fetchProperties()]).then(([b, g, p]) => {
       setBookings(b); setGuests(g); setProps(p); setLoading(false)
     })
-  }, [ownerId])
+  }, [ownerId, ano, mes])
 
   const mapa = useMemo(
     () => gerarMapaIne(bookings, guests, props, ano, mes),

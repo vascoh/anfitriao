@@ -1,6 +1,7 @@
 import 'server-only'
 import { createAdminClient } from './supabase'
 import { revelarLista } from './campos-sensiveis'
+import { carregarTudo } from './supabase-tudo'
 import type { SibaBookingRow } from './siba'
 
 export interface SibaBookingRowWithId extends SibaBookingRow {
@@ -20,17 +21,26 @@ export async function fetchSibaRowsForOwner(
 ): Promise<{ rows: SibaBookingRowWithId[]; error?: string }> {
   const supabase = createAdminClient()
 
-  const { data: bookings, error: bookingsError } = await supabase
-    .from('bookings')
-    .select('id, check_in, check_out, num_hospedes, hospede_id, propriedade_id')
-    .eq('owner_id', ownerId)
-    .gte('check_in', from)
-    .lte('check_in', to)
-    .not('estado', 'in', '("cancelada","no_show")')
-    .order('check_in', { ascending: true })
+  /* Em páginas. Um período com mais de 1000 reservas é raro, mas é exatamente
+   * o alojamento grande que mais arrisca: o corte silencioso do PostgREST
+   * deixaria de fora boletins que a lei obriga a comunicar, e o ficheiro sairia
+   * com ar de completo. */
+  const { linhas: bookings, erro: bookingsError } = await carregarTudo<{
+    id: string; check_in: string; check_out: string
+    num_hospedes: number; hospede_id: string | null; propriedade_id: string
+  }>(() =>
+    supabase
+      .from('bookings')
+      .select('id, check_in, check_out, num_hospedes, hospede_id, propriedade_id')
+      .eq('owner_id', ownerId)
+      .gte('check_in', from)
+      .lte('check_in', to)
+      .not('estado', 'in', '("cancelada","no_show")')
+      .order('check_in', { ascending: true }),
+  )
 
   if (bookingsError) {
-    console.error('[siba-fetch]', bookingsError.message)
+    console.error('[siba-fetch]', bookingsError)
     return { rows: [], error: 'Erro ao carregar reservas' }
   }
   if (!bookings || bookings.length === 0) return { rows: [] }

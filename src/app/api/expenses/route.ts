@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase'
 import { canUpsertRow, ownsProperty } from '@/lib/ownership'
 import { today } from '@/lib/utils'
 import type { Expense } from '@/lib/types'
+import { carregarTudo } from '@/lib/supabase-tudo'
 
 const supabase = createAdminClient()
 
@@ -11,14 +12,18 @@ export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const { data, error } = await supabase
-    .from('expenses')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('data', { ascending: false })
+  // Em páginas: as despesas alimentam as contas do ano, e faltar-lhe metade
+  // dá um lucro que não existe.
+  const { linhas, erro } = await carregarTudo(() =>
+    supabase
+      .from('expenses')
+      .select('*')
+      .eq('owner_id', userId)
+      .order('data', { ascending: false }),
+  )
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  if (erro) return NextResponse.json({ error: erro }, { status: 500 })
+  return NextResponse.json(linhas)
 }
 
 /**

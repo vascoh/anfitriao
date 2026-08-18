@@ -177,12 +177,19 @@ export default function RelatoriosPage() {
   const now = useMemo(() => new Date(), [])
   const [year, setYear] = useState(now.getFullYear())
 
+  /* O ano escolhido e o anterior — é o que a página compara. Pedir tudo dava
+   * as 1000 reservas mais recentes e mais nenhuma: os anos anteriores
+   * apareciam vazios num relatório que não dizia que lhe faltavam dados. */
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchBookings(), fetchProperties(), fetchGuests()])
+    Promise.all([
+      fetchBookings({ de: `${year - 1}-01-01`, ate: `${year}-12-31` }),
+      fetchProperties(),
+      fetchGuests(),
+    ])
       .then(([b, p, g]) => { setBookings(b); setProperties(p); setGuests(g) })
       .finally(() => setLoaded(true))
-  }, [ownerId])
+  }, [ownerId, year])
 
   function exportRevenue() {
     const csv = buildRevenueCsv(bookings, properties, guests, year)

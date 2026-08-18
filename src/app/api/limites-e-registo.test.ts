@@ -157,3 +157,29 @@ describe('eliminações que arrastam registos com prazo legal', () => {
     expect(corpo).toMatch(/409/)
   })
 })
+
+/**
+ * Oitava pergunta da série: **o que deixa de funcionar quando os dados
+ * crescem?**
+ *
+ * O PostgREST do Supabase corta qualquer resposta a 1000 linhas — verificado
+ * neste projeto: 2500 pedidas, 1000 devolvidas, resposta 200, aviso nenhum. As
+ * rotas de listagem devolviam por isso as 1000 linhas mais recentes e mais
+ * nenhuma. Numa casa isso são anos; num alojamento de 40 quartos são três
+ * meses, e a partir daí o calendário mostra livre o que está ocupado e a
+ * declaração da taxa turística sai por baixo do devido.
+ *
+ * Não é um problema de velocidade: é o número errado, sem nada a assinalá-lo.
+ */
+describe('listas que têm de vir completas', () => {
+  const COMPLETAS = ['bookings', 'guests', 'expenses']
+
+  it('paginam em vez de aceitar o corte silencioso', () => {
+    const semPaginacao = rotas()
+      .filter(r => COMPLETAS.includes(r.nome))
+      .filter(r => !r.codigo.includes('carregarTudo'))
+      .map(r => r.nome)
+
+    expect(semPaginacao).toEqual([])
+  })
+})

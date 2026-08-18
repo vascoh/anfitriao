@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase'
 import type { Guest } from '@/lib/types'
 import { canUpsertRow } from '@/lib/ownership'
 import { protegerCampos, revelarLista } from '@/lib/campos-sensiveis'
+import { carregarTudo } from '@/lib/supabase-tudo'
 
 const supabase = createAdminClient()
 
@@ -11,14 +12,19 @@ export async function GET() {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const { data, error } = await supabase
-    .from('guests')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('criado_em', { ascending: false })
+  /* Em páginas: o PostgREST corta a 1000 sem avisar, e um hóspede que não
+   * apareça na lista é uma ficha que se volta a criar do zero — a mesma pessoa
+   * duas vezes, e dois boletins onde devia haver um. */
+  const { linhas, erro } = await carregarTudo<Record<string, unknown>>(() =>
+    supabase
+      .from('guests')
+      .select('*')
+      .eq('owner_id', userId)
+      .order('criado_em', { ascending: false }),
+  )
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(revelarLista(data))
+  if (erro) return NextResponse.json({ error: erro }, { status: 500 })
+  return NextResponse.json(revelarLista(linhas))
 }
 
 /**

@@ -4,21 +4,53 @@ import { createAdminClient } from '@/lib/supabase'
 import type { Booking } from '@/lib/types'
 import { canUpsertRow, ownsProperty } from '@/lib/ownership'
 import { logAudit } from '@/lib/audit'
+import { carregarTudo } from '@/lib/supabase-tudo'
 
 const supabase = createAdminClient()
 
-export async function GET() {
+const DATA_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * GET /api/bookings[?de=YYYY-MM-DD&ate=YYYY-MM-DD]
+ *
+ * Sem intervalo devolve tudo — em páginas, porque o PostgREST corta a resposta
+ * a 1000 linhas sem dizer nada. Devolvia por isso as 1000 reservas mais
+ * recentes e mais nenhuma: num alojamento de 40 quartos, cerca de três meses.
+ * O calendário mostrava livre o que estava ocupado e a declaração da taxa
+ * turística saía por baixo, sem erro nenhum a assinalar que faltava metade.
+ *
+ * Com intervalo devolve só o que lá cabe, que é o que quase todas as páginas
+ * precisam: um ano de relatórios, um mês de taxa turística.
+ */
+export async function GET(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('owner_id', userId)
-    .order('check_in', { ascending: false })
+  const { searchParams } = req.nextUrl
+  const de = searchParams.get('de')
+  const ate = searchParams.get('ate')
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  if ((de && !DATA_RE.test(de)) || (ate && !DATA_RE.test(ate))) {
+    return NextResponse.json({ error: 'Datas em formato inválido (YYYY-MM-DD).' }, { status: 400 })
+  }
+
+  const { linhas, erro } = await carregarTudo<Booking>(() => {
+    let q = supabase
+      .from('bookings')
+      .select('*')
+      .eq('owner_id', userId)
+      .order('check_in', { ascending: false })
+
+    /* A estadia sobrepõe-se ao intervalo pedido — não basta a entrada estar
+     * lá dentro. Uma reserva de 28 de dezembro a 3 de janeiro conta para os
+     * dois anos, e filtrar só pelo `check_in` perdia-a num deles. */
+    if (ate) q = q.lte('check_in', ate)
+    if (de) q = q.gte('check_out', de)
+    return q
+  })
+
+  if (erro) return NextResponse.json({ error: erro }, { status: 500 })
+  return NextResponse.json(linhas)
 }
 
 /**

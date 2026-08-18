@@ -17,8 +17,21 @@ export async function fetchGuests(): Promise<Guest[]> {
   return res.ok ? res.json() : []
 }
 
-export async function fetchBookings(): Promise<Booking[]> {
-  const res = await fetch('/api/bookings')
+/**
+ * Reservas do anfitrião.
+ *
+ * `de`/`ate` limitam ao que a página precisa — um ano, um mês. Vale a pena
+ * usá-los: sem intervalo vem tudo, e "tudo" ao fim de uns anos são milhares de
+ * linhas com o histórico completo de cada uma a atravessar a ligação do
+ * telemóvel de quem só quer ver as chegadas de hoje.
+ */
+export async function fetchBookings(intervalo?: { de?: string; ate?: string }): Promise<Booking[]> {
+  const params = new URLSearchParams()
+  if (intervalo?.de) params.set('de', intervalo.de)
+  if (intervalo?.ate) params.set('ate', intervalo.ate)
+  const qs = params.toString()
+
+  const res = await fetch(`/api/bookings${qs ? `?${qs}` : ''}`)
   return res.ok ? res.json() : []
 }
 

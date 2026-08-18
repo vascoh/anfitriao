@@ -25,6 +25,9 @@ function construtor(tabela: string) {
     lte: (c: string, v: string) => { filtros.push(l => String(l[c]) <= v); return obj },
     not: () => obj,
     order: () => obj,
+    /* Como o PostgREST: devolve a fatia pedida. Sem isto o duplo aceitava
+     * qualquer paginação e não provava nada sobre ela. */
+    range: async (de: number, ate: number) => ({ data: alvo().slice(de, ate + 1), error: null }),
     then: (r: (v: { data: unknown; error: null }) => unknown) => r({ data: alvo(), error: null }),
   }
   return obj

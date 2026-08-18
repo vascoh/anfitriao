@@ -489,6 +489,11 @@ export default function CalendarioPage() {
   const [guests, setGuests] = useState<{ id: string; nome: string }[]>([])
   const [view, setView] = useState<'timeline' | 'grid'>('timeline')
 
+  /* Aqui carrega-se tudo de propósito: o calendário navega para qualquer ano,
+   * e uma janela fixa dava meses vazios a quem recuasse o suficiente. Deixou
+   * de ser um problema de correção quando `/api/bookings` passou a paginar —
+   * antes, "tudo" eram as 1000 linhas mais recentes e o resto do calendário
+   * aparecia livre. */
   useEffect(() => {
     if (!ownerId) return
     fetchBookings().then(setBookings)
