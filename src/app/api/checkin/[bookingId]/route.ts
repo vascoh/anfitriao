@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { sendCheckinCompleteNotification } from '@/lib/notify-checkin'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { protegerCampos, revelarCampos, revelarLista } from '@/lib/campos-sensiveis'
 import { chaveDeNome } from '@/lib/nomes'
 import { janelaDeCheckin } from '@/lib/checkin-acesso'
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
   const { bookingId } = await params
 
   // Devolve PII do hóspede — limitar tentativas de enumeração de bookingIds
-  const rl = checkRateLimit(`checkin-get:${getClientIp(req)}`, 60, 3_600_000)
+  const rl = await verificarLimite(`checkin-get:${getClientIp(req)}`, 60, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
   }
@@ -121,7 +122,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
 export async function POST(req: NextRequest, { params }: { params: Params }) {
   const { bookingId } = await params
 
-  const rl = checkRateLimit(`checkin:${getClientIp(req)}`, 10, 3_600_000)
+  const rl = await verificarLimite(`checkin:${getClientIp(req)}`, 10, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
   }

@@ -1,6 +1,16 @@
-// Simple in-memory rate limiter for Edge-compatible environments.
-// Uses a sliding window counter per IP address.
-// NOTE: In multi-instance deployments, use Upstash Redis instead.
+/**
+ * Limitador em memória — uma contagem por processo.
+ *
+ * Em Vercel isso significa uma contagem por instância: o limite vale por
+ * instância e recomeça em cada arranque a frio. Medido em produção — 90
+ * pedidos em paralelo com limite de 60/hora passaram os 90 — portanto isto
+ * **não** trava quem manda pedidos ao mesmo tempo.
+ *
+ * Serve na mesma como primeira porta, de graça, e é o que basta em rotas
+ * autenticadas onde o limite é uma cortesia e não uma defesa. Onde o limite
+ * protege dados pessoais ou dinheiro, usar `verificarLimite` de
+ * `rate-limit-persistente.ts`, que conta na base.
+ */
 
 interface RateLimitState {
   count: number

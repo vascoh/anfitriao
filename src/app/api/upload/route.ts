@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { put } from '@vercel/blob'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 
 const MAX_SIZE = 8 * 1024 * 1024 // 8MB, alinhado com /api/documentos/extrair
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 8 MB por ficheiro, guardados para sempre e pagos por nós.
-  const rl = checkRateLimit(`upload:${userId}`, 40, 3_600_000)
+  const rl = await verificarLimite(`upload:${userId}`, 40, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados carregamentos. Tenta mais tarde.' }, { status: 429 })
   }

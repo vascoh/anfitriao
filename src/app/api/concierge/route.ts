@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { auth } from '@clerk/nextjs/server'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 
 const client = new Anthropic()
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Rate limit: 20 requests per minute per user
-  const rl = checkRateLimit(`concierge:${userId}`, 20, 60_000)
+  const rl = await verificarLimite(`concierge:${userId}`, 20, 60_000)
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Demasiados pedidos. Aguarda um momento.' },

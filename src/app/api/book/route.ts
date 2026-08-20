@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase'
 import { sendBookingNotification } from '@/lib/notify-booking'
 import { uuid } from '@/lib/utils'
 import { validateBookingRequest } from '@/lib/booking-request'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 
 const supabase = createAdminClient()
 
@@ -16,7 +17,7 @@ const supabase = createAdminClient()
  * forçados aqui.
  */
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(`book:${getClientIp(req)}`, 10, 3_600_000)
+  const rl = await verificarLimite(`book:${getClientIp(req)}`, 10, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
   }

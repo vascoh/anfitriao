@@ -50,7 +50,9 @@ describe('quem gasta dinheiro ou incomoda terceiros tem teto', () => {
     const semTeto = rotas()
       .filter(r => CARAS.test(r.codigo))
       .filter(r => !EXCECOES[r.nome])
-      .filter(r => !r.codigo.includes('checkRateLimit'))
+      // Qualquer um dos dois serve aqui: o que importa é haver teto. Qual dos
+      // limitadores é o certo para cada rota é a pergunta do bloco lá abaixo.
+      .filter(r => !/checkRateLimit|verificarLimite/.test(r.codigo))
       .map(r => r.nome)
 
     expect(semTeto).toEqual([])
@@ -181,5 +183,37 @@ describe('listas que têm de vir completas', () => {
       .map(r => r.nome)
 
     expect(semPaginacao).toEqual([])
+  })
+})
+
+/**
+ * Nona pergunta da série: **o que só funciona porque assumimos um servidor
+ * único?**
+ *
+ * O limitador guardava a contagem num `Map` do processo. Em Vercel cada
+ * instância tem o seu, portanto o limite valia por instância e recomeçava em
+ * cada arranque a frio. Medido em produção antes de mexer: 90 pedidos em
+ * paralelo à rota pública de check-in, limite de 60/hora, **nenhum recusado**;
+ * a seguir, 70 em série na mesma instância quente, recusados a partir do 30.º.
+ *
+ * A regra existia e nunca valeu para quem manda pedidos ao mesmo tempo — que é
+ * exatamente quem se quer travar.
+ */
+describe('limites que protegem dados pessoais ou dinheiro', () => {
+  /** Rotas onde o limite é uma defesa, não uma cortesia. */
+  const A_SERIO = ['checkin/[bookingId]', 'concierge', 'upload', 'book']
+
+  it('contam na base, não na memória de cada instância', () => {
+    const soEmMemoria = rotas()
+      .filter(r => A_SERIO.includes(r.nome))
+      .filter(r => !r.codigo.includes('verificarLimite'))
+      .map(r => r.nome)
+
+    expect(soEmMemoria).toEqual([])
+  })
+
+  it('as rotas em causa continuam a existir — uma lista desatualizada não protege nada', () => {
+    const nomes = rotas().map(r => r.nome)
+    for (const alvo of A_SERIO) expect(nomes).toContain(alvo)
   })
 })

@@ -63,6 +63,11 @@ vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: !rateLimited, remaining: 0, resetAt: 0 }),
   getClientIp: () => '1.2.3.4',
 }))
+// A contagem que trava esta rota é a da base, partilhada por todas as
+// instâncias — ver lib/rate-limit-persistente.ts.
+vi.mock('@/lib/rate-limit-persistente', () => ({
+  verificarLimite: async () => ({ allowed: !rateLimited, remaining: 0, resetAt: 0 }),
+}))
 
 const notifyMock = vi.fn(async (..._args: unknown[]) => {})
 vi.mock('@/lib/notify-booking', () => ({

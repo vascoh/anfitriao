@@ -41,6 +41,11 @@ vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: () => ({ allowed: !limitado, remaining: 9, resetAt: 0 }),
   getClientIp: () => '1.2.3.4',
 }))
+/* A contagem que vale é a da base — a memória de cada instância só conta os
+ * pedidos que aquela instância viu. */
+vi.mock('@/lib/rate-limit-persistente', () => ({
+  verificarLimite: async () => ({ allowed: !limitado, remaining: 9, resetAt: 0 }),
+}))
 
 const notificar = vi.fn(async () => {})
 vi.mock('@/lib/notify-checkin', () => ({ sendCheckinCompleteNotification: () => notificar() }))

@@ -116,6 +116,12 @@ CREATE TABLE public.envios_unicos (
   criado_em timestamp with time zone NOT NULL DEFAULT now()
 );
 
+CREATE TABLE public.limites_pedidos (
+  chave text NOT NULL,
+  janela_inicio timestamp with time zone NOT NULL DEFAULT now(),
+  contagem integer NOT NULL DEFAULT 0
+);
+
 CREATE TABLE public.expenses (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   owner_id text,

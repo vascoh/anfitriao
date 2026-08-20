@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { aplicarRetencao } from '@/lib/retencao-server'
+import { limparLimitesAntigos } from '@/lib/rate-limit-persistente'
 
 /**
  * Cron: aplica a política de retenção (ANF-1.10). Diário às 03:00, antes do
@@ -17,6 +18,11 @@ export async function GET(req: NextRequest) {
   if (authError) return authError
 
   const resultado = await aplicarRetencao()
+
+  /* Contagens de pedidos velhas não servem para nada e a tabela é escrita a
+   * cada pedido nas rotas públicas: sem limpeza, cresce para sempre. Aproveita
+   * a rotina que já corre de madrugada e que já é a única que apaga. */
+  await limparLimitesAntigos()
 
   if (resultado.anonimizados > 0 || resultado.erros > 0) {
     console.log(
