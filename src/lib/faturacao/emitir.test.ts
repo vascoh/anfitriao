@@ -161,6 +161,22 @@ describe('emitirFaturaDaReserva', () => {
     expect(pedidos).toHaveLength(0)
   })
 
+  it('recusa quando as taxas somadas passam o valor da reserva', async () => {
+    /* `decomporReserva` trava o alojamento em zero para não o deixar negativo,
+     * mas a limpeza e a taxa turística continuam de pé: uma reserva de 20 €
+     * com 30 € de limpeza dava um documento de 30 € por uma estadia de 20 €.
+     * É um documento certificado, que depois só se anula por nota de crédito —
+     * mais vale não sair. */
+    tabelas.bookings[0].preco_total = 20
+    const r = await emitirFaturaDaReserva('user_1', 'b1')
+
+    expect(r.ok).toBe(false)
+    if (!r.ok) expect(r.motivo).toBe('extras_excedem_total')
+    expect(pedidos).toHaveLength(0)
+    // E não fica presa em 'a_emitir' por causa da reserva do direito de emitir.
+    expect(tabelas.bookings[0].fatura_estado).toBe('nao_emitida')
+  })
+
   it('sem conta de faturação não tenta emitir', async () => {
     conta = null
     const r = await emitirFaturaDaReserva('user_1', 'b1')

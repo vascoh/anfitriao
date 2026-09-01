@@ -26,6 +26,7 @@ export type MotivoFalha =
   | 'sem_conta' | 'conta_incompleta' | 'ja_emitida' | 'a_emitir' | 'presa'
   | 'emitida_sem_registo'
   | 'cancelada' | 'sem_valor' | 'nao_encontrada' | 'sem_permissao' | 'fornecedor'
+  | 'extras_excedem_total'
 
 export interface FalhaEmissao {
   ok: false
@@ -56,6 +57,7 @@ const MENSAGENS: Record<MotivoFalha, string> = {
   nao_encontrada: 'Reserva não encontrada.',
   sem_permissao: 'Sem permissão para esta reserva.',
   fornecedor: 'O fornecedor de faturação recusou o pedido.',
+  extras_excedem_total: 'A taxa de limpeza e a taxa turística somadas ultrapassam o valor da reserva. A fatura sairia por mais do que o hóspede pagou — corrige o preço da reserva ou a taxa de limpeza do alojamento antes de faturar.',
 }
 
 function falha(motivo: MotivoFalha, estado: number, erro?: string): FalhaEmissao {
@@ -135,6 +137,32 @@ export async function emitirFaturaDaReserva(
     limpeza: prop.taxa_limpeza ?? 0,
     taxaTuristica,
   })
+
+  /* A fatura nunca pode somar mais do que a reserva.
+   *
+   * `decomporReserva` trava o alojamento em zero para não o deixar negativo,
+   * mas as outras duas parcelas ficam de pé: com uma reserva de 50 €, uma taxa
+   * de limpeza de 40 € e 30 € de taxa turística, saía um documento de 70 € por
+   * uma estadia de 50 €. O travão evita o número negativo e deixa passar o
+   * número errado — e este é um documento certificado, que depois só se anula
+   * por nota de crédito.
+   *
+   * Recusar é a única saída honesta: escolher qual das parcelas cortar seria a
+   * app a decidir o que o anfitrião cobrou. O que se pode dizer é o que está
+   * incoerente e onde se arranja.
+   *
+   * A tolerância de um cêntimo é do arredondamento, não do negócio. */
+  const somaComponentes = componentes.alojamento
+    + (componentes.limpeza ?? 0)
+    + (componentes.taxaTuristica ?? 0)
+
+  if (somaComponentes - b.preco_total > 0.01) {
+    await supabase
+      .from('bookings')
+      .update({ fatura_estado: 'nao_emitida', fatura_reservada_em: null })
+      .eq('id', bookingId)
+    return falha('extras_excedem_total', 400)
+  }
 
   const resultado = await getInvoicingAdapter().emitir(
     par.credenciais,
@@ -296,6 +324,20 @@ export async function emitirFaturaDoGrupo(
       }),
     }
   })
+
+  /* A mesma coerência do caminho individual, agora somada por quartos: o
+   * documento do grupo não pode passar o que o grupo pagou. Aqui é mais fácil
+   * de acontecer sem se dar por isso, porque basta **um** quarto barato com
+   * taxa de limpeza própria para inflacionar o total de todos. */
+  const somaQuartos = quartos.reduce((s, q) =>
+    s + q.componentes.alojamento + (q.componentes.limpeza ?? 0) + (q.componentes.taxaTuristica ?? 0), 0)
+
+  if (somaQuartos - total > 0.01) {
+    await supabase.from('bookings')
+      .update({ fatura_estado: 'nao_emitida', fatura_reservada_em: null })
+      .eq('reserva_grupo_id', grupoId).eq('owner_id', ownerId)
+    return falha('extras_excedem_total', 400)
+  }
 
   const resultado = await getInvoicingAdapter().emitir(par.credenciais, {
     tipo: 'invoice_receipt',
