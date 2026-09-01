@@ -36,7 +36,9 @@ export async function fetchSibaRowsForOwner(
       .gte('check_in', from)
       .lte('check_in', to)
       .not('estado', 'in', '("cancelada","no_show")')
-      .order('check_in', { ascending: true }),
+      .order('check_in', { ascending: true })
+      // Desempate estável: ver a nota sobre ordenação em lib/supabase-tudo.ts.
+      .order('id', { ascending: true }),
   )
 
   if (bookingsError) {

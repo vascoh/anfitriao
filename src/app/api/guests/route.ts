@@ -20,7 +20,9 @@ export async function GET() {
       .from('guests')
       .select('*')
       .eq('owner_id', userId)
-      .order('criado_em', { ascending: false }),
+      .order('criado_em', { ascending: false })
+      // Desempate estável: ver a nota sobre ordenação em lib/supabase-tudo.ts.
+      .order('id', { ascending: true }),
   )
 
   if (erro) return NextResponse.json({ error: erro }, { status: 500 })

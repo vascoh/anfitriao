@@ -89,7 +89,8 @@ async function syncProperty(
       .from('bookings')
       .select('id, uid_externo, check_in, check_out, estado, historico')
       .eq('propriedade_id', propertyId)
-      .not('uid_externo', 'is', null),
+      .not('uid_externo', 'is', null)
+      .order('id', { ascending: true }),
   )
 
   /* Sem esta lista não se sincroniza. Continuar às cegas não é "meio

@@ -33,6 +33,19 @@ interface Paginavel<T> {
  * `construir` é chamada uma vez por página porque um construtor do supabase-js
  * não se pode reutilizar depois de executado — reaproveitá-lo devolveria a
  * mesma página vezes sem conta.
+ *
+ * ⚠️ **A consulta tem de terminar numa ordenação única.** Cada página é um
+ * `SELECT` novo, e sem `ORDER BY` o Postgres não promete devolver as linhas
+ * pela mesma ordem duas vezes — nem sequer promete uma ordem. Ordenar por uma
+ * coluna com repetições (`check_in`, `criado_em`, `data`) não chega: as linhas
+ * empatadas em cima da fronteira das mil podem trocar de lugar entre a página
+ * que acabou e a que começa, e então uma vem duas vezes e outra não vem
+ * nenhuma. Numa função que existe para as respostas estarem **completas**, uma
+ * linha que desaparece é uma noite por declarar.
+ *
+ * Por isso todas as consultas daqui acabam em `.order('id')` — o desempate que
+ * a chave primária garante. Ordena-se pelo que interessa primeiro, e por `id`
+ * a seguir.
  */
 export async function carregarTudo<T>(
   construir: () => Paginavel<T>,

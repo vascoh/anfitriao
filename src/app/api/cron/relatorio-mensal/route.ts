@@ -50,12 +50,14 @@ export async function GET(req: NextRequest) {
     { linhas: bookings, erro: errBookings },
   ] = await Promise.all([
     carregarTudo<Property>(() =>
-      supabase.from('properties').select('*').not('owner_id', 'is', null)),
+      supabase.from('properties').select('*').not('owner_id', 'is', null)
+        .order('id', { ascending: true })),
     carregarTudo<Booking>(() =>
       supabase.from('bookings').select('*')
         .not('owner_id', 'is', null)
         .gte('check_out', inicioJanela)
-        .lte('check_in', fimJanela)),
+        .lte('check_in', fimJanela)
+        .order('id', { ascending: true })),
   ])
 
   if (errProps || errBookings) {

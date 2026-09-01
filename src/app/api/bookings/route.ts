@@ -40,6 +40,8 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('owner_id', userId)
       .order('check_in', { ascending: false })
+      // Desempate estável: ver a nota sobre ordenação em lib/supabase-tudo.ts.
+      .order('id', { ascending: true })
 
     /* A estadia sobrepõe-se ao intervalo pedido — não basta a entrada estar
      * lá dentro. Uma reserva de 28 de dezembro a 3 de janeiro conta para os

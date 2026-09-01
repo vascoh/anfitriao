@@ -19,7 +19,9 @@ export async function GET() {
       .from('expenses')
       .select('*')
       .eq('owner_id', userId)
-      .order('data', { ascending: false }),
+      .order('data', { ascending: false })
+      // Desempate estável: ver a nota sobre ordenação em lib/supabase-tudo.ts.
+      .order('id', { ascending: true }),
   )
 
   if (erro) return NextResponse.json({ error: erro }, { status: 500 })
