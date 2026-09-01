@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { Booking } from '@/lib/types'
-import { canUpsertRow, ownsProperty } from '@/lib/ownership'
+import { canUpsertRow, ownsProperty, ehCasaComQuartos } from '@/lib/ownership'
 import { logAudit } from '@/lib/audit'
 import { carregarTudo } from '@/lib/supabase-tudo'
 
@@ -92,6 +92,17 @@ export async function POST(req: NextRequest) {
   // dados de alguém que é cliente de outro anfitrião.
   if (!(await canUpsertRow(supabase, 'guests', body.hospede_id, userId))) {
     return NextResponse.json({ error: 'Hóspede não encontrado.' }, { status: 404 })
+  }
+
+  /* Uma casa com quartos é o contentor deles, não uma unidade alugável — e
+   * `/reservas/nova` já não a oferece. Faltava a regra do lado do servidor,
+   * onde ela vale para o separador que ficou aberto antes de o primeiro quarto
+   * existir e para qualquer escrita que não venha daquele ecrã. Ver
+   * `ehCasaComQuartos`: a reserva ficava invisível e não bloqueava nada. */
+  if (await ehCasaComQuartos(supabase, body.propriedade_id)) {
+    return NextResponse.json({
+      error: 'Esta casa tem quartos: reserva um quarto, ou usa a reserva de casa inteira.',
+    }, { status: 400 })
   }
 
   /* Datas coerentes. Não era verificado em lado nenhum do servidor: uma

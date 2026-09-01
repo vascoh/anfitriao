@@ -8,6 +8,8 @@ const inserted: { table: string; row: Record<string, unknown> }[] = []
 const deleted: string[] = []
 let propertyRow: Record<string, unknown> | null = null
 let conflictRows: Array<{ id: string }> = []
+/** Quartos ativos da propriedade pedida — uma casa com quartos não é alugável. */
+let quartosFilhos: Array<{ id: string }> = []
 
 vi.mock('@/lib/supabase', () => ({
   createAdminClient: () => ({
@@ -20,6 +22,10 @@ vi.mock('@/lib/supabase', () => ({
                 propertyRow
                   ? { data: propertyRow, error: null }
                   : { data: null, error: { message: 'not found' } },
+              // ehCasaComQuartos: .eq('parent_id', id).eq('ativo', true).limit(1)
+              eq: () => ({
+                limit: async () => ({ data: quartosFilhos, error: null }),
+              }),
             }),
           }
         }
@@ -106,6 +112,7 @@ beforeEach(() => {
   notifyMock.mockClear()
   propertyRow = { ...PROPERTY }
   conflictRows = []
+  quartosFilhos = []
   rateLimited = false
 })
 
@@ -243,6 +250,19 @@ describe('POST /api/book', () => {
     propertyRow = { ...PROPERTY, ativo: false }
     const res = await POST(makeReq(VALID))
     expect(res.status).toBe(404)
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('recusa reservar uma casa que tem quartos', async () => {
+    /* O id da casa é público — anda no URL de `/book/[id]`. A reserva na
+     * casa-mãe não choca com nada, não bloqueia os quartos, não sai no feed
+     * iCal e não aparece em ecrã nenhum (todos filtram por unidades
+     * alugáveis): ficava uma reserva invisível em datas que continuavam a ser
+     * vendidas. O ecrã já se comportava assim; o servidor não. */
+    quartosFilhos = [{ id: 'quarto-1' }]
+
+    const res = await POST(makeReq(VALID))
+    expect(res.status).toBe(400)
     expect(inserted).toHaveLength(0)
   })
 

@@ -36,6 +36,40 @@ export async function ownsProperty(
   return data.owner_id === null || data.owner_id === userId
 }
 
+/**
+ * Esta propriedade é uma casa com quartos ativos — ou seja, não é uma unidade
+ * alugável?
+ *
+ * `unidadesReservaveis` (lib/reservations.ts) diz que uma casa com quartos é o
+ * contentor deles e nunca se reserva por inteiro: reserva-se um quarto, ou
+ * reservam-se todos (reserva de grupo, `lib/grupos.ts`). Os ecrãs todos já se
+ * comportavam assim; o **servidor** não, e a regra só valia enquanto o browser
+ * a cumprisse.
+ *
+ * Uma reserva gravada na casa-mãe é pior do que uma reserva errada: não choca
+ * com nada (o conflito é procurado por `propriedade_id`, e a casa não tem
+ * reservas), não bloqueia os quartos, não sai no feed iCal que o Amenitiz e as
+ * plataformas leem — e não aparece em ecrã nenhum, porque todos filtram por
+ * unidades alugáveis. Fica uma reserva invisível numas datas que continuam a
+ * ser vendidas a toda a gente.
+ *
+ * O `id` de uma propriedade é público (anda no URL de `/book/[id]`), portanto
+ * chega um pedido a `/api/book` com o id da casa para a criar.
+ */
+export async function ehCasaComQuartos(
+  supabase: SupabaseClient,
+  propertyId: unknown,
+): Promise<boolean> {
+  if (typeof propertyId !== 'string' || !propertyId) return false
+  const { data } = await supabase
+    .from('properties')
+    .select('id')
+    .eq('parent_id', propertyId)
+    .eq('ativo', true)
+    .limit(1)
+  return !!data && data.length > 0
+}
+
 export async function canUpsertRow(
   supabase: SupabaseClient,
   table: string,

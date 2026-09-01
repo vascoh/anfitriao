@@ -3,6 +3,7 @@ import { createAdminClient } from './supabase'
 import { uuid, nights, today } from './utils'
 import { calculatePriceWithRules } from './reservations'
 import { adminGetPriceRules, adminGetTarifas, adminGetPlatformRates } from './db-admin'
+import { ehCasaComQuartos } from './ownership'
 import type { Property } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -95,6 +96,18 @@ export async function validateBookingRequest(
   }
 
   const owner_id = prop.owner_id as string | null
+
+  /* Uma casa com quartos não se reserva por inteiro por este caminho — para
+   * isso existe `/api/book/grupo`, que reserva os quartos todos. Ver
+   * `ehCasaComQuartos`: sem isto ficava uma reserva que não bloqueia nada e
+   * que nenhum ecrã mostra. */
+  if (await ehCasaComQuartos(supabase, propriedade_id)) {
+    return {
+      ok: false,
+      error: 'Esta casa reserva-se por quarto, ou por inteiro através da reserva de grupo.',
+      status: 400,
+    }
+  }
 
   /* Cabem? O caminho de grupo já validava a capacidade; este não validava
    * nada, e aceitava um pedido de 50 pessoas para um T0. O número vai para

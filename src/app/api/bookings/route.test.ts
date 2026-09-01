@@ -124,6 +124,27 @@ describe('POST /api/bookings', () => {
     expect(escritas[0].row.owner_id).toBe('user_1')
   })
 
+  it('recusa reservar uma casa que tem quartos ativos', async () => {
+    /* Uma casa com quartos é o contentor deles, não uma unidade alugável
+     * (`unidadesReservaveis`). `/reservas/nova` já não a oferece; a regra
+     * faltava no servidor, que é onde vale para o separador que ficou aberto
+     * antes de o primeiro quarto existir. A reserva ficava invisível — nenhum
+     * ecrã a mostra — e não bloqueava os quartos, que continuavam a ser
+     * vendidos nas mesmas datas. */
+    tabelas.properties.push({ id: 'q-1', owner_id: 'user_1', parent_id: 'p-minha', ativo: true })
+
+    const res = await POST(pedido(RESERVA))
+    expect(res.status).toBe(400)
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('um quarto desativado não impede reservar a casa', async () => {
+    tabelas.properties.push({ id: 'q-1', owner_id: 'user_1', parent_id: 'p-minha', ativo: false })
+
+    const res = await POST(pedido(RESERVA))
+    expect(res.status).toBe(200)
+  })
+
   it('recusa reservar no alojamento de outro anfitrião', async () => {
     /* O id de uma propriedade é público — está no URL de /book/[id]. Sem este
      * guarda, uma conta grátis bloqueava o calendário do vizinho: o
