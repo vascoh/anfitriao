@@ -31,6 +31,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/book/checkout',
   '/api/book-checkout-fulfill',
   '/api/og(.*)',
+  // Subscrição da newsletter na landing page (rate-limited na base)
+  '/api/newsletter',
   '/api/ical/(.*)',
   '/api/checkin/(.*)',
   '/api/book-confirmation/(.*)',

@@ -8,6 +8,7 @@ type Campos = { email: string }
 
 export function Newsletter() {
   const [enviado, setEnviado] = useState(false)
+  const [falha, setFalha] = useState<string | null>(null)
   const {
     register,
     handleSubmit,
@@ -15,10 +16,28 @@ export function Newsletter() {
     formState: { errors, isSubmitting },
   } = useForm<Campos>({ mode: 'onSubmit' })
 
-  // TODO: ligar a um endpoint real de subscrição antes de publicar.
-  const onSubmit = async () => {
-    setEnviado(true)
-    reset()
+  /* Isto era `setEnviado(true)` e mais nada: o formulário dizia "ficaste
+   * subscrito" e não guardava o email em lado nenhum. Recolher um email com a
+   * promessa de um serviço e deitá-lo fora é pior do que não ter formulário —
+   * ninguém do outro lado fica a saber que a promessa não foi cumprida. */
+  const onSubmit = async ({ email }: Campos) => {
+    setFalha(null)
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, origem: 'landing' }),
+      })
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: null }))
+        setFalha(error ?? 'Não foi possível subscrever. Tenta mais tarde.')
+        return
+      }
+      setEnviado(true)
+      reset()
+    } catch {
+      setFalha('Sem ligação. Verifica a internet e tenta outra vez.')
+    }
   }
 
   return (
@@ -66,7 +85,10 @@ export function Newsletter() {
             {errors.email.message}
           </span>
         )}
-        {enviado && !errors.email && (
+        {falha && !errors.email && (
+          <span className="text-red-400">{falha}</span>
+        )}
+        {enviado && !errors.email && !falha && (
           <span className="text-emerald-400">Obrigado — ficaste subscrito.</span>
         )}
       </p>
