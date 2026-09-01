@@ -1,7 +1,7 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
   Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
-  UserRound, CreditCard, Receipt,
+  UserRound, CreditCard, Receipt, Rss,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -58,6 +58,7 @@ export const NAV: NavSection[] = [
     label: 'Alojamentos',
     Icon: Building2,
     children: [
+      { href: '/canais', label: 'Canais', Icon: Rss, descricao: 'Ligar o calendário ao Airbnb e ao Booking.com' },
       { href: '/precos', label: 'Preços', Icon: Tag, descricao: 'Regras, tarifas e plataformas' },
       { href: '/conformidade', label: 'Conformidade', Icon: ShieldCheck, descricao: 'RNAL, seguro, Livro de Reclamações' },
       { href: '/website', label: 'Site de reservas', Icon: Globe, descricao: 'O teu site público' },

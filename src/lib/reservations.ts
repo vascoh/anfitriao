@@ -17,6 +17,26 @@ export function dateRange(start: string, end: string): string[] {
   return dates
 }
 
+/**
+ * Isto é um bloqueio do anfitrião, ou uma reserva de alguém?
+ *
+ * Um bloqueio é uma linha que o anfitrião criou para tapar datas — obras, uso
+ * próprio, limpeza — e por isso não tem hóspede. Não basta, porém, perguntar
+ * pelo hóspede: **as reservas importadas dos canais também não têm**. O iCal
+ * não transporta nome nem contacto, portanto o `ical-sync` insere-as com
+ * `hospede_id: null` e o nome do hóspede só aparece se o anfitrião o
+ * preencher à mão.
+ *
+ * Olhar só para o hóspede fazia passar por «Bloqueado» exatamente aquilo que
+ * mais interessa ver — a reserva que chegou do Airbnb — e pintava-a de cinzento
+ * no calendário, num ecrã onde a cor existe para dizer de que canal veio.
+ *
+ * O `uid_externo` é o que distingue: só as linhas que vieram de um feed o têm.
+ */
+export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo'>): boolean {
+  return !b.hospede_id && !b.uid_externo
+}
+
 export function blockedDates(bookings: Booking[], propertyId: string, excludeId?: string): Set<string> {
   const set = new Set<string>()
   bookings

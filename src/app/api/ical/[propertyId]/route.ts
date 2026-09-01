@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase'
 import { generateIcal } from '@/lib/ical'
+import { eBloqueio } from '@/lib/reservations'
 const supabase = createAdminClient()
 
 export const revalidate = 300
@@ -39,7 +40,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pro
   ]
 
   const { data: bookings } = await supabase
-    .from('bookings').select('id, hospede_id, check_in, check_out, estado')
+    .from('bookings').select('id, hospede_id, uid_externo, check_in, check_out, estado')
     .in('propriedade_id', idsOcupacao)
     .not('estado', 'in', '("cancelada","no_show")')
 
@@ -47,7 +48,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ pro
   // propertyId (visível nos URLs públicos /book) — só datas de ocupação.
   const events = (bookings ?? []).map(b => ({
     uid: `${publicUid(b.id as string)}@anfitriao`,
-    summary: b.hospede_id ? 'Reservado' : 'Bloqueado',
+    // Uma reserva importada de um canal não tem hóspede (o iCal não o
+    // transporta) e não é um bloqueio — ver `eBloqueio`.
+    summary: eBloqueio(b as { hospede_id: string | null; uid_externo?: string }) ? 'Bloqueado' : 'Reservado',
     start: b.check_in as string,
     end: b.check_out as string,
   }))

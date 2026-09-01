@@ -155,7 +155,13 @@ async function syncProperty(
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[ical-sync] feed "${feed.nome}" failed:`, msg)
       todosOsFeedsOk = false
-      updatedFeeds.push({ ...feed, last_sync: new Date().toISOString(), error: msg })
+      /* `last_sync` **não** se toca numa falha: quer dizer «última leitura com
+       * sucesso», e é sobre ela que se decide se um feed está desatualizado
+       * (36 h, ver `lib/canais.ts`). Carimbá-la aqui dava a um feed que falha
+       * todas as noites um «Última sincronização: hoje às 04:00» — a data
+       * dizia que estava tudo bem e o calendário estava parado desde o dia em
+       * que partiu. */
+      updatedFeeds.push({ ...feed, error: msg })
       results.push({ feed: feed.nome, imported: 0, skipped: 0, error: msg })
     }
   }

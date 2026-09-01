@@ -5,11 +5,12 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
-import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
+import { occupancyForMonth, unidadesReservaveis, eBloqueio } from '@/lib/reservations'
 import { nights } from '@/lib/utils'
 import { addDays, today as localToday } from '@/lib/utils'
-import type { Booking, Property } from '@/lib/types'
-import { STATUS_LABEL } from '@/lib/labels'
+import type { Booking, Property, BookingSource } from '@/lib/types'
+import { STATUS_LABEL, SOURCE_LABEL, SOURCE_COLOR } from '@/lib/labels'
+import { estadoDoAlojamento } from '@/lib/canais'
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -24,6 +25,75 @@ function isoDate(y: number, m: number, d: number) {
 /* `nights` de `lib/utils` faz exatamente esta conta, com o mesmo tratamento
  * de fuso — era uma terceira cópia da mesma fórmula. */
 const daysBetween = nights
+
+/* ── De onde veio esta reserva ──────────────────────────────────────────────
+ *
+ * O calendário pintava as reservas com a cor da **propriedade**. Na vista de
+ * timeline isso não dizia nada: cada linha já é uma propriedade, portanto a
+ * cor repetia a informação que o rótulo da linha dava — e a pergunta que o
+ * anfitrião faz ao olhar para o calendário («esta reserva veio do Airbnb ou do
+ * meu site?») não tinha resposta em lado nenhum, apesar de `origem` estar
+ * guardada em todas as reservas desde sempre.
+ *
+ * Passa a ser o canal a dar a cor. As cores das plataformas já existiam em
+ * `lib/labels` e não eram usadas em sítio nenhum do calendário. */
+
+function origemDe(b: Booking): BookingSource {
+  return (b.origem ?? 'direto') as BookingSource
+}
+
+/* `eBloqueio` vive em `lib/reservations`: a regra é a mesma no feed que se
+ * exporta e tem um caso que não se adivinha — as reservas importadas dos
+ * canais também não têm hóspede. Ver lá o porquê. */
+
+/**
+ * O que se escreve na barra da reserva.
+ *
+ * Uma reserva importada não traz nome — o iCal não transporta hóspedes. Pôr-lhe
+ * «Sem nome» descreve a limitação da ferramenta em vez de dizer o que se sabe:
+ * de onde é que ela veio. Vale mais ler «Airbnb» do que um vazio.
+ */
+function nomeDaReserva(b: Booking, guests: { id: string; nome: string }[]): string {
+  if (eBloqueio(b)) return 'Bloqueado'
+  const nome = guests.find(g => g.id === b.hospede_id)?.nome
+  return nome ?? (b.uid_externo ? SOURCE_LABEL[origemDe(b)] : 'Sem nome')
+}
+
+function corDaReserva(b: Booking): string {
+  return eBloqueio(b) ? '#6B7280' : SOURCE_COLOR[origemDe(b)]
+}
+
+/** Legenda dos canais — só os que aparecem mesmo no que está a ser mostrado. */
+function LegendaCanais({ bookings }: { bookings: Booking[] }) {
+  const presentes = useMemo(() => {
+    const s = new Set<string>()
+    let temBloqueio = false
+    for (const b of bookings) {
+      if (eBloqueio(b)) temBloqueio = true
+      else s.add(origemDe(b))
+    }
+    return { canais: [...s] as BookingSource[], temBloqueio }
+  }, [bookings])
+
+  if (presentes.canais.length === 0 && !presentes.temBloqueio) return null
+
+  return (
+    <div className="flex items-center gap-x-3 gap-y-1.5 flex-wrap">
+      {presentes.canais.map(c => (
+        <span key={c} className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-sm shrink-0" style={{ backgroundColor: SOURCE_COLOR[c] }} aria-hidden />
+          <span className="text-[11px] text-muted-foreground">{SOURCE_LABEL[c]}</span>
+        </span>
+      ))}
+      {presentes.temBloqueio && (
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-4 rounded-sm shrink-0 bg-gray-500" aria-hidden />
+          <span className="text-[11px] text-muted-foreground">Bloqueio</span>
+        </span>
+      )}
+    </div>
+  )
+}
 
 // ─── Timeline View ────────────────────────────────────────────────────────────
 
@@ -204,22 +274,44 @@ function TimelineView({
                       const widthPx = widthDays * CELL_W - 2
                       const isCutLeft = b.check_in < windowStart
                       const isCutRight = b.check_out > addDays(windowEnd, 1)
-                      const guestName = guests.find(g => g.id === b.hospede_id)?.nome ?? '—'
+                      const bloqueio = eBloqueio(b)
+                      const guestName = nomeDaReserva(b, guests)
+                      const canal = SOURCE_LABEL[origemDe(b)]
+
+                      /* O que o anfitrião precisa de saber sem clicar: quem,
+                       * de onde, e quando entra e sai. O `title` diz tudo por
+                       * extenso — a barra só tem espaço para o nome. */
+                      const descricao = bloqueio
+                        ? `Bloqueado · ${b.check_in} a ${b.check_out}`
+                        : `${guestName} · ${canal} · entrada ${b.check_in}, saída ${b.check_out}`
 
                       return (
                         <Link
                           key={b.id}
                           href={`/reservas/${b.id}`}
+                          title={descricao}
+                          aria-label={descricao}
                           className="absolute top-1.5 bottom-1.5 flex items-center overflow-hidden z-10"
                           style={{
                             left: leftPx + 1,
                             width: widthPx,
-                            backgroundColor: prop.cor,
+                            backgroundColor: corDaReserva(b),
+                            /* O canto redondo marca o início e o fim reais da
+                             * estadia; a ponta direita fica em bico quando a
+                             * reserva continua para lá da janela. */
                             borderRadius: `${isCutLeft ? 0 : 6}px ${isCutRight ? 0 : 6}px ${isCutRight ? 0 : 6}px ${isCutLeft ? 0 : 6}px`,
-                            opacity: b.estado === 'checkout' ? 0.5 : 0.9,
+                            opacity: b.estado === 'checkout' ? 0.45 : b.estado === 'pendente' ? 0.6 : 0.92,
+                            /* Pendente às riscas: uma reserva por confirmar não
+                             * pode ler-se como uma noite vendida. */
+                            backgroundImage: b.estado === 'pendente'
+                              ? 'repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px)'
+                              : undefined,
                           }}
                         >
-                          <span className="text-[10px] font-semibold text-white px-2 truncate leading-none">
+                          {!isCutLeft && (
+                            <span className="h-full w-1 bg-white/70 shrink-0" aria-hidden title="Entrada" />
+                          )}
+                          <span className="text-[10px] font-semibold text-white px-1.5 truncate leading-none">
                             {guestName}
                           </span>
                         </Link>
@@ -235,10 +327,11 @@ function TimelineView({
 
       {/* Legend */}
       {activeProps.length > 0 && (
-        <div className="px-4 py-3 border-t border-border bg-card">
-          <div className="flex items-center gap-1 flex-wrap">
-            <span className="text-[10px] text-muted-foreground mr-1">Clica numa célula vazia para criar reserva</span>
-          </div>
+        <div className="px-4 py-3 border-t border-border bg-card flex flex-col gap-2">
+          <LegendaCanais bookings={bookings} />
+          <span className="text-[10px] text-muted-foreground">
+            A cor diz de que canal veio a reserva. Clica numa célula vazia para criar uma reserva.
+          </span>
         </div>
       )}
     </div>
@@ -255,9 +348,9 @@ function getBookingsForDay(bookings: Booking[], date: string): Booking[] {
 }
 
 function DayCell({
-  date, bookings, props, isToday, isSelected, onClick,
+  date, bookings, isToday, isSelected, onClick,
 }: {
-  date: string; bookings: Booking[]; props: Property[]; isToday: boolean; isSelected: boolean; onClick: () => void
+  date: string; bookings: Booking[]; isToday: boolean; isSelected: boolean; onClick: () => void
 }) {
   const dayBookings = getBookingsForDay(bookings, date)
   const dayNum = parseInt(date.slice(8))
@@ -277,13 +370,13 @@ function DayCell({
         {dayNum}
       </span>
       <div className="flex flex-col gap-0.5 w-full px-0.5">
-        {dayBookings.slice(0, 3).map(b => {
-          const prop = props.find(p => p.id === b.propriedade_id)
-          return (
-            <div key={b.id} className="h-1 w-full rounded-sm"
-              style={{ backgroundColor: prop?.cor ?? 'var(--primary)', opacity: 0.75 }} />
-          )
-        })}
+        {/* A mesma regra da timeline: a cor é o canal. Ter as duas vistas a
+         * usar a cor para coisas diferentes no mesmo ecrã custava mais do que
+         * valia — quem aprendia "vermelho = Airbnb" numa desaprendia na outra. */}
+        {dayBookings.slice(0, 3).map(b => (
+          <div key={b.id} className="h-1 w-full rounded-sm"
+            style={{ backgroundColor: corDaReserva(b), opacity: 0.85 }} />
+        ))}
         {dayBookings.length > 3 && (
           <span className="text-[8px] text-muted-foreground leading-none mt-0.5 text-center">
             +{dayBookings.length - 3}
@@ -348,10 +441,6 @@ function GridView({
 
   const selectedBookings = selected ? getBookingsForDay(bookings, selected) : []
 
-  function guestName(hospede_id: string | null) {
-    return guests.find(g => g.id === hospede_id)?.nome ?? '—'
-  }
-
   return (
     <div className="flex flex-col flex-1">
       {/* Month nav */}
@@ -384,7 +473,6 @@ function GridView({
                 key={date}
                 date={date}
                 bookings={bookings}
-                props={properties}
                 isToday={date === today}
                 isSelected={date === selected}
                 onClick={() => setSelected(selected === date ? null : date)}
@@ -394,13 +482,11 @@ function GridView({
         </div>
 
         {activeProps.length > 0 && (
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1">
-            {activeProps.map(p => (
-              <div key={p.id} className="flex items-center gap-1.5">
-                <div className="h-2 w-4 rounded-sm shrink-0" style={{ backgroundColor: p.cor, opacity: 0.8 }} />
-                <span className="text-xs text-muted-foreground">{p.nome}</span>
-              </div>
-            ))}
+          <div className="flex flex-col gap-1.5 pt-1">
+            <LegendaCanais bookings={bookings} />
+            <span className="text-[10px] text-muted-foreground">
+              A cor diz de que canal veio a reserva. Toca num dia para ver o detalhe.
+            </span>
           </div>
         )}
 
@@ -426,10 +512,26 @@ function GridView({
                   return (
                     <Link key={b.id} href={`/reservas/${b.id}`}
                       className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 active:bg-muted/40 transition-colors">
-                      <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} />
+                      <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: corDaReserva(b) }} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{guestName(b.hospede_id)}</p>
-                        <p className="text-xs text-muted-foreground truncate">{prop?.nome}</p>
+                        <p className="text-sm font-semibold truncate">
+                          {nomeDaReserva(b, guests)}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                          <span className="truncate">{prop?.nome}</span>
+                          {!eBloqueio(b) && (
+                            <>
+                              <span aria-hidden>·</span>
+                              <span
+                                className="inline-flex items-center gap-1 shrink-0"
+                                title={`Reserva vinda de ${SOURCE_LABEL[origemDe(b)]}`}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: SOURCE_COLOR[origemDe(b)] }} aria-hidden />
+                                {SOURCE_LABEL[origemDe(b)]}
+                              </span>
+                            </>
+                          )}
+                        </p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         {isCheckIn && (
@@ -488,18 +590,72 @@ export default function CalendarioPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<{ id: string; nome: string }[]>([])
   const [view, setView] = useState<'timeline' | 'grid'>('timeline')
+  const [aCarregar, setACarregar] = useState(true)
+  const [erro, setErro] = useState(false)
 
   /* Aqui carrega-se tudo de propósito: o calendário navega para qualquer ano,
    * e uma janela fixa dava meses vazios a quem recuasse o suficiente. Deixou
    * de ser um problema de correção quando `/api/bookings` passou a paginar —
    * antes, "tudo" eram as 1000 linhas mais recentes e o resto do calendário
-   * aparecia livre. */
+   * aparecia livre.
+   *
+   * O estado de carregamento não existia, e a diferença entre "ainda não
+   * chegou" e "não há nada" é a diferença entre um calendário vazio por um
+   * segundo e um "Sem propriedades ativas" a mentir a quem tem seis. Pior: as
+   * três promessas não tinham `catch`, portanto uma falha de rede deixava o
+   * calendário vazio para sempre, sem um erro em lado nenhum. */
   useEffect(() => {
     if (!ownerId) return
-    fetchBookings().then(setBookings)
-    fetchProperties().then(setProperties)
-    fetchGuests().then(g => setGuests(g.map(x => ({ id: x.id, nome: x.nome }))))
+    let vivo = true
+    Promise.all([fetchBookings(), fetchProperties(), fetchGuests()])
+      .then(([b, p, g]) => {
+        if (!vivo) return
+        setBookings(b)
+        setProperties(p)
+        setGuests(g.map(x => ({ id: x.id, nome: x.nome })))
+      })
+      .catch(() => { if (vivo) setErro(true) })
+      .finally(() => { if (vivo) setACarregar(false) })
+    return () => { vivo = false }
   }, [ownerId])
+
+  /* Um calendário que não sabe de uma reserva é indistinguível de um
+   * calendário sem reservas — e é sobre ele que se decide vender uma noite.
+   * Quando um canal está em erro ou parado, isso tem de se ver aqui, e não só
+   * na página de canais onde ninguém vai por iniciativa própria. */
+  const canaisComProblema = useMemo(
+    () => unidadesReservaveis(properties).filter(p => {
+      const e = estadoDoAlojamento(p.ical_feeds ?? [])
+      return e === 'erro' || e === 'desatualizado'
+    }),
+    [properties],
+  )
+
+  if (aCarregar) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-full gap-3 py-20">
+        <div className="h-6 w-6 rounded-full border-2 border-primary/30 border-t-primary animate-spin" aria-hidden />
+        <p className="text-sm text-muted-foreground">A carregar o calendário…</p>
+      </div>
+    )
+  }
+
+  if (erro) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-full gap-4 py-20 px-6 text-center">
+        <p className="text-base font-semibold">Não foi possível carregar o calendário</p>
+        <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
+          Pode ter sido uma falha de rede. Não assumas que as datas estão livres sem confirmar.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold hover:bg-muted transition-colors"
+        >
+          Tentar outra vez
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-full">
@@ -527,6 +683,22 @@ export default function CalendarioPage() {
             </button>
           </div>
         </div>
+        {canaisComProblema.length > 0 && (
+          <Link
+            href="/canais"
+            className="flex items-start gap-2 px-4 py-2.5 border-t border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors"
+          >
+            <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden />
+            <span className="text-xs leading-relaxed">
+              <strong>
+                {canaisComProblema.length === 1
+                  ? `O calendário de "${canaisComProblema[0].nome}" não está a sincronizar.`
+                  : `${canaisComProblema.length} alojamentos não estão a sincronizar.`}
+              </strong>{' '}
+              Podem existir reservas nas plataformas que não aparecem aqui. Ver canais →
+            </span>
+          </Link>
+        )}
       </header>
 
       {view === 'timeline' ? (

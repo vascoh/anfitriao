@@ -82,6 +82,71 @@ export const GUIAS: Record<Exclude<BookingSource, 'direto'>, GuiaIcal> = {
 }
 
 /**
+ * O caminho inverso: onde **colar** o endereço que o Anfitrião publica.
+ *
+ * Sem isto a ligação é de sentido único e engana. Importar traz para cá as
+ * reservas da plataforma, mas nada impede essa mesma plataforma de vender uma
+ * noite que já foi vendida no teu site ou noutra plataforma — só o feed que
+ * sai daqui a impede. Quem só faz metade fica a achar que está protegido de
+ * uma dupla reserva quando não está.
+ */
+export interface GuiaExportacao {
+  label: string
+  passos: string[]
+  notas?: string[]
+}
+
+export const GUIAS_EXPORTAR: Record<Exclude<BookingSource, 'direto'>, GuiaExportacao> = {
+  airbnb: {
+    label: 'Airbnb',
+    passos: [
+      'Abre o Airbnb no computador e entra em Calendário.',
+      'Escolhe o anúncio, se tiveres mais do que um.',
+      'Na coluna da direita, abre Disponibilidade → Sincronizar calendários.',
+      'Carrega em Importar calendário.',
+      'Cola aqui o endereço do Anfitrião e dá-lhe um nome — por exemplo, «Anfitrião».',
+    ],
+    notas: ['O Airbnb costuma ler o calendário de duas em duas horas — não esperes uma atualização imediata.'],
+  },
+  booking: {
+    label: 'Booking.com',
+    passos: [
+      'Entra na Extranet do Booking.com.',
+      'Abre Tarifas e disponibilidade → Sincronização de calendários.',
+      'Escolhe o tipo de quarto e carrega em Ligar outro calendário.',
+      'Cola o endereço do Anfitrião e confirma.',
+    ],
+    notas: ['Tem de ser feito para cada tipo de quarto, um a um.'],
+  },
+  expedia: {
+    label: 'Expedia',
+    passos: [
+      'Entra no Partner Central da Expedia.',
+      'Abre Alojamento → Calendário.',
+      'Procura a opção de importação de calendário e cola o endereço do Anfitrião.',
+    ],
+  },
+  vrbo: {
+    label: 'Vrbo',
+    passos: [
+      'Entra no painel do Vrbo.',
+      'Abre Calendário → Importar/Exportar.',
+      'Carrega em Import calendar e cola o endereço do Anfitrião.',
+    ],
+  },
+  outro: {
+    label: 'Gestor de canais ou outra plataforma',
+    passos: [
+      'Procura uma secção chamada iCal, Sincronização de calendários ou Importar calendário.',
+      'Cola o endereço do Anfitrião no campo de importação.',
+    ],
+    notas: [
+      'Com um gestor de canais, exportar daqui para lá raramente é preciso: é ele que manda nas plataformas todas e o calendário dele já é a fonte de verdade.',
+    ],
+  },
+}
+
+/**
  * Gestores de canais que o Anfitrião aceita como fonte. Estão à parte das OTA
  * porque mudam a topologia: quem usa um deles importa **dele**, e não de cada
  * plataforma — as reservas do Airbnb e do Booking já vêm lá dentro.

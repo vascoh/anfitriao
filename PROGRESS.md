@@ -6,6 +6,231 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-01] Revisão do trabalho por commitar — quatro coisas que estavam mal
+
+Passagem de verificação ao estado do projeto (typecheck, lint e 953 testes já
+passavam; as migrations 042 e 043 já estavam aplicadas em produção e o advisor
+do Supabase só dá INFO). Os erros estavam no que ainda não tinha sido commitado.
+
+- 🐛 **As reservas do Airbnb apareciam no calendário como «Bloqueado», a
+  cinzento.** A cor por canal — a novidade toda deste ecrã — falhava
+  precisamente nas reservas que vêm dos canais. `eBloqueio` perguntava só pelo
+  hóspede, e o `ical-sync` insere as reservas importadas com `hospede_id: null`
+  porque **o iCal não transporta hóspedes**. Quem ligou o Airbnb via o
+  calendário todo cinzento e nenhuma entrada na legenda.
+  A regra passou para `lib/reservations.ts` com testes e distingue pelo
+  `uid_externo`, que só as linhas vindas de um feed têm. O mesmo engano estava
+  no feed que **exportamos** (`/api/ical/[propertyId]`), que anunciava as
+  reservas importadas às outras plataformas como bloqueios.
+  Nas barras sem hóspede mas com origem, escreve-se agora o canal («Airbnb») em
+  vez de «Sem nome»: é o que se sabe, em vez da limitação da ferramenta.
+
+- 🐛 **`last_sync` era carimbado nas falhas.** Um feed que falha todas as noites
+  mostrava «Última sincronização: hoje às 04:00» — a data dizia que estava tudo
+  bem e o calendário estava parado desde o dia em que partiu. E, como
+  `last_sync` é o que a regra das 36 h lê, o estado «desatualizado» nunca podia
+  disparar. Numa falha o campo deixa de ser tocado: quer dizer última leitura
+  **com sucesso**.
+
+- 🐛 **A página de canais traduzia todos os erros como falhas de leitura.**
+  `erroAmigavel` era aplicado a qualquer resposta da rota, e o que não reconhece
+  devolve «A leitura falhou: …». Dava frases falsas por cima das recusas que a
+  própria rota já escreve em português — «A leitura falhou: Demasiadas
+  tentativas de ligação», quando não houve leitura nenhuma. A rota já marcava as
+  falhas de leitura com `teste: 'falhou'`; é essa agora a fronteira.
+
+- 🔧 **`ativo` lido de duas maneiras no mesmo ficheiro.** O cálculo das casas
+  com quartos usava `p.ativo` e a lista ao lado usava `ativo !== false`, que é
+  como o resto do projeto lê a coluna. Alinhado.
+
+Validação: `npm test` (956, +3 novos), `npm run typecheck` e `npm run lint` a
+zero. Por commitar e por fazer deploy.
+
+### [2026-08-23e] Casa com quartos — dava para criar, não dava para arrumar
+
+Relatado pelo Vasco: criou a «Casa de Vasco» e três quartos, e ficou com os
+quartos à solta sem forma de os ligar à casa.
+
+A causa é um beco sem saída na interface. `parent_id` existe no modelo, na base
+e em metade da lógica (`unidadesReservaveis`, `ordenarComQuartos`, o feed iCal
+que agrega os quartos, o limite do plano) — mas só se conseguia **definir na
+criação**, através de um `?parent=<id>` no URL. E o único link que gerava esse
+URL, o «Adicionar quarto a X», vivia dentro do `ParentPropertyGroup`, que só
+rende para casas que **já têm** quartos.
+
+Ou seja: só se podia acrescentar um quarto a uma casa que já tivesse quartos.
+Quem seguisse a ordem natural — criar a casa, depois os quartos — não tinha
+caminho nenhum, e acabava com tudo ao mesmo nível.
+
+- 🔧 **Seletor «Faz parte de uma casa?»** na edição do alojamento, que é o que
+  permite arrumar o que já foi criado à solta. Explica a consequência antes de
+  guardar: ao ligar quartos, a casa deixa de se alugar por inteiro e passa a
+  alugar-se quarto a quarto. E o contrário também.
+- 🔧 **«Dividir em quartos»** passou a aparecer nas casas sem quartos, que é
+  onde faz falta.
+- 🛡️ **Três guardas no servidor**, com testes: um alojamento não pode ser
+  quarto de si próprio; não há três níveis (quarto dentro de quarto); e uma
+  casa que já tem quartos não pode passar a ser quarto de outra. Nenhuma destas
+  árvores dá erro na base — dão árvores que o resto do código não sabe
+  percorrer, e o ecrã sozinho não é garantia nenhuma.
+
+**Segunda passagem, depois de o Vasco dizer «não pode ser nada implícito»:** um
+seletor dentro do formulário de edição continua a só ser encontrado por quem já
+saiba que o conceito existe. O que faltava não era o campo — era a *pergunta*.
+
+- ❓ **A criação passa a perguntar primeiro**: «Um alojamento inteiro» ou «Um
+  quarto dentro de uma casa», cada um com uma frase a dizer o que significa na
+  prática («uma reserva ocupa a casa toda» vs. «cada quarto aluga-se em
+  separado, a hóspedes diferentes ao mesmo tempo»). Escolher quarto obriga a
+  dizer de que casa — o botão de gravar fica travado sem isso, senão o quarto
+  nascia solto, que é o engano que isto veio evitar. O `?parent=` continua a
+  funcionar, mas já não é o único caminho.
+- 🔎 **A lista deteta a situação e propõe-se a corrigi-la.** Com dois ou mais
+  alojamentos independentes aparece «Algum destes alojamentos é um quarto de
+  outro?», e daí sai um agrupamento em dois passos — qual é a casa, quais são
+  os quartos — com caixas de seleção. Não adivinha: um T1 e um T2 na mesma
+  cidade são mesmo dois alojamentos, e escolher por eles seria pior do que
+  perguntar. Desaparece assim que deixa de haver o que agrupar.
+
+### [2026-08-23d] Produção — o código está pronto, o ambiente não
+
+Auditoria de produção: cabeçalhos, CSP, metadata, OG, robots, sitemap, 404 e
+`.env.example` estão todos completos e corretos — não houve nada a corrigir no
+código. O que falta é **configuração**, e é bloqueante.
+
+Comparação entre o que o código lê (`process.env.*`) e o que está definido em
+Production no Vercel:
+
+- 🔴 **`RESEND_API_KEY` não está definida.** O `NoopProvider` engole todos os
+  envios: pedidos e confirmações de reserva, check-in, lembretes de pagamento,
+  fim de trial, alertas de conformidade, relatório mensal e o motor de
+  automações. **Nenhum email sai de produção.** O próprio `diagnosticarEmail`
+  descreve isto ao pormenor e o `PROGRESS.md` de 2026-07-30 já registou semanas
+  sem enviar um único email — continua exatamente igual quase um mês depois.
+- 🟠 **`STRIPE_EMPRESA_PRICE_ID` não está definida.** O plano Empresa existe no
+  código e na página de preços mas não tem Price ID: o checkout falha. (O
+  fallback perigoso já foi corrigido — `priceToPlano` devolve `null` em vez de
+  despromover um cliente pagante para `starter`.)
+- 🟡 `INVOICEXPRESS_PARTNER_API_KEY` em falta — a faturação certificada
+  anuncia-se indisponível. Degrada com elegância.
+- ⚪ `EMAIL_FROM_NAME`, `EMAIL_SUPPORT`, `EMAIL_SYSTEM`, `NOTIFY_FROM`,
+  `SIBA_WS_URL` — todas com valores por omissão sensatos. Sem ação.
+
+Nada disto se resolve com código: são chaves de terceiros. `/admin/saude` já
+mostra tudo isto a quem lá for.
+
+### [2026-08-23c] Segurança — o limitador de pedidos estava desarmável com a chave pública
+
+Linter de segurança do Supabase: dois ERROR. `limites_pedidos` e `envios_unicos`
+sem RLS, e a verificação dos grants confirmou o pior caso — `anon` e
+`authenticated` com SELECT/INSERT/UPDATE/DELETE/TRUNCATE nas duas. `anon` é a
+chave que vai no browser.
+
+- 🔓 **`limites_pedidos` é a tabela do limitador** (migration 041). Qualquer
+  visitante podia `DELETE FROM limites_pedidos` e pôr todos os contadores a
+  zero. O limitador existe para proteger `/api/checkin/[bookingId]` — que
+  devolve documentos de identificação de hóspedes — e as rotas de IA e upload,
+  que gastam dinheiro por chamada. Corrigir a contagem em 041 não valeu nada
+  enquanto a tabela onde ela vive esteve aberta.
+- 📧 **`envios_unicos`** garante que um email sai uma vez só. Apagar uma linha
+  fazia o envio repetir-se — hóspedes a receber o mesmo email várias vezes.
+- 🛠️ Migration 043: RLS ligada nas duas, sem políticas (o padrão deny-all do
+  projeto — ambas são tocadas só pela service role). `registar_pedido` passou a
+  ter `search_path` fixo. Confirmado antes de aplicar que
+  `SUPABASE_SERVICE_ROLE_KEY` está definida em Production, senão o cliente admin
+  cai para a anon e as duas funcionalidades parariam. Verificado depois: o
+  limitador continua a contar, e os ERROR/WARN do linter desapareceram.
+
+### [2026-08-23b] Dupla reserva — o caminho do anfitrião não era verificado
+
+O caminho do **hóspede** (`lib/booking-request.ts`) sempre verificou conflitos no
+servidor, e ainda reconfirma no pagamento com reembolso. O caminho do
+**anfitrião** — que cria a maioria das reservas — não verificava nada no
+servidor. `POST /api/bookings` aceitava tudo.
+
+- 🐛 A única verificação vivia no browser, em `/reservas/nova`, sobre a lista
+  que a página tinha em mão. Isso deixa passar dois separadores abertos ao mesmo
+  tempo, uma lista velha, e qualquer escrita que não venha daquele ecrã.
+- 🐛 **Editar as datas de uma reserva não tinha verificação nenhuma** — nem no
+  browser. Arrastar uma reserva para cima de outra gravava sem uma palavra.
+- 🐛 E o botão «Guardar» dessa página fazia `throw` dentro de um `onClick`: a
+  promessa rebentava para o vazio e o ecrã não mexia. Quem gravasse com erro via
+  exatamente o mesmo que quem gravou bem — nada. Passou a usar `guardar`.
+- ✅ Verificação no servidor, com 12 testes a fixar as regras: intervalos
+  meio-abertos (sair no dia 10 liberta a cama para quem entra no dia 10), a
+  reserva não choca consigo mesma ao ser editada, cancelar nunca é bloqueado, e
+  uma cancelada não bloqueia ninguém. Há saída explícita
+  (`permitir_sobreposicao`) para quem sabe o que está a fazer.
+- ✅ Também não havia validação de `check_in < check_out` no servidor: uma
+  reserva com saída antes da entrada entrava na base e aparecia com largura
+  negativa no calendário.
+
+### [2026-08-23a] O formulário da newsletter mentia
+
+`onSubmit` era `setEnviado(true)` e um `TODO: ligar a um endpoint real antes de
+publicar`. Validava o email, dizia «Obrigado — ficaste subscrito» e **não
+guardava nada**. Recolher um email com a promessa de um serviço e deitá-lo fora
+é pior do que não ter formulário: ninguém do outro lado fica a saber.
+
+Migration 042 (`newsletter_subscribers`, RLS deny-all) + `/api/newsletter`,
+pública e com limite contado na base. A escrita usa `ignoreDuplicates`: a chave
+de conflito é o email vindo do pedido e ninguém prova que é seu — com
+atualização, um estranho podia limpar o `removido_em` de quem tinha pedido para
+sair. O teste estrutural `upserts-com-dono` apanhou isto e obrigou a justificar
+a exceção, que era exactamente o trabalho dele.
+
+### [2026-08-23] Canais — a pergunta "como ligo isto ao Airbnb?" não tinha resposta na app
+
+O motor de iCal estava bom e ninguém lhe chegava. A configuração vivia **no fim de
+um formulário de trinta campos** (Alojamentos → Editar), duplicada numa segunda
+versão em `/website`, e uma terceira parte — o endereço que se exporta para as
+plataformas — só existia atrás de um botão «Copiar URL» sem uma linha a dizer
+para que serve. Três sítios, nenhum a explicar, e o guia por plataforma
+(`ical-guias.ts`, escrito e testado desde julho) só aparecia num deles.
+
+- 🧭 **`/canais`, um sítio só.** Assistente de dois passos por plataforma, com os
+  passos concretos do menu do Airbnb e da Extranet do Booking, exemplo do
+  endereço, e o aviso de duplicação para quem já tem gestor de canais. As duas
+  cópias antigas passaram a ponteiros — menos 240 linhas de UI duplicada.
+- 🚦 **Estados a sério** (`lib/canais.ts`, 18 testes): não configurado, por
+  sincronizar, ligado, **desatualizado**, erro. O «desatualizado» é o que não
+  existia e mais custava: o cron corre uma vez por dia, portanto um feed parado
+  há 36 h falhou uma passagem **em silêncio** — o calendário continuava a
+  mostrar o de ontem e vendia-se por cima. Agora aparece no calendário, em
+  banner, com link.
+- 🗣️ **Os erros passaram a dizer o que fazer.** Guardava-se o `err.message` cru
+  («Upstream devolveu 404») e mostrava-se tal e qual. Um 404 passa a explicar
+  que a plataforma gerou um endereço novo e que é preciso ir copiá-lo outra vez.
+- ↔️ **O sentido que faltava.** A app só falava de importar. Exportar — levar as
+  datas daqui para o Airbnb — é o que impede vender a mesma noite duas vezes, e
+  não estava documentado em lado nenhum (`GUIAS_EXPORTAR`, novo).
+- 🐛 **O feed perdia-se sem aviso.** `addFeed` só mexia em estado local; quem
+  colava o endereço e saía da página perdia-o. `/api/canais` grava só o
+  `ical_feeds`, **testa o endereço antes de o guardar** (recusa na hora, com a
+  razão) e recusa o mesmo URL duas vezes — que inflacionava a ocupação acima
+  dos 100 %.
+
+### [2026-08-23] Calendário — não se via de que canal vinha uma reserva
+
+A `origem` está guardada em todas as reservas desde sempre e o calendário nunca
+a mostrou. As barras eram pintadas com a cor da **propriedade** — na timeline,
+onde cada linha já é uma propriedade, a cor repetia o rótulo e não dizia mais
+nada. `SOURCE_COLOR` existia em `lib/labels` sem um único uso no calendário.
+
+- 🎨 **A cor passou a ser o canal**, nas duas vistas (a legenda de propriedades
+  do mês deu lugar à de canais — a mesma cor a significar coisas diferentes em
+  dois separadores do mesmo ecrã custava mais do que valia).
+- 🔒 **Bloqueios** (reserva sem hóspede) deixaram de se confundir com reservas:
+  cinzento e rotulados. **Pendentes** ficaram às riscas — uma reserva por
+  confirmar não pode ler-se como noite vendida.
+- 🐛 **O ecrã de carregamento não existia.** `bookings` começava a `[]` sem
+  bandeira de loading, portanto quem tinha seis alojamentos via **«Sem
+  propriedades ativas»** enquanto os dados não chegavam. Pior: as três promessas
+  não tinham `catch` — uma falha de rede deixava o calendário vazio para sempre,
+  sem erro nenhum, e um calendário vazio por falha é indistinguível de um
+  calendário livre. Passa a haver estado de carregamento, estado de erro com
+  «tentar outra vez», e um aviso a dizer para não assumir datas livres.
+
 ### [2026-08-18i] Fórmulas duplicadas — a mesma conta em sítios diferentes
 
 Terceira pergunta da mesma família: **que coisas são calculadas em dois sítios com fórmulas diferentes?** Sete cópias, três com comportamento divergente.

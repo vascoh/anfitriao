@@ -15,6 +15,7 @@ import {
   occupancyForMonth,
   unidadesReservaveis,
   ordenarComQuartos,
+  eBloqueio,
 } from './reservations'
 import type { Booking, Property, PriceRule, Tarifa, PlatformRate } from './types'
 
@@ -416,5 +417,24 @@ describe('unidadesReservaveis', () => {
     const outra: Property = { ...PROPERTY, id: 'outra' }
     const ids = unidadesReservaveis([casa, outra, quarto('q1')]).map(p => p.id)
     expect(ids).toEqual(['outra', 'q1'])
+  })
+})
+
+describe('eBloqueio', () => {
+  it('sem hóspede e sem origem externa é um bloqueio do anfitrião', () => {
+    expect(eBloqueio({ hospede_id: null, uid_externo: undefined })).toBe(true)
+  })
+
+  it('com hóspede nunca é bloqueio', () => {
+    expect(eBloqueio({ hospede_id: 'guest-1', uid_externo: undefined })).toBe(false)
+  })
+
+  /* O caso que motivou a função: o iCal não transporta hóspedes, portanto o
+   * `ical-sync` insere as reservas do Airbnb com `hospede_id: null`. Lidas só
+   * pelo hóspede, apareciam no calendário como «Bloqueado» e pintadas de
+   * cinzento — precisamente as reservas que a cor por canal existe para
+   * mostrar. */
+  it('uma reserva importada de um canal não é bloqueio, apesar de não ter hóspede', () => {
+    expect(eBloqueio({ hospede_id: null, uid_externo: 'feed-1::abc@airbnb.com' })).toBe(false)
   })
 })
