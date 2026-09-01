@@ -14,6 +14,15 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 >
 > Frase de posicionamento proposta (§9.1 do dossiê): **"A tua conformidade, com prova."** Ver a correção no topo do dossiê para o que sobra de vantagem defensável e onde estamos atrás.
 
+## ▶️ Migração do Amenitiz
+
+`docs/MIGRACAO-AMENITIZ.md` (2026-09-01) — plano em 5 fases. **Conclusão: o
+Amenitiz não sai já.** O Anfitrião fala com as plataformas por iCal e a
+sincronização corre uma vez por dia; sem a API (H3) ou ligação direta às OTA,
+tirar o Amenitiz do meio troca uma mensalidade por risco de overbooking. Tudo o
+resto — operação, conformidade, faturação, reservas diretas — migra em semanas.
+Bloqueio da Fase 0: `RESEND_API_KEY`.
+
 ## ▶️ Primeira reserva real
 
 `docs/PRIMEIRA-RESERVA-REAL.md` — guião de 20 minutos para atravessar o fluxo completo uma vez, com o que verificar em cada passo e onde olhar quando falha. **Só depende de um bloqueio: a `RESEND_API_KEY`.** SIBA e faturação são secções opcionais do mesmo guião.

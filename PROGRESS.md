@@ -6,6 +6,62 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-01] Ponto de situação + os caminhos por onde se perde uma reserva
+
+Verificação do estado antes de planear a saída do Amenitiz. O que já lá estava
+passava (959 testes, typecheck e lint a zero, produção a correr o último
+commit, advisor do Supabase só com INFO). Os bugs estavam todos no mesmo sítio:
+o caminho que leva uma reserva de uma plataforma até ao calendário, e de volta.
+
+- 🐛 **Uma reserva cancelada por engano nosso não tinha volta.** As travas da
+  reconciliação reduzem a hipótese de cancelar uma reserva viva, não a
+  eliminam: um feed que devolva 20 dos 21 eventos passa por todas elas. A
+  reserva que ficasse de fora ficava cancelada **para sempre** — o
+  `uid_externo` já estava na base, portanto a sincronização seguinte não a
+  reimportava, e o estado `cancelada` era intocável, portanto também não a
+  corrigia. O quarto dizia-se livre numas datas em que ia mesmo chegar alguém.
+  Um cancelamento **da sincronização** passa a desfazer-se se o UID voltar ao
+  feed (marca `origem: 'sincronizacao'` no histórico); um cancelamento **do
+  anfitrião** nunca se desfaz.
+
+- 🐛 **A trava do feed vazio só olhava para a propriedade inteira.** Com dois
+  feeds no mesmo alojamento, um deles a devolver um calendário válido mas sem
+  eventos passava despercebido e as reservas dele eram todas canceladas. Um
+  feed que ontem trazia reservas e hoje vem vazio conta agora como falha.
+
+- 🐛 **As mil linhas, agora no feed que exportamos.** O calendário que diz ao
+  Airbnb e ao Booking o que não podem vender era lido sem paginação e trazia o
+  histórico todo: passadas mil reservas, as que ficavam fora do corte eram as
+  futuras. O feed anunciava livres noites vendidas. Paginado, sem o passado, e
+  com 503 em vez de um calendário meio vazio quando a leitura falha — um erro
+  faz a plataforma manter a última leitura boa; um feed incompleto fá-la vender
+  por cima. A rota não tinha testes; tem dez.
+
+- 🐛 **A casa-mãe aceitava reservas do lado do servidor.** Uma casa com quartos
+  não é unidade alugável e nenhum ecrã a oferece, mas `/api/book` e
+  `/api/bookings` aceitavam-na — e o id da propriedade é público. A reserva que
+  daí saía não chocava com nada, não bloqueava os quartos, não saía no feed e
+  não aparecia em ecrã nenhum: invisível, em datas que continuavam à venda.
+
+- 🔧 **Dois leitores de iCal, e o que tinha testes era o que ninguém usava.**
+  O `parseIcal` de `lib/ical.ts` tinha sete testes e zero chamadas; quem lê os
+  feeds a sério era uma cópia dentro de `api/ical-sync/route.ts`, sem testes. E
+  o testado era o pior: não desdobrava linhas (RFC 5545 §3.1) e inventava UIDs.
+  Ficou um só, o da sincronização, com os testes à frente.
+
+Validação: `npm test` (980, +21), typecheck e lint a zero, `npm run build` a
+passar. Quatro commits temáticos, deployado a 2026-09-01
+(`dpl_SY6ehHHNzzjFhk2LG2xppDwXdSGy`), alias `anfitrioes.pt` confirmado por
+`vercel inspect` na data do deploy e feed de exportação sondado em produção.
+
+**Estado da base**: 1 conta, 4 propriedades (Casa de Vasco + 3 quartos), 0
+reservas, 0 hóspedes, 0 feeds iCal configurados. A Fase A da migração
+(`docs/SINCRONIZACAO.md`) ainda não arrancou — ver `docs/MIGRACAO-AMENITIZ.md`.
+
+**Bloqueio confirmado por `vercel env ls production`**: `RESEND_API_KEY`
+continua por definir. `EMAIL_FROM` está lá; a chave não. Sem ela não sai um
+único email — e o plano de migração depende disso a partir do dia 1.
+
 ### [2026-09-01] Revisão do trabalho por commitar — quatro coisas que estavam mal
 
 Passagem de verificação ao estado do projeto (typecheck, lint e 953 testes já
