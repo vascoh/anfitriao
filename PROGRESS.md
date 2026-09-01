@@ -6,6 +6,40 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-02] A disponibilidade passou a ser perguntada ao vivo
+
+A verificação de conflito corria contra a nossa base, e a nossa base sabe o que
+a sincronização das 04:00 lhe contou. Confirmado por API da Vercel que a conta
+está no plano **Hobby**, onde os cron jobs só correm **uma vez por dia** — o
+que fazia dessa verificação uma resposta com até 24 horas. Para mostrar o
+calendário é um incómodo; para aceitar uma reserva é a definição de dupla
+reserva.
+
+O caminho curto não foi sincronizar mais vezes (não dá, sem Vercel Pro) — foi
+perguntar no único momento em que a resposta tem de estar certa.
+
+- ✅ **`lib/disponibilidade-ao-vivo.ts`** — lê os feeds das plataformas no
+  segundo em que se carrega em confirmar, em paralelo, com limite de 4 s.
+  Ligado aos quatro caminhos que criam reservas: `/api/book`,
+  `/api/book/grupo`, `/api/bookings` (o do anfitrião) e `hasConflict` (a
+  reconfirmação pós-pagamento).
+- ⚠️ **Fecha por omissão** — um feed que não responde dá «indisponível», não
+  «livre». Custo assumido: um endereço iCal partido trava as reservas diretas
+  até ser arranjado. A exceção é depois do pagamento, onde só uma sobreposição
+  de facto trava — recusar por dez segundos de rede seria devolver o dinheiro
+  a quem tinha direito à reserva.
+- 🔧 `fetchIcalText` aceita um limite de tempo (15 s é a paciência certa para o
+  cron e a errada para quem está à espera); `maxDuration` explícito nas rotas
+  que passaram a ir à rede.
+
+O cron diário sai do caminho crítico: continua a encher o calendário que se vê,
+e o Vercel Pro passa a ser só a diferença entre esse ecrã estar ao minuto ou ao
+dia. Não é preciso para evitar overbooking.
+
+Validação: `npm test` (994, +14), typecheck e lint a zero, build a passar.
+`docs/MIGRACAO-AMENITIZ.md` ganhou a secção «Atualização online» com as três
+direções do problema e quem é o dono de cada uma.
+
 ### [2026-09-01] Ponto de situação + os caminhos por onde se perde uma reserva
 
 Verificação do estado antes de planear a saída do Amenitiz. O que já lá estava

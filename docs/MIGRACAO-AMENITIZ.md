@@ -5,6 +5,12 @@ _2026-09-01. Plano de execução. Substitui a secção 4 (Recomendação) de
 
 ---
 
+> **Atualização 2026-09-02 — a disponibilidade passou a ser verificada ao
+> vivo.** A secção «A conclusão, primeiro» continua a valer para a gestão de
+> canais, mas a parte que nos cabia está fechada: nenhuma reserva é aceite sem
+> se perguntar às plataformas, no momento, se a noite ainda está livre. Ver
+> **Atualização online** mais abaixo e `lib/disponibilidade-ao-vivo.ts`.
+
 ## A conclusão, primeiro
 
 **O Amenitiz não sai já, e a parte dele que gere os canais provavelmente não
@@ -31,6 +37,59 @@ uma mensalidade por um risco de overbooking. **Não se faz.**
 
 O que se segue é como migrar tudo o que **não** é isso — que é a maior parte do
 valor, e onde estão as horas do teu dia.
+
+---
+
+## Atualização online — as três direções do problema
+
+«Overbooking» não é um problema só: são três, com donos diferentes. Vale a pena
+separá-los, porque dois deles já estão resolvidos e o terceiro não é nosso.
+
+### A · Uma plataforma vendeu → o nosso site vende a mesma noite
+
+**A única em que a dupla reserva é causada por nós. Resolvida a 2026-09-02.**
+
+Nenhuma reserva é aceite sem se ler, **naquele segundo**, os feeds das
+plataformas e confirmar que a noite continua livre
+(`lib/disponibilidade-ao-vivo.ts`). Ligado aos quatro caminhos que criam
+reservas: pedido direto, casa inteira, o do anfitrião em `/reservas/nova`, e a
+reconfirmação depois do pagamento. Custa 1–2 segundos, uma vez por reserva.
+
+Não depende do cron, não depende do plano da Vercel e não depende do Amenitiz.
+
+> ⚠️ **Fecha por omissão.** Se um feed não responde, a reserva é recusada em vez
+> de aceite às cegas. Isto tem um custo real que tens de conhecer: **um
+> endereço iCal partido trava as reservas diretas até ser arranjado.** É a
+> escolha certa para o teu critério — perder uma reserva é reversível e aparece
+> em `/canais` como feed «desatualizado»; uma dupla reserva é uma pessoa sem
+> casa. Se preferires o contrário, muda-se numa linha; diz.
+
+### B · Nós vendemos → uma plataforma vende a mesma noite
+
+**Resolvida na parte que controlamos.** Uma reserva direta entra na nossa base
+no instante em que é criada, e o feed que exportamos reflete-a com **5 minutos**
+de cache. O que não controlamos é a rapidez com que o Amenitiz lê esse feed — e
+é por isso que o Amenitiz fica: assim que ele sabe, empurra para o Airbnb e para
+o Booking **por API**, que é instantâneo.
+
+### C · Uma plataforma vendeu → outra plataforma vende a mesma noite
+
+**Não é nossa, e é a razão de fundo para o Amenitiz ficar.** Enquanto ele for o
+gestor de canais, isto passa por API entre plataformas e nunca chega ao iCal.
+
+### O que continua a ser diário, e não é grave
+
+A sincronização das 04:00 é o que enche o **calendário que vês**. Entre duas
+passagens, uma reserva feita no Airbnb pode não estar visível em `/hoje` ou
+`/calendario` durante algumas horas. Já não é um risco de dupla reserva — é uma
+vista desatualizada, e a verificação ao vivo trava a reserva mesmo que o ecrã
+diga o contrário.
+
+**Se quiseres também o ecrã ao minuto**, o caminho é o plano **Vercel Pro**
+(~20 €/mês): confirmei por API que a conta está em **Hobby**, onde os cron jobs
+só correm uma vez por dia. Com Pro passa a poder correr de 15 em 15 minutos, e
+é uma linha no `vercel.json`. É uma decisão de orçamento, não técnica — e não
+é necessária para evitar overbooking.
 
 ---
 
@@ -187,19 +246,11 @@ Anfitrião ──iCal──► Amenitiz ──API──► Airbnb / Booking / Vr
    alteração pequena e é decisão tua se fica noutro endereço ou no mesmo com
    um parâmetro — diz e implemento.
 
-2. **A frequência da sincronização.** Uma reserva direta tem de chegar ao
-   Amenitiz depressa. O feed é cacheado 5 minutos, o que é bom; a leitura do
-   Amenitiz é que manda. Do nosso lado, a importação continua a ser **uma vez
-   por dia** — e nesta fase isso passa a ter consequência: uma reserva que
-   entre no Airbnb às 05:00 só é conhecida cá 23 horas depois, e o teu site
-   pode vendê-la nesse intervalo. **Aumentar a frequência do cron exige
-   confirmar o plano da Vercel** — no plano gratuito os cron jobs correm com
-   granularidade diária.
-
-   Enquanto isso não estiver resolvido, há uma mitigação que não custa nada:
-   **manter o motor de reservas do Amenitiz desligado e o do Anfitrião como o
-   único canal direto**, e carregar em «sincronizar» à mão antes de confirmar
-   uma reserva direta. Não é elegante; é seguro.
+2. ~~**A frequência da sincronização.**~~ **Resolvido a 2026-09-02**, e não pela
+   frequência: a disponibilidade passou a ser confirmada ao vivo no momento de
+   aceitar a reserva (secção «Atualização online», acima). O cron diário deixou
+   de estar no caminho crítico — continua a encher o calendário que vês, e o
+   plano Vercel Pro só é preciso se quiseres esse ecrã ao minuto.
 
 ### Verificação obrigatória, com dados a sério
 
@@ -246,7 +297,8 @@ não se pode tirar antes do mês.
 | Reserva cá que já não está no Amenitiz | Cancelada lá | A sincronização cancela-a na próxima passagem, com nota no histórico |
 | Reserva cancelada cá sem razão | Falha parcial do feed | Volta sozinha quando o UID reaparecer. Se não voltar, o cancelamento não foi da sincronização — ver o histórico da reserva. |
 | Calendário cá com o dobro das reservas | Airbnb ligado **e** Amenitiz ligado | Apagar os feeds diretos das plataformas. Só o Amenitiz. |
-| Duas pessoas para a mesma noite | Fase 3 sem a Fase 3 feita | Ver acima: não avançar sem as duas coisas resolvidas |
+| Reservas diretas recusadas com «não foi possível confirmar a disponibilidade» | Um feed partido — a verificação ao vivo fecha por omissão | `/canais`: o feed em causa está «desatualizado». Corrigir o endereço. **Enquanto não for corrigido, não entram reservas diretas** — é deliberado |
+| Duas pessoas para a mesma noite | Direção B ou C (ver «Atualização online») | Não é a direção que controlamos. Confirmar que o Amenitiz está a ler o nosso feed e que continua a ser ele o gestor de canais |
 
 ---
 
@@ -258,4 +310,6 @@ não se pode tirar antes do mês.
 3. **H1 · SIBA** — bloqueia a Fase 2. 1–3 dias úteis por alojamento.
 4. **H2 · InvoiceXpress** — bloqueia a faturação na Fase 2.
 5. **Clerk de produção, Sentry, PITR** — bloqueiam a Fase 0.
-6. **Plano da Vercel** — bloqueia a frequência de sincronização na Fase 3.
+6. **Plano da Vercel** — confirmado **Hobby** (cron só uma vez por dia). Já
+   **não** bloqueia nada: só decide se o calendário que vês está ao minuto ou
+   ao dia. ~20 €/mês, decisão de orçamento.
