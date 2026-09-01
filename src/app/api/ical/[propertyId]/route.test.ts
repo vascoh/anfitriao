@@ -70,9 +70,9 @@ const { GET } = await import('./route')
 const HOJE = today()
 const CASA = { id: 'casa', nome: 'Casa de Vasco', owner_id: 'user_1' }
 
-function pedir(id = 'casa') {
+function pedir(id = 'casa', query = '') {
   return GET(
-    new NextRequest(`http://localhost/api/ical/${id}`),
+    new NextRequest(`http://localhost/api/ical/${id}${query}`),
     { params: Promise.resolve({ propertyId: id }) },
   )
 }
@@ -177,6 +177,37 @@ describe('GET /api/ical/[propertyId]', () => {
 
     const res = await pedir()
     expect(res.status).toBe(503)
+  })
+
+  it('por omissão exporta tudo — uma plataforma ligada direta precisa disso', async () => {
+    /* O Airbnb a ler-nos sem ninguém no meio não sabe o que o Booking vendeu:
+     * uma data que lhe escondamos é uma data que ele vende por cima. */
+    reservas = [
+      reserva({ id: 'b-direta' }),
+      reserva({ id: 'b-do-canal', uid_externo: 'feed-1::abc' }),
+    ]
+    expect(uids(await (await pedir()).text())).toHaveLength(2)
+  })
+
+  it('?origem=diretas devolve só o que o gestor de canais não sabe', async () => {
+    /* As importadas foram ele que as criou. Devolver-lhas é redundante no
+     * melhor caso, e no pior um bloqueio nosso por cima de uma reserva dele
+     * que ninguém sabe desfazer. */
+    reservas = [
+      reserva({ id: 'b-direta' }),
+      reserva({ id: 'b-do-canal', uid_externo: 'feed-1::abc' }),
+    ]
+
+    const ics = await (await pedir('casa', '?origem=diretas')).text()
+    expect(uids(ics)).toHaveLength(1)
+    expect(ics).toContain('(reservas diretas)')
+  })
+
+  it('um valor desconhecido em ?origem não esconde nada', async () => {
+    // Falhar para o lado que exporta a mais: uma data a mais bloqueia, uma
+    // data a menos vende duas vezes.
+    reservas = [reserva({ id: 'b-do-canal', uid_externo: 'feed-1::abc' })]
+    expect(uids(await (await pedir('casa', '?origem=lixo')).text())).toHaveLength(1)
   })
 
   it('404 quando a propriedade não existe', async () => {

@@ -314,10 +314,38 @@ function AssistenteLigar({
 
 /* ── Exportar: o endereço que se cola nas plataformas ─────────────────────── */
 
+/**
+ * Quem vai ler este calendário decide o que ele deve dizer.
+ *
+ * Uma plataforma ligada diretamente não sabe o que as outras venderam, e
+ * precisa de toda a ocupação. Um gestor de canais precisa só das reservas
+ * diretas: as outras foi ele que as criou, e devolver-lhas põe um bloqueio
+ * nosso por cima de uma reserva dele. Ver `/api/ical/[propertyId]`.
+ */
+const DESTINOS = {
+  plataforma: {
+    label: 'Uma plataforma',
+    exemplos: 'Airbnb, Booking, Vrbo',
+    query: '',
+    explicacao:
+      'Vai tudo o que ocupa datas: as reservas do teu site e as que chegam dos outros canais. A plataforma não sabe o que as outras venderam — uma data que lhe escondas é uma data que ela vende por cima.',
+  },
+  gestor: {
+    label: 'Um gestor de canais',
+    exemplos: 'Amenitiz, Smoobu, Lodgify',
+    query: '?origem=diretas',
+    explicacao:
+      'Vão só as reservas do teu próprio site. As que vieram dos canais foi ele que as criou — devolver-lhas punha um bloqueio nosso por cima de uma reserva dele, que depois ninguém sabe desfazer.',
+  },
+} as const
+
 function PainelExportar({ prop }: { prop: Property }) {
   const [copiado, setCopiado] = useState(false)
   const [plataforma, setPlataforma] = useState<BookingSource>('airbnb')
-  const url = typeof window === 'undefined' ? '' : `${window.location.origin}/api/ical/${prop.id}`
+  const [destino, setDestino] = useState<keyof typeof DESTINOS>('plataforma')
+  const url = typeof window === 'undefined'
+    ? ''
+    : `${window.location.origin}/api/ical/${prop.id}${DESTINOS[destino].query}`
   const guia = GUIAS_EXPORTAR[plataforma as keyof typeof GUIAS_EXPORTAR]
 
   async function copiar() {
@@ -339,9 +367,30 @@ function PainelExportar({ prop }: { prop: Property }) {
 
       <div className="mt-3 flex flex-col gap-3">
         <p className="text-[13px] text-muted-foreground leading-relaxed">
-          Este é o endereço do calendário deste alojamento. Cola-o em cada plataforma
-          para que as datas ocupadas aqui — incluindo as reservas do teu próprio site — fiquem bloqueadas lá.
+          Este é o endereço do calendário deste alojamento. Cola-o onde queres que as
+          tuas datas ocupadas fiquem bloqueadas.
         </p>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-1.5">Quem vai ler este endereço?</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {(Object.keys(DESTINOS) as Array<keyof typeof DESTINOS>).map(d => (
+              <button
+                key={d}
+                onClick={() => setDestino(d)}
+                className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                  destino === d ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'
+                }`}
+              >
+                <span className="block text-xs font-semibold">{DESTINOS[d].label}</span>
+                <span className="block text-[11px] text-muted-foreground">{DESTINOS[d].exemplos}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[12px] text-muted-foreground leading-relaxed">
+            {DESTINOS[destino].explicacao}
+          </p>
+        </div>
 
         <div className="flex gap-2">
           <input
