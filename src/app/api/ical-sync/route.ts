@@ -258,7 +258,13 @@ async function syncProperty(
     }
   }
 
-  await supabase.from('properties').update({ ical_feeds: updatedFeeds }).eq('id', propertyId)
+  /* O estado dos feeds é o que a página de canais lê para dizer «ligado» ou
+   * «erro». Se esta escrita falhar em silêncio, a sincronização corre e o
+   * anfitrião continua a ver o estado da véspera — incluindo um feed que
+   * passou a dar erro e que ninguém lhe vai dizer que deu. */
+  const { error: erroFeeds } = await supabase
+    .from('properties').update({ ical_feeds: updatedFeeds }).eq('id', propertyId)
+  if (erroFeeds) console.error('[ical-sync] estado dos feeds não guardado', propertyId, erroFeeds.message)
 
   return { synced: results.reduce((s, r) => s + r.imported, 0), results, updatedFeeds }
 }

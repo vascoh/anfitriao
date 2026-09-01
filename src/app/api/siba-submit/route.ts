@@ -263,8 +263,14 @@ export async function POST(req: NextRequest) {
       dataMovimento: today(),
     })
 
-    // Prova de submissão: fica sempre, tenha corrido bem ou mal.
-    await supabase.from('siba_submissoes').insert({
+    /* Prova de submissão: fica sempre, tenha corrido bem ou mal.
+     *
+     * O erro desta escrita era descartado, o que contradizia o propósito da
+     * linha: sem ela não há prova de que se comunicou, e a prova é o que
+     * responde a uma inspeção. Não se pode desfazer o envio ao SIBA por causa
+     * disto, mas pode-se deixar rasto no log em vez de perder a prova sem
+     * ninguém saber. */
+    const { error: erroProva } = await supabase.from('siba_submissoes').insert({
       owner_id: userId,
       property_id: propId,
       booking_ids: prontas.map(p => p.booking_id),
@@ -276,6 +282,11 @@ export async function POST(req: NextRequest) {
       resposta_bruta: resposta.respostaBruta ?? null,
       tentativas: resposta.tentativas,
     })
+
+    if (erroProva) {
+      console.error('[siba-submit] prova de submissão não guardada',
+        propId, numeroFicheiro, resposta.hashEnvio, erroProva.message)
+    }
 
     const agora = new Date().toISOString()
     // Uma linha de resultado por reserva, não por boletim: quem carregou no

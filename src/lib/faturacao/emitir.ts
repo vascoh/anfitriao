@@ -500,9 +500,44 @@ export async function emitirNotaCredito(
     nota_credito_emitida_em: new Date().toISOString(),
   }
 
-  await supabase.from('bookings').update(marcaNota).eq('id', bookingId)
+  /* O mesmo cuidado que a emissão tem, e que aqui faltava.
+   *
+   * A nota de crédito já existe no fornecedor e já foi comunicada à AT. Se a
+   * escrita falhar em silêncio, a reserva continua a dizer `fatura_estado:
+   * 'emitida'` sem `nota_credito_numero` — ou seja, a app mostra uma fatura por
+   * anular que já está anulada, e o caminho natural do anfitrião é anulá-la
+   * outra vez. Seriam duas notas de crédito para uma fatura só, que é o
+   * duplicado de documento legal que a emissão tem todo o cuidado de evitar
+   * 300 linhas acima. O erro não se ignora: o número vai na mensagem, que é
+   * onde o anfitrião o consegue ler e apontar.
+   *
+   * Nas irmãs do grupo o registo é o mesmo documento repetido por linha —
+   * falhar numa não anula nada, mas deixa essa reserva a mentir sobre o estado
+   * dela, por isso conta como falha de registo na mesma. */
+  const errosRegisto: string[] = []
+
+  const { error: erroNota } = await supabase.from('bookings').update(marcaNota).eq('id', bookingId)
+  if (erroNota) errosRegisto.push(erroNota.message)
+
   for (const irma of irmas) {
-    await supabase.from('bookings').update(marcaNota).eq('id', irma.id)
+    const { error: erroIrma } = await supabase.from('bookings').update(marcaNota).eq('id', irma.id)
+    if (erroIrma) errosRegisto.push(erroIrma.message)
+  }
+
+  if (errosRegisto.length > 0) {
+    console.error('[faturacao] nota de crédito emitida sem registo', bookingId, resultado.numero, errosRegisto)
+    await logAudit({
+      actorId: ownerId,
+      entidade: 'booking',
+      entidadeId: bookingId,
+      acao: 'nota_credito_emitida_sem_registo',
+      detalhes: { numero: resultado.numero, id_externo: resultado.idExterno, erros: errosRegisto },
+    })
+    return falha(
+      'emitida_sem_registo',
+      500,
+      `A nota de crédito ${resultado.numero ?? ''} foi emitida no fornecedor mas não conseguimos guardá-la aqui. Aponta este número e confirma no teu fornecedor antes de anular outra vez.`.trim(),
+    )
   }
 
   return {
