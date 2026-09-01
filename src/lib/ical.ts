@@ -1,45 +1,67 @@
+/**
+ * Ler e escrever calendários iCal.
+ *
+ * Havia dois leitores de iCal no projeto: este e um dentro de
+ * `api/ical-sync/route.ts`. O que tinha testes era este, e era o que **não**
+ * era usado por nada — a sincronização, que é quem lê os feeds do Amenitiz e
+ * das plataformas, usava o outro, sem um único teste. E não eram equivalentes:
+ * este não desdobrava linhas (RFC 5545 §3.1 parte as linhas longas em várias,
+ * com um espaço à frente da continuação) e inventava um UID aleatório para os
+ * eventos que não trazem nenhum — o que, na sincronização, faria a mesma
+ * reserva entrar de novo todas as noites, porque a deduplicação é pelo UID.
+ *
+ * Ficou um só, o da sincronização, aqui e com os testes à frente.
+ */
+
 export interface IcalEvent {
   uid: string
+  dtstart: string
+  dtend: string
   summary: string
-  start: string
-  end: string
 }
 
-function parseIsoDate(raw: string): string {
-  const clean = raw.replace(/[TZ]/g, '').slice(0, 8)
-  return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`
+/** `20260810` ou `20260810T140000Z` → `2026-08-10`. */
+function parseIcalDate(s: string): string {
+  const clean = s.replace(/T.*$/, '').trim()
+  if (clean.length === 8) {
+    return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`
+  }
+  return clean
 }
 
 export function parseIcal(text: string): IcalEvent[] {
   const events: IcalEvent[] = []
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
-
+  /* Desdobrar antes de partir por linhas: uma continuação é um CRLF seguido de
+   * espaço ou tab, e sem isto um UID longo — os do Booking são — ficava
+   * cortado a meio, e o resto aparecia como uma linha à parte. */
+  const lines = text.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
   let inEvent = false
-  let uid = ''
-  let summary = ''
-  let start = ''
-  let end = ''
+  let cur: IcalEvent = { uid: '', dtstart: '', dtend: '', summary: '' }
 
-  for (const raw of lines) {
-    const line = raw.trim()
-    if (line === 'BEGIN:VEVENT') {
+  for (const line of lines) {
+    if (line.trim() === 'BEGIN:VEVENT') {
       inEvent = true
-      uid = summary = start = end = ''
+      cur = { uid: '', dtstart: '', dtend: '', summary: '' }
       continue
     }
-    if (line === 'END:VEVENT') {
-      if (start && end && start < end) {
-        events.push({ uid: uid || crypto.randomUUID(), summary, start, end })
-      }
+    if (line.trim() === 'END:VEVENT') {
+      /* Sem UID não se importa nada. É o que identifica a reserva do outro
+       * lado: sem ele não há como saber, na noite seguinte, que já cá está. */
+      if (inEvent && cur.uid && cur.dtstart && cur.dtend) events.push({ ...cur })
       inEvent = false
       continue
     }
     if (!inEvent) continue
 
-    if (line.startsWith('UID:')) uid = line.slice(4)
-    else if (line.startsWith('SUMMARY:')) summary = line.slice(8)
-    else if (line.startsWith('DTSTART')) start = parseIsoDate(line.split(':').pop() ?? '')
-    else if (line.startsWith('DTEND')) end = parseIsoDate(line.split(':').pop() ?? '')
+    const colon = line.indexOf(':')
+    if (colon === -1) continue
+    const key = line.slice(0, colon).toUpperCase().split(';')[0]
+    const val = line.slice(colon + 1).trim()
+
+    if (key === 'UID') cur.uid = val
+    else if (key === 'DTSTART') cur.dtstart = parseIcalDate(val)
+    else if (key === 'DTEND') cur.dtend = parseIcalDate(val)
+    else if (key === 'SUMMARY') cur.summary = val
   }
 
   return events
