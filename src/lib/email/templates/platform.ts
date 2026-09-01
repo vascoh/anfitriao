@@ -97,3 +97,39 @@ export function trialExpiredEmail(p: { firstName: string; baseUrl: string }): st
     ${ctaButton('Reativar conta →', `${p.baseUrl}/conta/billing`, theme)}
   `)
 }
+
+/**
+ * Plataforma: um canal parou de responder.
+ *
+ * O que este email tem de dizer não é «há um erro» — é o que esse erro está a
+ * custar. Desde que a disponibilidade é confirmada ao vivo antes de aceitar
+ * uma reserva (`lib/disponibilidade-ao-vivo.ts`), um calendário que não
+ * responde faz **recusar reservas diretas**. Quem recebe isto não vê recusas:
+ * vê um mês fraco, semanas depois, sem o ligar a nada.
+ */
+export function canaisEmRiscoEmail(p: {
+  firstName: string
+  /** Uma linha por canal: onde, e o que fazer. */
+  linhas: Array<[string, string]>
+  temErro: boolean
+  baseUrl: string
+}): string {
+  const theme = platformTheme()
+  return renderEmail(theme, `
+    ${kicker(p.temErro ? 'Ação necessária' : 'A confirmar', theme)}
+    ${heading(p.temErro
+      ? 'Um canal parou de responder'
+      : 'Um canal está sem leituras há mais de um dia')}
+    ${paragraph(`Olá ${escHtml(p.firstName)}, ${p.linhas.length === 1
+      ? 'um dos teus calendários não está a ser lido.'
+      : `${p.linhas.length} dos teus calendários não estão a ser lidos.`}`)}
+    ${detailsTable(p.linhas, theme, { title: 'O que precisa de atenção' })}
+    ${noteBox(
+      'O que isto está a custar',
+      'Antes de aceitar uma reserva, confirmamos com as plataformas se a data continua livre. Quando um calendário não responde, a reserva é recusada em vez de aceite às cegas — é o que evita vender a mesma noite duas vezes. Enquanto este canal estiver assim, podes estar a perder reservas diretas sem dar por isso.',
+      theme,
+    )}
+    ${ctaButton('Ver os canais →', `${p.baseUrl}/canais`, theme)}
+    ${paragraph('Quase sempre resolve-se copiando o endereço atual na plataforma e substituindo o que está guardado.')}
+  `)
+}

@@ -13,6 +13,7 @@ import { checkinCompleteEmail } from './templates/checkin'
 import { paymentReminderEmail } from './templates/payment'
 import {
   trialEndingEmail, trialExpiredEmail, complianceAlertEmail, noitesOrfasEmail, relatorioMensalEmail,
+  canaisEmRiscoEmail,
 } from './templates/platform'
 import { automationMessageEmail } from './templates/automation'
 
@@ -229,6 +230,22 @@ class EmailService {
       p.to,
       `📊 O teu ${p.mesLabel} em números`,
       relatorioMensalEmail({ ...p, baseUrl: APP_URL }),
+    )
+  }
+
+  /** Anfitrião: um calendário parou de ser lido — e isso recusa reservas. */
+  async sendCanaisEmRisco(p: {
+    to: string
+    firstName: string
+    linhas: Array<[string, string]>
+    temErro: boolean
+  }): Promise<SendResult> {
+    return this.sendAsPlatform(
+      p.to,
+      p.temErro
+        ? '⚠️ Um canal parou de responder — podes estar a perder reservas'
+        : '🔄 Um canal está sem leituras há mais de um dia',
+      canaisEmRiscoEmail({ ...p, baseUrl: APP_URL }),
     )
   }
 }

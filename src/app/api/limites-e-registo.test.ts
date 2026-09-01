@@ -43,6 +43,7 @@ describe('quem gasta dinheiro ou incomoda terceiros tem teto', () => {
     'cron/noites-orfas': 'cron',
     'cron/faturacao': 'cron',
     'cron/retencao': 'cron',
+    'cron/canais-alertas': 'cron',
     'ical-proxy': 'pré-visualização de um feed: uma leitura, sem escrita nem envio',
   }
 
