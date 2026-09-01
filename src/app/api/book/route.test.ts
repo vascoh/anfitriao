@@ -75,6 +75,17 @@ vi.mock('@/lib/rate-limit-persistente', () => ({
   verificarLimite: async () => ({ allowed: !rateLimited, remaining: 0, resetAt: 0 }),
 }))
 
+/* O que as plataformas respondem quando lhes perguntamos ao vivo. Sem isto os
+ * testes provavam só a metade da verificação que corre contra a base — e é a
+ * outra metade que impede a dupla reserva entre duas sincronizações. */
+let feedAoVivo: string | Error = 'BEGIN:VCALENDAR\r\nEND:VCALENDAR'
+vi.mock('@/lib/ical-fetch', () => ({
+  fetchIcalText: async () => {
+    if (feedAoVivo instanceof Error) throw feedAoVivo
+    return feedAoVivo
+  },
+}))
+
 const notifyMock = vi.fn(async (..._args: unknown[]) => {})
 vi.mock('@/lib/notify-booking', () => ({
   sendBookingNotification: (...args: unknown[]) => notifyMock(...args),
@@ -114,7 +125,26 @@ beforeEach(() => {
   conflictRows = []
   quartosFilhos = []
   rateLimited = false
+  feedAoVivo = 'BEGIN:VCALENDAR\r\nEND:VCALENDAR'
 })
+
+/** Um feed com estas datas já vendidas do outro lado. */
+function feedOcupado(de: string, ate: string): string {
+  return [
+    'BEGIN:VCALENDAR',
+    'BEGIN:VEVENT',
+    'UID:vendida-no-airbnb',
+    `DTSTART;VALUE=DATE:${de.replace(/-/g, '')}`,
+    `DTEND;VALUE=DATE:${ate.replace(/-/g, '')}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+}
+
+const COM_FEED = {
+  ...PROPERTY,
+  ical_feeds: [{ id: 'f1', url: 'https://amenitiz.com/ical/abc', nome: 'Amenitiz', source: 'direto' }],
+}
 
 describe('POST /api/book', () => {
   it('creates guest and booking, derives owner from property', async () => {
@@ -250,6 +280,36 @@ describe('POST /api/book', () => {
     propertyRow = { ...PROPERTY, ativo: false }
     const res = await POST(makeReq(VALID))
     expect(res.status).toBe(404)
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('recusa a noite que a plataforma vendeu depois da última sincronização', async () => {
+    /* A verificação contra a base diria «livre»: a reserva do Airbnb ainda não
+     * cá está, e só chegaria na sincronização das 04:00. É exatamente esta a
+     * janela em que se vendia a mesma noite duas vezes. */
+    propertyRow = { ...COM_FEED }
+    feedAoVivo = feedOcupado(CHECK_IN, CHECK_OUT)
+
+    const res = await POST(makeReq(VALID))
+    expect(res.status).toBe(409)
+    expect(inserted).toHaveLength(0)
+  })
+
+  it('aceita quando a plataforma também diz que está livre', async () => {
+    propertyRow = { ...COM_FEED }
+    feedAoVivo = feedOcupado(addDays(today(), 200), addDays(today(), 202))
+
+    expect((await POST(makeReq(VALID))).status).toBe(200)
+  })
+
+  it('não confirma às cegas quando o feed não responde', async () => {
+    /* Fecha por omissão. O custo está assumido e documentado: um feed partido
+     * trava as reservas diretas até ser arranjado. */
+    propertyRow = { ...COM_FEED }
+    feedAoVivo = new Error('timeout')
+
+    const res = await POST(makeReq(VALID))
+    expect(res.status).toBe(503)
     expect(inserted).toHaveLength(0)
   })
 

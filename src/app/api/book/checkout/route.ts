@@ -6,6 +6,12 @@ import { getClientIp } from '@/lib/rate-limit'
 import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { APP_URL } from '@/lib/config'
 
+/* Esta rota lê os calendários das plataformas ao vivo antes de aceitar a
+ * reserva (`lib/disponibilidade-ao-vivo.ts`), o que lhe acrescenta uma ida à
+ * rede. O teto fica explícito para não depender do que a plataforma de
+ * alojamento tiver por omissão. */
+export const maxDuration = 20
+
 /**
  * POST /api/book/checkout
  * Cria uma Checkout Session de pagamento (cartão) diretamente na conta

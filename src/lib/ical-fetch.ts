@@ -88,7 +88,16 @@ export function mensagemUrlRecusado(url: string): string {
   return `O domínio "${parsed.hostname}" não está na lista de plataformas suportadas. Se for o teu gestor de canais ou uma plataforma legítima, pede para ser acrescentado.`
 }
 
-export async function fetchIcalText(url: string): Promise<string> {
+/**
+ * `timeoutMs` existe para o caso em que alguém está à espera.
+ *
+ * Os 15 segundos são a paciência certa para o cron das 04:00, e a errada para
+ * uma verificação feita enquanto um hóspede olha para o botão de confirmar:
+ * com três quartos, três feeds lentos gastavam o tempo todo da função e o
+ * pedido morria sem resposta. Quem chama do caminho da reserva passa um limite
+ * curto (`lib/disponibilidade-ao-vivo.ts`).
+ */
+export async function fetchIcalText(url: string, timeoutMs = FETCH_TIMEOUT_MS): Promise<string> {
   if (!isAllowedIcalUrl(url)) {
     throw new IcalFetchError(mensagemUrlRecusado(url), 403)
   }
@@ -98,7 +107,7 @@ export async function fetchIcalText(url: string): Promise<string> {
       'User-Agent': 'Anfitriao/1.0 Calendar Sync',
       Accept: 'text/calendar,*/*',
     },
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     next: { revalidate: 0 },
   })
 

@@ -4,6 +4,7 @@ import { uuid, nights, today } from './utils'
 import { calculatePriceWithRules } from './reservations'
 import { adminGetPriceRules, adminGetTarifas, adminGetPlatformRates } from './db-admin'
 import { ehCasaComQuartos } from './ownership'
+import { verificarDisponibilidadeAoVivo, mensagemAoVivo } from './disponibilidade-ao-vivo'
 import type { Property } from './types'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -136,6 +137,18 @@ export async function validateBookingRequest(
   }
   if (conflicts && conflicts.length > 0) {
     return { ok: false, error: 'Estas datas já não estão disponíveis.', status: 409 }
+  }
+
+  /* E agora a mesma pergunta às plataformas, ao vivo.
+   *
+   * A verificação acima corre contra a nossa base, e a nossa base sabe o que a
+   * sincronização das 04:00 lhe contou — até 24 horas atrás. Uma reserva feita
+   * no Airbnb esta manhã não está lá. Ver `disponibilidade-ao-vivo.ts` para o
+   * porquê de isto fechar por omissão. */
+  const aoVivo = await verificarDisponibilidadeAoVivo([prop as Property], check_in, check_out)
+  if (!aoVivo.livre) {
+    console.warn('[book] recusado pela verificação ao vivo', aoVivo.motivo, aoVivo.feed)
+    return { ok: false, error: mensagemAoVivo(aoVivo), status: aoVivo.motivo === 'ocupado' ? 409 : 503 }
   }
 
   const [rules, tarifas, rates] = await Promise.all([
@@ -277,6 +290,15 @@ export async function validateGroupBookingRequest(
     return { ok: false, error: 'Estas datas já não estão disponíveis para a casa inteira.', status: 409 }
   }
 
+  /* Ao vivo, os feeds de todos os quartos — uma casa inteira com um quarto
+   * vendido no Airbnb esta manhã não é uma casa inteira. Os feeds são lidos em
+   * paralelo, por isso três quartos custam o tempo do mais lento. */
+  const aoVivo = await verificarDisponibilidadeAoVivo(quartos, check_in, check_out)
+  if (!aoVivo.livre) {
+    console.warn('[book/grupo] recusado pela verificação ao vivo', aoVivo.motivo, aoVivo.feed)
+    return { ok: false, error: mensagemAoVivo(aoVivo), status: aoVivo.motivo === 'ocupado' ? 409 : 503 }
+  }
+
   const [rules, tarifas, rates] = await Promise.all([
     adminGetPriceRules(owner_id ?? undefined),
     adminGetTarifas(owner_id ?? undefined),
@@ -314,7 +336,17 @@ export async function validateGroupBookingRequest(
   }
 }
 
-/** Re-verifica conflito de datas — usado no preenchimento pós-pagamento, onde pode ter passado tempo desde a validação inicial. */
+/**
+ * Re-verifica conflito de datas — usado no preenchimento pós-pagamento, onde
+ * pode ter passado tempo desde a validação inicial.
+ *
+ * Aqui a verificação ao vivo comporta-se ao contrário do resto: **só uma
+ * ocupação de facto conta**. Do outro lado desta função há um pagamento já
+ * feito e um reembolso automático à espera; recusar por um feed que não
+ * respondeu seria devolver o dinheiro a quem tinha direito à reserva, por
+ * causa de dez segundos de rede. A trava do caminho da reserva
+ * (`disponibilidade-ao-vivo.ts`) é que fecha por omissão — esta não.
+ */
 export async function hasConflict(propriedade_id: string, check_in: string, check_out: string): Promise<boolean> {
   const supabase = createAdminClient()
   const { data } = await supabase
@@ -325,5 +357,13 @@ export async function hasConflict(propriedade_id: string, check_in: string, chec
     .lt('check_in', check_out)
     .gt('check_out', check_in)
     .limit(1)
-  return !!data && data.length > 0
+
+  if (data && data.length > 0) return true
+
+  const { data: prop } = await supabase
+    .from('properties').select('nome, ical_feeds').eq('id', propriedade_id).maybeSingle()
+  if (!prop) return false
+
+  const aoVivo = await verificarDisponibilidadeAoVivo([prop as Property], check_in, check_out)
+  return !aoVivo.livre && aoVivo.motivo === 'ocupado'
 }

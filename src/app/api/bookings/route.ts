@@ -3,8 +3,15 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import type { Booking } from '@/lib/types'
 import { canUpsertRow, ownsProperty, ehCasaComQuartos } from '@/lib/ownership'
+import { verificarDisponibilidadeAoVivo } from '@/lib/disponibilidade-ao-vivo'
 import { logAudit } from '@/lib/audit'
 import { carregarTudo } from '@/lib/supabase-tudo'
+
+/* Esta rota lê os calendários das plataformas ao vivo antes de aceitar a
+ * reserva (`lib/disponibilidade-ao-vivo.ts`), o que lhe acrescenta uma ida à
+ * rede. O teto fica explícito para não depender do que a plataforma de
+ * alojamento tiver por omissão. */
+export const maxDuration = 20
 
 const supabase = createAdminClient()
 
@@ -166,6 +173,27 @@ export async function POST(req: NextRequest) {
         code: 'CONFLITO',
         conflito: { id: c.id, check_in: c.check_in, check_out: c.check_out },
       }, { status: 409 })
+    }
+
+    /* E às plataformas, ao vivo. A verificação acima corre contra a nossa
+     * base, que sabe o que a sincronização das 04:00 lhe contou — uma reserva
+     * que entrou no Airbnb esta manhã não está lá, e o anfitrião estaria a
+     * escrever por cima dela sem nada o avisar. `permitir_sobreposicao`
+     * continua a valer: quem sabe o que está a fazer passa à frente. */
+    const { data: propFeeds } = await supabase
+      .from('properties').select('nome, ical_feeds').eq('id', campos.propriedade_id as string).maybeSingle()
+
+    const aoVivo = propFeeds
+      ? await verificarDisponibilidadeAoVivo([propFeeds], checkIn, checkOut)
+      : { livre: true as const }
+
+    if (!aoVivo.livre) {
+      return NextResponse.json({
+        error: aoVivo.motivo === 'ocupado'
+          ? `O calendário de "${aoVivo.feed}" tem estas datas ocupadas — a reserva entrou lá depois da última sincronização. Confirma na plataforma antes de gravar.`
+          : `Não foi possível ler o calendário de "${aoVivo.feed}" para confirmar a disponibilidade. Tenta outra vez, ou grava mesmo assim se tiveres a certeza.`,
+        code: 'CONFLITO_AO_VIVO',
+      }, { status: aoVivo.motivo === 'ocupado' ? 409 : 503 })
     }
   }
 
