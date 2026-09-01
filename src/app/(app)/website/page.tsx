@@ -85,6 +85,11 @@ export default function WebsitePage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  /* A mesma regra que o site público aplica em `/r/[slug]`: só as casas são
+   * publicadas; os quartos reservam-se dentro da página da casa. */
+  const publicadas = props.filter(p => p.ativo && !p.parent_id)
+  const quartosDe = (casaId: string) => props.filter(p => p.parent_id === casaId && p.ativo)
+
   const directBookings = allBookings.filter(b => b.origem === 'direto' && b.estado !== 'cancelada')
   const totalRevenue = directBookings.reduce((s, b) => s + b.preco_total, 0)
   const commissionSaved = Math.round(totalRevenue * 0.15)
@@ -456,28 +461,50 @@ export default function WebsitePage() {
         {settings.enabled && (
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Propriedades publicadas</p>
+            {/* Esta lista mostrava **todos** os alojamentos ativos, quartos
+              * incluídos, e contava-os todos como «visíveis». O site público
+              * não faz isso: `/r/[slug]` filtra os que têm `parent_id` e
+              * publica só as casas — os quartos reservam-se dentro da página
+              * da casa. Um anfitrião com uma casa e três quartos lia aqui
+              * «4 propriedades visíveis» e tinha uma. Agora a lista segue a
+              * regra do site e mostra os quartos onde eles de facto estão:
+              * pendurados na casa. */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              {props.filter(p => p.ativo).length === 0 ? (
+              {publicadas.length === 0 ? (
                 <div className="px-4 py-3.5 text-sm text-muted-foreground">
                   Sem propriedades ativas. Ativa uma propriedade para aparecer no website.
                 </div>
               ) : (
-                props.filter(p => p.ativo).map(p => (
-                  <div key={p.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0">
-                    <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
-                    <span className="flex-1 text-sm font-medium truncate">{p.nome}</span>
-                    <span className="text-xs text-muted-foreground">{p.cidade}</span>
-                    <a href={`/book/${p.id}`} target="_blank" rel="noopener noreferrer"
-                      className="shrink-0 text-primary hover:text-primary/80 transition-colors">
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                ))
+                publicadas.map(p => {
+                  const quartos = quartosDe(p.id)
+                  return (
+                    <div key={p.id} className="border-b border-border last:border-0">
+                      <div className="flex items-center gap-3 px-4 py-3.5">
+                        <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: p.cor }} />
+                        <span className="flex-1 text-sm font-medium truncate">{p.nome}</span>
+                        <span className="text-xs text-muted-foreground">{p.cidade}</span>
+                        <a href={`/book/${p.id}`} target="_blank" rel="noopener noreferrer"
+                          className="shrink-0 text-primary hover:text-primary/80 transition-colors">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                      {quartos.length > 0 && (
+                        <div className="px-4 pb-3 -mt-1">
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            Reserva-se por inteiro ou {quartos.length === 1 ? 'pelo quarto' : 'quarto a quarto'} —
+                            {' '}{quartos.map(q => q.nome).join(', ')} — dentro desta mesma página.
+                            Os quartos não têm página própria no site, e não tens nada a configurar para isso.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
               )}
             </div>
-            {props.filter(p => p.ativo).length > 0 && (
+            {publicadas.length > 0 && (
               <p className="text-xs text-muted-foreground text-center">
-                {props.filter(p => p.ativo).length} propriedade{props.filter(p => p.ativo).length !== 1 ? 's' : ''} visível{props.filter(p => p.ativo).length !== 1 ? 'eis' : ''} em{' '}
+                {publicadas.length} propriedade{publicadas.length !== 1 ? 's' : ''} visível{publicadas.length !== 1 ? 'eis' : ''} em{' '}
                 <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-medium">/book</a>
               </p>
             )}

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import {
   RefreshCw, Trash2, Check, Copy, Plus, ArrowLeft, ArrowRight,
-  AlertCircle, Loader2, Building2, Download, Upload, Info,
+  AlertCircle, Loader2, Building2, Download, Upload, Info, ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchProperties } from '@/lib/fetcher'
@@ -392,14 +392,106 @@ function PainelExportar({ prop }: { prop: Property }) {
   )
 }
 
+/* ── Casa dividida em quartos: o que é preciso fazer ───────────────────────── */
+
+/**
+ * O que fazer quando a casa está dividida em quartos.
+ *
+ * O cartão da casa dizia só «liga os calendários quarto a quarto, em baixo», e
+ * ficava-se por aí. Quem tem os quartos criados fica com duas perguntas por
+ * responder, e são perguntas com respostas **diferentes**: o site de reservas
+ * não precisa de nada (a casa já mostra os quartos sozinha) e as plataformas
+ * precisam de tudo (um anúncio por quarto, e os dois sentidos em cada um).
+ *
+ * Deixar as duas sem resposta no mesmo ecrã leva ao pior dos enganos: assumir
+ * que ligar a casa chega, e vender o mesmo quarto duas vezes.
+ */
+function GuiaCasaComQuartos({ casa, quartos }: { casa: Property; quartos: Property[] }) {
+  const n = quartos.length
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[13px] text-muted-foreground leading-relaxed">
+        Esta casa está dividida em <strong className="text-foreground">{n} {n === 1 ? 'quarto' : 'quartos'}</strong>,
+        e as reservas vivem em cada quarto — não na casa. O que é preciso fazer
+        é diferente de um lado e do outro:
+      </p>
+
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 py-3">
+        <p className="text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
+          <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          No teu site de reservas — já está feito
+        </p>
+        <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+          Não tens nada a configurar. Os quartos não aparecem como alojamentos
+          soltos: aparece <strong className="text-foreground">{casa.nome}</strong>, e
+          quem a abrir escolhe entre reservar a casa inteira ou só um quarto. Um
+          quarto já ocupado aparece indisponível nessas datas.
+        </p>
+        <Link
+          href={`/book/${casa.id}`}
+          target="_blank"
+          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        >
+          Ver como aparece aos hóspedes <ExternalLink className="h-3 w-3" aria-hidden />
+        </Link>
+      </div>
+
+      <div className="rounded-xl border border-border bg-muted/30 px-3.5 py-3">
+        <p className="text-xs font-semibold flex items-center gap-1.5">
+          <Upload className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
+          Nas plataformas — um anúncio por quarto, e dois sentidos em cada
+        </p>
+        <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed">
+          No Airbnb e no Booking.com cada quarto é um anúncio próprio. A ligação
+          faz-se <strong className="text-foreground">dentro do cartão de cada quarto</strong>,
+          aqui em baixo — não neste cartão da casa. Em cada um:
+        </p>
+        <ol className="mt-2 flex flex-col gap-1.5 list-decimal list-inside">
+          <li className="text-[13px] text-muted-foreground leading-relaxed">
+            <strong className="text-foreground">Trazer</strong> — no anúncio desse quarto na
+            plataforma, copia o endereço iCal e cola-o em «Ligar uma plataforma», no cartão do quarto.
+          </li>
+          <li className="text-[13px] text-muted-foreground leading-relaxed">
+            <strong className="text-foreground">Levar</strong> — copia o endereço do quarto
+            (em «Levar as tuas datas para as plataformas», dentro do cartão dele) e cola-o
+            no mesmo anúncio, na plataforma.
+          </li>
+        </ol>
+        <p className="mt-2 text-[12px] text-muted-foreground leading-relaxed">
+          Repete para {n === 1 ? 'o quarto' : `os ${n} quartos`}: {quartos.map(q => q.nome).join(', ')}.
+          Só com os dois sentidos é que uma noite vendida num lado fica bloqueada no outro.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
+        <p className="text-xs font-semibold text-amber-900">Se também anuncias a casa inteira</p>
+        <p className="mt-1.5 text-[13px] text-amber-900/90 leading-relaxed">
+          O endereço desta casa — em «Levar as tuas datas», aqui em baixo — junta
+          a ocupação {n === 1 ? 'do quarto' : `dos ${n} quartos`} num só calendário.
+          Cola-o no anúncio da casa inteira e um quarto vendido passa a bloquear a casa.
+        </p>
+        <p className="mt-2 text-[13px] text-amber-900/90 leading-relaxed">
+          <strong>O contrário ainda não acontece:</strong> uma reserva da casa inteira
+          feita numa plataforma não é trazida para aqui nem bloqueia os quartos — por
+          isso é que este cartão não tem «Ligar uma plataforma». Enquanto for assim,
+          bloqueia os quartos à mão quando venderes a casa inteira por fora.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 /* ── Cartão de um alojamento ──────────────────────────────────────────────── */
 
 function CartaoAlojamento({
-  prop, eContentor, recarregar,
+  prop, eContentor, quartos, recarregar,
 }: {
   prop: Property
   /** Casa cujas reservas vivem nos quartos — não leva feeds próprios. */
   eContentor: boolean
+  /** Os quartos desta casa, quando é contentor. */
+  quartos: Property[]
   recarregar: () => Promise<void>
 }) {
   const feeds = useMemo(() => prop.ical_feeds ?? [], [prop.ical_feeds])
@@ -475,11 +567,7 @@ function CartaoAlojamento({
 
       <div className="px-4 py-4 flex flex-col gap-3">
         {eContentor ? (
-          <p className="text-[13px] text-muted-foreground leading-relaxed">
-            Esta casa está dividida em quartos, e as reservas vivem em cada quarto.
-            Liga os calendários <strong className="text-foreground">quarto a quarto</strong>, em baixo.
-            O endereço de exportação desta casa continua a servir — junta a ocupação de todos os quartos num só calendário.
-          </p>
+          <GuiaCasaComQuartos casa={prop} quartos={quartos} />
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">
@@ -637,6 +725,20 @@ export default function CanaisPage() {
     [props],
   )
 
+  /* Os quartos de cada casa, para o guia os poder nomear um a um — «repete
+   * para o Quarto de Casal, o Quarto Familiar…» é acionável de uma forma que
+   * «repete para cada quarto» não é. */
+  const quartosPorCasa = useMemo(() => {
+    const m = new Map<string, Property[]>()
+    for (const p of props) {
+      if (!p.parent_id || p.ativo === false) continue
+      const lista = m.get(p.parent_id) ?? []
+      lista.push(p)
+      m.set(p.parent_id, lista)
+    }
+    return m
+  }, [props])
+
   const ativos = useMemo(
     () => ordenarComQuartos(props.filter(p => p.ativo !== false)),
     [props],
@@ -697,6 +799,7 @@ export default function CanaisPage() {
             key={p.id}
             prop={p}
             eContentor={contentores.has(p.id)}
+            quartos={quartosPorCasa.get(p.id) ?? []}
             recarregar={carregar}
           />
         ))}
