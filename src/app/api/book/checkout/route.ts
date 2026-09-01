@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateBookingRequest } from '@/lib/booking-request'
 import { getAccountByClerkId } from '@/lib/accounts'
 import { createGuestCheckoutSession } from '@/lib/stripe-connect'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { APP_URL } from '@/lib/config'
 
 /**
@@ -13,7 +14,9 @@ import { APP_URL } from '@/lib/config'
  * em /api/book-checkout-fulfill), nunca aqui.
  */
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(`book-checkout:${getClientIp(req)}`, 10, 3_600_000)
+  // Na base: rota pública que cria sessões de pagamento no Stripe. O limitador
+  // em memória conta por instância e não trava pedidos simultâneos.
+  const rl = await verificarLimite(`book-checkout:${getClientIp(req)}`, 10, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
   }

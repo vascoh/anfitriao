@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { getAccountByClerkId } from '@/lib/accounts'
 import { fulfillCheckoutSession } from '@/lib/checkout-fulfillment'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 
 const supabase = createAdminClient()
 
@@ -14,7 +15,8 @@ const supabase = createAdminClient()
  * mecanismo fiável caso o hóspede feche o separador antes de voltar.
  */
 export async function GET(req: NextRequest) {
-  const rl = checkRateLimit(`book-checkout-fulfill:${getClientIp(req)}`, 20, 3_600_000)
+  // Na base: rota pública que confirma pagamentos e escreve reservas.
+  const rl = await verificarLimite(`book-checkout-fulfill:${getClientIp(req)}`, 20, 3_600_000)
   if (!rl.allowed) return NextResponse.json({ error: 'Demasiados pedidos.' }, { status: 429 })
 
   const sessionId = req.nextUrl.searchParams.get('session_id')

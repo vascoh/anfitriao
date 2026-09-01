@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { auth } from '@clerk/nextjs/server'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { createAdminClient } from '@/lib/supabase'
 import { janelaDeCheckin } from '@/lib/checkin-acesso'
 import { today } from '@/lib/utils'
@@ -48,9 +49,17 @@ export async function POST(req: NextRequest) {
    * explicação que fizesse sentido para quem está do outro lado.
    *
    * 20 cobre um grupo grande com repetições e continua a limitar o custo de
-   * IA. ⚠️ Este limitador é em memória e não funciona em serverless (ver
-   * DOSSIE §3, S2) — o teto real só existe depois do Upstash. */
-  const rl = checkRateLimit(`documentos:${ip}`, 20, 3_600_000)
+   * IA.
+   *
+   * Conta-se na base. A nota que aqui estava dizia que o teto real só existiria
+   * "depois do Upstash" — ficou desatualizada quando a migração 041 trouxe o
+   * `verificarLimite`, que conta em `limites_pedidos`. Enquanto foi o limitador
+   * em memória, esta era a pior combinação do projeto: rota pública, sem
+   * sessão, e um modelo pago a cada chamada — 20/hora era 20 vezes o número de
+   * instâncias que a Vercel decidisse arrancar, e pedidos em paralelo não
+   * batiam em teto nenhum. É exatamente o caso que a lib do limitador descreve
+   * como valendo a pena: dinheiro. */
+  const rl = await verificarLimite(`documentos:${ip}`, 20, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Demasiados pedidos. Tenta mais tarde.' },

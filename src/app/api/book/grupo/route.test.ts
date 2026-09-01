@@ -4,6 +4,14 @@ import { today, addDays } from '@/lib/utils'
 
 vi.mock('server-only', () => ({}))
 
+/* A contagem que trava esta rota é a da base, partilhada por todas as
+ * instâncias — ver lib/rate-limit-persistente.ts. O mock do Supabase daqui não
+ * tem `rpc`, e não deve ter: o que se testa neste ficheiro é a reserva de
+ * grupo, não o limitador. */
+vi.mock('@/lib/rate-limit-persistente', () => ({
+  verificarLimite: async () => ({ allowed: true, remaining: 10, resetAt: 0 }),
+}))
+
 /** Estado da base simulada, reposto em cada teste. */
 let casa: Record<string, unknown> | null = null
 let quartos: Array<Record<string, unknown>> = []

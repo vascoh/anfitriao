@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 
 const supabase = createAdminClient()
 
@@ -15,7 +16,10 @@ const supabase = createAdminClient()
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ bookingId: string }> }) {
   const ip = getClientIp(req)
-  const rl = checkRateLimit(`book-confirmation:${ip}`, 30, 60_000)
+  // Na base, como o `/api/checkin/[bookingId]` cujo padrão de capability URL
+  // esta rota segue: devolve datas, número de hóspedes e preço de uma reserva
+  // sem sessão. Mesma classe de dados, mesmo limitador.
+  const rl = await verificarLimite(`book-confirmation:${ip}`, 30, 60_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos.' }, { status: 429 })
   }

@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase'
 import { sendBookingNotification } from '@/lib/notify-booking'
 import { uuid } from '@/lib/utils'
 import { validateGroupBookingRequest } from '@/lib/booking-request'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 
 const supabase = createAdminClient()
 
@@ -23,7 +24,10 @@ const supabase = createAdminClient()
  *    três — e é a ela que se responde.
  */
 export async function POST(req: NextRequest) {
-  const rl = checkRateLimit(`book-grupo:${getClientIp(req)}`, 10, 3_600_000)
+  // Na base, como o `/api/book` de que esta rota é irmã: escreve hóspedes e
+  // reservas sem sessão nenhuma. Tinham a mesma ameaça e limitadores
+  // diferentes — a inconsistência é que faz uma delas ser a porta aberta.
+  const rl = await verificarLimite(`book-grupo:${getClientIp(req)}`, 10, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Tenta mais tarde.' }, { status: 429 })
   }
