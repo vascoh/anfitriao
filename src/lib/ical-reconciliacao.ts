@@ -28,6 +28,21 @@
  *   pareceriam desaparecidas só porque o servidor do outro lado esteve em
  *   baixo dez segundos.
  *
+ * ## E quando um cancelamento destes foi engano
+ *
+ * As travas acima reduzem a hipótese de cancelar por engano; não a eliminam.
+ * Um feed que devolva 20 dos 21 eventos passa por todas elas, e a reserva que
+ * ficou de fora era cancelada **para sempre**: o `uid_externo` já estava na
+ * base, portanto a sincronização seguinte não a reimportava, e o estado
+ * `cancelada` era intocável, portanto também não a corrigia. O quarto ficava a
+ * dizer que estava livre numas datas em que ia mesmo chegar alguém — que é a
+ * dupla reserva que todo este ficheiro existe para evitar, pela porta do lado.
+ *
+ * Por isso um cancelamento **feito pela sincronização** é reversível: se o UID
+ * volta a aparecer no feed, a reserva volta a confirmada. Um cancelamento
+ * **feito por uma pessoa** nunca é desfeito — a plataforma continuar a
+ * publicar o evento não é razão para contrariar uma decisão do anfitrião.
+ *
  * ## Porquê por propriedade, e não por feed
  *
  * A chave local é `${feed.id}::${uid}`, e o `feed.id` muda quando o anfitrião
@@ -58,10 +73,36 @@ export interface EventoDoFeed {
 export interface Reconciliacao {
   paraAtualizar: Array<{ id: string; check_in: string; check_out: string; antes: string }>
   paraCancelar: Array<{ id: string; uid_externo: string }>
+  /** Canceladas pela sincronização que voltaram a constar do feed. */
+  paraReativar: Array<{ id: string; check_in: string; check_out: string }>
 }
 
 /** Estados que a sincronização nunca mexe: já aconteceram ou já foram fechados à mão. */
-const ESTADOS_INTOCAVEIS = ['cancelada', 'no_show', 'checkin', 'checkout']
+const ESTADOS_INTOCAVEIS = ['no_show', 'checkin', 'checkout']
+
+/** Marca escrita no histórico quando é a sincronização a cancelar. */
+export const CANCELAMENTO_POR_SINCRONIZACAO = 'sincronizacao'
+
+/**
+ * O último cancelamento desta reserva foi da sincronização, ou de uma pessoa?
+ *
+ * Lê-se o histórico de trás para a frente e olha-se só para o cancelamento
+ * mais recente: uma reserva que a sincronização cancelou, foi reativada e
+ * depois o anfitrião cancelou à mão não pode voltar a ser reativada.
+ */
+export function canceladaPelaSincronizacao(historico: unknown): boolean {
+  if (!Array.isArray(historico)) return false
+
+  for (let i = historico.length - 1; i >= 0; i--) {
+    const ev = historico[i]
+    if (!ev || typeof ev !== 'object') continue
+    const { tipo, origem } = ev as { tipo?: unknown; origem?: unknown }
+    if (tipo !== 'cancelada') continue
+    return origem === CANCELAMENTO_POR_SINCRONIZACAO
+  }
+
+  return false
+}
 
 /** O UID de origem, sem o `${feed.id}::` que a app lhe põe à frente. */
 export function uidDeOrigem(uidExterno: string): string {
@@ -84,6 +125,7 @@ export function reconciliarPropriedade(p: {
 
   const paraAtualizar: Reconciliacao['paraAtualizar'] = []
   const paraCancelar: Reconciliacao['paraCancelar'] = []
+  const paraReativar: Reconciliacao['paraReativar'] = []
 
   const esvaziouDeRepente = p.eventos.length === 0 && (p.contagemAnterior ?? 0) > 0
   const podeCancelar = p.todosOsFeedsOk && !esvaziouDeRepente
@@ -93,6 +135,19 @@ export function reconciliarPropriedade(p: {
     if (ESTADOS_INTOCAVEIS.includes(local.estado)) continue
 
     const evento = porUid.get(uidDeOrigem(local.uid_externo))
+
+    /* Cancelada: só há uma coisa a fazer-lhe, e é desfazer um engano nosso.
+     * Reativar não depende de os feeds estarem todos bons — voltar a ocupar
+     * uma data é o lado seguro do erro. Nada do passado é reativado, pela
+     * mesma razão por que nada do passado é cancelado. */
+    if (local.estado === 'cancelada') {
+      if (!evento) continue
+      if (local.check_out <= p.hoje) continue
+      if (!canceladaPelaSincronizacao(local.historico)) continue
+
+      paraReativar.push({ id: local.id, check_in: evento.dtstart, check_out: evento.dtend })
+      continue
+    }
 
     if (evento) {
       if (evento.dtstart !== local.check_in || evento.dtend !== local.check_out) {
@@ -113,5 +168,5 @@ export function reconciliarPropriedade(p: {
     paraCancelar.push({ id: local.id, uid_externo: local.uid_externo })
   }
 
-  return { paraAtualizar, paraCancelar }
+  return { paraAtualizar, paraCancelar, paraReativar }
 }

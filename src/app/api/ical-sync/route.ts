@@ -4,55 +4,15 @@ import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { fetchIcalText } from '@/lib/ical-fetch'
+import { parseIcal } from '@/lib/ical'
 import { checkRateLimit } from '@/lib/rate-limit'
 import {
-  reconciliarPropriedade, uidDeOrigem,
+  reconciliarPropriedade, uidDeOrigem, CANCELAMENTO_POR_SINCRONIZACAO,
   type ReservaImportada, type EventoDoFeed,
 } from '@/lib/ical-reconciliacao'
 import { today } from '@/lib/utils'
 import { carregarTudo } from '@/lib/supabase-tudo'
 const supabase = createAdminClient()
-
-function parseIcalDate(s: string): string {
-  const clean = s.replace(/T.*$/, '').trim()
-  if (clean.length === 8) {
-    return `${clean.slice(0, 4)}-${clean.slice(4, 6)}-${clean.slice(6, 8)}`
-  }
-  return clean
-}
-
-function parseIcal(text: string): Array<{ uid: string; dtstart: string; dtend: string; summary: string }> {
-  const events: Array<{ uid: string; dtstart: string; dtend: string; summary: string }> = []
-  const lines = text.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
-  let inEvent = false
-  let cur = { uid: '', dtstart: '', dtend: '', summary: '' }
-
-  for (const line of lines) {
-    if (line.trim() === 'BEGIN:VEVENT') {
-      inEvent = true
-      cur = { uid: '', dtstart: '', dtend: '', summary: '' }
-      continue
-    }
-    if (line.trim() === 'END:VEVENT') {
-      if (inEvent && cur.uid && cur.dtstart && cur.dtend) events.push({ ...cur })
-      inEvent = false
-      continue
-    }
-    if (!inEvent) continue
-
-    const colon = line.indexOf(':')
-    if (colon === -1) continue
-    const key = line.slice(0, colon).toUpperCase().split(';')[0]
-    const val = line.slice(colon + 1).trim()
-
-    if (key === 'UID') cur.uid = val
-    else if (key === 'DTSTART') cur.dtstart = parseIcalDate(val)
-    else if (key === 'DTEND') cur.dtend = parseIcalDate(val)
-    else if (key === 'SUMMARY') cur.summary = val
-  }
-
-  return events
-}
 
 interface ResultadoFeed {
   feed: string
@@ -62,6 +22,8 @@ interface ResultadoFeed {
   atualizadas?: number
   /** Reservas que desapareceram do feed — canceladas na plataforma. */
   canceladas?: number
+  /** Cancelamentos nossos desfeitos: o UID voltou a constar do feed. */
+  reativadas?: number
   error?: string
 }
 
@@ -122,6 +84,20 @@ async function syncProperty(
     try {
       const text = await fetchIcalText(feed.url)
       const events = parseIcal(text)
+
+      /* Um feed que ontem trazia reservas e hoje vem vazio é quase sempre uma
+       * avaria do outro lado — uma página de manutenção que ainda assim é um
+       * calendário válido, uma exportação que saiu sem eventos. A trava do
+       * `esvaziouDeRepente` só apanha isto quando a propriedade **inteira**
+       * fica sem eventos; com dois feeds, um deles vazio passava despercebido
+       * e as reservas dele eram todas canceladas. Tratado como falha para
+       * efeitos de cancelamento: as datas continuam a aplicar-se, nada se
+       * cancela esta noite. Se o vazio for verdadeiro, o `last_count` fica a
+       * zero e amanhã a sincronização segue normal. */
+      if (events.length === 0 && (feed.last_count ?? 0) > 0) {
+        console.warn(`[ical-sync] feed "${feed.nome}" veio vazio depois de ${feed.last_count} eventos — não se cancela nada esta noite`)
+        todosOsFeedsOk = false
+      }
 
       const newBookings: object[] = []
       let skipped = 0
@@ -199,7 +175,7 @@ async function syncProperty(
    * cancelada lá tem de libertar a data cá, e uma data alterada tem de ser
    * aplicada. Feito uma vez por propriedade, contra a união dos eventos de
    * todos os feeds — as travas estão em `lib/ical-reconciliacao.ts`. */
-  const { paraAtualizar, paraCancelar } = reconciliarPropriedade({
+  const { paraAtualizar, paraCancelar, paraReativar } = reconciliarPropriedade({
     locais: importadas,
     eventos: eventosDaPropriedade,
     hoje,
@@ -242,6 +218,10 @@ async function syncProperty(
           id: crypto.randomUUID(),
           data: new Date().toISOString(),
           tipo: 'cancelada',
+          /* Quem cancelou. É o que distingue este cancelamento — que se
+           * desfaz sozinho se o UID voltar — de um cancelamento do anfitrião,
+           * que nunca se desfaz. Ver `lib/ical-reconciliacao.ts`. */
+          origem: CANCELAMENTO_POR_SINCRONIZACAO,
           descricao: 'Deixou de constar no calendário da plataforma — cancelada do outro lado.',
         }],
       })
@@ -250,11 +230,34 @@ async function syncProperty(
     if (error) console.error('[ical-sync] cancelar', canc.id, error.message)
   }
 
-  if (paraAtualizar.length > 0 || paraCancelar.length > 0) {
+  /* Desfazer um cancelamento nosso. O quarto volta a estar ocupado nas datas
+   * que o feed diz — e é o feed que manda, incluindo se as datas entretanto
+   * mudaram. */
+  for (const react of paraReativar) {
+    const { error } = await supabase
+      .from('bookings')
+      .update({
+        estado: 'confirmada',
+        check_in: react.check_in,
+        check_out: react.check_out,
+        historico: [...historicoDe(react.id), {
+          id: crypto.randomUUID(),
+          data: new Date().toISOString(),
+          tipo: 'sincronizacao',
+          descricao: `Voltou a constar no calendário da plataforma — reativada para ${react.check_in} → ${react.check_out}.`,
+        }],
+      })
+      .eq('id', react.id)
+      .eq('owner_id', ownerId)
+    if (error) console.error('[ical-sync] reativar', react.id, error.message)
+  }
+
+  if (paraAtualizar.length > 0 || paraCancelar.length > 0 || paraReativar.length > 0) {
     for (const r of results) {
       if (r.error) continue
       r.atualizadas = paraAtualizar.length
       r.canceladas = paraCancelar.length
+      r.reativadas = paraReativar.length
       break
     }
   }

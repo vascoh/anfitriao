@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { reconciliarPropriedade, uidDeOrigem, type ReservaImportada } from './ical-reconciliacao'
+import {
+  reconciliarPropriedade, uidDeOrigem, canceladaPelaSincronizacao,
+  CANCELAMENTO_POR_SINCRONIZACAO, type ReservaImportada,
+} from './ical-reconciliacao'
 import { today, addDays } from './utils'
 
 const FEED = 'feed-1::'
@@ -26,6 +29,30 @@ describe('uidDeOrigem', () => {
   it('aguenta um uid sem prefixo e um uid com dois pontos lá dentro', () => {
     expect(uidDeOrigem('abc-123')).toBe('abc-123')
     expect(uidDeOrigem('feed-1::urn:uuid:9')).toBe('urn:uuid:9')
+  })
+})
+
+describe('canceladaPelaSincronizacao', () => {
+  it('olha só para o cancelamento mais recente', () => {
+    /* Cancelada pela sincronização, reativada, e depois cancelada à mão: a
+     * decisão que conta é a última, e essa não se desfaz. */
+    expect(canceladaPelaSincronizacao([
+      { tipo: 'cancelada', origem: CANCELAMENTO_POR_SINCRONIZACAO },
+      { tipo: 'sincronizacao' },
+      { tipo: 'cancelada' },
+    ])).toBe(false)
+
+    expect(canceladaPelaSincronizacao([
+      { tipo: 'cancelada' },
+      { tipo: 'cancelada', origem: CANCELAMENTO_POR_SINCRONIZACAO },
+    ])).toBe(true)
+  })
+
+  it('sem histórico, sem prova — não se reativa', () => {
+    expect(canceladaPelaSincronizacao(undefined)).toBe(false)
+    expect(canceladaPelaSincronizacao([])).toBe(false)
+    expect(canceladaPelaSincronizacao('lixo')).toBe(false)
+    expect(canceladaPelaSincronizacao([null, 'x'])).toBe(false)
   })
 })
 
@@ -178,6 +205,88 @@ describe('reconciliarPropriedade', () => {
 
     expect(r.paraCancelar).toHaveLength(0)
     expect(r.paraAtualizar[0].check_out).toBe(addDays(HOJE, 5))
+  })
+
+  it('um cancelamento nosso desfaz-se quando o UID volta ao feed', () => {
+    /* As travas não são infalíveis: um feed que devolva 20 dos 21 eventos
+     * passa por todas elas. Sem reativação, essa reserva ficava cancelada para
+     * sempre — nunca era reimportada (o UID já cá estava) nem corrigida — e o
+     * quarto dizia-se livre numas datas em que ia mesmo chegar alguém. */
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [reserva({
+        estado: 'cancelada',
+        historico: [{ tipo: 'cancelada', origem: CANCELAMENTO_POR_SINCRONIZACAO }],
+      })],
+      eventos: [{ uid: 'abc', dtstart: addDays(HOJE, 10), dtend: addDays(HOJE, 14) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraReativar).toEqual([{
+      id: 'b1',
+      check_in: addDays(HOJE, 10),
+      check_out: addDays(HOJE, 14),
+    }])
+  })
+
+  it('reativar aplica as datas do feed, não as que a reserva tinha', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [reserva({
+        estado: 'cancelada',
+        historico: [{ tipo: 'cancelada', origem: CANCELAMENTO_POR_SINCRONIZACAO }],
+      })],
+      eventos: [{ uid: 'abc', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 16) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraReativar[0].check_in).toBe(addDays(HOJE, 11))
+    expect(r.paraReativar[0].check_out).toBe(addDays(HOJE, 16))
+    expect(r.paraAtualizar).toHaveLength(0)
+  })
+
+  it('um cancelamento do anfitrião nunca é desfeito', () => {
+    // A plataforma continuar a publicar o evento não contraria uma decisão de
+    // quem lá está — e o anfitrião cancela cá o que já tratou por telefone.
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [reserva({ estado: 'cancelada', historico: [{ tipo: 'cancelada' }] })],
+      eventos: [{ uid: 'abc', dtstart: addDays(HOJE, 10), dtend: addDays(HOJE, 14) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraReativar).toHaveLength(0)
+  })
+
+  it('não reativa o que já terminou', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [reserva({
+        estado: 'cancelada',
+        check_in: addDays(HOJE, -20),
+        check_out: addDays(HOJE, -15),
+        historico: [{ tipo: 'cancelada', origem: CANCELAMENTO_POR_SINCRONIZACAO }],
+      })],
+      eventos: [{ uid: 'abc', dtstart: addDays(HOJE, -20), dtend: addDays(HOJE, -15) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraReativar).toHaveLength(0)
+  })
+
+  it('reativa mesmo com um feed em baixo — voltar a ocupar é o lado seguro', () => {
+    const r = reconciliarPropriedade({
+      hoje: HOJE,
+      todosOsFeedsOk: false,
+      locais: [reserva({
+        estado: 'cancelada',
+        historico: [{ tipo: 'cancelada', origem: CANCELAMENTO_POR_SINCRONIZACAO }],
+      })],
+      eventos: [{ uid: 'abc', dtstart: addDays(HOJE, 10), dtend: addDays(HOJE, 14) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraReativar).toHaveLength(1)
   })
 
   it('reservas de dois feeds diferentes convivem sem se cancelarem', () => {
