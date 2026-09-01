@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
 import {
-  Receipt, ShieldCheck, CircleAlert, Download, ExternalLink, Loader2, Ban, Zap,
+  Receipt, ShieldCheck, CircleAlert, Download, ExternalLink, Loader2, Ban, Zap, Info,
 } from 'lucide-react'
 import { fmtDate, fmtMoney, today } from '@/lib/utils'
 import { emissaoPresa } from '@/lib/faturacao/estado-fatura'
@@ -206,6 +207,30 @@ export default function FaturacaoPage() {
           Incluídas na tua subscrição.
         </p>
       </header>
+
+      {/* O que a fatura leva e o que não leva, dito onde as faturas se veem —
+        * senão a ausência da linha da taxa turística parece um esquecimento. */}
+      <div className="flex gap-3 rounded-xl border border-border bg-card p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <div className="text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">O que vai na fatura</p>
+          <p className="mt-1">
+            A fatura-recibo documenta o que o hóspede pagou através da aplicação: o alojamento e a
+            taxa de limpeza, com o IVA do alojamento (6 % no continente, 5 % na Madeira, 4 % nos
+            Açores).
+          </p>
+          <p className="mt-2">
+            A <strong className="text-foreground">taxa turística municipal não entra</strong>,
+            porque não está incluída no preço das reservas — cobra-la ao hóspede à parte e
+            entrega-la ao município. Vê o mapa mensal em{' '}
+            <Link href="/conformidade/taxa-turistica" className="font-medium text-primary hover:underline">
+              Conformidade → Taxa turística
+            </Link>
+            . Se preferires cobrá-la dentro do preço, sobe o preço da reserva: aí passa a ser
+            alojamento, e é assim que sai na fatura.
+          </p>
+        </div>
+      </div>
 
       {!conta && <Arranque disponivel={disponivel} onCriada={recarregar} />}
 

@@ -199,6 +199,26 @@ describe('emitirFaturaDaReserva', () => {
     expect(tabelas.bookings[0].fatura_erro).toBe('NIF inválido')
   })
 
+  it('a taxa turística não entra na fatura, nem sequer num concelho que a cobra', async () => {
+    /* A TMT não está no `preco_total` — é cobrada à parte ao hóspede e
+     * declarada ao município. Subtraí-la ao total não mudava o valor do
+     * documento, mudava a repartição: tirava base à linha de alojamento
+     * (IVA 6 %) e punha-a numa linha não sujeita. O total ficava certo e o IVA
+     * liquidado ficava a menos — 24 € numa reserva de 400 € em Lisboa. */
+    tabelas.properties[0] = { ...PROPRIEDADE, cidade: 'Lisboa' }
+    tabelas.bookings[0] = reserva({ preco_total: 400 })
+
+    await emitirFaturaDaReserva('user_1', 'b1')
+
+    const linhas = pedidos[0].linhas as Array<Record<string, unknown>>
+    expect(linhas.some(l => String(l.nome).toLowerCase().includes('turística'))).toBe(false)
+
+    // Tudo o que o hóspede pagou, tirando a limpeza, fica na base tributável.
+    const alojamento = linhas.find(l => l.nome === 'Alojamento')
+    expect(alojamento).toBeDefined()
+    expect(alojamento!.taxaIva).toBe(6)
+  })
+
   it('a linha da taxa turística sai isenta de IVA', async () => {
     // Não é sujeita (art. 2.º n.º 2 do CIVA): misturá-la com o alojamento
     // inflacionaria o IVA liquidado.

@@ -186,6 +186,36 @@ export default function TaxaTuristicaPage() {
         </div>
       </div>
 
+      {/* A pergunta que decide se este valor está certo: a taxa está no preço?
+        * A app assume que não, e isso muda o que o anfitrião tem de fazer com o
+        * hóspede. Dito aqui, que é onde ele olha para o número. */}
+      <div className="flex gap-3 rounded-xl border border-primary/25 bg-primary/5 p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        <div className="text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">
+            Esta taxa não está incluída no preço das tuas reservas
+          </p>
+          <p className="mt-1">
+            O preço que a aplicação calcula soma as noites, a taxa de limpeza e as regras de preço
+            — e nunca lhe soma a taxa turística. O valor acima é o que{' '}
+            <strong className="text-foreground">cobras ao hóspede à parte</strong>, tipicamente à
+            chegada, e entregas depois ao município.
+          </p>
+          <p className="mt-2">
+            Por isso a <strong className="text-foreground">fatura também não a leva</strong>: a
+            fatura-recibo documenta o que foi pago através da aplicação. Somá-la lá não mudava o
+            total do documento, mudava a repartição — tirava valor à linha de alojamento, que é
+            tributada a 6 %, e punha-o numa linha não sujeita a IVA. O total ficava certo e o IVA
+            liquidado ficava a menos, que é o erro que não se apanha a conferir a fatura.
+          </p>
+          <p className="mt-2">
+            Se preferires cobrar a taxa dentro do preço da reserva, sobe o preço e{' '}
+            <strong className="text-foreground">declara aqui na mesma</strong> — o município recebe
+            o mesmo, e a fatura passa a incluir esse valor como alojamento.
+          </p>
+        </div>
+      </div>
+
       {mapa.porConfigurar.length > 0 && (
         <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />

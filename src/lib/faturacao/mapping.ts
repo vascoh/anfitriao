@@ -29,6 +29,15 @@ export interface ComponentesReserva {
  * os extras excederem o total (dados inconsistentes), o alojamento fica a zero
  * e quem chama tem de corrigir antes de emitir.
  */
+/**
+ * ⚠️ `taxaTuristica` só se passa quando ela **estiver incluída** no
+ * `precoTotal`. Neste projeto não está: o motor de preços soma noites, taxa de
+ * limpeza e ajustes, e a TMT é cobrada à parte ao hóspede e declarada ao
+ * município. Passá-la aqui não muda o total do documento — muda a repartição:
+ * tira valor da linha de alojamento (IVA 6 %/5 %/4 %) e põe-no numa linha não
+ * sujeita a IVA. O total fica certo e o IVA liquidado fica a menos, que é o
+ * erro que não se apanha a conferir a fatura.
+ */
 export function decomporReserva(
   precoTotal: number,
   opts?: { limpeza?: number; taxaTuristica?: number },

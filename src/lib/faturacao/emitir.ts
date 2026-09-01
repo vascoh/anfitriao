@@ -1,6 +1,5 @@
 import 'server-only'
 import { createAdminClient } from '../supabase'
-import { regraPara, calcularTmt } from '../taxa-turistica'
 import { revelarCampos } from '../campos-sensiveis'
 import { logAudit } from '../audit'
 import { emissaoPresa } from './estado-fatura'
@@ -57,7 +56,7 @@ const MENSAGENS: Record<MotivoFalha, string> = {
   nao_encontrada: 'Reserva não encontrada.',
   sem_permissao: 'Sem permissão para esta reserva.',
   fornecedor: 'O fornecedor de faturação recusou o pedido.',
-  extras_excedem_total: 'A taxa de limpeza e a taxa turística somadas ultrapassam o valor da reserva. A fatura sairia por mais do que o hóspede pagou — corrige o preço da reserva ou a taxa de limpeza do alojamento antes de faturar.',
+  extras_excedem_total: 'A taxa de limpeza é maior do que o valor da reserva. A fatura sairia por mais do que o hóspede pagou — corrige o preço da reserva ou a taxa de limpeza do alojamento antes de faturar.',
 }
 
 function falha(motivo: MotivoFalha, estado: number, erro?: string): FalhaEmissao {
@@ -130,22 +129,34 @@ export async function emitirFaturaDaReserva(
   if (!reservado) return falha('a_emitir', 409)
 
   const prop = propriedade as Property
-  const regra = regraPara(prop.cidade)
-  const taxaTuristica = regra ? calcularTmt(b, regra).valor : 0
-
+  /* A taxa turística **não** entra aqui.
+   *
+   * Isto subtraía-a ao `preco_total`, como se o preço a incluísse. Não inclui:
+   * o motor de preços soma noites, taxa de limpeza e ajustes, e nunca lhe soma
+   * a TMT — ela é cobrada à parte ao hóspede e declarada ao município na
+   * página da taxa turística.
+   *
+   * Subtraí-la tinha uma consequência que não se via no total: o documento
+   * fechava na mesma pelo valor certo, mas passava parte do alojamento — que é
+   * tributado a 6 % — para uma linha de TMT, que **não é sujeita a IVA**
+   * (art. 2.º n.º 2 do CIVA). Ou seja, o total do documento estava certo e o
+   * IVA liquidado estava a menos, que é o erro que não se vê a conferir a
+   * fatura. Numa reserva de 400 € em Lisboa, eram 24 € a fugir da base
+   * tributável.
+   *
+   * O que a app sabe que foi cobrado é o `preco_total`, e é isso que a
+   * fatura-recibo documenta. */
   const componentes = decomporReserva(b.preco_total, {
     limpeza: prop.taxa_limpeza ?? 0,
-    taxaTuristica,
   })
 
   /* A fatura nunca pode somar mais do que a reserva.
    *
    * `decomporReserva` trava o alojamento em zero para não o deixar negativo,
-   * mas as outras duas parcelas ficam de pé: com uma reserva de 50 €, uma taxa
-   * de limpeza de 40 € e 30 € de taxa turística, saía um documento de 70 € por
-   * uma estadia de 50 €. O travão evita o número negativo e deixa passar o
-   * número errado — e este é um documento certificado, que depois só se anula
-   * por nota de crédito.
+   * mas a taxa de limpeza fica de pé: com uma reserva de 20 € e uma taxa de
+   * limpeza de 30 €, saía um documento de 30 € por uma estadia de 20 €. O
+   * travão evita o número negativo e deixa passar o número errado — e este é um
+   * documento certificado, que depois só se anula por nota de crédito.
    *
    * Recusar é a única saída honesta: escolher qual das parcelas cortar seria a
    * app a decidir o que o anfitrião cobrou. O que se pode dizer é o que está
@@ -314,13 +325,11 @@ export async function emitirFaturaDoGrupo(
 
   const quartos = ativas.map(b => {
     const quarto = propMap.get(b.propriedade_id)
-    const regra = regraPara(alojamento.cidade)
-    const taxaTuristica = regra ? calcularTmt(b, regra).valor : 0
+    // Sem TMT, pela mesma razão do caminho individual: não está no preço.
     return {
       nome: quarto?.nome ?? 'Quarto',
       componentes: decomporReserva(b.preco_total, {
         limpeza: quarto?.taxa_limpeza ?? 0,
-        taxaTuristica,
       }),
     }
   })
@@ -474,14 +483,11 @@ export async function emitirNotaCredito(
   const hospede = revelarCampos(hospedeGuardado)
 
   const prop = propriedade as Property
-  const regra = regraPara(prop.cidade)
-  const taxaTuristica = regra ? calcularTmt(b, regra).valor : 0
-
   // Num grupo, anula-se o que a fatura cobrou: a soma de todas as reservas.
+  // Sem TMT, para a nota espelhar a fatura — que também não a leva.
   const valorAAnular = b.preco_total + irmas.reduce((s, i) => s + (i.preco_total ?? 0), 0)
   const componentes = decomporReserva(valorAAnular, {
     limpeza: prop.taxa_limpeza ?? 0,
-    taxaTuristica,
   })
 
   const resultado = await getInvoicingAdapter().emitir(
