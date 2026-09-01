@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
 import { fetchBookings } from '@/lib/fetcher'
+import { guardar } from '@/lib/guardar'
 import type { Booking, BookingSource, BookingStatus } from '@/lib/types'
 import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
 
@@ -60,8 +62,12 @@ export default function EditarReservaPage() {
         id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: 'Reserva editada manualmente'
       }],
     }
-    const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
-    if (!res.ok) throw new Error('Erro ao guardar reserva')
+    /* Era `throw` dentro de um onClick: a promessa rebentava para o vazio e o
+     * ecrã não mexia. Quem carregasse em «Guardar» com datas em conflito via
+     * exatamente o mesmo que quem gravou com sucesso — nada. `guardar` mostra
+     * a mensagem do servidor, que aqui é a que diz com que reserva chocou. */
+    if (!await guardar('/api/bookings', updated)) return
+    toast.success('Reserva atualizada')
     router.push(`/reservas/${id}`)
   }
 

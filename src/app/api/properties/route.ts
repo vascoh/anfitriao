@@ -125,6 +125,56 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Alojamento principal não encontrado.' }, { status: 404 })
   }
 
+  /* A árvore tem dois níveis e só dois: casa → quartos.
+   *
+   * Passou a ser possível ligar um alojamento já existente a uma casa (antes
+   * só se podia decidir isso no momento da criação, o que deixava quartos
+   * criados à solta sem forma de os arrumar). Com essa liberdade vêm três
+   * formas de partir o modelo, e nenhuma delas dá erro na base — dão árvores
+   * que o `unidadesReservaveis` e o feed iCal não sabem percorrer:
+   *
+   *   1. um alojamento apontado a si próprio;
+   *   2. um quarto apontado a outro quarto (três níveis);
+   *   3. uma casa que já tem quartos a tornar-se quarto de outra.
+   *
+   * Todas se recusam aqui, e não só no ecrã: o ecrã é uma cortesia, esta é a
+   * garantia. */
+  if (body.parent_id) {
+    if (body.parent_id === body.id) {
+      return NextResponse.json(
+        { error: 'Um alojamento não pode ser quarto de si próprio.' },
+        { status: 400 },
+      )
+    }
+
+    const { data: pai } = await supabase
+      .from('properties')
+      .select('parent_id, nome')
+      .eq('id', body.parent_id)
+      .maybeSingle()
+
+    if (pai?.parent_id) {
+      return NextResponse.json(
+        { error: `"${pai.nome}" já é um quarto de outra casa. Os quartos não se dividem em mais quartos.` },
+        { status: 400 },
+      )
+    }
+
+    if (typeof body.id === 'string' && body.id) {
+      const { count: filhos } = await supabase
+        .from('properties')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_id', body.id)
+        .eq('owner_id', userId)
+
+      if ((filhos ?? 0) > 0) {
+        return NextResponse.json({
+          error: 'Este alojamento já tem quartos, por isso não pode passar a ser quarto de outra casa. Move ou remove primeiro os quartos dele.',
+        }, { status: 400 })
+      }
+    }
+  }
+
   // Normalizar casasBanho → casas_banho (padrão do DB)
   const { casasBanho, ...rest } = body as Property
   const row = { ...rest, casas_banho: casasBanho ?? body.casas_banho ?? 1, owner_id: userId }

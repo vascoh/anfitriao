@@ -4,58 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
-import { ArrowLeft, Plus, Trash2, RefreshCw, Upload, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Plus, Trash2, Rss, Upload, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fetchProperties } from '@/lib/fetcher'
-import type { Property, PropertyType, IcalFeed, BookingSource } from '@/lib/types'
+import type { Property, PropertyType, IcalFeed } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
-import { GUIAS, GUIA_AMENITIZ, AVISO_FONTE_DUPLICADA, deveAvisarDuplicacao, eGestorDeCanais } from '@/lib/ical-guias'
 import { guardar } from '@/lib/guardar'
-
-const ICAL_SOURCES: { value: BookingSource; label: string }[] = [
-  { value: 'outro', label: 'Amenitiz ou outro gestor de canais' },
-  { value: 'airbnb', label: 'Airbnb' },
-  { value: 'booking', label: 'Booking.com' },
-  { value: 'expedia', label: 'Expedia' },
-  { value: 'vrbo', label: 'VRBO' },
-]
-
-/**
- * Passos concretos para ir buscar o endereço iCal à plataforma escolhida.
- * O conteúdo vive em `lib/ical-guias.ts`; aqui só se apresenta.
- *
- * Em "Outro" mostra-se o Amenitiz por extenso: é o gestor de canais que
- * sabemos estar em uso, e passos concretos valem mais do que uma instrução
- * genérica que não diz onde carregar.
- */
-function GuiaIcalPainel({ fonte }: { fonte: BookingSource }) {
-  const guia = fonte === 'outro' ? GUIA_AMENITIZ : GUIAS[fonte as keyof typeof GUIAS]
-  if (!guia) return null
-
-  return (
-    <details className="rounded-xl border border-border bg-muted/30 px-4 py-3">
-      <summary className="text-xs font-semibold cursor-pointer select-none">
-        Onde encontro este endereço? · {guia.label}
-      </summary>
-      <ol className="mt-3 flex flex-col gap-1.5 list-decimal list-inside">
-        {guia.passos.map(passo => (
-          <li key={passo} className="text-xs text-foreground/80 leading-relaxed">{passo}</li>
-        ))}
-      </ol>
-      <p className="mt-2.5 text-[11px] text-muted-foreground break-all">
-        Deve parecer-se com: <code className="font-mono">{guia.exemploUrl}</code>
-      </p>
-      {guia.notas?.map(nota => (
-        <p key={nota} className="mt-1.5 text-[11px] text-amber-700 leading-relaxed">{nota}</p>
-      ))}
-      {fonte === 'outro' && (
-        <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
-          Noutro gestor, procura uma secção chamada iCal, Sincronização de calendários ou Exportar calendário.
-        </p>
-      )}
-    </details>
-  )
-}
 
 const PRESET_COLORS = [
   '#C2714F', '#E07B39', '#3D82F6', '#10B981', '#8B5CF6',
@@ -83,6 +37,10 @@ export default function EditarPropriedadePage() {
   const ownerId = user?.id
   const router = useRouter()
   const [prop, setProp] = useState<Property | null>(null)
+  /* A lista toda serve para saber que casas podem receber este alojamento como
+   * quarto — e para saber se ele próprio já tem quartos. */
+  const [todas, setTodas] = useState<Property[]>([])
+  const [parentId, setParentId] = useState<string | null>(null)
 
   const [nome, setNome] = useState('')
   const [tipo, setTipo] = useState<PropertyType>('apartamento')
@@ -104,16 +62,11 @@ export default function EditarPropriedadePage() {
   const [instrucoesCheckin, setInstrucoesCheckin] = useState('')
   const [regrasCasa, setRegrasCasa] = useState('')
   const [icalFeeds, setIcalFeeds] = useState<IcalFeed[]>([])
-  const [newFeedUrl, setNewFeedUrl] = useState('')
-  const [newFeedSource, setNewFeedSource] = useState<BookingSource>('outro')
-  const temGestorDeCanais = icalFeeds.some(f => eGestorDeCanais(f.url))
-  const avisoDuplicacao = deveAvisarDuplicacao(icalFeeds.map(f => f.url), newFeedSource)
-  const [syncing, setSyncing] = useState(false)
-  const [syncResult, setSyncResult] = useState<string | null>(null)
 
   useEffect(() => {
     if (!ownerId) return
     fetchProperties().then(all => {
+      setTodas(all)
       const p = all.find(x => x.id === id)
       if (!p) { router.push('/propriedades'); return }
       setProp(p)
@@ -135,6 +88,7 @@ export default function EditarPropriedadePage() {
       setInstrucoesCheckin(p.instrucoes_checkin)
       setRegrasCasa(p.regras_casa)
       setIcalFeeds(p.ical_feeds ?? [])
+      setParentId(p.parent_id ?? null)
     })
   }, [id, router, ownerId])
 
@@ -182,63 +136,6 @@ export default function EditarPropriedadePage() {
     setComodidades(prev => prev.includes(aid) ? prev.filter(x => x !== aid) : [...prev, aid])
   }
 
-  function addFeed() {
-    if (!newFeedUrl.trim()) return
-    const label = ICAL_SOURCES.find(s => s.value === newFeedSource)?.label ?? newFeedSource
-    const feed: IcalFeed = {
-      id: crypto.randomUUID(),
-      url: newFeedUrl.trim(),
-      source: newFeedSource,
-      nome: label,
-    }
-    setIcalFeeds(prev => [...prev, feed])
-    setNewFeedUrl('')
-  }
-
-  function removeFeed(feedId: string) {
-    setIcalFeeds(prev => prev.filter(f => f.id !== feedId))
-  }
-
-  async function syncNow() {
-    if (!prop) return
-    setSyncing(true)
-    setSyncResult(null)
-    try {
-      // Save first to persist current feeds
-      const updated: Property = {
-        ...prop, nome: nome.trim(), tipo, endereco: endereco.trim(), cidade: cidade.trim(),
-        descricao: descricao.trim() || undefined, imagem_url: imagemUrl.trim() || undefined, fotos,
-        mostrar_morada_publica: mostrarMoradaPublica,
-        quartos, casasBanho, capacidade, preco_base: precoBase, taxa_limpeza: taxaLimpeza || undefined, cor, comodidades,
-        instrucoes_checkin: instrucoesCheckin.trim(), regras_casa: regrasCasa.trim(),
-        ical_feeds: icalFeeds,
-      }
-      /* Guardar antes de sincronizar: se a gravação for recusada, os feeds
-       * que se querem sincronizar ainda não existem no servidor — sincronizar
-       * a seguir dava um resultado sobre o alojamento antigo. */
-      if (!await guardar('/api/properties', updated)) return
-      const res = await fetch('/api/ical-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ propertyId: id }),
-      })
-      const data = await res.json()
-      if (data.synced !== undefined) {
-        setSyncResult(`${data.synced} reservas importadas`)
-        // Reload feeds to get updated last_sync
-        const propsAll = await fetchProperties()
-        const fresh = propsAll.find(x => x.id === id)
-        if (fresh) setIcalFeeds(fresh.ical_feeds ?? [])
-      } else {
-        setSyncResult(data.error ?? 'Erro desconhecido')
-      }
-    } catch {
-      setSyncResult('Erro de rede')
-    } finally {
-      setSyncing(false)
-    }
-  }
-
   async function handleSave() {
     if (!prop || !nome.trim() || !cidade.trim()) return
     try {
@@ -262,6 +159,7 @@ export default function EditarPropriedadePage() {
         instrucoes_checkin: instrucoesCheckin.trim(),
         regras_casa: regrasCasa.trim(),
         ical_feeds: icalFeeds,
+        parent_id: parentId,
       }
       /* Verificava o `ok` — e deitava fora o motivo. O servidor sabe dizer
        * "limite do plano atingido (3/3 alojamentos)"; o ecrã respondia "Erro
@@ -290,6 +188,13 @@ export default function EditarPropriedadePage() {
   )
 
   const canSave = nome.trim() && cidade.trim()
+
+  /* Quem pode receber este alojamento como quarto: casas de topo, sem contar
+   * com ele próprio. As mesmas três regras que o servidor impõe — aqui só para
+   * não se oferecer o que vai ser recusado. */
+  const quartosFilhos = todas.filter(x => x.parent_id === id)
+  const temQuartos = quartosFilhos.length > 0
+  const casasPossiveis = todas.filter(x => x.id !== id && !x.parent_id)
 
   return (
     <div className="flex flex-col min-h-full">
@@ -486,84 +391,86 @@ export default function EditarPropriedadePage() {
           </div>
         </div>
 
-        {/* iCal Sync */}
+        {/* Canais — a gestão vive em /canais.
+          *
+          * Havia três sítios a fazer isto: aqui, em /website e agora em
+          * /canais. Nenhum dos dois primeiros explicava o que é um iCal, nem
+          * validava o endereço, nem mostrava se a ligação estava viva — e este
+          * ainda perdia o feed se o anfitrião saísse sem carregar em «Guardar
+          * alterações» no fim de um formulário de trinta campos. Passa a haver
+          * um sítio só, e é o que ensina. */}
+        {/* Faz parte de uma casa?
+          *
+          * `parent_id` existia no modelo, na base e em metade da lógica — mas
+          * só se conseguia definir no momento da criação, e só através de um
+          * `?parent=` no URL que aparecia num link escondido dentro de casas
+          * que **já tinham** quartos. Quem criasse a casa e os quartos pela
+          * ordem natural ficava com tudo à solta e sem forma de o arrumar.
+          * Este seletor é a forma de o corrigir depois do facto. */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Calendários externos (iCal)</p>
-          <p className="text-xs text-muted-foreground -mt-1">
-            Traz para cá as reservas das plataformas. O iCal transporta <strong>só datas ocupadas</strong> —
-            preços, estadia mínima e restrições de chegada continuam a definir-se em cada plataforma.
-          </p>
-          {temGestorDeCanais && (
-            <p className="text-xs text-muted-foreground -mt-1">
-              Tens um gestor de canais ligado: as reservas do Airbnb e do Booking já vêm por aí.
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Faz parte de uma casa?</p>
+          {temQuartos ? (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Este alojamento é uma casa com {quartosFilhos.length} {quartosFilhos.length === 1 ? 'quarto' : 'quartos'}.
+              Uma casa com quartos não pode ser, ela própria, quarto de outra.
             </p>
+          ) : (
+            <>
+              <select
+                value={parentId ?? ''}
+                onChange={e => setParentId(e.target.value || null)}
+                className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">Não — é um alojamento independente</option>
+                {casasPossiveis.map(c => (
+                  <option key={c.id} value={c.id}>Sim, é um quarto de: {c.nome}</option>
+                ))}
+              </select>
+
+              {casasPossiveis.length === 0 && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ainda não tens nenhuma casa a que este quarto possa pertencer.
+                  Cria primeiro o alojamento principal e volta aqui.
+                </p>
+              )}
+
+              {parentId && !prop.parent_id && (
+                <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+                  Ao guardar, este alojamento passa a ser um quarto de{' '}
+                  <strong>{casasPossiveis.find(c => c.id === parentId)?.nome}</strong>.
+                  A casa deixa de se alugar por inteiro — passa a alugar-se quarto a quarto,
+                  e o calendário dela mostra a ocupação de todos os quartos juntos.
+                  As reservas que este alojamento já tem não se perdem.
+                </p>
+              )}
+
+              {!parentId && prop.parent_id && (
+                <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+                  Ao guardar, este quarto deixa de pertencer à casa e passa a alugar-se sozinho.
+                  Se a casa ficar sem quartos nenhuns, volta a alugar-se por inteiro.
+                </p>
+              )}
+            </>
           )}
+        </div>
 
-          {icalFeeds.map(feed => (
-            <div key={feed.id} className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{feed.nome}</p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{feed.url}</p>
-                {feed.last_sync && (
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Último sync: {new Date(feed.last_sync).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}
-                    {feed.last_count !== undefined && ` · ${feed.last_count} eventos`}
-                  </p>
-                )}
-                {feed.error && <p className="text-[10px] text-destructive mt-1">Erro: {feed.error}</p>}
-              </div>
-              <button onClick={() => removeFeed(feed.id)} className="p-1.5 text-muted-foreground hover:text-destructive transition-colors shrink-0">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-
-          <div className="flex flex-col gap-2">
-            <select
-              value={newFeedSource}
-              onChange={e => setNewFeedSource(e.target.value as BookingSource)}
-              className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {ICAL_SOURCES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </select>
-            <GuiaIcalPainel fonte={newFeedSource} />
-            {avisoDuplicacao && (
-              <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 leading-relaxed">
-                {AVISO_FONTE_DUPLICADA}
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Canais e calendários</p>
+          <Link
+            href="/canais"
+            className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 hover:border-primary/40 transition-colors"
+          >
+            <Rss className="h-4 w-4 text-primary shrink-0" aria-hidden />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Ligar ao Airbnb e ao Booking.com</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                {(icalFeeds.length > 0)
+                  ? `${icalFeeds.length} ${icalFeeds.length === 1 ? 'canal ligado' : 'canais ligados'} · ver estado e sincronizar`
+                  : 'Importar reservas das plataformas e bloquear lá as datas ocupadas aqui'}
               </p>
-            )}
-            <div className="flex gap-2">
-              <input
-                type="url"
-                value={newFeedUrl}
-                onChange={e => setNewFeedUrl(e.target.value)}
-                placeholder="https://www.airbnb.com/calendar/ical/..."
-                className="flex-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                onClick={addFeed}
-                disabled={!newFeedUrl.trim()}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40 active:opacity-80 transition-opacity"
-              >
-                <Plus className="h-4 w-4" />
-                Adicionar
-              </button>
             </div>
-          </div>
-
-          {icalFeeds.length > 0 && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={syncNow}
-                disabled={syncing}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'A sincronizar…' : 'Sincronizar agora'}
-              </button>
-              {syncResult && <span className="text-xs text-muted-foreground">{syncResult}</span>}
-            </div>
-          )}
+            <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
+          </Link>
         </div>
 
         <div className="flex gap-2">

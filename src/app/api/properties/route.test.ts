@@ -7,7 +7,7 @@ const tabelas: Record<string, Array<Record<string, unknown>>> = {}
 const escritas: Array<Record<string, unknown>> = []
 
 /** Duplo que respeita os filtros — ver a nota em `bookings/route.test.ts`. */
-function construtor(tabela: string) {
+function construtor(tabela: string, opcoes?: { count?: string; head?: boolean }) {
   const filtros: Array<[string, unknown]> = []
   const alvo = () => (tabelas[tabela] ?? []).filter(l => filtros.every(([c, v]) => l[c] === v))
 
@@ -16,7 +16,11 @@ function construtor(tabela: string) {
     maybeSingle: async () => ({ data: alvo()[0] ?? null, error: null }),
     single: async () => ({ data: alvo()[0] ?? null, error: alvo()[0] ? null : { message: 'not found' } }),
     order: () => obj,
-    then: (resolve: (v: { data: unknown; error: null }) => unknown) => resolve({ data: alvo(), error: null }),
+    /* `count` tem de vir mesmo: o guarda que impede uma casa com quartos de
+     * virar quarto de outra lê-o, e um duplo que devolvesse sempre `undefined`
+     * fazia o teste passar sem o guarda alguma vez disparar. */
+    then: (resolve: (v: { data: unknown; error: null; count?: number }) => unknown) =>
+      resolve({ data: alvo(), error: null, ...(opcoes?.count ? { count: alvo().length } : {}) }),
   }
   return obj
 }
@@ -24,7 +28,7 @@ function construtor(tabela: string) {
 vi.mock('@/lib/supabase', () => ({
   createAdminClient: () => ({
     from: (tabela: string) => ({
-      select: () => construtor(tabela),
+      select: (_cols?: string, opcoes?: { count?: string; head?: boolean }) => construtor(tabela, opcoes),
       upsert: async (row: Record<string, unknown>) => { escritas.push(row); return { error: null } },
       delete: () => construtor(tabela),
     }),
@@ -138,5 +142,67 @@ describe('POST /api/properties', () => {
     conta = null
     const res = await POST(pedido(NOVA))
     expect(res.status).toBe(404)
+  })
+})
+
+/**
+ * Casa → quartos, e só dois níveis.
+ *
+ * Ligar um alojamento já existente a uma casa passou a ser possível na página
+ * de edição — antes só se podia decidir na criação, e por um `?parent=` no URL
+ * que só aparecia em casas que já tinham quartos. Quem criava a casa e depois
+ * os quartos ficava com tudo à solta, sem forma de o arrumar.
+ *
+ * Com essa liberdade vêm as árvores que o resto do código não sabe percorrer.
+ * Nenhuma delas dá erro na base — por isso são recusadas aqui.
+ */
+describe('POST /api/properties — casa e quartos', () => {
+  beforeEach(() => {
+    tabelas.properties = [
+      { id: 'casa', owner_id: 'user_1', parent_id: null, ativo: true },
+      { id: 'quarto-a', owner_id: 'user_1', parent_id: 'casa', ativo: true },
+      { id: 'solto', owner_id: 'user_1', parent_id: null, ativo: true },
+      { id: 'casa-do-vizinho', owner_id: 'user_2', parent_id: null, ativo: true },
+    ]
+    conta = { id: 'acc_1', propriedades_max: 10 }
+  })
+
+  /* O caso que motivou tudo: três quartos criados à solta, e a casa já feita. */
+  it('deixa ligar um alojamento solto a uma casa', async () => {
+    const res = await POST(pedido({ ...NOVA, id: 'solto', parent_id: 'casa' }))
+    expect(res.status).toBe(200)
+    expect(escritas[0].parent_id).toBe('casa')
+  })
+
+  it('deixa soltar um quarto da casa', async () => {
+    const res = await POST(pedido({ ...NOVA, id: 'quarto-a', parent_id: null }))
+    expect(res.status).toBe(200)
+    expect(escritas[0].parent_id).toBeNull()
+  })
+
+  it('recusa um alojamento como quarto de si próprio', async () => {
+    const res = await POST(pedido({ ...NOVA, id: 'solto', parent_id: 'solto' }))
+    expect(res.status).toBe(400)
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('recusa três níveis — um quarto dentro de um quarto', async () => {
+    const res = await POST(pedido({ ...NOVA, id: 'solto', parent_id: 'quarto-a' }))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({ error: expect.stringContaining('já é um quarto') })
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('recusa que uma casa com quartos passe a ser quarto de outra', async () => {
+    const res = await POST(pedido({ ...NOVA, id: 'casa', parent_id: 'solto' }))
+    expect(res.status).toBe(400)
+    expect(await res.json()).toMatchObject({ error: expect.stringContaining('já tem quartos') })
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('recusa pendurar um quarto na casa de outro anfitrião', async () => {
+    const res = await POST(pedido({ ...NOVA, id: 'solto', parent_id: 'casa-do-vizinho' }))
+    expect(res.status).toBe(404)
+    expect(escritas).toHaveLength(0)
   })
 })

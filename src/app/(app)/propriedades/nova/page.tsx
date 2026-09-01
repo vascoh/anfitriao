@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Upload, Loader2 } from 'lucide-react'
+import { ArrowLeft, Upload, Loader2, Home, DoorOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
+import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 
@@ -32,7 +33,27 @@ const TYPES: PropertyType[] = ['apartamento', 'moradia', 'quarto', 'outro']
 function NovaPropriedadeForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const parentId = searchParams.get('parent') ?? undefined
+
+  /* A escolha «alojamento inteiro ou quarto» era implícita: vinha de um
+   * `?parent=` no URL, posto por um link que só existia em casas que já
+   * tinham quartos. Quem abrisse «Nova» pelo botão normal nunca via a
+   * pergunta — e ficava sem saber que o conceito existia. Agora é a primeira
+   * coisa que se decide, por palavras, no ecrã. */
+  const [modo, setModo] = useState<'inteiro' | 'quarto'>(
+    searchParams.get('parent') ? 'quarto' : 'inteiro',
+  )
+  const [parentEscolhido, setParentEscolhido] = useState<string | null>(
+    searchParams.get('parent'),
+  )
+  const [casas, setCasas] = useState<Property[]>([])
+
+  useEffect(() => {
+    fetchProperties()
+      .then(todas => setCasas(todas.filter(x => !x.parent_id)))
+      .catch(() => setCasas([]))
+  }, [])
+
+  const parentId = modo === 'quarto' ? (parentEscolhido ?? undefined) : undefined
   const [nome, setNome] = useState('')
   const [tipo, setTipo] = useState<PropertyType>('apartamento')
   const [endereco, setEndereco] = useState('')
@@ -130,7 +151,9 @@ function NovaPropriedadeForm() {
     }
   }
 
-  const canSave = nome.trim() && cidade.trim()
+  /* Escolher «quarto» e não dizer de que casa deixaria o quarto a alugar-se
+   * sozinho — exactamente o engano que este ecrã passou a existir para evitar. */
+  const canSave = nome.trim() && cidade.trim() && (modo === 'inteiro' || !!parentEscolhido)
 
   return (
     <div className="flex flex-col min-h-full">
@@ -144,11 +167,78 @@ function NovaPropriedadeForm() {
       </header>
 
       <div className="flex flex-col gap-5 p-4 pb-8">
-        {parentId && (
-          <div className="rounded-lg bg-primary/8 border border-primary/20 px-4 py-3 text-sm text-primary font-medium">
-            Este quarto será agrupado sob a propriedade mãe.
-          </div>
-        )}
+        {/* A primeira pergunta, e a única que muda o resto. */}
+        <div className="flex flex-col gap-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            O que estás a criar?
+          </p>
+
+          <button
+            type="button"
+            onClick={() => { setModo('inteiro'); setParentEscolhido(null) }}
+            className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors ${
+              modo === 'inteiro' ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/40'
+            }`}
+          >
+            <Home className={`h-5 w-5 shrink-0 mt-0.5 ${modo === 'inteiro' ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden />
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold">Um alojamento inteiro</span>
+              <span className="block text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Aluga-se todo de uma vez, a um só grupo. Uma reserva ocupa a casa toda.
+                É o caso de um apartamento ou de uma moradia.
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setModo('quarto')}
+            className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition-colors ${
+              modo === 'quarto' ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/40'
+            }`}
+          >
+            <DoorOpen className={`h-5 w-5 shrink-0 mt-0.5 ${modo === 'quarto' ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden />
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold">Um quarto dentro de uma casa</span>
+              <span className="block text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Cada quarto aluga-se em separado, a hóspedes diferentes ao mesmo tempo.
+                A casa em si deixa de se alugar por inteiro.
+              </span>
+            </span>
+          </button>
+
+          {modo === 'quarto' && (
+            <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted/30 px-4 py-3.5">
+              <label htmlFor="casa-mae" className="text-xs font-semibold">
+                De que casa faz parte este quarto?
+              </label>
+              {casas.length === 0 ? (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Ainda não tens nenhuma casa criada. Cria primeiro o alojamento principal
+                  (por exemplo, «Casa de Vasco») como <strong>alojamento inteiro</strong>,
+                  e depois volta aqui para lhe acrescentar os quartos.
+                </p>
+              ) : (
+                <>
+                  <select
+                    id="casa-mae"
+                    value={parentEscolhido ?? ''}
+                    onChange={e => setParentEscolhido(e.target.value || null)}
+                    className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Escolhe a casa…</option>
+                    {casas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                  {!parentEscolhido && (
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      Escolhe a casa antes de continuar — sem isso, este quarto fica a alugar-se sozinho.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
         {/* Basic info */}
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Informação básica</p>

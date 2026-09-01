@@ -23,6 +23,12 @@ const EXCECOES: Record<string, string> = {
     'rota pública: o hóspede não tem sessão, e a ligação deriva da reserva que o URL identifica',
   'push/route.ts':
     'a chave de conflito é o endpoint do browser, um segredo do próprio dispositivo',
+  'newsletter/route.ts':
+    'rota pública sem sessão e sem dono: a linha é o email. Como a chave vem do '
+    + 'pedido e ninguém prova que é sua, a escrita usa ignoreDuplicates — a '
+    + 'primeira subscrição manda e as seguintes não tocam na linha, portanto '
+    + 'não há nada para sobrepor. A tabela tem RLS sem políticas: nem anon nem '
+    + 'authenticated a leem.',
 }
 
 function ficheirosDeRota(dir: string): string[] {

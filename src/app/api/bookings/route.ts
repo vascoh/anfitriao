@@ -92,7 +92,71 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Hóspede não encontrado.' }, { status: 404 })
   }
 
-  const row = { ...body, owner_id: userId }
+  /* Datas coerentes. Não era verificado em lado nenhum do servidor: uma
+   * reserva com saída antes da entrada entrava na base e depois aparecia com
+   * largura negativa no calendário e noites negativas na receita. */
+  const { permitir_sobreposicao, ...campos } = body as unknown as Record<string, unknown>
+  const checkIn = typeof campos.check_in === 'string' ? campos.check_in : ''
+  const checkOut = typeof campos.check_out === 'string' ? campos.check_out : ''
+
+  if (!checkIn || !checkOut || checkIn >= checkOut) {
+    return NextResponse.json(
+      { error: 'A data de saída tem de ser depois da data de entrada.' },
+      { status: 400 },
+    )
+  }
+
+  /* Dupla reserva: a verificação estava só no browser.
+   *
+   * `/reservas/nova` chamava `detectConflict` sobre a lista que tinha em mão,
+   * e mais nada — o servidor aceitava tudo. Isso deixa passar as três formas
+   * que interessam: dois separadores abertos ao mesmo tempo, uma lista que
+   * ficou velha desde que a página abriu, e qualquer escrita que não venha
+   * daquele ecrã. **Editar as datas de uma reserva não tinha verificação
+   * nenhuma**, nem no browser — arrastar uma reserva para cima de outra
+   * gravava sem uma palavra.
+   *
+   * O caminho do hóspede (`lib/booking-request.ts`) sempre verificou isto do
+   * lado do servidor, e ainda reconfirma no pagamento. Era o caminho do
+   * anfitrião — o que cria a maioria das reservas — que estava desprotegido.
+   *
+   * Cancelar nunca é bloqueado: uma reserva cancelada não ocupa nada. */
+  const estado = typeof campos.estado === 'string' ? campos.estado : 'confirmada'
+  const libertaDatas = estado === 'cancelada' || estado === 'no_show'
+
+  if (!libertaDatas && permitir_sobreposicao !== true) {
+    let q = supabase
+      .from('bookings')
+      .select('id, check_in, check_out, estado')
+      .eq('propriedade_id', campos.propriedade_id as string)
+      .eq('owner_id', userId)
+      .not('estado', 'in', '("cancelada","no_show")')
+      // Sobreposição de intervalos meio-abertos: [entrada, saída[.
+      // Sair no dia em que outro entra não é conflito.
+      .lt('check_in', checkOut)
+      .gt('check_out', checkIn)
+
+    // Numa alteração, a própria reserva não conta como conflito consigo mesma.
+    if (typeof campos.id === 'string' && campos.id) q = q.neq('id', campos.id)
+
+    const { data: conflitos, error: cErr } = await q.limit(1)
+
+    if (cErr) {
+      console.error('[POST /api/bookings] verificação de conflito', cErr.message)
+      return NextResponse.json({ error: 'Não foi possível verificar a disponibilidade.' }, { status: 500 })
+    }
+
+    if (conflitos && conflitos.length > 0) {
+      const c = conflitos[0]
+      return NextResponse.json({
+        error: `Estas datas chocam com uma reserva que já existe neste alojamento (${c.check_in} a ${c.check_out}). Verifica as datas ou cancela a outra reserva primeiro.`,
+        code: 'CONFLITO',
+        conflito: { id: c.id, check_in: c.check_in, check_out: c.check_out },
+      }, { status: 409 })
+    }
+  }
+
+  const row = { ...campos, owner_id: userId }
 
   const { error } = await supabase.from('bookings').upsert(row)
   if (error) {

@@ -3,12 +3,158 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, BedDouble, ChevronDown, ChevronRight as ChevronRightIcon, Home } from 'lucide-react'
+import { toast } from 'sonner'
 import { fmtMoney, today as localToday } from '@/lib/utils'
+import { guardar } from '@/lib/guardar'
 import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { useUser } from '@clerk/nextjs'
+
+/**
+ * Assistente para agrupar alojamentos soltos numa casa.
+ *
+ * O modelo casa→quartos existia, mas era invisível: quem criasse a casa e os
+ * quartos pela ordem natural ficava com quatro alojamentos ao mesmo nível e
+ * sem nada no ecrã a sugerir que podiam estar relacionados. Reparar nisso
+ * exigia saber de antemão que a funcionalidade existia — que é a definição de
+ * implícito.
+ *
+ * Aparece só quando há material para agrupar (duas ou mais unidades soltas) e
+ * desaparece assim que se agrupa. Não decide nada sozinho: um T1 e um T2 na
+ * mesma cidade são dois alojamentos independentes, e adivinhar aqui seria pior
+ * do que perguntar.
+ */
+function AssistenteAgrupar({ soltos, aoAgrupar }: {
+  soltos: Property[]
+  aoAgrupar: () => Promise<void>
+}) {
+  const [aberto, setAberto] = useState(false)
+  const [casaId, setCasaId] = useState<string>('')
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set())
+  const [aGravar, setAGravar] = useState(false)
+
+  const quartos = soltos.filter(p => p.id !== casaId)
+
+  function alternar(id: string) {
+    setEscolhidos(prev => {
+      const s = new Set(prev)
+      if (s.has(id)) s.delete(id); else s.add(id)
+      return s
+    })
+  }
+
+  async function agrupar() {
+    if (!casaId || escolhidos.size === 0) return
+    setAGravar(true)
+    try {
+      for (const id of escolhidos) {
+        const quarto = soltos.find(p => p.id === id)
+        if (!quarto) continue
+        if (!await guardar('/api/properties', { ...quarto, parent_id: casaId })) {
+          setAGravar(false)
+          return
+        }
+      }
+      const casa = soltos.find(p => p.id === casaId)
+      toast.success(
+        `${escolhidos.size} ${escolhidos.size === 1 ? 'quarto agrupado' : 'quartos agrupados'} em ${casa?.nome}.`,
+      )
+      setAberto(false)
+      setEscolhidos(new Set())
+      setCasaId('')
+      await aoAgrupar()
+    } finally {
+      setAGravar(false)
+    }
+  }
+
+  if (!aberto) {
+    return (
+      <button
+        onClick={() => setAberto(true)}
+        className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/[0.04] px-4 py-3.5 text-left hover:border-primary/50 transition-colors"
+      >
+        <Home className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden />
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-semibold">
+            Algum destes alojamentos é um quarto de outro?
+          </span>
+          <span className="block text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            Tens {soltos.length} alojamentos independentes. Se forem quartos da mesma casa —
+            alugados em separado, a hóspedes diferentes — podes agrupá-los aqui. A ocupação
+            passa a somar-se num só calendário.
+          </span>
+        </span>
+        <ChevronRightIcon className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" aria-hidden />
+      </button>
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-primary/30 bg-primary/[0.03] px-4 py-4 flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold flex-1">Agrupar em casa e quartos</span>
+        <button onClick={() => setAberto(false)}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          Cancelar
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="agrupar-casa" className="text-xs font-semibold">
+          1. Qual deles é a casa?
+        </label>
+        <select
+          id="agrupar-casa"
+          value={casaId}
+          onChange={e => { setCasaId(e.target.value); setEscolhidos(new Set()) }}
+          className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">Escolhe a casa…</option>
+          {soltos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        </select>
+      </div>
+
+      {casaId && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-semibold">2. Quais destes são quartos dela?</p>
+          {quartos.map(p => (
+            <label key={p.id}
+              className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={escolhidos.has(p.id)}
+                onChange={() => alternar(p.id)}
+                className="h-4 w-4 shrink-0 accent-[color:var(--primary)]"
+              />
+              <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: p.cor }} aria-hidden />
+              <span className="text-sm flex-1 min-w-0 truncate">{p.nome}</span>
+            </label>
+          ))}
+        </div>
+      )}
+
+      {escolhidos.size > 0 && (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+          <strong>{soltos.find(p => p.id === casaId)?.nome}</strong> deixa de se alugar por inteiro
+          e passa a alugar-se quarto a quarto. O calendário dela passa a mostrar a ocupação de
+          todos os quartos juntos — é esse o calendário que exportas para o Airbnb e o Booking.
+          As reservas que já existem não se perdem.
+        </p>
+      )}
+
+      <button
+        onClick={agrupar}
+        disabled={!casaId || escolhidos.size === 0 || aGravar}
+        className="self-start rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-40 active:opacity-80 transition-opacity"
+      >
+        {aGravar ? 'A agrupar…' : `Agrupar ${escolhidos.size || ''} ${escolhidos.size === 1 ? 'quarto' : 'quartos'}`.trim()}
+      </button>
+    </div>
+  )
+}
 
 function PropertyCard({ p, bookings, guests, isRoom = false }: {
   p: Property
@@ -221,6 +367,12 @@ export default function PropriedadesPage() {
       .finally(() => setLoaded(true))
   }, [ownerId])
 
+  /* Depois de agrupar, a lista tem de se redesenhar: os quartos saltam de
+   * «independentes» para dentro da casa. */
+  async function recarregar() {
+    setAllProps(await fetchProperties())
+  }
+
   // Separate parents from rooms
   const parents = allProps.filter(p => !p.parent_id)
   const roomsByParent = allProps.filter(p => p.parent_id)
@@ -298,9 +450,29 @@ export default function PropriedadesPage() {
               />
             ))}
 
-            {/* Standalone properties */}
+            {/* Só faz sentido perguntar quando há material para agrupar. */}
+            {standalone.length >= 2 && (
+              <AssistenteAgrupar soltos={standalone} aoAgrupar={recarregar} />
+            )}
+
+            {/* Standalone properties
+              *
+              * O «Adicionar quarto» vivia só no `ParentPropertyGroup`, ou seja
+              * só aparecia em casas que **já tinham** quartos. Uma casa
+              * acabada de criar caía aqui, sem esse link em lado nenhum: para
+              * lhe pôr o primeiro quarto era preciso adivinhar o
+              * `?parent=<id>` no URL. Quem seguia a ordem natural — criar a
+              * casa, depois os quartos — acabava com tudo à solta e sem forma
+              * de o arrumar. */}
             {standalone.map(p => (
-              <PropertyCard key={p.id} p={p} bookings={bookings} guests={guests} />
+              <div key={p.id} className="flex flex-col gap-2">
+                <PropertyCard p={p} bookings={bookings} guests={guests} />
+                <Link href={`/propriedades/nova?parent=${p.id}`}
+                  className="ml-6 flex items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2.5 text-xs text-muted-foreground hover:text-foreground hover:border-border/70 transition-colors">
+                  <Plus className="h-3.5 w-3.5" />
+                  Dividir em quartos — adicionar quarto a {p.nome}
+                </Link>
+              </div>
             ))}
           </>
         )}
