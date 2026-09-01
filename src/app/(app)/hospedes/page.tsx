@@ -9,6 +9,7 @@ import type { Guest, Booking, GuestTag } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, sibaComplete } from '@/lib/labels'
 import { today } from '@/lib/utils'
 import { useUser } from '@clerk/nextjs'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 
 function avatarLetter(nome: string) { return nome?.[0]?.toUpperCase() ?? '?' }
 
@@ -20,6 +21,7 @@ export default function HospedesPage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [erro, setErro] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
@@ -27,6 +29,7 @@ export default function HospedesPage() {
     // construía à mão, e que passou a ser feito no servidor.
     Promise.all([fetchGuests(), fetchBookings()])
       .then(([g, b]) => { setGuests(g); setBookings(b) })
+      .catch(() => setErro(true))
       .finally(() => setLoaded(true))
   }, [ownerId])
 
@@ -137,7 +140,9 @@ export default function HospedesPage() {
       </header>
 
       <div className="flex-1">
-        {!loaded ? (
+        {erro ? (
+          <ErroAoCarregar oQue="os hóspedes" />
+        ) : !loaded ? (
           <div className="flex flex-col animate-pulse">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-border">

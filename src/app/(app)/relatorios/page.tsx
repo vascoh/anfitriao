@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
 import { calcularRevPar } from '@/lib/revpar'
 import { agruparReservas } from '@/lib/grupos'
@@ -174,6 +175,7 @@ export default function RelatoriosPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [erro, setErro] = useState(false)
   const now = useMemo(() => new Date(), [])
   const [year, setYear] = useState(now.getFullYear())
 
@@ -188,6 +190,9 @@ export default function RelatoriosPage() {
       fetchGuests(),
     ])
       .then(([b, p, g]) => { setBookings(b); setProperties(p); setGuests(g) })
+      /* Um relatório que não carregou mostra zeros, e zeros aqui leem-se como
+       * "o mês correu mal" e não como "os dados não chegaram". */
+      .catch(() => setErro(true))
       .finally(() => setLoaded(true))
   }, [ownerId, year])
 
@@ -274,6 +279,10 @@ export default function RelatoriosPage() {
   const yoyChange = prevYearRevenue > 0
     ? Math.round(((totalRevenue - prevYearRevenue) / prevYearRevenue) * 100)
     : 0
+
+  if (erro) {
+    return <ErroAoCarregar oQue="os relatórios" aviso="Os números que aparecem por baixo de um erro destes não são zero — são desconhecidos." />
+  }
 
   if (!loaded) {
     return (

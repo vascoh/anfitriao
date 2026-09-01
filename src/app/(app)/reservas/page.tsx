@@ -9,6 +9,7 @@ import type { Booking, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
 import { agruparReservas, type ResumoGrupo } from '@/lib/grupos'
 import { useUser } from '@clerk/nextjs'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 
 type Filter = 'todas' | 'ativas' | 'proximas' | 'pendentes' | 'passadas'
 
@@ -143,11 +144,16 @@ export default function ReservasPage() {
   const [propFilter, setPropFilter] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [loaded, setLoaded] = useState(false)
+  const [erro, setErro] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
     Promise.all([fetchBookings(), fetchGuests(), fetchProperties()])
       .then(([b, g, p]) => { setBookings(b); setGuests(g); setProps(p) })
+      /* Sem isto, uma falha de rede dava uma lista vazia igual à de quem não
+       * tem reservas nenhumas — e é sobre esta lista que se decide aceitar
+       * uma reserva nova. */
+      .catch(() => setErro(true))
       .finally(() => setLoaded(true))
   }, [ownerId])
 
@@ -283,7 +289,9 @@ export default function ReservasPage() {
       )}
 
       <div className="flex-1">
-        {!loaded ? (
+        {erro ? (
+          <ErroAoCarregar oQue="as reservas" aviso="A lista pode não estar completa — não confirmes disponibilidade a partir daqui sem recarregar." />
+        ) : !loaded ? (
           <div className="flex flex-col animate-pulse">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-start gap-3 px-4 py-3.5 border-b border-border">

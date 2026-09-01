@@ -10,6 +10,7 @@ import { gerarMapaIne, prazoIne } from '@/lib/ine'
 import { mesAnterior, nomeMes } from '@/lib/relatorio-mensal'
 import { escCsv } from '@/lib/siba'
 import type { Booking, Guest, Property } from '@/lib/types'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 
 const URL_WEBINQ = 'https://webinq.ine.pt/'
 
@@ -20,6 +21,7 @@ export default function IneePage() {
   const [guests, setGuests] = useState<Guest[]>([])
   const [props, setProps] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(false)
 
   // Por omissão mostra o mês anterior — é esse que está por declarar
   const inicial = mesAnterior(today())
@@ -33,9 +35,13 @@ export default function IneePage() {
      * ecrã até chegar a nova, em vez de piscar para vazio. */
     const de = `${ano}-${String(mes + 1).padStart(2, '0')}-01`
     const ate = mes === 11 ? `${ano + 1}-01-01` : `${ano}-${String(mes + 2).padStart(2, '0')}-01`
-    Promise.all([fetchBookings({ de, ate }), fetchGuests(), fetchProperties()]).then(([b, g, p]) => {
-      setBookings(b); setGuests(g); setProps(p); setLoading(false)
-    })
+    /* Ver a nota do `catch` em /conformidade/taxa-turistica: sem ele o
+     * `setLoading(false)` nunca corria e a página ficava presa no esqueleto,
+     * ou — ao mudar de mês — deixava a tabela do mês anterior no ecrã. */
+    Promise.all([fetchBookings({ de, ate }), fetchGuests(), fetchProperties()])
+      .then(([b, g, p]) => { setBookings(b); setGuests(g); setProps(p); setErro(false) })
+      .catch(() => setErro(true))
+      .finally(() => setLoading(false))
   }, [ownerId, ano, mes])
 
   const mapa = useMemo(
@@ -73,6 +79,15 @@ export default function IneePage() {
         <div className="h-8 w-56 animate-pulse rounded-lg bg-muted" />
         <div className="h-64 animate-pulse rounded-2xl bg-muted" />
       </div>
+    )
+  }
+
+  if (erro) {
+    return (
+      <ErroAoCarregar
+        oQue="as dormidas deste mês"
+        aviso="Não entregues o mapa a partir desta página enquanto não carregar: um mapa vazio por falha de rede é indistinguível de um mês sem hóspedes."
+      />
     )
   }
 

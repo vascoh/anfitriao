@@ -10,6 +10,7 @@ import { regraPara, calcularTmt, REGRAS_TMT } from '@/lib/taxa-turistica'
 import { mesAnterior, nomeMes } from '@/lib/relatorio-mensal'
 import { escCsv } from '@/lib/siba'
 import type { Booking, Property } from '@/lib/types'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 
 export default function TaxaTuristicaPage() {
   const { user } = useUser()
@@ -17,6 +18,7 @@ export default function TaxaTuristicaPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [props, setProps] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(false)
 
   const inicial = mesAnterior(today())
   const [ano, setAno] = useState(inicial.ano)
@@ -37,9 +39,16 @@ export default function TaxaTuristicaPage() {
      * ecrã até chegar a nova, em vez de piscar para vazio. */
     const de = `${ano}-${String(mes + 1).padStart(2, '0')}-01`
     const ate = mes === 11 ? `${ano + 1}-01-01` : `${ano}-${String(mes + 2).padStart(2, '0')}-01`
-    Promise.all([fetchBookings({ de, ate }), fetchProperties()]).then(([b, p]) => {
-      setBookings(b); setProps(p); setLoading(false)
-    })
+    /* O `catch` não é cortesia: sem ele, uma falha de rede não mexia em
+     * `loading` (o `setLoading(false)` vive dentro do `then`) e a página ficava
+     * presa no esqueleto para sempre. Ao mudar de mês era pior — a tabela do
+     * mês anterior continuava no ecrã por baixo do cabeçalho do mês novo. Numa
+     * página de onde sai um valor para a câmara, um número que não chegou não
+     * pode passar por um número que é zero. */
+    Promise.all([fetchBookings({ de, ate }), fetchProperties()])
+      .then(([b, p]) => { setBookings(b); setProps(p); setErro(false) })
+      .catch(() => setErro(true))
+      .finally(() => setLoading(false))
   }, [ownerId, ano, mes])
 
   const mapa = useMemo(() => {
@@ -128,6 +137,15 @@ export default function TaxaTuristicaPage() {
         <div className="h-8 w-64 animate-pulse rounded-lg bg-muted" />
         <div className="h-64 animate-pulse rounded-2xl bg-muted" />
       </div>
+    )
+  }
+
+  if (erro) {
+    return (
+      <ErroAoCarregar
+        oQue="as reservas deste mês"
+        aviso="Não declares nada a partir desta página enquanto não carregar: uma tabela vazia por falha de rede é indistinguível de um mês sem dormidas."
+      />
     )
   }
 

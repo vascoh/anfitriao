@@ -7,16 +7,21 @@ import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Newspaper, Eye, EyeOff } from 'lucide-react'
 import { fetchPosts } from '@/lib/fetcher'
 import type { Post } from '@/lib/types'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 
 export default function BlogPage() {
   const { user } = useUser()
   const ownerId = user?.id
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
-    fetchPosts().then(p => { setPosts(p); setLoading(false) })
+    fetchPosts()
+      .then(setPosts)
+      .catch(() => setErro(true))
+      .finally(() => setLoading(false))
   }, [ownerId])
 
   async function handleDelete(id: string) {
@@ -28,6 +33,10 @@ export default function BlogPage() {
     }
     setPosts(prev => prev.filter(p => p.id !== id))
     toast.success('Post eliminado')
+  }
+
+  if (erro) {
+    return <ErroAoCarregar oQue="os artigos" />
   }
 
   if (loading) {

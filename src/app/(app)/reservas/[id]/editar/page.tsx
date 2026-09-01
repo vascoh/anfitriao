@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
 import { fetchBookings } from '@/lib/fetcher'
 import { guardar } from '@/lib/guardar'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import type { Booking, BookingSource, BookingStatus } from '@/lib/types'
 import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
 
@@ -18,6 +19,10 @@ export default function EditarReservaPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
+  /* Distinguir as três coisas que o `booking` a null podia significar:
+   * ainda a carregar, não existe, ou não foi possível saber. As três davam
+   * o mesmo esqueleto a pulsar para sempre. */
+  const [falha, setFalha] = useState<null | 'rede' | 'inexistente'>(null)
 
   // Form fields
   const [checkIn, setCheckIn] = useState('')
@@ -30,8 +35,9 @@ export default function EditarReservaPage() {
   const [notas, setNotas] = useState('')
 
   useEffect(() => {
-    fetchBookings().then(bs => { const b = bs.find(x => x.id === id) ?? null; return b }).then(b => {
-      if (!b) return
+    fetchBookings().then(bs => {
+      const b = bs.find(x => x.id === id) ?? null
+      if (!b) { setFalha('inexistente'); return }
       setBooking(b)
       setCheckIn(b.check_in)
       setCheckOut(b.check_out)
@@ -41,7 +47,7 @@ export default function EditarReservaPage() {
       setPrecoTotal(String(b.preco_total))
       setPrecoPago(String(b.preco_pago))
       setNotas(b.notas ?? '')
-    })
+    }).catch(() => setFalha('rede'))
   }, [id])
 
   async function handleSave() {
@@ -70,6 +76,13 @@ export default function EditarReservaPage() {
     toast.success('Reserva atualizada')
     router.push(`/reservas/${id}`)
   }
+
+  if (falha) return (
+    <ErroAoCarregar
+      oQue={falha === 'inexistente' ? 'esta reserva' : 'a reserva'}
+      aviso={falha === 'inexistente' ? 'Pode ter sido eliminada entretanto.' : undefined}
+    />
+  )
 
   if (!booking) return (
     <div className="flex flex-col min-h-full">
