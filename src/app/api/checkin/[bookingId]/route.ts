@@ -286,8 +286,22 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     }
 
     /* Reenviar o formulário atualiza a mesma ficha em vez de criar outra: pelo
-     * id quando o cliente o tem, pelo nome quando não tem. */
-    const idExistente = typeof a?.id === 'string' && a.id
+     * id quando o cliente o tem, pelo nome quando não tem.
+     *
+     * O id só vale se já estiver ligado a **esta** reserva. Aceitava-se
+     * qualquer `id` que viesse no corpo do pedido, e a escrita logo a seguir é
+     * feita com o cliente admin, que ignora o RLS e não filtrava por dono:
+     * quem tivesse um link de check-in podia mandar o id da ficha de um
+     * hóspede de outro anfitrião e reescrevê-la por cima — nome, documento,
+     * data de nascimento e o próprio `owner_id`, que a passaria para si. Os
+     * ids são UUID e não se adivinham, mas isso é o segredo do URL a fazer de
+     * autorização, que é a definição do IDOR que o `canUpsertRow` existe para
+     * travar no resto do projeto.
+     *
+     * Um id que não pertença a esta reserva deixa de ser um atalho para
+     * escrever onde se quer: cai no reaproveitamento por nome, e daí para
+     * ficha nova. */
+    const idExistente = typeof a?.id === 'string' && a.id && idsLigados.includes(a.id)
       ? a.id
       : porNome.get(chaveDeNome(nomeAcomp))?.shift() ?? null
 

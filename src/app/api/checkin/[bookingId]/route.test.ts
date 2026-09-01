@@ -288,6 +288,26 @@ describe('POST duas vezes — acompanhantes', () => {
     expect(escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')).toHaveLength(1)
   })
 
+  it('um id de acompanhante que não é desta reserva não dá acesso de escrita à ficha', async () => {
+    /* O `id` do acompanhante vem do corpo do pedido e a escrita é feita com o
+     * cliente admin, que ignora o RLS. Aceite sem verificação, era um IDOR:
+     * quem tivesse um link de check-in reescrevia por cima da ficha de um
+     * hóspede de outro anfitrião — documento, data de nascimento e o próprio
+     * `owner_id`. Um id que não esteja ligado a esta reserva tem de cair no
+     * caminho normal e criar ficha nova. */
+    tabelas.guests.push({ id: 'g-de-outro-anfitriao', nome: 'Vítima' })
+
+    await POST(pedidoPost({
+      ...FICHA,
+      acompanhantes: [{ nome: 'Estranho', id: 'g-de-outro-anfitriao' }],
+    }), { params: params('b1') })
+
+    // Ficha nova para o acompanhante; a do outro anfitrião fica por tocar.
+    expect(escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')).toHaveLength(1)
+    // Só o titular é atualizado.
+    expect(escritas.filter(e => e.tabela === 'guests' && e.tipo === 'update')).toHaveLength(1)
+  })
+
   it('quem reservou nunca é confundido com um acompanhante do mesmo nome', async () => {
     await POST(pedidoPost({
       ...FICHA,
