@@ -44,7 +44,13 @@ do Supabase só dá INFO). Os erros estavam no que ainda não tinha sido commita
   como o resto do projeto lê a coluna. Alinhado.
 
 Validação: `npm test` (956, +3 novos), `npm run typecheck` e `npm run lint` a
-zero. Por commitar e por fazer deploy.
+zero, `npm run build` a passar. Commitado em quatro commits temáticos e
+deployado a 2026-09-01 (`dpl_CaW9L5i4pE3r93o5hH31xpYkszEp`), com o alias
+`anfitrioes.pt` confirmado por `vercel inspect` na data do deploy.
+
+⚠️ **Nota de deploy:** `npx vercel deploy --prod` devolveu `Not authorized` sem
+`--scope`, apesar de o `whoami` e o `project ls` funcionarem. Com
+`--scope vascotelo-7402s-projects` passou à primeira. Usar sempre o `--scope`.
 
 ### [2026-08-23e] Casa com quartos — dava para criar, não dava para arrumar
 
