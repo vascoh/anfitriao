@@ -5,7 +5,7 @@ import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { fetchIcalText } from '@/lib/ical-fetch'
 import { parseIcal } from '@/lib/ical'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import {
   reconciliarPropriedade, uidDeOrigem, CANCELAMENTO_POR_SINCRONIZACAO,
   type ReservaImportada, type EventoDoFeed,
@@ -282,8 +282,16 @@ export async function POST(req: NextRequest) {
    * teto, um botão carregado repetidamente pode fazer o Airbnb ou o Booking
    * limitarem o **feed do anfitrião** — um castigo que ele leva sem perceber
    * porquê. O cron diário continua a passar por aqui sem limitação, porque
-   * usa o outro handler. */
-  const rl = checkRateLimit(`ical-sync:${userId}`, 12, 60_000)
+   * usa o outro handler.
+   *
+   * Conta na base, e não em memória. O limitador em memória tem um `Map` por
+   * instância, portanto o teto real era 12 vezes o número de instâncias que a
+   * Vercel decidisse arrancar — que é o mesmo que não haver teto para quem
+   * carrega depressa. Com um alojamento isso é uma curiosidade; com uma
+   * carteira de clientes deixa de ser, porque quem leva o castigo do Airbnb
+   * não é a conta que exagerou: é o **endereço de saída da Vercel**, partilhado
+   * por todos os anfitriões ao mesmo tempo. */
+  const rl = await verificarLimite(`ical-sync:${userId}`, 12, 60_000)
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Demasiadas sincronizações seguidas. Espera um minuto.' },
