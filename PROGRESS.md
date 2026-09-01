@@ -6,6 +6,39 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-02] Três arestas do lado de vender isto a outros anfitriões
+
+Continuação da sessão. As três nasceram da mesma pergunta: **o que é que muda
+quando o utilizador não é o Vasco?**
+
+- ✅ **Alerta de canal partido** (`lib/canais-alertas.ts` + cron às 06:00, duas
+  horas depois da sincronização). O estado já se via em `/canais`, mas ninguém
+  abre `/canais`. E desde a verificação ao vivo, um feed partido deixou de ser
+  uma vista desatualizada e passou a **recusar reservas diretas** — recusas que
+  não se veem acontecer. Push (independente do Resend) + um email por anfitrião
+  por dia. A mensagem diz a consequência, não o estado. Para um cliente, isto é
+  a diferença entre um aviso e um cancelamento de subscrição.
+- ✅ **`?origem=diretas` no feed de exportação** — o pré-requisito da Fase 3 do
+  plano de migração, que tinha ficado por decidir. Ao Amenitiz dá-se só as
+  reservas diretas: as outras foi ele que as criou, e devolver-lhas põe um
+  bloqueio nosso por cima de uma reserva dele. Por omissão exporta tudo, que é
+  o lado seguro de falhar. Em `/canais`, a pergunta «quem vai ler este
+  endereço?» está agora à frente de quem copia.
+- ✅ **O teto do «sincronizar agora» passou a contar na base.** Contava em
+  memória, ou seja, doze por minuto **vezes o número de instâncias**. Com um
+  alojamento é uma curiosidade; com clientes, quem leva o castigo do Airbnb por
+  leituras a mais é o endereço de saída da Vercel — partilhado por todos os
+  anfitriões ao mesmo tempo.
+
+O teste estrutural dos limitadores apanhou o cron novo sozinho, que é o que se
+lhe pede.
+
+**Confirmado por API: a conta Vercel está no plano Hobby**, que é para uso não
+comercial. Antes do primeiro cliente a pagar, o Pro deixa de ser uma decisão de
+orçamento e passa a ser pré-requisito — ao lado da Fase 0 do TODO.
+
+Validação: `npm test` (1007, +13), typecheck e lint a zero, build a passar.
+
 ### [2026-09-02] A disponibilidade passou a ser perguntada ao vivo
 
 A verificação de conflito corria contra a nossa base, e a nossa base sabe o que

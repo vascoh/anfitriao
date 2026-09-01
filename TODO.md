@@ -41,7 +41,8 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 ## Fase 0 (dossiê) — sem isto não pode haver um segundo utilizador
 - [x] **0.1 Copy da landing** — removidas caixa de entrada, contrato eletrónico e "+12 %"; "atualização contínua" → sincronização diária com FAQ sobre a latência do iCal (2026-08-02)
 - [ ] **0.2 Clerk em instância de produção** — ainda em chaves de desenvolvimento. Obrigatório antes do primeiro utilizador real que não seja o Vasco
-- [ ] **0.3 Rate limit distribuído (Upstash)** — o limitador é **em memória e não funciona em serverless**: o teto real não existe. Já assumido em código no ajuste do OCR (5→20/h)
+- [~] **0.3 Rate limit distribuído** — `lib/rate-limit-persistente.ts` (contagem na base) cobre as rotas que têm de travar a sério; o `ical-sync` manual passou para lá a 2026-09-02, por causa do endereço de saída da Vercel ser partilhado por todos os anfitriões. O Upstash continua a ser o passo seguinte (a base aguenta, mas paga-se em escritas)
+- [ ] **0.7 Vercel Pro antes do primeiro cliente** — confirmado por API que a conta está em **Hobby**, que é para uso não comercial. Deixa de ser decisão de orçamento no momento em que houver alguém a pagar. Destranca também o cron de 15 em 15 minutos e o wildcard de subdomínio (pendência #6)
 - [ ] **0.4 Observabilidade** — sem Sentry e sem funil PostHog (registo → 1.ª propriedade → 1.º iCal → 1.ª reserva → 1.º check-in). Hoje uma falha em produção só se descobre por acaso — foi o que aconteceu com os emails
 - [x] **0.5 Encriptação em repouso + log de acesso** (2026-08-12) — `numero_documento` e `data_validade_doc` guardados em AES-256-GCM (`lib/campos-sensiveis.ts`, ANF-1.7); saída de dados para fora do sistema (CSV do SIBA, submissão, export do art. 15.º) registada no `audit_log` (ANF-1.8). Feito com 0 hóspedes na base: sem backfill e sem risco
 - [ ] **0.6 MFA no Clerk · PITR + restauro de ensaio**

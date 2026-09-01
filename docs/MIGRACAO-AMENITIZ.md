@@ -60,9 +60,15 @@ Não depende do cron, não depende do plano da Vercel e não depende do Amenitiz
 > ⚠️ **Fecha por omissão.** Se um feed não responde, a reserva é recusada em vez
 > de aceite às cegas. Isto tem um custo real que tens de conhecer: **um
 > endereço iCal partido trava as reservas diretas até ser arranjado.** É a
-> escolha certa para o teu critério — perder uma reserva é reversível e aparece
-> em `/canais` como feed «desatualizado»; uma dupla reserva é uma pessoa sem
-> casa. Se preferires o contrário, muda-se numa linha; diz.
+> escolha certa para o teu critério — perder uma reserva é reversível; uma
+> dupla reserva é uma pessoa sem casa. Se preferires o contrário, muda-se numa
+> linha; diz.
+>
+> **Desde 2026-09-02 isso não passa despercebido**: um cron às 06:00 avisa-te
+> por push e por email quando um calendário está em erro ou sem leituras há
+> mais de um dia (`lib/canais-alertas.ts`). O aviso diz o que está a custar, e
+> não só que existe. Antes ficava um crachá em `/canais` à espera de uma visita
+> que ninguém faz.
 
 ### B · Nós vendemos → uma plataforma vende a mesma noite
 
@@ -237,14 +243,18 @@ Anfitrião ──iCal──► Amenitiz ──API──► Airbnb / Booking / Vr
 
 ### Duas coisas a resolver **antes**, não durante
 
-1. **O feed de exportação não pode devolver ao Amenitiz o que veio dele.**
-   Hoje `/api/ical/[propertyId]` exporta todas as reservas ativas do
-   alojamento, incluindo as que importámos dos feeds do próprio Amenitiz.
-   Devolvê-las é, no melhor caso, redundante; no pior, um bloqueio nosso por
-   cima de uma reserva dele que ninguém sabe desfazer. **Recomendação:** um
-   feed que exporte só as reservas **diretas** (sem `uid_externo`). É uma
-   alteração pequena e é decisão tua se fica noutro endereço ou no mesmo com
-   um parâmetro — diz e implemento.
+1. ~~**O feed de exportação não pode devolver ao Amenitiz o que veio dele.**~~
+   **Feito a 2026-09-02.** Em `/canais`, o painel «Levar as tuas datas para as
+   plataformas» pergunta agora **quem vai ler o endereço**:
+
+   | Destino | Endereço | O que leva |
+   |---|---|---|
+   | Uma plataforma (Airbnb, Booking) | `/api/ical/<id>` | Tudo o que ocupa datas |
+   | Um gestor de canais (Amenitiz) | `/api/ical/<id>?origem=diretas` | Só as reservas do teu site |
+
+   **Ao Amenitiz dás o segundo.** As reservas que vieram dele já são dele;
+   devolver-lhas punha um bloqueio nosso por cima de uma reserva dele, que
+   depois ninguém sabe desfazer.
 
 2. ~~**A frequência da sincronização.**~~ **Resolvido a 2026-09-02**, e não pela
    frequência: a disponibilidade passou a ser confirmada ao vivo no momento de
