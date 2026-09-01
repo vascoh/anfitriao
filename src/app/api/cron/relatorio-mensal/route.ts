@@ -6,6 +6,7 @@ import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { today, fmtMoney } from '@/lib/utils'
 import { resumoMensal, mesAnterior, variacaoPct, nomeMes } from '@/lib/relatorio-mensal'
 import { SOURCE_LABEL } from '@/lib/labels'
+import { carregarTudo } from '@/lib/supabase-tudo'
 import type { Booking, Property, BookingSource } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -23,13 +24,42 @@ export async function GET(req: NextRequest) {
   const { ano, mes } = mesAnterior(today())
   const anterior = mesAnterior(`${ano}-${String(mes + 1).padStart(2, '0')}-01`)
 
-  const [{ data: props, error: errProps }, { data: bookings, error: errBookings }] = await Promise.all([
-    supabase.from('properties').select('*').not('owner_id', 'is', null),
-    supabase.from('bookings').select('*').not('owner_id', 'is', null),
+  /* Duas correções na mesma leitura, pela mesma razão.
+   *
+   * **Paginar:** isto lia `bookings` de **todos** os anfitriões sem `range`, e
+   * o PostgREST corta a 1000 linhas sem dizer nada. Assim que a plataforma
+   * passar de mil reservas no total, o relatório do mês deixa de ver parte
+   * delas — e não falha: envia. Cada anfitrião recebe um email com receita,
+   * noites e ocupação a menos, com ar de estarem certos, e quem os lê não tem
+   * como desconfiar. É o mesmo corte que já mordeu o calendário.
+   *
+   * **Estreitar:** só interessam dois meses — o do relatório e o anterior, com
+   * que se calcula a variação. Trazer o histórico inteiro de toda a gente para
+   * memória a cada dia 1 era, além do corte, um problema que só cresce.
+   *
+   * A janela apanha reservas que **atravessam** os meses e não só as que
+   * começam neles: `occupancyForMonth` conta as noites que caem dentro do mês,
+   * portanto uma estadia de 28 de junho a 3 de julho conta para os dois. */
+  const inicioJanela = `${anterior.ano}-${String(anterior.mes + 1).padStart(2, '0')}-01`
+  const fimJanela = mes === 11
+    ? `${ano + 1}-01-01`
+    : `${ano}-${String(mes + 2).padStart(2, '0')}-01`
+
+  const [
+    { linhas: props, erro: errProps },
+    { linhas: bookings, erro: errBookings },
+  ] = await Promise.all([
+    carregarTudo<Property>(() =>
+      supabase.from('properties').select('*').not('owner_id', 'is', null)),
+    carregarTudo<Booking>(() =>
+      supabase.from('bookings').select('*')
+        .not('owner_id', 'is', null)
+        .gte('check_out', inicioJanela)
+        .lte('check_in', fimJanela)),
   ])
 
   if (errProps || errBookings) {
-    const msg = errProps?.message ?? errBookings?.message ?? 'erro'
+    const msg = errProps ?? errBookings ?? 'erro'
     console.error('[relatorio-mensal]', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }

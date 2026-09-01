@@ -10,6 +10,7 @@ import {
   type ReservaImportada, type EventoDoFeed,
 } from '@/lib/ical-reconciliacao'
 import { today } from '@/lib/utils'
+import { carregarTudo } from '@/lib/supabase-tudo'
 const supabase = createAdminClient()
 
 function parseIcalDate(s: string): string {
@@ -73,14 +74,39 @@ async function syncProperty(
   const updatedFeeds: IcalFeed[] = []
 
   /* Uma leitura só das reservas já importadas: serve para não reimportar e
-   * para saber o que mudou do outro lado. */
-  const { data: existingRows } = await supabase
-    .from('bookings')
-    .select('id, uid_externo, check_in, check_out, estado, historico')
-    .eq('propriedade_id', propertyId)
-    .not('uid_externo', 'is', null)
+   * para saber o que mudou do outro lado.
+   *
+   * Paginada, e com o erro verificado — as duas coisas pela mesma razão. Esta
+   * lista é o que impede a reimportação: o que não vier nela é tratado como
+   * reserva nova. Cortada às mil linhas pelo PostgREST (ou vazia por um erro
+   * que ninguém leu), a sincronização da noite seguinte reinsere tudo o que
+   * ficou de fora — e volta a fazê-lo todas as noites, porque a causa não
+   * desaparece. O resultado é o calendário a encher-se de duplicados e a
+   * ocupação a passar dos 100 %, que é precisamente o estrago que o
+   * `uid_externo` existe para evitar. */
+  const { linhas: importadas, erro: erroImportadas } = await carregarTudo<ReservaImportada>(() =>
+    supabase
+      .from('bookings')
+      .select('id, uid_externo, check_in, check_out, estado, historico')
+      .eq('propriedade_id', propertyId)
+      .not('uid_externo', 'is', null),
+  )
 
-  const importadas = (existingRows ?? []) as ReservaImportada[]
+  /* Sem esta lista não se sincroniza. Continuar às cegas não é "meio
+   * sincronizado": é importar de novo o que já cá está. */
+  if (erroImportadas) {
+    console.error('[ical-sync] leitura das reservas importadas falhou:', erroImportadas)
+    return {
+      synced: 0,
+      results: feeds.map(f => ({
+        feed: f.nome,
+        imported: 0,
+        skipped: 0,
+        error: 'Não foi possível ler as reservas já importadas — sincronização adiada para não duplicar.',
+      })),
+      updatedFeeds: feeds,
+    }
+  }
   /* Deduplicação pelo UID **de origem**, não pela chave local: o `feed.id`
    * muda quando o anfitrião remove e volta a adicionar o mesmo calendário, e
    * comparar pela chave local reimportava a agenda toda em duplicado. */
