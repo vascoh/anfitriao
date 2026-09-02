@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser } from '@clerk/nextjs'
 import {
   Search, CalendarCheck2, Users, Building2, X, Plus, ArrowRight, FileDown, type LucideIcon,
 } from 'lucide-react'
@@ -38,7 +39,7 @@ interface Result {
   badgeClass?: string
 }
 
-function search(q: string, bookings: Booking[], guests: Guest[], props: Property[]): Result[] {
+function search(q: string, bookings: Booking[], guests: Guest[], props: Property[], admin = false): Result[] {
   const termo = normalizar(q.trim())
   const results: Result[] = []
 
@@ -47,7 +48,7 @@ function search(q: string, bookings: Booking[], guests: Guest[], props: Property
     ACCOES.slice(0, 3).forEach(a => {
       results.push({ type: 'accao', id: a.href, title: a.label, subtitle: '', href: a.href })
     })
-    todosOsDestinos().slice(0, 6).forEach(d => {
+    todosOsDestinos(admin).slice(0, 6).forEach(d => {
       results.push({ type: 'navegacao', id: d.href, title: d.label, subtitle: d.descricao ?? '', href: d.href })
     })
     return results
@@ -59,7 +60,7 @@ function search(q: string, bookings: Booking[], guests: Guest[], props: Property
       results.push({ type: 'accao', id: a.href, title: a.label, subtitle: '', href: a.href })
     })
 
-  todosOsDestinos()
+  todosOsDestinos(admin)
     .filter(d => normalizar(d.label).includes(termo) || normalizar(d.descricao ?? '').includes(termo))
     .slice(0, 5)
     .forEach(d => {
@@ -122,6 +123,8 @@ export function GlobalSearch() {
   const [cursor, setCursor] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+  const { user } = useUser()
+  const isAdmin = user?.id === process.env.NEXT_PUBLIC_ADMIN_USER_ID
 
   // Load data once on mount
   useEffect(() => {
@@ -130,7 +133,7 @@ export function GlobalSearch() {
     fetchProperties().then(setProps)
   }, [])
 
-  const results = search(q, bookings, guests, props)
+  const results = search(q, bookings, guests, props, isAdmin)
 
   const close = useCallback(() => { setOpen(false); setQ('') }, [])
 

@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Search, Moon, Sun, ShieldCheck } from 'lucide-react'
+import { Search, Moon, Sun } from 'lucide-react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
 import { useTheme } from '@/hooks/use-theme'
-import { NAV, CONTA_NAV, rotaAtiva, seccaoDe } from '@/lib/navigation'
+import { NAV, CONTA_NAV, ADMIN_NAV, rotaAtiva, seccaoDe } from '@/lib/navigation'
 
 export function SideNav() {
   const pathname = usePathname()
@@ -89,15 +89,25 @@ export function SideNav() {
           )
         })}
 
-        {/* Admin link — só visível para o admin */}
+        {/* Admin — só para o administrador. A lista vive em `ADMIN_NAV` para
+            ser a mesma aqui, na barra do telemóvel e no ⌘K. */}
         {isAdmin && (
           <>
             <div className="my-2 h-px bg-border" />
-            <Link href="/admin/contas"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-              <ShieldCheck className="h-4 w-4 shrink-0 stroke-[1.5]" />
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Admin
-            </Link>
+            </p>
+            {ADMIN_NAV.map(({ href, label, Icon }) => (
+              <Link key={href} href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  rotaAtiva(pathname, href)
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}>
+                <Icon className="h-4 w-4 shrink-0 stroke-[1.5]" />
+                {label}
+              </Link>
+            ))}
           </>
         )}
       </nav>

@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { MoreHorizontal, X, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk, useUser } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
 import { useTheme } from '@/hooks/use-theme'
-import { NAV, CONTA_NAV, seccaoDe } from '@/lib/navigation'
+import { NAV, CONTA_NAV, ADMIN_NAV, seccaoDe } from '@/lib/navigation'
 
 /**
  * Barra inferior (mobile). Mostra as 4 secções mais usadas + "Mais".
@@ -24,9 +24,11 @@ export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { signOut } = useClerk()
+  const { user } = useUser()
   const [open, setOpen] = useState(false)
   const alertsCount = useAlertsCount()
   const { isDark, setTheme } = useTheme()
+  const isAdmin = user?.id === process.env.NEXT_PUBLIC_ADMIN_USER_ID
 
   const barra = NAV.filter(s => NA_BARRA.includes(s.href))
   const seccaoAtual = seccaoDe(pathname)
@@ -90,6 +92,26 @@ export function BottomNav() {
                   </div>
                 )
               })}
+
+              {/* Admin — estava só no menu do computador, e por isso no
+                  telemóvel não havia porta nenhuma para o painel. */}
+              {isAdmin && (
+                <div className="border-b border-border">
+                  <p className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Admin
+                  </p>
+                  {ADMIN_NAV.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 py-3 pl-[4.25rem] pr-4 transition-colors hover:bg-muted/60"
+                    >
+                      <span className="text-sm">{label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
 
               <div className="border-b border-border">
                 <p className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

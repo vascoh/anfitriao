@@ -1,7 +1,7 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
   Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
-  UserRound, CreditCard, Receipt, Rss,
+  UserRound, CreditCard, Receipt, Rss, Activity,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -95,6 +95,27 @@ export const CONTA_NAV: SubItem[] = [
   { href: '/conta/billing', label: 'Subscrição', Icon: CreditCard },
 ]
 
+/**
+ * Painel de administração — só para o administrador da plataforma.
+ *
+ * Vive aqui, e não escrito à mão dentro de um dos menus, porque **estava só no
+ * `side-nav`**: no telemóvel não havia porta nenhuma para o admin, e o ⌘K
+ * também não o encontrava, porque `todosOsDestinos` não o incluía. O painel só
+ * se alcançava escrevendo o endereço — num ecrã em que escrever endereços é o
+ * que menos apetece fazer.
+ *
+ * O `/admin/saude` nem no computador constava: só se lá chegava depois de
+ * entrar em Contas.
+ *
+ * Quem decide se isto se mostra é cada menu (comparando o utilizador com
+ * `NEXT_PUBLIC_ADMIN_USER_ID`); a lista em si não é segredo nenhum — quem
+ * protege as rotas é o `layout.tsx` do grupo `(admin)`, no servidor.
+ */
+export const ADMIN_NAV: SubItem[] = [
+  { href: '/admin/contas', label: 'Contas', Icon: ShieldCheck, descricao: 'Todas as contas da plataforma' },
+  { href: '/admin/saude', label: 'Saúde', Icon: Activity, descricao: 'Estado dos crons e da base de dados' },
+]
+
 /** True quando `pathname` é `href` ou uma rota abaixo dele. */
 export function rotaAtiva(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
@@ -111,11 +132,18 @@ export function seccaoDe(pathname: string): NavSection | undefined {
   )
 }
 
-/** Lista plana de todos os destinos, para pesquisa no ⌘K. */
-export function todosOsDestinos(): SubItem[] {
+/**
+ * Lista plana de todos os destinos, para pesquisa no ⌘K.
+ *
+ * `incluirAdmin` é do lado de quem chama: mostrar «Contas» e «Saúde» a quem não
+ * é administrador levava a um clique que acaba num redirecionamento para
+ * `/hoje` — um destino que existe na lista e não existe para quem o escolheu.
+ */
+export function todosOsDestinos(incluirAdmin = false): SubItem[] {
   return [
     ...NAV.map(({ href, label, Icon }) => ({ href, label, Icon })),
     ...NAV.flatMap(s => s.children ?? []),
     ...CONTA_NAV,
+    ...(incluirAdmin ? ADMIN_NAV : []),
   ]
 }
