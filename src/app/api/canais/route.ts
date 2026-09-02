@@ -6,6 +6,7 @@ import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { SOURCE_LABEL } from '@/lib/labels'
 import type { IcalFeed, BookingSource } from '@/lib/types'
 import { CANAIS_IMPORTAVEIS } from '@/lib/canais'
+import { nomeDoFeed } from '@/lib/ical-guias'
 import { logAudit } from '@/lib/audit'
 
 const supabase = createAdminClient()
@@ -113,9 +114,11 @@ export async function POST(req: NextRequest) {
     id: crypto.randomUUID(),
     url: endereco,
     source: source as BookingSource,
+    /* O nome vem do endereço quando ninguém o escreve: o rótulo da fonte
+     * daria «Outro» a todos os feeds de um gestor de canais. Ver `nomeDoFeed`. */
     nome: typeof body.nome === 'string' && body.nome.trim()
       ? body.nome.trim().slice(0, 60)
-      : SOURCE_LABEL[source as BookingSource],
+      : nomeDoFeed(endereco, SOURCE_LABEL[source as BookingSource]),
     // Ficou testado agora; não se finge que já sincronizou — só que foi lido.
     last_count: eventos,
   }

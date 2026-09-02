@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   GUIAS,
   GUIA_AMENITIZ,
+  nomeDoFeed,
   eGestorDeCanais,
   deveAvisarDuplicacao,
 } from './ical-guias'
@@ -71,5 +72,28 @@ describe('mensagemUrlRecusado', () => {
 
   it('distingue um URL partido', () => {
     expect(mensagemUrlRecusado('isto não é um url')).toContain('inválido')
+  })
+})
+
+describe('nomeDoFeed', () => {
+  it('lê o gestor de canais do endereço', () => {
+    /* Sem isto, os três feeds do Amenitiz ficavam todos chamados «Outro» — que
+     * é o rótulo da fonte `outro`, a única que serve para um gestor de canais.
+     * Aparecia na página de canais e no alerta: «Quarto de Casal · Outro». */
+    expect(nomeDoFeed('https://app.amenitiz.io/ical/abc.ics', 'Outro')).toBe('Amenitiz')
+    expect(nomeDoFeed('https://smoobu.com/ical/x.ics', 'Outro')).toBe('Smoobu')
+  })
+
+  it('lê também as plataformas', () => {
+    expect(nomeDoFeed('https://www.airbnb.pt/calendar/ical/1.ics?s=x', 'Airbnb')).toBe('Airbnb')
+    expect(nomeDoFeed('https://ical.booking.com/v1/export?t=x', 'Booking.com')).toBe('Booking.com')
+  })
+
+  it('um domínio desconhecido fica com o rótulo da fonte', () => {
+    expect(nomeDoFeed('https://calendario.exemplo.pt/x.ics', 'Outro')).toBe('Outro')
+  })
+
+  it('um endereço ilegível não rebenta — quem o valida é outro', () => {
+    expect(nomeDoFeed('nao-e-um-url', 'Outro')).toBe('Outro')
   })
 })

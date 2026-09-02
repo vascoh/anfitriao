@@ -163,6 +163,12 @@ export const GUIA_AMENITIZ: GuiaIcal = {
   notas: [
     'Um endereço por quarto. Ligar a casa-mãe não traz as reservas dos quartos.',
     'A sincronização do Amenitiz é de sentido único: traz para cá o que ele sabe, mas nada do que fizeres aqui volta para lá.',
+    /* Limitação real e específica dos gestores de canais: um feed só carrega
+     * reservas de várias plataformas, e o iCal não diz de qual. Entram todas
+     * como «Outro», o que mistura numa taxa só as comissões do Airbnb e do
+     * Booking. O texto da reserva fica guardado nas notas — é por aí que a
+     * distinção se recupera, quando se souber o formato que o Amenitiz usa. */
+    'As reservas chegam sem dizer de que plataforma vieram — o iCal não transporta essa informação. Entram como «Outro» e a comissão por plataforma fica por estimar; o texto original fica nas notas de cada reserva.',
   ],
 }
 
@@ -177,6 +183,45 @@ export const AVISO_FONTE_DUPLICADA =
 
 /** Fontes que representam um gestor de canais e não uma OTA. */
 const GESTORES_DE_CANAIS = ['amenitiz', 'smoobu', 'lodgify', 'beds24']
+
+/**
+ * O nome de um canal, lido do endereço.
+ *
+ * A alternativa era o rótulo da fonte escolhida, e para um gestor de canais
+ * essa fonte é `outro` — cujo rótulo é «Outro». Quem ligasse o Amenitiz ficava
+ * com três calendários chamados «Outro»: na página de canais, no alerta de
+ * canal partido («Quarto de Casal · Outro») e no resultado da sincronização.
+ * A informação estava no endereço o tempo todo.
+ *
+ * Os gestores vêm antes das OTA porque um endereço do Amenitiz não contém
+ * «airbnb», mas a ordem torna a intenção explícita. Um domínio desconhecido
+ * fica com o rótulo da fonte, que é o melhor que se sabe dele.
+ */
+const NOMES_POR_HOST: Array<[string, string]> = [
+  ['amenitiz', 'Amenitiz'],
+  ['smoobu', 'Smoobu'],
+  ['lodgify', 'Lodgify'],
+  ['beds24', 'Beds24'],
+  ['airbnb', 'Airbnb'],
+  ['booking', 'Booking.com'],
+  ['expedia', 'Expedia'],
+  ['vrbo', 'Vrbo'],
+  ['homeaway', 'Vrbo'],
+  ['calendar.google', 'Google Calendar'],
+  ['outlook', 'Outlook'],
+]
+
+export function nomeDoFeed(url: string, alternativa: string): string {
+  try {
+    const host = new URL(url).hostname.toLowerCase()
+    for (const [chave, nome] of NOMES_POR_HOST) {
+      if (host.includes(chave)) return nome
+    }
+  } catch {
+    // Endereço ilegível: quem valida o URL é `isAllowedIcalUrl`, não isto.
+  }
+  return alternativa
+}
 
 export function eGestorDeCanais(url: string): boolean {
   try {
