@@ -16,12 +16,21 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 
 ## ▶️ Migração do Amenitiz
 
-`docs/MIGRACAO-AMENITIZ.md` (2026-09-01) — plano em 5 fases. **Conclusão: o
-Amenitiz não sai já.** O Anfitrião fala com as plataformas por iCal e a
-sincronização corre uma vez por dia; sem a API (H3) ou ligação direta às OTA,
-tirar o Amenitiz do meio troca uma mensalidade por risco de overbooking. Tudo o
-resto — operação, conformidade, faturação, reservas diretas — migra em semanas.
-Bloqueio da Fase 0: `RESEND_API_KEY`.
+`docs/MIGRACAO-AMENITIZ.md` — plano em fases, atualizado a 2026-09-03.
+
+🔴 **O feed do Amenitiz é de disponibilidade, não de reservas.** Medido com os
+três feeds ligados: `PRODID:Amenitiz Availability iCalendar`, eventos todos a
+dizer `SUMMARY:Quarto indisponível`, sem hóspede, sem preço, sem canal. A
+**Fase 2 (check-in, SIBA, faturação) fica bloqueada** — precisam de saber quem
+chega, e o ficheiro não diz.
+
+**H3 (API do Amenitiz) subiu ao topo das dependências**: deixou de destrancar
+só a Fase 4 e passou a destrancar também a Fase 2. É um email, e é a única
+coisa da lista cujo atraso não depende de nós.
+
+O que pode arrancar já (Fase 2b): conformidade, dossiê ASAE, financeiro, preços
+e o site próprio — nada disso depende de hóspedes importados. **As reservas
+diretas são hoje as únicas em que temos a informação toda.**
 
 ## ▶️ Primeira reserva real
 
@@ -77,7 +86,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 ## Dependências humanas do dossiê (arrancar em paralelo)
 - [ ] **H1 · SIBA** — registar cada alojamento no portal em modo "Web Service" e obter NIPC + estabelecimento + chave (1–3 dias úteis). 0 propriedades configuradas. Validar primeiro contra `/bawsdev/` via `SIBA_WS_URL`
 - [ ] **H2 · InvoiceXpress** — abrir conta de parceiro (desbloqueia 1.3)
-- [ ] **H3 · API do Amenitiz** — pedir acesso (Definições → API); custa um email e destranca a fase 3 da sincronização
+- [ ] 🔴 **H3 · API do Amenitiz** — pedir acesso (Definições → API). **Prioridade máxima desde 2026-09-03**: o feed iCal é de disponibilidade e não traz reservas, portanto esta API destranca a Fase 2 (check-in, SIBA, faturação) **e** a Fase 4 da sincronização. Custa um email
 - [ ] **H4 · Orçamento** — Upstash → Vercel Pro → Supabase Pro
 - [ ] **H5 · Marca** — `anfitriao.pt` vs `anfitrioes.pt`
 - [ ] **Posicionamento (novo, 2026-08-17)** — decidir se a venda passa a ser "conformidade com prova" em vez de "tudo por conta". Bloqueia 2.1 (preços), 2.3 (marca) e 2.4 (calculadora)

@@ -2,6 +2,19 @@
 
 _2026-07-30. Contexto: o Vasco tem o **Amenitiz** como gestor de canais ativo._
 
+> 🔴 **2026-09-03 — o feed do Amenitiz é de disponibilidade, não de reservas.**
+> Medido com os três feeds ligados: `PRODID:Amenitiz Availability iCalendar`,
+> e todos os eventos dizem `SUMMARY:Quarto indisponível` — sem hóspede, sem
+> preço, sem dizer de que plataforma vêm.
+>
+> A secção 2 («o iCal não transporta preços nem restrições») fica curta: no
+> caso do Amenitiz **também não transporta as reservas**. A tabela da secção 1
+> — «reserva nova → importada» — descreve o que o mecanismo faz com um feed de
+> reservas, não o que este feed traz.
+>
+> Consequência prática em `docs/MIGRACAO-AMENITIZ.md`: a Fase 2 (operação) fica
+> bloqueada até haver API. O resto deste documento continua válido.
+
 ---
 
 ## 1. O que está ligado hoje: calendário

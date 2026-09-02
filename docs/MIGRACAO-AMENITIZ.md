@@ -5,6 +5,17 @@ _2026-09-01. Plano de execução. Substitui a secção 4 (Recomendação) de
 
 ---
 
+> 🔴 **Atualização 2026-09-03 — o feed do Amenitiz não traz reservas.**
+> Medido, não suposto: os três feeds respondem
+> `PRODID:Amenitiz Availability iCalendar` e **todos** os eventos dizem
+> `SUMMARY:Quarto indisponível`, sem hóspede, sem preço e sem dizer de que
+> plataforma vêm. É um calendário de *disponibilidade*.
+>
+> Isto invalida a Fase 2 tal como estava escrita: check-in online, boletim SIBA
+> e faturação precisam de saber **quem** chega, e o feed só diz **quando** o
+> quarto está fechado. A **API do Amenitiz (H3)** deixa de destrancar a Fase 4
+> e passa a ser pré-requisito da Fase 2. Ver «O muro por baixo do muro».
+>
 > **Atualização 2026-09-02 — a disponibilidade passou a ser verificada ao
 > vivo.** A secção «A conclusão, primeiro» continua a valer para a gestão de
 > canais, mas a parte que nos cabia está fechada: nenhuma reserva é aceite sem
@@ -99,18 +110,77 @@ só correm uma vez por dia. Com Pro passa a poder correr de 15 em 15 minutos, e
 
 ---
 
+## O muro por baixo do muro
+
+O documento sempre disse que o iCal não transporta preços nem restrições. O que
+se descobriu a 2026-09-03, com o feed à frente, é pior e mais específico:
+
+**O export do Amenitiz não transporta reservas de todo.**
+
+```
+BEGIN:VCALENDAR
+PRODID:Amenitiz Availability iCalendar     ← disponibilidade, não reservas
+BEGIN:VEVENT
+UID:f199cc0d-9987-5534-b9cf-da72ea0066f2
+DTSTART;VALUE=DATE:20260902
+DTEND;VALUE=DATE:20260923
+SUMMARY:Quarto indisponível                ← sem hóspede, sem preço, sem canal
+END:VEVENT
+```
+
+Um evento por período fechado. Não diz quem chega, não diz de que plataforma
+veio, e nem sequer diz se aquele bloco é uma reserva ou o anfitrião a fechar o
+quarto. Três quartos, três eventos.
+
+### O que isto permite, e o que não permite
+
+| | Com o feed do Amenitiz |
+|---|---|
+| Ver que noites estão ocupadas | ✅ |
+| Impedir uma dupla reserva no site próprio | ✅ (é o que a verificação ao vivo usa) |
+| Ocupação e RevPAR | ⚠️ conta noites fechadas, não reservas |
+| Saber **quem** chega | ❌ |
+| Check-in online | ❌ não há a quem mandar o link |
+| Boletim SIBA | ❌ não há pessoa para comunicar |
+| Faturação | ❌ não há nome, NIF nem valor |
+| Comissão por plataforma | ❌ não diz de que canal veio |
+
+As quatro últimas eram **a Fase 2 inteira**. Não se resolvem com trabalho deste
+lado: a informação não está no ficheiro.
+
+### As saídas, por ordem de custo
+
+1. **API do Amenitiz (H3).** Passa a ser o item mais importante da lista toda.
+   Pede-se no painel (Definições → API), custa um email e a resposta demora o
+   que demorar. Sem ela, a Fase 2 não existe.
+2. **Ligar o Airbnb e o Booking diretamente** — em vez do Amenitiz, nunca os
+   dois. Dá mais do que o feed do gestor (o Airbnb distingue «Reserved» de
+   «Not available» e leva os últimos dígitos do telefone na descrição), mas
+   continua sem nome nem email. Melhora a atribuição por canal; não resolve o
+   check-in nem o SIBA.
+3. **Aceitar que a operação fica no Amenitiz** e usar o Anfitrião para o que
+   não depende de hóspedes: conformidade, dossiê ASAE, financeiro, preços,
+   site próprio. É a opção honesta enquanto 1 não chegar.
+
+---
+
 ## O que se migra, e por que ordem
 
 | Fase | O que passa para o Anfitrião | Risco | Reversão |
 |---|---|---|---|
 | **0** | Nada. Fecham-se os bloqueios. | — | — |
 | **1** | Ver o calendário | Nenhum | Apagar os feeds |
-| **2** | Operação: check-in, SIBA, faturação, financeiro, hóspedes | Baixo | Voltar ao Amenitiz |
+| **2** | Operação: check-in, SIBA, faturação | **🔴 bloqueada — precisa da API (H3)** | — |
+| **2b** | Conformidade, dossiê, financeiro, preços | Baixo | Voltar ao Amenitiz |
 | **3** | Reservas diretas e o site | Médio | Desligar o site |
 | **4** | Gestão de canais | **Alto — bloqueado** | Não aplicável |
 
 Cada fase é útil sozinha e nenhuma se deita fora. Só se avança quando a
 anterior tiver corrido **um mês inteiro** sem surpresas.
+
+A Fase 2 partiu-se em duas quando se percebeu que metade dela dependia de dados
+que o feed não traz. A **2b** é a parte que não depende de hóspedes nenhuns, e
+essa pode arrancar já.
 
 ---
 
@@ -145,10 +215,12 @@ O Amenitiz manda em tudo. O Anfitrião **só olha**.
 
 ### O que fazer
 
-1. No Amenitiz, tirar o endereço iCal **de cada quarto** (Quarto Individual,
-   Quarto de Casal, Quarto Familiar).
-2. No Anfitrião: Propriedades → Editar → Calendários externos, um feed por
-   quarto. **A Casa de Vasco não leva nenhum** — a ocupação vive nos quartos.
+1. No Amenitiz: **Channel Manager → iCals**, e copiar o endereço **de cada
+   quarto** (Quarto Individual, Quarto de Casal, Quarto Familiar).
+2. No Anfitrião: **Alojamentos → Canais → Ligar uma plataforma → Gestor de
+   canais**. Um feed por quarto. **A Casa de Vasco não leva nenhum** — a
+   ocupação vive nos quartos.
+   _(Feito a 2026-09-02: os três estão ligados.)_
 3. **Não ligar o Airbnb nem o Booking diretamente.** O Amenitiz já os agrega;
    ligar os dois caminhos traz a mesma reserva com identificadores diferentes,
    a deduplicação por UID não a apanha, e a ocupação passa dos 100 %. A app
@@ -188,6 +260,22 @@ foram fechadas a 2026-09-01 e estão em produção:
 
 Apagar os feeds. O Amenitiz nunca soube que isto existiu.
 
+### O que a primeira ligação já respondeu (2026-09-02)
+
+Duas das perguntas que esta fase existia para responder ficaram respondidas na
+primeira hora, e as respostas não foram as esperadas:
+
+- **O feed traz reservas?** Não. Traz períodos fechados — ver «O muro por baixo
+  do muro». Foi assim que se descobriu.
+- **Cada reserva chega uma vez?** Sim, e com UID estável. A deduplicação
+  funciona.
+
+E apanhou-se um erro nosso: os três bloqueios entraram como reservas
+confirmadas, porque a regra em vigor era «veio de um feed, logo é reserva» —
+escrita para o problema oposto, quando as reservas do Airbnb apareciam
+cinzentas. Corrigido no mesmo dia: `eBloqueio` passa a ler o texto que o feed
+manda, e um bloqueio importado mostra a frase do próprio feed.
+
 ### Como se sabe que a fase acabou bem
 
 Um mês completo em que o calendário do Anfitrião nunca esteve errado, e a
@@ -195,25 +283,35 @@ resposta escrita à pergunta «quantas vezes mexi em preços este mês?».
 
 ---
 
-## Fase 2 — A operação passa para cá (1 mês)
+## Fase 2 — A operação passa para cá 🔴 **bloqueada**
+
+> **Precisa da API do Amenitiz (H3).** O feed iCal não diz quem chega, e sem
+> isso não há check-in para enviar, não há pessoa para comunicar ao SIBA e não
+> há nome nem valor para faturar. Ver «O muro por baixo do muro».
+>
+> A parte que **não** depende de hóspedes está separada na **Fase 2b**, abaixo,
+> e essa pode arrancar já.
 
 O Amenitiz continua a ser o gestor de canais. O Anfitrião passa a ser **onde
 vives o dia a dia**. É aqui que está quase todo o valor da migração, e o risco
 continua baixo porque nada disto toca na disponibilidade.
 
-### O que passa
+### O que passa, e de que depende cada coisa
 
-- **`/hoje`** — entradas, saídas, quem está em casa.
-- **Check-in online** — o hóspede preenche os dados antes de chegar.
-- **SIBA por web service** — depende de **H1**: registar cada alojamento no
-  portal SIBA em modo «Web Service» e obter NIPC, número de estabelecimento e
-  chave. Resposta em 1–3 dias úteis, credenciais são tuas, não da plataforma.
-  ⚠️ **Validar primeiro contra `/bawsdev/`** (`SIBA_WS_URL`) antes do primeiro
-  envio real. Um boletim em falta são 100–2.000 € por hóspede.
-- **Faturação certificada** — depende de **H2** (conta de parceiro
-  InvoiceXpress) e da variável `INVOICEXPRESS_PARTNER_API_KEY`.
-- **Financeiro** — despesas, comissões por plataforma, lucro líquido.
-- **Hóspedes** — fichas, notas, histórico.
+- **`/hoje`** — entradas, saídas, quem está em casa. 🔴 Precisa de saber quem
+  chega: hoje mostraria «Quarto indisponível».
+- **Check-in online** — 🔴 não há email para onde mandar o link.
+- **SIBA por web service** — 🔴 não há pessoa para comunicar. Continua a
+  depender também de **H1** (registar cada alojamento no portal em modo «Web
+  Service»: NIPC, estabelecimento e chave, 1–3 dias úteis, credenciais tuas e
+  não da plataforma). ⚠️ **Validar contra `/bawsdev/`** (`SIBA_WS_URL`) antes
+  do primeiro envio real — um boletim em falta são 100–2.000 € por hóspede.
+- **Faturação certificada** — 🔴 não há nome, NIF nem valor. Depende também de
+  **H2** (conta de parceiro InvoiceXpress) e de `INVOICEXPRESS_PARTNER_API_KEY`.
+- **Hóspedes** — 🔴 fichas de quem o feed não nomeia.
+
+Os quatro 🔴 desaparecem todos no dia em que a API do Amenitiz responder. **É
+uma dependência só**, e é por isso que ela subiu ao topo da lista.
 
 ### Regra que não se quebra nesta fase
 
@@ -229,6 +327,34 @@ Voltar a fazer a operação no Amenitiz. Os dados ficam cá e não se perdem.
 
 Um mês de boletins SIBA aceites, faturas emitidas com os números certos, e
 nenhuma vez em que precisaste de abrir o Amenitiz para saber quem chegava.
+
+---
+
+## Fase 2b — O que não depende de saber quem chega ✅ **pode arrancar já**
+
+Tudo isto funciona com a informação que já cá está, e nada disto espera pela
+API. É onde está o valor que sobra da Fase 2 enquanto ela estiver bloqueada.
+
+- **Conformidade** (`/conformidade`) — RNAL, seguro, Livro de Reclamações,
+  certificado energético, com aviso antes de expirarem. Não depende de reservas
+  nenhumas.
+- **Dossiê para inspeção** (`/conformidade/dossie/[id]`) — imprime o estado das
+  obrigações e a prova de comunicação ao SIBA. Enquanto não houver
+  comunicações, diz honestamente que não há.
+- **Cartaz do Livro de Reclamações** — pronto a afixar.
+- **Financeiro** (`/financeiro`) — despesas e lucro. A receita das reservas dos
+  canais não vem no feed, portanto entra à mão ou fica de fora; as **despesas**
+  são todas tuas e não dependem de ninguém.
+- **Preços e regras** (`/precos`) — a sazonalidade fica escrita uma vez. Não se
+  envia para lado nenhum (o iCal não leva preços), mas deixa de viver na tua
+  cabeça — é a Fase B do `docs/SINCRONIZACAO.md`.
+- **Site próprio e reservas diretas** — é a Fase 3, e essas reservas nascem cá,
+  portanto trazem hóspede, email e valor. **As reservas diretas são, hoje, as
+  únicas em que o Anfitrião tem a informação toda.**
+
+Esta última linha é a mais importante do documento: enquanto a API não chegar,
+**o caminho para o Anfitrião ter dados completos não é importar melhor — é
+vender direto.**
 
 ---
 
@@ -320,6 +446,11 @@ uma destas três não existir:
 **Pede a API do Amenitiz hoje.** Custa um email, a resposta demora o que
 demora, e sem ela esta fase não existe. Pede já, decide depois.
 
+> ⚠️ **A 2026-09-03 este pedido deixou de ser só sobre a Fase 4.** Sabendo-se
+> que o feed iCal não traz reservas, a mesma API é o que destranca a **Fase 2**
+> — check-in, SIBA e faturação. Uma dependência, duas fases, e é a única coisa
+> na lista toda que se resolve com um email escrito hoje.
+
 Entretanto, a Fase B do `docs/SINCRONIZACAO.md` — a fila de «por aplicar», em
 que decides os preços cá e o Anfitrião te diz o que mudar lá — continua a ser a
 coisa mais valiosa a construir, **se** o mês da Fase 1 mostrar que mexes em
@@ -344,12 +475,27 @@ não se pode tirar antes do mês.
 
 ## Dependências humanas, por ordem de urgência
 
-1. **`RESEND_API_KEY`** — bloqueia a Fase 0. Minutos.
-2. **API do Amenitiz (H3)** — não bloqueia nada agora e bloqueia tudo depois.
-   Um email, hoje.
-3. **H1 · SIBA** — bloqueia a Fase 2. 1–3 dias úteis por alojamento.
-4. **H2 · InvoiceXpress** — bloqueia a faturação na Fase 2.
+_Reordenado a 2026-09-03: a API do Amenitiz subiu de segundo para primeiro
+quando se percebeu que bloqueia a Fase 2 inteira, e não só a Fase 4._
+
+1. 🔴 **API do Amenitiz (H3)** — Definições → API, no painel. **Bloqueia a Fase
+   2 e a Fase 4.** Um email, hoje, e a resposta demora o que demorar. É a única
+   coisa nesta lista em que o atraso não depende de ti.
+2. **`RESEND_API_KEY`** — bloqueia a Fase 0 e o alerta de canal partido por
+   email. Minutos.
+3. **H1 · SIBA** — 1–3 dias úteis por alojamento. Vale a pena pedir em
+   paralelo com a 1: quando a API chegar, isto já está tratado.
+4. **H2 · InvoiceXpress** — bloqueia a faturação.
 5. **Clerk de produção, Sentry, PITR** — bloqueiam a Fase 0.
-6. **Plano da Vercel** — confirmado **Hobby** (cron só uma vez por dia). Já
-   **não** bloqueia nada: só decide se o calendário que vês está ao minuto ou
-   ao dia. ~20 €/mês, decisão de orçamento.
+6. **Vercel Pro** — confirmado **Hobby**, que é para uso não comercial. Não
+   bloqueia nada enquanto fores o único utilizador; passa a ser pré-requisito
+   **antes do primeiro cliente a pagar** (ver TODO 0.7). ~20 €/mês.
+
+### O que fazer enquanto se espera pela 1
+
+A Fase 2b (conformidade, dossiê, financeiro, preços) e a Fase 3 (site próprio)
+não dependem dela. E vale a pena repetir a conclusão da 2b:
+
+**As reservas diretas são, hoje, as únicas em que o Anfitrião tem a informação
+toda** — hóspede, email, valor. Enquanto a API não chegar, o caminho para o
+Anfitrião deixar de ser um espelho não é importar melhor: é vender direto.

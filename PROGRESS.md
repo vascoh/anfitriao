@@ -40,6 +40,36 @@ deployado a 2026-09-02 e rota confirmada no build e protegida como as irmãs.
 já estavam em `lib/compliance.ts` e `lib/estado-siba.ts`; não foram introduzidas
 afirmações novas, mas o documento passa a ser mostrado a terceiros.
 
+### [2026-09-03] Os feeds do Amenitiz ligados — e o que eles não trazem
+
+Primeira ligação real. Os três feeds (um por quarto) entraram bem, com o nome
+«Amenitiz» derivado do domínio. E a primeira sincronização respondeu, em dez
+minutos, a pergunta que o plano dava um mês para responder.
+
+🔴 **O export do Amenitiz é um calendário de disponibilidade.**
+`PRODID:Amenitiz Availability iCalendar`, três eventos, todos
+`SUMMARY:Quarto indisponível` — sem hóspede, sem preço, sem dizer de que
+plataforma vêm. Verificado evento a evento contra os feeds: as datas importadas
+estavam corretas (02→23 set, 03→08, 03→09).
+
+- 🐛 **Os bloqueios entraram como reservas confirmadas.** A regra era «tem
+  `uid_externo`, logo é reserva», escrita em agosto para o problema oposto (as
+  reservas do Airbnb apareciam cinzentas). Certa para um feed de reservas,
+  ao contrário num de bloqueios. `eBloqueio` passa a ler o texto que o feed
+  manda — que já era guardado em `notas` — com as frases escritas a partir de
+  feeds observados. Um bloqueio importado mostra agora a frase do próprio feed
+  («Quarto indisponível») em vez de um «Bloqueado» genérico.
+- 📄 **Plano atualizado** (`MIGRACAO-AMENITIZ.md`, `SINCRONIZACAO.md`, TODO):
+  a Fase 2 (check-in, SIBA, faturação) fica **bloqueada** — precisa de saber
+  quem chega. Nasceu uma **Fase 2b** com o que não depende disso: conformidade,
+  dossiê, financeiro, preços, site próprio. **H3 (API do Amenitiz) subiu ao
+  topo das dependências**: destranca a Fase 2 e a Fase 4, e é a única cujo
+  atraso não depende de nós.
+
+A conclusão que fica escrita: enquanto a API não chegar, o caminho para o
+Anfitrião deixar de ser um espelho não é importar melhor — é vender direto. As
+reservas diretas são as únicas em que temos hóspede, email e valor.
+
 ### [2026-09-02] Três arestas do lado de vender isto a outros anfitriões
 
 Continuação da sessão. As três nasceram da mesma pergunta: **o que é que muda
