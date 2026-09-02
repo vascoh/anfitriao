@@ -58,7 +58,11 @@ export const NAV: NavSection[] = [
     label: 'Alojamentos',
     Icon: Building2,
     children: [
-      { href: '/canais', label: 'Canais', Icon: Rss, descricao: 'Ligar o calendário ao Airbnb e ao Booking.com' },
+      /* Nomear só as duas OTA dizia a quem usa um gestor de canais que não era
+       * ali — e é ali, e é a ele que se liga. Terceiro sítio com o mesmo
+       * engano; os outros dois eram o atalho na ficha do alojamento e a ordem
+       * das opções em `CANAIS_IMPORTAVEIS`. */
+      { href: '/canais', label: 'Canais', Icon: Rss, descricao: 'Gestor de canais, Airbnb, Booking.com — calendários' },
       { href: '/precos', label: 'Preços', Icon: Tag, descricao: 'Regras, tarifas e plataformas' },
       { href: '/conformidade', label: 'Conformidade', Icon: ShieldCheck, descricao: 'RNAL, seguro, Livro de Reclamações' },
       { href: '/website', label: 'Site de reservas', Icon: Globe, descricao: 'O teu site público' },
