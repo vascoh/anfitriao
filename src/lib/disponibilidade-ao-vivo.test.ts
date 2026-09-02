@@ -130,6 +130,41 @@ describe('verificarDisponibilidadeAoVivo', () => {
     expect(lidos).toHaveLength(3)
   })
 
+  it('a reserva que está a ser editada não choca consigo própria', async () => {
+    /* Editar uma reserva importada era impossível: o evento que o feed
+     * devolve é essa mesma reserva. Corrigir-lhe o preço — que o iCal não
+     * transporta e de que o financeiro precisa — dava «datas ocupadas», com
+     * uma mensagem a dizer que a reserva tinha entrado depois da última
+     * sincronização. Era ela própria. */
+    feeds['https://a'] = calendario({ uid: 'reserva-do-airbnb', de: '2026-10-01', ate: '2026-10-04' })
+
+    const semIgnorar = await verificarDisponibilidadeAoVivo(
+      [alojamento('Quarto', 'https://a')], '2026-10-01', '2026-10-03',
+    )
+    expect(semIgnorar.livre).toBe(false)
+
+    const aEditar = await verificarDisponibilidadeAoVivo(
+      [alojamento('Quarto', 'https://a')], '2026-10-01', '2026-10-03',
+      { ignorarUid: 'reserva-do-airbnb' },
+    )
+    expect(aEditar.livre).toBe(true)
+  })
+
+  it('ignorar a própria não abre a porta às outras', async () => {
+    // Mudar as datas de uma reserva importada para cima de outra continua a
+    // ser recusado — é o caso que a verificação existe para apanhar.
+    feeds['https://a'] = calendario(
+      { uid: 'a-que-edito', de: '2026-10-01', ate: '2026-10-04' },
+      { uid: 'outra', de: '2026-11-01', ate: '2026-11-05' },
+    )
+
+    const r = await verificarDisponibilidadeAoVivo(
+      [alojamento('Quarto', 'https://a')], '2026-11-02', '2026-11-04',
+      { ignorarUid: 'a-que-edito' },
+    )
+    expect(r).toMatchObject({ livre: false, motivo: 'ocupado' })
+  })
+
   it('um evento com datas inválidas não bloqueia nada', async () => {
     feeds['https://a'] = [
       'BEGIN:VEVENT', 'UID:mau',

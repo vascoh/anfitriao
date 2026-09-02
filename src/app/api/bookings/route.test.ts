@@ -69,6 +69,14 @@ vi.mock('@/lib/supabase', () => ({
 }))
 
 let utilizador: string | null = 'user_1'
+/* O que as plataformas respondem quando lhes perguntamos ao vivo. Só entra em
+ * jogo nas propriedades com `ical_feeds` — as do resto da suite não têm, e por
+ * isso a verificação nem chega a perguntar. */
+let feedAoVivo = 'BEGIN:VCALENDAR\r\nEND:VCALENDAR'
+vi.mock('@/lib/ical-fetch', () => ({
+  fetchIcalText: async () => feedAoVivo,
+}))
+
 vi.mock('@clerk/nextjs/server', () => ({
   auth: async () => ({ userId: utilizador }),
 }))
@@ -299,5 +307,111 @@ describe('POST /api/bookings — sobreposição de datas', () => {
   it('recusa entrada e saída no mesmo dia', async () => {
     const res = await POST(pedido({ ...NOVA, check_in: '2026-09-20', check_out: '2026-09-20' }))
     expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/bookings · verificação ao vivo nas plataformas', () => {
+  /** Um feed com estas datas ocupadas pelo UID indicado. */
+  function feedCom(uid: string, de: string, ate: string): string {
+    return [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTART;VALUE=DATE:${de.replace(/-/g, '')}`,
+      `DTEND;VALUE=DATE:${ate.replace(/-/g, '')}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n')
+  }
+
+  beforeEach(() => {
+    tabelas.properties = [{
+      id: 'p-com-feed',
+      owner_id: 'user_1',
+      nome: 'Quarto de Casal',
+      ical_feeds: [{ id: 'f1', url: 'https://amenitiz.com/ical/q.ics', nome: 'Amenitiz', source: 'outro' }],
+    }]
+    tabelas.guests = [{ id: 'g-meu', owner_id: 'user_1' }]
+    tabelas.bookings = []
+    feedAoVivo = 'BEGIN:VCALENDAR\r\nEND:VCALENDAR'
+  })
+
+  const NOVA = {
+    id: 'b-nova',
+    propriedade_id: 'p-com-feed',
+    hospede_id: 'g-meu',
+    check_in: '2026-10-01',
+    check_out: '2026-10-04',
+    estado: 'confirmada',
+  }
+
+  it('recusa a noite que a plataforma já vendeu', async () => {
+    feedAoVivo = feedCom('vendida-no-airbnb', '2026-10-02', '2026-10-06')
+
+    const res = await POST(pedido(NOVA))
+    expect(res.status).toBe(409)
+    expect((await res.json()).code).toBe('CONFLITO_AO_VIVO')
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('editar uma reserva importada não choca com ela própria', async () => {
+    /* O bug: a verificação contra a base sempre se excluiu a si mesma
+     * (`.neq('id', …)`), mas a verificação ao vivo não tinha como — do lado do
+     * feed a reserva não se chama pelo nosso id, chama-se pelo UID da
+     * plataforma. Corrigir o preço de uma reserva do Airbnb, que o iCal não
+     * transporta e de que o financeiro precisa, dava «datas ocupadas». */
+    tabelas.bookings = [{
+      id: 'b-importada',
+      owner_id: 'user_1',
+      propriedade_id: 'p-com-feed',
+      check_in: '2026-10-01',
+      check_out: '2026-10-04',
+      estado: 'confirmada',
+      uid_externo: 'f1::reserva-do-airbnb',
+    }]
+    feedAoVivo = feedCom('reserva-do-airbnb', '2026-10-01', '2026-10-04')
+
+    const res = await POST(pedido({
+      ...NOVA, id: 'b-importada', preco_total: 240,
+    }))
+
+    expect(res.status).toBe(200)
+    expect(escritas[0].row.preco_total).toBe(240)
+  })
+
+  it('mas mudar as datas para cima de outra continua recusado', async () => {
+    tabelas.bookings = [{
+      id: 'b-importada',
+      owner_id: 'user_1',
+      propriedade_id: 'p-com-feed',
+      check_in: '2026-10-01',
+      check_out: '2026-10-04',
+      estado: 'confirmada',
+      uid_externo: 'f1::a-que-edito',
+    }]
+    feedAoVivo = [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT', 'UID:a-que-edito',
+      'DTSTART;VALUE=DATE:20261001', 'DTEND;VALUE=DATE:20261004', 'END:VEVENT',
+      'BEGIN:VEVENT', 'UID:outra-reserva',
+      'DTSTART;VALUE=DATE:20261120', 'DTEND;VALUE=DATE:20261125', 'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n')
+
+    const res = await POST(pedido({
+      ...NOVA, id: 'b-importada', check_in: '2026-11-21', check_out: '2026-11-23',
+    }))
+
+    expect(res.status).toBe(409)
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('permitir_sobreposicao passa à frente da verificação ao vivo', async () => {
+    // Quem sabe o que está a fazer não é travado — é a mesma porta que já
+    // existia para a verificação contra a base.
+    feedAoVivo = feedCom('vendida', '2026-10-02', '2026-10-06')
+
+    const res = await POST(pedido({ ...NOVA, permitir_sobreposicao: true }))
+    expect(res.status).toBe(200)
   })
 })

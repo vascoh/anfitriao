@@ -64,6 +64,19 @@ export async function verificarDisponibilidadeAoVivo(
   alojamentos: Array<{ nome?: string; ical_feeds?: IcalFeed[] | null }>,
   checkIn: string,
   checkOut: string,
+  opcoes: {
+    /**
+     * UID de origem a ignorar — a reserva que está a ser alterada.
+     *
+     * Sem isto, editar uma reserva **importada** era impossível: o evento que
+     * o feed devolve é essa mesma reserva, e a verificação recusava-a por
+     * conflito consigo própria. A verificação contra a base sempre se excluiu
+     * a si mesma (`.neq('id', …)`); esta não tinha como, porque do outro lado
+     * a reserva não se chama pelo nosso `id` — chama-se pelo UID da
+     * plataforma, que é o que `uid_externo` guarda.
+     */
+    ignorarUid?: string | null
+  } = {},
 ): Promise<ResultadoAoVivo> {
   const feeds = alojamentos.flatMap(a =>
     (a.ical_feeds ?? []).map(f => ({ feed: f, alojamento: a.nome ?? '' })),
@@ -93,6 +106,8 @@ export async function verificarDisponibilidadeAoVivo(
   for (const { etiqueta, eventos } of leituras) {
     for (const ev of eventos) {
       if (!ev.dtstart || !ev.dtend || ev.dtstart >= ev.dtend) continue
+      // A reserva não choca consigo própria — ver `ignorarUid`.
+      if (opcoes.ignorarUid && ev.uid === opcoes.ignorarUid) continue
       if (sobrepoe({ inicio: ev.dtstart, fim: ev.dtend }, { inicio: checkIn, fim: checkOut })) {
         return { livre: false, motivo: 'ocupado', feed: etiqueta }
       }

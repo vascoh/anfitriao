@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase'
 import type { Booking } from '@/lib/types'
 import { canUpsertRow, ownsProperty, ehCasaComQuartos } from '@/lib/ownership'
 import { verificarDisponibilidadeAoVivo } from '@/lib/disponibilidade-ao-vivo'
+import { uidDeOrigem } from '@/lib/ical-reconciliacao'
 import { logAudit } from '@/lib/audit'
 import { carregarTudo } from '@/lib/supabase-tudo'
 
@@ -180,11 +181,26 @@ export async function POST(req: NextRequest) {
      * que entrou no Airbnb esta manhã não está lá, e o anfitrião estaria a
      * escrever por cima dela sem nada o avisar. `permitir_sobreposicao`
      * continua a valer: quem sabe o que está a fazer passa à frente. */
+    /* Numa alteração, a reserva não choca consigo própria — e do lado do feed
+     * ela não se chama pelo nosso `id`, chama-se pelo UID da plataforma. Sem
+     * isto, editar uma reserva importada era impossível: o evento que o feed
+     * devolve é a própria reserva, e corrigir-lhe o preço (que o iCal não
+     * transporta, e de que o financeiro precisa) dava «datas ocupadas».
+     *
+     * O `uid_externo` é lido da base e não do corpo do pedido: é o servidor
+     * que sabe se esta reserva veio de um feed. */
+    const aEditar = typeof campos.id === 'string' && campos.id ? campos.id : null
+    const { data: existente } = aEditar
+      ? await supabase.from('bookings').select('uid_externo').eq('id', aEditar).eq('owner_id', userId).maybeSingle()
+      : { data: null }
+
     const { data: propFeeds } = await supabase
       .from('properties').select('nome, ical_feeds').eq('id', campos.propriedade_id as string).maybeSingle()
 
     const aoVivo = propFeeds
-      ? await verificarDisponibilidadeAoVivo([propFeeds], checkIn, checkOut)
+      ? await verificarDisponibilidadeAoVivo([propFeeds], checkIn, checkOut, {
+          ignorarUid: existente?.uid_externo ? uidDeOrigem(existente.uid_externo as string) : null,
+        })
       : { livre: true as const }
 
     if (!aoVivo.livre) {

@@ -262,6 +262,36 @@ Anfitrião ──iCal──► Amenitiz ──API──► Airbnb / Booking / Vr
    de estar no caminho crítico — continua a encher o calendário que vês, e o
    plano Vercel Pro só é preciso se quiseres esse ecrã ao minuto.
 
+### Dois riscos conhecidos desta fase, por verificar
+
+**1. O eco.** A tua reserva direta vai para o Amenitiz pelo feed. Se o Amenitiz
+**reexportar** essa reserva no iCal do quarto — que é o feed que nós lemos —
+ela volta cá com o UID dele, é tratada como reserva nova e ficas com ela em
+duplicado. Muitos gestores de canais fazem exatamente isto.
+
+Não está resolvido em código porque não sei se o Amenitiz o faz, e uma defesa
+construída contra um comportamento imaginado costuma proteger do caso errado.
+**É a primeira coisa a verificar quando ligares o feed de exportação**: cria uma
+reserva direta, espera pela sincronização seguinte, e vê se ela aparece duas
+vezes no calendário. Se aparecer, diz — a defesa é pequena (não importar um
+evento cujas datas coincidem exatamente com uma reserva direta já existente na
+mesma propriedade), mas só se escreve depois de se saber que é precisa.
+
+**2. As leituras ao vivo e o IP partilhado.** Cada tentativa de reserva direta lê
+os feeds das plataformas. Num site com movimento, isso são muitas leituras a
+partir do **mesmo endereço de saída da Vercel**, partilhado por todos os
+anfitriões. Se o Airbnb ou o Amenitiz limitarem esse IP, a verificação ao vivo
+passa a falhar e — como fecha por omissão — as reservas diretas param.
+
+Não está mitigado com cache de propósito. Com um alojamento e pouco tráfego não
+acontece, e pôr uma cache no único sítio que tem de estar certo troca um risco
+raro por um permanente: uma resposta guardada é uma resposta velha, e velha é
+exatamente o que esta verificação existe para não ser. Se e quando houver
+volume, a mitigação é uma cache curta (30–60 s) por feed — mede-se primeiro.
+
+O sintoma, se acontecer, é visível: o alerta de canal dispara e as reservas
+diretas são recusadas com «não foi possível confirmar a disponibilidade».
+
 ### Verificação obrigatória, com dados a sério
 
 Reservar uma noite no próprio site e confirmar, **pelo Amenitiz e pelo
