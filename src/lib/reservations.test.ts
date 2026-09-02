@@ -435,6 +435,37 @@ describe('eBloqueio', () => {
    * cinzento — precisamente as reservas que a cor por canal existe para
    * mostrar. */
   it('uma reserva importada de um canal não é bloqueio, apesar de não ter hóspede', () => {
-    expect(eBloqueio({ hospede_id: null, uid_externo: 'feed-1::abc@airbnb.com' })).toBe(false)
+    expect(eBloqueio({ hospede_id: null, uid_externo: 'feed-1::abc@airbnb.com', notas: 'Reserved' })).toBe(false)
+  })
+
+  /* O caso oposto, e o que aconteceu com dados reais a 2026-09-02: o export do
+   * Amenitiz é um calendário de **disponibilidade**
+   * (`PRODID:Amenitiz Availability iCalendar`), em que cada evento diz «Quarto
+   * indisponível». Com a regra anterior — «tem uid_externo, logo é reserva» —
+   * três bloqueios entraram como três reservas confirmadas sem hóspede, e o
+   * anfitrião viu no calendário qualquer coisa que não sabia identificar. */
+  it('um bloqueio vindo de um feed de disponibilidade é bloqueio', () => {
+    expect(eBloqueio({
+      hospede_id: null,
+      uid_externo: '75088eec::995e14f8',
+      notas: 'Quarto indisponível',
+    })).toBe(true)
+  })
+
+  it('reconhece o fecho nas várias formas em que as plataformas o escrevem', () => {
+    for (const texto of ['Quarto indisponível', 'Airbnb (Not available)', 'Blocked', 'CLOSED']) {
+      expect(eBloqueio({ hospede_id: null, uid_externo: 'f::1', notas: texto }), texto).toBe(true)
+    }
+  })
+
+  it('um texto desconhecido conta como reserva, não como bloqueio', () => {
+    // A dúvida resolve-se do lado que dá mais informação a quem olha: uma
+    // reserva mostra o canal e a cor; um bloqueio é cinzento e mudo.
+    expect(eBloqueio({ hospede_id: null, uid_externo: 'f::1', notas: 'Joao Silva' })).toBe(false)
+    expect(eBloqueio({ hospede_id: null, uid_externo: 'f::1', notas: undefined })).toBe(false)
+  })
+
+  it('um hóspede preenchido à mão manda mais do que o texto do feed', () => {
+    expect(eBloqueio({ hospede_id: 'g-1', uid_externo: 'f::1', notas: 'Quarto indisponível' })).toBe(false)
   })
 })

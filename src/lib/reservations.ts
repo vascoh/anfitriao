@@ -18,23 +18,60 @@ export function dateRange(start: string, end: string): string[] {
 }
 
 /**
- * Isto é um bloqueio do anfitrião, ou uma reserva de alguém?
+ * Textos com que as plataformas dizem «esta data está fechada».
  *
- * Um bloqueio é uma linha que o anfitrião criou para tapar datas — obras, uso
- * próprio, limpeza — e por isso não tem hóspede. Não basta, porém, perguntar
- * pelo hóspede: **as reservas importadas dos canais também não têm**. O iCal
- * não transporta nome nem contacto, portanto o `ical-sync` insere-as com
- * `hospede_id: null` e o nome do hóspede só aparece se o anfitrião o
- * preencher à mão.
+ * Escritos a partir de feeds observados, não imaginados. O do Amenitiz veio de
+ * um export real a 2026-09-02: `PRODID:Amenitiz Availability iCalendar`, com
+ * todos os eventos a dizerem `SUMMARY:Quarto indisponível`. É um calendário de
+ * **disponibilidade** — não traz reservas, traz períodos fechados.
  *
- * Olhar só para o hóspede fazia passar por «Bloqueado» exatamente aquilo que
- * mais interessa ver — a reserva que chegou do Airbnb — e pintava-a de cinzento
- * no calendário, num ecrã onde a cor existe para dizer de que canal veio.
- *
- * O `uid_externo` é o que distingue: só as linhas que vieram de um feed o têm.
+ * Acrescentar aqui uma frase nova é barato; o que não se pode é adivinhá-la.
+ * Um texto desconhecido não passa por bloqueio — a dúvida resolve-se do lado
+ * de tratar como reserva, que é o que dá mais informação a quem olha.
  */
-export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo'>): boolean {
-  return !b.hospede_id && !b.uid_externo
+const TEXTOS_DE_BLOQUEIO = [
+  'indisponivel',      // Amenitiz (PT), sem acentos por causa da normalização
+  'not available',     // Airbnb
+  'unavailable',
+  'blocked',
+  'bloqueado',
+  'closed',
+  'fechado',
+]
+
+function semAcentos(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+/** O texto que o feed mandou diz que a data está fechada, e não vendida? */
+export function textoDizIndisponivel(notas: string | null | undefined): boolean {
+  if (!notas) return false
+  const t = semAcentos(notas)
+  return TEXTOS_DE_BLOQUEIO.some(p => t.includes(p))
+}
+
+/**
+ * Isto é um bloqueio, ou uma reserva de alguém?
+ *
+ * Um bloqueio tapa datas — obras, uso próprio, limpeza — e não tem hóspede.
+ * Perguntar só pelo hóspede não chega: **as reservas importadas dos canais
+ * também não têm**, porque o iCal não transporta nome nem contacto.
+ *
+ * Durante algum tempo a regra foi «tem `uid_externo` → é reserva», e resolveu o
+ * problema de as reservas do Airbnb aparecerem cinzentas. Mas assume que um
+ * feed só transporta reservas, e há feeds que só transportam o contrário: o
+ * export do Amenitiz é um calendário de **disponibilidade**, em que cada evento
+ * diz «Quarto indisponível». Com aquela regra, três bloqueios entravam como
+ * três reservas confirmadas sem hóspede — e o anfitrião via no calendário
+ * qualquer coisa que não sabia identificar.
+ *
+ * A resposta está no texto que o feed mandou, que é a única coisa que ele diz
+ * sobre a natureza do evento. Fica guardado em `notas` pelo `ical-sync`.
+ */
+export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas'>): boolean {
+  if (b.hospede_id) return false
+  if (!b.uid_externo) return true
+  return textoDizIndisponivel(b.notas)
 }
 
 export function blockedDates(bookings: Booking[], propertyId: string, excludeId?: string): Set<string> {

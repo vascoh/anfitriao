@@ -54,7 +54,14 @@ function origemDe(b: Booking): BookingSource {
  * de onde é que ela veio. Vale mais ler «Airbnb» do que um vazio.
  */
 function nomeDaReserva(b: Booking, guests: { id: string; nome: string }[]): string {
-  if (eBloqueio(b)) return 'Bloqueado'
+  if (eBloqueio(b)) {
+    /* Um bloqueio que veio de um feed diz o que o feed lhe chamou — «Quarto
+     * indisponível» é a frase do Amenitiz, e é ela que o anfitrião reconhece
+     * quando compara os dois calendários lado a lado. Um «Bloqueado» genérico
+     * obrigava-o a adivinhar de onde é que aquilo tinha vindo. */
+    if (b.uid_externo) return b.notas?.trim() || 'Indisponível'
+    return 'Bloqueado'
+  }
   const nome = guests.find(g => g.id === b.hospede_id)?.nome
   return nome ?? (b.uid_externo ? SOURCE_LABEL[origemDe(b)] : 'Sem nome')
 }
