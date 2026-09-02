@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3, Coins } from 'lucide-react'
+import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3, Coins, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { fetchProperties } from '@/lib/fetcher'
 import { abreviaturaDe } from '@/lib/siba-mapping'
@@ -243,6 +243,14 @@ export default function ConformidadePage() {
                   {resumo.pendentes} {resumo.pendentes === 1 ? 'pendência' : 'pendências'}
                 </span>
               )}
+              {/* O dossiê é por alojamento porque uma inspeção também o é. */}
+              <Link
+                href={`/conformidade/dossie/${p.id}`}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-4 text-sm font-semibold transition-colors hover:bg-muted"
+              >
+                <FileText className="h-4 w-4" aria-hidden="true" />
+                Dossiê
+              </Link>
               <button
                 type="button"
                 onClick={() => abrir(p)}
