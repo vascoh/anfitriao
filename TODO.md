@@ -49,7 +49,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 
 ## Fase 1 (dossiê) — paridade de conformidade
 - [x] **1.1 SIBA por web service** — `siba-xml.ts` / `siba-mapping.ts` / `siba-api.ts` (3 tentativas, recuo exponencial), cofre encriptado por alojamento, migrações 030/031, formulário em `/conformidade`. **Em produção, à espera das credenciais do portal (H1)**
-- [x] **1.2 I1 — prova de submissão** — `siba_submissoes` com SHA-256 do enviado e resposta em bruto. Falta o dossiê ASAE em PDF
+- [x] **1.2 I1 — prova de submissão** — `siba_submissoes` com SHA-256 do enviado e resposta em bruto. **Dossiê ASAE feito a 2026-09-02**: `/conformidade/dossie/[propertyId]`, imprimível (CSS de impressão + «Guardar como PDF», sem dependência nova), com identificação, obrigações e base legal, estadias do período e o que foi comunicado, e os registos de envio com o hash. Mostra o que está por cumprir e tem uma secção «o que este documento não prova» — um papel com ar de certificado sem o ser seria pior do que não existir. Lógica em `lib/dossie-asae.ts`, 15 testes
 - [x] **1.3 Faturação ponta-a-ponta** — uma conta InvoiceXpress por anfitrião criada com chave de parceiro, emissão manual + cron 07:00, nota de crédito, SAF-T, IVA 6/5/4 % e taxa turística isenta M99, caso "casa inteira = 1 fatura" resolvido. **Falta a conta de parceiro (H2) e a variável de ambiente**
 - [ ] **1.4 Taxa turística: 5 → 12 concelhos** — **travado de propósito**: só há blogues em desacordo para os restantes (um dava Cascais a 1 € quando são 4 €). Exige leitura dos regulamentos municipais; publicar um valor errado cobra dinheiro a mais a hóspedes reais
 - [ ] **1.5 I8 — verificador do número de registo AL** (Reg. UE 2024/1028)

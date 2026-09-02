@@ -6,6 +6,40 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-02] Dossiê ASAE — a prova sai da tabela e vai para papel
+
+Item 1.2 do TODO, e a única vantagem que resistiu a duas verificações de
+mercado (dossiê de 2026-08). A prova de submissão existia em `siba_submissoes`
+desde agosto — número de ficheiro, SHA-256 do enviado, código de retorno,
+resposta em bruto — e não havia maneira de a pôr em cima de uma mesa.
+
+- ✅ **`/conformidade/dossie/[propertyId]`** — identificação do estabelecimento,
+  obrigações com a base legal ao lado, estadias do período com o estado da
+  comunicação de cada uma, e os registos de envio com o hash. Um ano por
+  omissão, ajustável por `?de=` / `?ate=`. Botão «Dossiê» no cartão de cada
+  alojamento em `/conformidade`.
+- ✅ **Sem biblioteca de PDF** — CSS de impressão e «Guardar como PDF» do
+  browser, a mesma decisão tomada para o cartaz do Livro de Reclamações e para
+  o .xlsx do financeiro.
+- ✅ **Mostra o que está mal.** Obrigações por cumprir nomeadas, estadias sem
+  comunicação contadas, as que passaram do prazo marcadas «fora de prazo». Um
+  dossiê todo verde que os registos não sustentam é pior do que nenhum.
+- ✅ **Diz o que não é.** Cabeçalho e secção 4: compilação dos registos do
+  próprio titular, não emitido nem validado por entidade nenhuma, os documentos
+  originais não vivem cá, e o quadro diz o que foi comunicado — não quem estava
+  obrigado a sê-lo, que é uma pergunta jurídica a que a app não responde.
+
+Lógica em `lib/dossie-asae.ts` (pura, 15 testes). As duas leituras são
+paginadas, e uma que falhe devolve um aviso em vez de um dossiê com menos
+linhas — quem o imprime não teria como saber que lhe faltava metade.
+
+Validação: `npm test` (1022, +15), typecheck e lint a zero, build a passar,
+deployado a 2026-09-02 e rota confirmada no build e protegida como as irmãs.
+
+⚠️ **Para revisão jurídica (H6)**: as referências legais do dossiê são as que
+já estavam em `lib/compliance.ts` e `lib/estado-siba.ts`; não foram introduzidas
+afirmações novas, mas o documento passa a ser mostrado a terceiros.
+
 ### [2026-09-02] Três arestas do lado de vender isto a outros anfitriões
 
 Continuação da sessão. As três nasceram da mesma pergunta: **o que é que muda
