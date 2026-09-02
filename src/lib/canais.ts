@@ -173,11 +173,18 @@ export const O_QUE_NAO_SINCRONIZA = [
  * Nomes das plataformas que se oferecem como canal de importação.
  * `direto` fica de fora: é a origem das reservas do teu próprio site, não um
  * calendário que se vá buscar a lado nenhum.
+ *
+ * **O gestor de canais vem primeiro, e não por ordem alfabética.** Quem tem um
+ * Amenitiz ou um Smoobu tem de o escolher *a ele* e a mais nada — as reservas
+ * do Airbnb e do Booking já vêm lá dentro, e ligar os dois caminhos duplica-as
+ * (`deveAvisarDuplicacao`). Estando em último, a seguir a quatro OTA, a opção
+ * certa era a última a ser vista por quem mais precisa dela: a lista parecia
+ * dizer que a app só fala com plataformas.
  */
 export const CANAIS_IMPORTAVEIS: Exclude<BookingSource, 'direto'>[] = [
+  'outro',
   'airbnb',
   'booking',
   'expedia',
   'vrbo',
-  'outro',
 ]

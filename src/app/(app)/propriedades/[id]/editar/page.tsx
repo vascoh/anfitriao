@@ -462,11 +462,13 @@ export default function EditarPropriedadePage() {
           >
             <Rss className="h-4 w-4 text-primary shrink-0" aria-hidden />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">Ligar ao Airbnb e ao Booking.com</p>
+              {/* Nomear só as duas OTA dizia a quem tem um gestor de canais que
+                * a app não fala com ele — e é precisamente a ele que se liga. */}
+              <p className="text-sm font-medium">Ligar calendários de plataformas</p>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 {(icalFeeds.length > 0)
                   ? `${icalFeeds.length} ${icalFeeds.length === 1 ? 'canal ligado' : 'canais ligados'} · ver estado e sincronizar`
-                  : 'Importar reservas das plataformas e bloquear lá as datas ocupadas aqui'}
+                  : 'Gestor de canais (Amenitiz, Smoobu), Airbnb, Booking.com e outros'}
               </p>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />

@@ -219,6 +219,16 @@ function AssistenteLigar({
 
       {passo === 1 && (
         <>
+          {/* A regra da topologia, antes da escolha e não depois dela. Quem tem
+            * gestor de canais e escolhe «Airbnb» acaba com as reservas em
+            * duplicado, e o aviso que existe para isso só aparece à segunda. */}
+          <p className="text-[13px] text-muted-foreground leading-relaxed">
+            Se usas um <strong className="font-semibold text-foreground">gestor de canais</strong> —
+            Amenitiz, Smoobu, Lodgify — escolhe-o a ele e mais nada: as reservas do
+            Airbnb e do Booking já vêm lá dentro. Ligar também as plataformas traz
+            cada reserva duas vezes.
+          </p>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {CANAIS_IMPORTAVEIS.map(c => (
               <button

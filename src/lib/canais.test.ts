@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   estadoDoFeed, estadoDoAlojamento, erroAmigavel, HORAS_ATE_DESATUALIZADO, ESTADO_CANAL,
+  CANAIS_IMPORTAVEIS,
 } from './canais'
 import type { IcalFeed } from './types'
 
@@ -116,5 +117,20 @@ describe('ESTADO_CANAL', () => {
       expect(d.explicacao.length, nome).toBeGreaterThan(20)
       expect(['verde', 'ambar', 'vermelho', 'neutro'], nome).toContain(d.tom)
     }
+  })
+})
+
+describe('CANAIS_IMPORTAVEIS', () => {
+  it('o gestor de canais vem primeiro', () => {
+    /* Não é ordem alfabética nem estética: quem tem um Amenitiz tem de o
+     * escolher a ele e a mais nada, porque as reservas das OTA já vêm lá
+     * dentro. Estando em último, a seguir a quatro plataformas, a opção certa
+     * era a última a ser vista por quem mais precisava dela — e a lista
+     * parecia dizer que a app só falava com Airbnb e Booking. */
+    expect(CANAIS_IMPORTAVEIS[0]).toBe('outro')
+  })
+
+  it('não oferece «direto» — não há calendário nenhum a ir buscar ao próprio site', () => {
+    expect(CANAIS_IMPORTAVEIS).not.toContain('direto')
   })
 })
