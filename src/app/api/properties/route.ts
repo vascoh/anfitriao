@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+import { carregarTudo } from '@/lib/supabase-tudo'
 import { getAccountByClerkId } from '@/lib/accounts'
 import { logAudit } from '@/lib/audit'
 import type { Property } from '@/lib/types'
@@ -209,14 +210,33 @@ export async function DELETE(req: NextRequest) {
    * Documentos com prazo legal de conservação não se apagam com dois toques
    * num botão. Quem quer deixar de ver um alojamento desativa-o — a app já
    * trata alojamentos inativos como se não existissem, sem perder nada. */
-  const { data: comHistoria } = await supabase
-    .from('bookings')
-    .select('id, fatura_numero, siba_status')
-    .eq('propriedade_id', id)
-    .eq('owner_id', userId)
+  /* Paginado, e o erro verificado — as duas coisas pela mesma razão.
+   *
+   * Esta leitura é o que **impede** a eliminação. Cortada às mil linhas pelo
+   * PostgREST, ou vazia por um erro que ninguém leu, a guarda conclui que não
+   * há faturas nem boletins e deixa apagar precisamente o alojamento que
+   * devia proteger. Num sítio de 40 quartos, mil reservas são pouco mais de
+   * um ano. */
+  const { linhas: comHistoria, erro: erroHistoria } = await carregarTudo<{
+    id: string; fatura_numero: string | null; siba_status: string | null
+  }>(() =>
+    supabase
+      .from('bookings')
+      .select('id, fatura_numero, siba_status')
+      .eq('propriedade_id', id)
+      .eq('owner_id', userId)
+      .order('id', { ascending: true }),
+  )
 
-  const comFatura = (comHistoria ?? []).filter(b => b.fatura_numero).length
-  const comBoletim = (comHistoria ?? []).filter(b => b.siba_status === 'submetido').length
+  if (erroHistoria) {
+    console.error('[DELETE /api/properties] leitura do histórico', erroHistoria)
+    return NextResponse.json({
+      error: 'Não foi possível verificar se este alojamento tem faturas ou boletins. Tenta outra vez.',
+    }, { status: 500 })
+  }
+
+  const comFatura = comHistoria.filter(b => b.fatura_numero).length
+  const comBoletim = comHistoria.filter(b => b.siba_status === 'submetido').length
 
   if (comFatura > 0 || comBoletim > 0) {
     const partes = [

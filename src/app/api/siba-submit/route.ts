@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+import { carregarTudo } from '@/lib/supabase-tudo'
 import { submeterBoletins, explicarFalha } from '@/lib/siba-api'
 import { boletimDaLinha, unidadeDaPropriedade, type LinhaBoletim } from '@/lib/siba-mapping'
 import type { BoletimHospede } from '@/lib/siba-xml'
@@ -49,23 +50,34 @@ export async function POST(req: NextRequest) {
 
   const supabase = createAdminClient()
 
-  const { data: bookings, error: bookingsError } = await supabase
-    .from('bookings')
-    .select('id, check_in, check_out, hospede_id, propriedade_id, num_hospedes, siba_status')
-    .eq('owner_id', userId)
-    .gte('check_in', from)
-    .lte('check_in', to)
-    .not('estado', 'in', '("cancelada","no_show")')
-    .order('check_in', { ascending: true })
+  /* Paginado: uma reserva que não venha na resposta é uma reserva que ninguém
+   * comunica. O corte às mil linhas do PostgREST não dá erro nenhum — a rota
+   * respondia «submetidas 1000 de 1000» e as restantes ficavam por comunicar,
+   * a 100–2.000 € por boletim, sem nada a assinalá-lo. */
+  const { linhas: bookings, erro: bookingsError } = await carregarTudo<{
+    id: string; check_in: string; check_out: string; hospede_id: string | null
+    propriedade_id: string; num_hospedes: number; siba_status: string | null
+  }>(() =>
+    supabase
+      .from('bookings')
+      .select('id, check_in, check_out, hospede_id, propriedade_id, num_hospedes, siba_status')
+      .eq('owner_id', userId)
+      .gte('check_in', from)
+      .lte('check_in', to)
+      .not('estado', 'in', '("cancelada","no_show")')
+      .order('check_in', { ascending: true })
+      // Desempate estável: ver a nota sobre ordenação em lib/supabase-tudo.ts.
+      .order('id', { ascending: true }),
+  )
 
   if (bookingsError) {
-    console.error('[siba-submit]', bookingsError.message)
+    console.error('[siba-submit]', bookingsError)
     return NextResponse.json({ error: 'Erro ao carregar reservas' }, { status: 500 })
   }
 
   // Já aceites pelo SIBA não voltam a ser enviadas: entregar duas vezes o
   // mesmo boletim é um erro do lado de lá, não uma inocuidade.
-  const porEnviar = (bookings ?? []).filter(b => b.siba_status !== 'submetido')
+  const porEnviar = bookings.filter(b => b.siba_status !== 'submetido')
   if (porEnviar.length === 0) {
     return NextResponse.json({ resultados: [], total: 0, sucesso: 0 })
   }

@@ -5,6 +5,7 @@
  */
 
 import { createAdminClient } from './supabase'
+import { carregarTudo } from './supabase-tudo'
 import { revelarCampos } from './campos-sensiveis'
 import type { Booking, Guest, Property, WebsiteSettings, Post } from './types'
 
@@ -56,12 +57,36 @@ export async function adminGetWebsiteSettings(ownerId?: string | null): Promise<
   return settings
 }
 
-export async function adminGetBookings(ownerId?: string): Promise<Booking[]> {
-  let q = getSupabase().from('bookings').select('*').order('criado_em', { ascending: false })
-  if (ownerId) q = q.eq('owner_id', ownerId)
-  const { data, error } = await q
-  if (error) { console.error('[adminGetBookings]', error.message); return [] }
-  return data as Booking[]
+/**
+ * Reservas de um anfitrião, para o site público calcular disponibilidade.
+ *
+ * As duas coisas que esta função fazia mal levavam ao mesmo sítio — **mostrar
+ * como livre uma noite que está ocupada**:
+ *
+ * 1. **Sem paginação.** Ordenada por `criado_em` decrescente, devolvia as mil
+ *    reservas criadas mais recentemente. As mais antigas caíam — e uma reserva
+ *    antiga pode ser uma estadia **futura**. Num sítio com movimento, o
+ *    calendário público começava a mostrar datas vendidas como disponíveis.
+ * 2. **Erro devolvia lista vazia.** Nenhuma reserva quer dizer tudo livre: um
+ *    tremor da base pintava o calendário inteiro de disponível.
+ *
+ * Por isso o erro sobe agora em vez de ser engolido. Um site que diz «não foi
+ * possível confirmar a disponibilidade» perde um pedido; um site que mostra
+ * livre o que está vendido põe duas pessoas à porta.
+ */
+export async function adminGetBookings(
+  ownerId?: string,
+): Promise<{ linhas: Booking[]; erro?: string }> {
+  return carregarTudo<Booking>(() => {
+    let q = getSupabase()
+      .from('bookings')
+      .select('*')
+      .order('criado_em', { ascending: false })
+      // Desempate estável: ver a nota sobre ordenação em lib/supabase-tudo.ts.
+      .order('id', { ascending: true })
+    if (ownerId) q = q.eq('owner_id', ownerId)
+    return q
+  })
 }
 
 export async function adminGetProperties(ownerId?: string): Promise<Property[]> {

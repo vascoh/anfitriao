@@ -18,7 +18,7 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
   const prop = await adminGetPropertyById(propertyId)
   const ownerId = prop?.owner_id as string | undefined
 
-  const [props, ws, bookings, rules, tars, rates, account] = await Promise.all([
+  const [props, ws, reservas, rules, tars, rates, account] = await Promise.all([
     adminGetProperties(ownerId),
     adminGetWebsiteSettings(ownerId),
     adminGetBookings(ownerId),
@@ -28,6 +28,23 @@ export default async function BookPropertyPage({ params }: { params: Promise<{ p
     ownerId ? getAccountByClerkId(ownerId) : Promise.resolve(null),
   ])
   const paymentsEnabled = !!account?.stripe_connect_charges_enabled
+
+  /* Sem a lista completa de reservas não se mostra um calendário.
+   *
+   * As datas ocupadas saem daqui: uma leitura falhada ou cortada mostraria
+   * como disponível o que já está vendido, e o hóspede só descobria depois de
+   * preencher o formulário — ou, pior, não descobria. Ver `adminGetBookings`. */
+  if (reservas.erro) {
+    console.error('[book] leitura de reservas falhou', propertyId, reservas.erro)
+    return (
+      <div className="min-h-dvh flex items-center justify-center p-8 text-center">
+        <p className="text-muted-foreground">
+          Não foi possível confirmar a disponibilidade neste momento. Tenta daqui a pouco.
+        </p>
+      </div>
+    )
+  }
+  const bookings = reservas.linhas
 
   if (!ws.enabled) {
     return (

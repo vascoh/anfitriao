@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
+import { carregarTudo } from '@/lib/supabase-tudo'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
 import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
@@ -40,18 +41,30 @@ export async function GET(req: NextRequest) {
   if (ativas.length === 0) return NextResponse.json({ ok: true, notificados: 0 })
 
   // Só as reservas que podem formar buracos dentro do horizonte
-  const { data: bookings, error: errBookings } = await supabase
-    .from('bookings')
-    .select('id, propriedade_id, check_in, check_out, estado, owner_id')
-    .gte('check_out', hoje)
-    .lte('check_in', limite)
+  /* Paginado, e o erro corta a execução.
+   *
+   * Esta lista é o que diz quais noites estão ocupadas. Uma reserva que não
+   * venha na resposta transforma-se num buraco no calendário — e este cron
+   * manda um email a sugerir que se venda essa noite com desconto. Sugerir a
+   * venda de uma noite já vendida é a dupla reserva a chegar por email, com o
+   * nosso nome. */
+  const { linhas: bookings, erro: errBookings } = await carregarTudo<
+    Pick<Booking, 'id' | 'propriedade_id' | 'check_in' | 'check_out' | 'estado' | 'owner_id'>
+  >(() =>
+    supabase
+      .from('bookings')
+      .select('id, propriedade_id, check_in, check_out, estado, owner_id')
+      .gte('check_out', hoje)
+      .lte('check_in', limite)
+      .order('id', { ascending: true }),
+  )
 
   if (errBookings) {
-    console.error('[noites-orfas]', errBookings.message)
-    return NextResponse.json({ error: errBookings.message }, { status: 500 })
+    console.error('[noites-orfas]', errBookings)
+    return NextResponse.json({ error: errBookings }, { status: 500 })
   }
 
-  const todas = (bookings ?? []) as unknown as Booking[]
+  const todas = bookings as unknown as Booking[]
   const porAnfitriao = new Map<string, Array<[string, string]>>()
 
   for (const p of ativas) {

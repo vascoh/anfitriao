@@ -19,6 +19,9 @@ function construtor(tabela: string) {
     not: () => obj,
     order: () => obj,
     limit: () => obj,
+    /* A leitura das reservas passou a ser paginada (`carregarTudo`): sem
+     * `range`, o duplo não exercitava o caminho que a rota usa mesmo. */
+    range: async (de: number, ate: number) => ({ data: alvo().slice(de, ate + 1), error: null }),
     maybeSingle: async () => ({ data: alvo()[0] ?? null, error: null }),
     single: async () => ({ data: alvo()[0] ?? null, error: null }),
     then: (r: (v: { data: unknown; error: null }) => unknown) => r({ data: alvo(), error: null }),
