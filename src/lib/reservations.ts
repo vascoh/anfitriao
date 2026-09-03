@@ -97,6 +97,20 @@ export function geraObrigacoesDeHospede(
   return !eBloqueio(b)
 }
 
+/**
+ * O que se escreve na linha de um bloqueio, onde estaria o nome do hóspede.
+ *
+ * Um bloqueio vindo de um feed diz o que o feed lhe chamou — «Quarto
+ * indisponível» é a frase do Amenitiz, e é por ela que o anfitrião o reconhece
+ * quando compara os dois calendários lado a lado. Um traço, que era o que a
+ * lista de reservas mostrava, é indistinguível de uma reserva a que falta a
+ * ficha do hóspede.
+ */
+export function rotuloDeBloqueio(b: Pick<Booking, 'uid_externo' | 'notas'>): string {
+  if (b.uid_externo) return b.notas?.trim() || 'Indisponível'
+  return 'Bloqueado'
+}
+
 export function blockedDates(bookings: Booking[], propertyId: string, excludeId?: string): Set<string> {
   const set = new Set<string>()
   bookings

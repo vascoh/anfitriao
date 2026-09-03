@@ -17,6 +17,7 @@ import {
   ordenarComQuartos,
   eBloqueio,
   geraObrigacoesDeHospede,
+  rotuloDeBloqueio,
 } from './reservations'
 import type { Booking, Property, PriceRule, Tarifa, PlatformRate } from './types'
 
@@ -496,5 +497,23 @@ describe('geraObrigacoesDeHospede', () => {
 
   it('uma reserva com hóspede gera sempre', () => {
     expect(geraObrigacoesDeHospede({ hospede_id: 'g-1', uid_externo: undefined, notas: undefined })).toBe(true)
+  })
+})
+
+describe('rotuloDeBloqueio', () => {
+  it('um bloqueio de feed diz o que o feed lhe chamou', () => {
+    /* «Quarto indisponível» é a frase do Amenitiz, e é por ela que o anfitrião
+     * reconhece a linha quando compara os dois calendários lado a lado. */
+    expect(rotuloDeBloqueio({ uid_externo: 'f::1', notas: 'Quarto indisponível' }))
+      .toBe('Quarto indisponível')
+  })
+
+  it('um bloqueio de feed sem texto ainda diz que é indisponibilidade', () => {
+    expect(rotuloDeBloqueio({ uid_externo: 'f::1', notas: undefined })).toBe('Indisponível')
+    expect(rotuloDeBloqueio({ uid_externo: 'f::1', notas: '   ' })).toBe('Indisponível')
+  })
+
+  it('um bloqueio do anfitrião é «Bloqueado»', () => {
+    expect(rotuloDeBloqueio({ uid_externo: undefined, notas: 'Obras' })).toBe('Bloqueado')
   })
 })

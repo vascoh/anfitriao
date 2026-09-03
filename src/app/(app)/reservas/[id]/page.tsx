@@ -13,7 +13,7 @@ import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar, eliminar } from '@/lib/guardar'
-import { transitionBooking, canTransition, availableActions } from '@/lib/reservations'
+import { transitionBooking, canTransition, availableActions, eBloqueio } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
@@ -248,14 +248,22 @@ export default function ReservaDetailPage() {
 
   const n = nights(booking.check_in, booking.check_out)
   const saldo = booking.preco_total - booking.preco_pago
-  const actions = availableActions(booking.estado)
+
+  /* Um bloqueio não tem hóspede, e por isso não tem nada do fluxo de hóspede:
+   * não há a quem registar um check-in, nem a quem mandar um link para o fazer
+   * online. O feed do Amenitiz manda «Quarto indisponível», e a app oferecia
+   * na mesma «Registar check-in» — uma ação que, se carregada, punha o
+   * bloqueio em «Em casa» e a pessoa inexistente a aparecer em `/hoje`. */
+  const bloqueio = eBloqueio(booking)
+
+  const actions = bloqueio ? [] : availableActions(booking.estado)
 
   const PRIMARY_ACTION: Partial<Record<BookingStatus, { label: string; to: BookingStatus }>> = {
     pendente:   { label: 'Confirmar reserva',   to: 'confirmada' },
     confirmada: { label: 'Registar check-in',   to: 'checkin' },
     checkin:    { label: 'Registar check-out',  to: 'checkout' },
   }
-  const primaryAction = PRIMARY_ACTION[booking.estado]
+  const primaryAction = bloqueio ? undefined : PRIMARY_ACTION[booking.estado]
 
   return (
     <div className="flex flex-col min-h-full pb-6">
@@ -469,7 +477,7 @@ export default function ReservaDetailPage() {
               <span className="text-sm text-emerald-700 font-medium">Enviar mensagem WhatsApp</span>
             </button>
           )}
-          {booking.estado !== 'cancelada' && booking.estado !== 'checkout' && (
+          {!bloqueio && booking.estado !== 'cancelada' && booking.estado !== 'checkout' && (
             <button
               onClick={async () => {
                 await navigator.clipboard.writeText(`${window.location.origin}/checkin/${booking.id}`)

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, Search } from 'lucide-react'
 import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
+import { eBloqueio, rotuloDeBloqueio } from '@/lib/reservations'
 import type { Booking, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/labels'
 import { agruparReservas, type ResumoGrupo } from '@/lib/grupos'
@@ -94,6 +95,7 @@ function BookingRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
   const n = nights(b.check_in, b.check_out)
   const saldo = b.preco_total - b.preco_pago
   const isActive = b.estado === 'checkin'
+  const bloqueio = eBloqueio(b)
 
   return (
     <Link href={`/reservas/${b.id}`}
@@ -106,7 +108,11 @@ function BookingRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-semibold text-sm truncate">{guest?.nome ?? '—'}</p>
+          {/* Um traço era indistinguível de uma reserva sem ficha de hóspede.
+              Um bloqueio diz o que é, com as palavras do feed. */}
+          <p className="font-semibold text-sm truncate">
+            {bloqueio ? rotuloDeBloqueio(b) : guest?.nome ?? '—'}
+          </p>
           <div className="flex flex-col items-end gap-1 shrink-0">
             <span className="text-sm font-semibold">{fmtMoney(b.preco_total)}</span>
             {saldo > 0 && (

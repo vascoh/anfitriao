@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ChevronLeft, ChevronRight, Plus, LogIn, LogOut, LayoutGrid, AlignJustify } from 'lucide-react'
 import { fetchBookings, fetchProperties, fetchGuests } from '@/lib/fetcher'
-import { occupancyForMonth, unidadesReservaveis, eBloqueio } from '@/lib/reservations'
+import { occupancyForMonth, unidadesReservaveis, eBloqueio, rotuloDeBloqueio } from '@/lib/reservations'
 import { nights } from '@/lib/utils'
 import { addDays, today as localToday } from '@/lib/utils'
 import type { Booking, Property, BookingSource } from '@/lib/types'
@@ -54,14 +54,8 @@ function origemDe(b: Booking): BookingSource {
  * de onde é que ela veio. Vale mais ler «Airbnb» do que um vazio.
  */
 function nomeDaReserva(b: Booking, guests: { id: string; nome: string }[]): string {
-  if (eBloqueio(b)) {
-    /* Um bloqueio que veio de um feed diz o que o feed lhe chamou — «Quarto
-     * indisponível» é a frase do Amenitiz, e é ela que o anfitrião reconhece
-     * quando compara os dois calendários lado a lado. Um «Bloqueado» genérico
-     * obrigava-o a adivinhar de onde é que aquilo tinha vindo. */
-    if (b.uid_externo) return b.notas?.trim() || 'Indisponível'
-    return 'Bloqueado'
-  }
+  // Ver `rotuloDeBloqueio`: a mesma frase no calendário, na lista e no detalhe.
+  if (eBloqueio(b)) return rotuloDeBloqueio(b)
   const nome = guests.find(g => g.id === b.hospede_id)?.nome
   return nome ?? (b.uid_externo ? SOURCE_LABEL[origemDe(b)] : 'Sem nome')
 }
