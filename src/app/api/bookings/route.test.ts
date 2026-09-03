@@ -415,3 +415,39 @@ describe('POST /api/bookings · verificação ao vivo nas plataformas', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('POST /api/bookings · conjuntos fechados', () => {
+  /**
+   * `estado` e `origem` não têm restrição na base — só `siba_status` e
+   * `fatura_estado` a têm. O painel de administração já tinha tapado este
+   * buraco para as contas; nas reservas custa mais caro: um estado desconhecido
+   * não é `cancelada` nem `no_show`, portanto continua a ocupar datas e a
+   * contar na receita, e `availableActions` devolve-lhe uma lista vazia — a
+   * reserva fica presa, sem transição possível.
+   */
+  it('recusa um estado que não existe', async () => {
+    const res = await POST(pedido({ ...RESERVA, estado: 'meio-confirmada' }))
+    expect(res.status).toBe(400)
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('recusa uma origem que não existe', async () => {
+    const res = await POST(pedido({ ...RESERVA, origem: 'telepatia' }))
+    expect(res.status).toBe(400)
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('aceita todos os estados do domínio', async () => {
+    for (const estado of ['pendente', 'confirmada', 'checkin', 'checkout', 'cancelada', 'no_show']) {
+      escritas.length = 0
+      const res = await POST(pedido({ ...RESERVA, estado }))
+      expect(res.status, estado).toBe(200)
+    }
+  })
+
+  it('uma reserva sem estado nem origem continua a passar', async () => {
+    // O campo é opcional: a base tem valores por omissão.
+    const { estado: _e, ...semEstado } = RESERVA
+    expect((await POST(pedido(semEstado))).status).toBe(200)
+  })
+})

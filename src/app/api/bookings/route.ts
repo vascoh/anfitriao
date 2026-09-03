@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
-import type { Booking } from '@/lib/types'
+import type { Booking, BookingStatus, BookingSource } from '@/lib/types'
 import { canUpsertRow, ownsProperty, ehCasaComQuartos } from '@/lib/ownership'
 import { verificarDisponibilidadeAoVivo } from '@/lib/disponibilidade-ao-vivo'
 import { uidDeOrigem } from '@/lib/ical-reconciliacao'
@@ -17,6 +17,10 @@ export const maxDuration = 20
 const supabase = createAdminClient()
 
 const DATA_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Conjuntos fechados que a base não impõe — ver a nota no POST. */
+const ESTADOS: BookingStatus[] = ['pendente', 'confirmada', 'checkin', 'checkout', 'cancelada', 'no_show']
+const ORIGENS: BookingSource[] = ['airbnb', 'booking', 'direto', 'expedia', 'vrbo', 'outro']
 
 /**
  * GET /api/bookings[?de=YYYY-MM-DD&ate=YYYY-MM-DD]
@@ -117,6 +121,23 @@ export async function POST(req: NextRequest) {
    * reserva com saída antes da entrada entrava na base e depois aparecia com
    * largura negativa no calendário e noites negativas na receita. */
   const { permitir_sobreposicao, ...campos } = body as unknown as Record<string, unknown>
+
+  /* `estado` e `origem` são conjuntos fechados, e nenhum deles tem restrição na
+   * base — só `siba_status` e `fatura_estado` a têm.
+   *
+   * É o mesmo buraco que o painel de administração já tapou para as contas, e
+   * o comentário de lá descreve-o melhor do que eu: «um valor fora do conjunto
+   * ficava lá gravado e a app passava a comparar contra uma palavra que não
+   * existe». Numa reserva o preço é mais alto: um estado desconhecido não é
+   * `cancelada` nem `no_show`, portanto continua a ocupar datas e a contar na
+   * receita — e `availableActions` devolve-lhe uma lista vazia, o que deixa a
+   * reserva **presa para sempre**, sem transição nenhuma possível. */
+  if (campos.estado !== undefined && !ESTADOS.includes(campos.estado as BookingStatus)) {
+    return NextResponse.json({ error: 'Estado de reserva desconhecido.' }, { status: 400 })
+  }
+  if (campos.origem !== undefined && !ORIGENS.includes(campos.origem as BookingSource)) {
+    return NextResponse.json({ error: 'Origem de reserva desconhecida.' }, { status: 400 })
+  }
   const checkIn = typeof campos.check_in === 'string' ? campos.check_in : ''
   const checkOut = typeof campos.check_out === 'string' ? campos.check_out : ''
 

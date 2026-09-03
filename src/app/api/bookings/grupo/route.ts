@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
+
+/** Conjuntos fechados que a base não impõe — ver a nota em `/api/bookings`. */
+const ESTADOS = ['pendente', 'confirmada', 'checkin', 'checkout', 'cancelada', 'no_show']
+const ORIGENS = ['airbnb', 'booking', 'direto', 'expedia', 'vrbo', 'outro']
 import { checkRateLimit } from '@/lib/rate-limit'
 import { logAudit } from '@/lib/audit'
 import {
   quartosDaCasa, disponibilidadeDosQuartos, capacidadeTotal, distribuirPessoas,
 } from '@/lib/grupos'
 import { calculatePriceWithRules } from '@/lib/reservations'
-import type { Booking, Property, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
+import type { Booking, Property, PriceRule, Tarifa, PlatformRate, BookingSource, BookingStatus } from '@/lib/types'
 
 const supabase = createAdminClient()
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -131,7 +135,19 @@ export async function POST(req: NextRequest) {
     supabase.from('platform_rates').select('*').eq('owner_id', userId),
   ])
 
-  const origem: BookingSource = body?.origem ?? 'direto'
+  /* Conjuntos fechados, e a base não os impõe — ver a nota em
+   * `/api/bookings`. Aqui `estado` e `origem` vinham do corpo sem verificação
+   * nenhuma, e uma reserva de grupo são N linhas: um valor desconhecido
+   * prendia a casa inteira de uma vez. */
+  const origemPedida = body?.origem ?? 'direto'
+  if (!ORIGENS.includes(origemPedida as BookingSource)) {
+    return NextResponse.json({ error: 'Origem de reserva desconhecida.' }, { status: 400 })
+  }
+  const estadoPedido = body?.estado ?? 'confirmada'
+  if (!ESTADOS.includes(estadoPedido as BookingStatus)) {
+    return NextResponse.json({ error: 'Estado de reserva desconhecido.' }, { status: 400 })
+  }
+  const origem = origemPedida as BookingSource
   const pessoasPorQuarto = distribuirPessoas(pedidos, numHospedes)
   const grupoId = crypto.randomUUID()
   const agora = new Date().toISOString()
@@ -159,7 +175,7 @@ export async function POST(req: NextRequest) {
     check_in: checkIn,
     check_out: checkOut,
     num_hospedes: pessoasPorQuarto.get(q.id) ?? 0,
-    estado: body?.estado ?? 'confirmada',
+    estado: estadoPedido,
     origem,
     preco_total: Math.round(precos[i] * fator * 100) / 100,
     preco_pago: 0,
