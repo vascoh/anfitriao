@@ -4,16 +4,35 @@ import { NextRequest } from 'next/server'
 vi.mock('server-only', () => ({}))
 
 let definicoes: Record<string, unknown> | null = null
-const escritas: Array<{ tipo: 'insert' | 'update'; row: Record<string, unknown> }> = []
+
+/* O duplo guarda **por que filtro** a escrita passou.
+ *
+ * Antes, o `update` era `eq: async () => …`: ignorava a coluna e o valor. Um
+ * teste não conseguia distinguir «atualiza as definições deste anfitrião» de
+ * «atualiza as de toda a gente» — e o slug do site é único entre contas, o que
+ * torna esta a escrita com mais consequência de cruzar inquilinos. */
+const escritas: Array<{
+  tipo: 'insert' | 'update'
+  row: Record<string, unknown>
+  filtros?: Array<[string, unknown]>
+}> = []
 
 vi.mock('@/lib/supabase', () => ({
   createAdminClient: () => ({
     from: () => ({
       select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: definicoes, error: null }) }) }),
       insert: async (row: Record<string, unknown>) => { escritas.push({ tipo: 'insert', row }); return { error: null } },
-      update: (row: Record<string, unknown>) => ({
-        eq: async () => { escritas.push({ tipo: 'update', row }); return { error: null } },
-      }),
+      update: (row: Record<string, unknown>) => {
+        const filtros: Array<[string, unknown]> = []
+        const alvo = {
+          eq: (coluna: string, valor: unknown) => {
+            filtros.push([coluna, valor])
+            escritas.push({ tipo: 'update', row, filtros })
+            return Promise.resolve({ error: null })
+          },
+        }
+        return alvo
+      },
     }),
   }),
 }))
@@ -135,5 +154,36 @@ describe('POST /api/website-settings — publicar', () => {
     const res = await POST(pedido(PRONTAS))
     expect(res.status).toBe(401)
     expect(escritas).toHaveLength(0)
+  })
+})
+
+describe('isolamento entre contas', () => {
+  /**
+   * O slug é único entre contas e o site é público: uma escrita que não filtre
+   * por dono não estraga só as definições de quem a fez.
+   *
+   * Este teste existe porque o duplo antigo ignorava o filtro do `update` — o
+   * código estava certo, mas nada o segurava. Apagar o `.eq('owner_id', …)` da
+   * rota passava despercebido a toda a suite.
+   */
+  it('a atualização é filtrada pelo dono da sessão', async () => {
+    definicoes = { owner_id: 'user_1', nome: 'Casa' }
+
+    await POST(pedido({ nome: 'Casa Nova' }))
+
+    const update = escritas.find(e => e.tipo === 'update')
+    expect(update, 'não houve update para verificar').toBeDefined()
+    expect(update?.filtros).toContainEqual(['owner_id', 'user_1'])
+  })
+
+  it('o owner_id gravado é o da sessão, não o que vier no corpo', async () => {
+    definicoes = { owner_id: 'user_1', nome: 'Casa' }
+
+    await POST(pedido({ nome: 'Casa', owner_id: 'user_2' }))
+
+    const escrita = escritas.at(-1)
+    if (escrita && 'owner_id' in escrita.row) {
+      expect(escrita.row.owner_id).toBe('user_1')
+    }
   })
 })

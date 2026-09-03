@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}))
 /** Conta devolvida pelo `select` — o estado antes da alteração. */
 let contaNaBase: Record<string, unknown> | null = null
 const escritas: Array<Record<string, unknown>> = []
+const filtrosDeEscrita: Array<[string, unknown]> = []
 
 vi.mock('./supabase', () => ({
   createAdminClient: () => ({
@@ -15,9 +16,14 @@ vi.mock('./supabase', () => ({
           single: async () => ({ data: contaNaBase, error: null }),
         }),
       }),
+      /* O duplo guarda por que filtro a escrita passou. Ignorar a coluna e o
+       * valor deixava passar um `updateAccount` que escrevesse na conta
+       * errada — e aqui vive o plano, o estado e os identificadores do
+       * Stripe. */
       update: (campos: Record<string, unknown>) => ({
-        eq: async () => {
+        eq: async (coluna: string, valor: unknown) => {
           escritas.push(campos)
+          filtrosDeEscrita.push([coluna, valor])
           return { error: null }
         },
       }),
@@ -34,6 +40,7 @@ let chamadasClerk: Array<{ url: string; metadata: Record<string, unknown> }> = [
 
 beforeEach(() => {
   escritas.length = 0
+  filtrosDeEscrita.length = 0
   chamadasClerk = []
   contaNaBase = {
     id: 'acc_1',
@@ -85,5 +92,26 @@ describe('updateAccount', () => {
     contaNaBase = null
     await expect(updateAccount('acc_perdida', { estado: 'suspenso' }, 'admin_1')).resolves.toBeUndefined()
     expect(chamadasClerk).toHaveLength(0)
+  })
+})
+
+describe('updateAccount · a escrita vai à conta certa', () => {
+  /**
+   * Aqui vivem o plano, o estado da subscrição e os identificadores do Stripe.
+   * O duplo antigo ignorava a coluna e o valor do filtro, portanto uma escrita
+   * dirigida à conta errada — ou a nenhuma em particular — passava na suite
+   * sem deixar rasto.
+   */
+  it('filtra pelo id da conta que recebeu', async () => {
+    await updateAccount('conta-abc', { estado: 'activo' })
+
+    expect(filtrosDeEscrita).toContainEqual(['id', 'conta-abc'])
+  })
+
+  it('não escreve na mesma conta quando o id muda', async () => {
+    await updateAccount('conta-1', { estado: 'activo' })
+    await updateAccount('conta-2', { estado: 'suspenso' })
+
+    expect(filtrosDeEscrita.map(([, v]) => v)).toEqual(['conta-1', 'conta-2'])
   })
 })
