@@ -1,3 +1,5 @@
+import { textoDizIndisponivel } from './reservations'
+
 /**
  * O que fazer às reservas importadas quando os feeds mudam.
  *
@@ -43,6 +45,27 @@
  * **feito por uma pessoa** nunca é desfeito — a plataforma continuar a
  * publicar o evento não é razão para contrariar uma decisão do anfitrião.
  *
+ * ## Quando o outro lado muda o UID sozinho
+ *
+ * A comparação por UID assume que o UID identifica a reserva. **O Amenitiz
+ * não faz isso**: os UIDs dele são UUIDv5, ou seja, um hash do conteúdo do
+ * evento — medido a 2026-09-03, o mesmo bloqueio passou de
+ * `f199cc0d-…` (02→23 set) para `ea2b6a7e-…` (03→23 set) só por a data de
+ * início ter avançado um dia.
+ *
+ * Com isso, o caminho «datas alteradas → atualizar» nunca dispara: o UID
+ * antigo desaparece (cancela-se) e um novo aparece (importa-se). Uma linha
+ * cancelada por dia, para sempre, e a reserva a perder tudo o que lhe estava
+ * agarrado — histórico, estado do boletim, ligação à fatura.
+ *
+ * Por isso, antes de cancelar, procura-se entre os eventos **novos** um que
+ * ocupe as mesmas datas. Se houver exatamente um, é a mesma reserva com outro
+ * nome: atualizam-se as datas e o `uid_externo`, e o evento não é importado.
+ *
+ * Só se faz isto a **bloqueios**, e a candidato único. Entre reservas de
+ * hóspedes, juntar duas que se parecem seria misturar pessoas diferentes —
+ * e aí cancelar e criar, apesar de feio, não engana ninguém.
+ *
  * ## Porquê por propriedade, e não por feed
  *
  * A chave local é `${feed.id}::${uid}`, e o `feed.id` muda quando o anfitrião
@@ -59,6 +82,8 @@ export interface ReservaImportada {
   check_in: string
   check_out: string
   estado: string
+  /** O SUMMARY que o feed mandou. É o que diz se isto é um período fechado. */
+  notas?: string | null
   /** Eventos da reserva; a sincronização acrescenta o que muda. */
   historico?: unknown
 }
@@ -71,10 +96,23 @@ export interface EventoDoFeed {
 }
 
 export interface Reconciliacao {
-  paraAtualizar: Array<{ id: string; check_in: string; check_out: string; antes: string }>
+  paraAtualizar: Array<{
+    id: string
+    check_in: string
+    check_out: string
+    antes: string
+    /** Presente quando o evento mudou de identidade — ver `absorvidos`. */
+    novoUidExterno?: string
+  }>
   paraCancelar: Array<{ id: string; uid_externo: string }>
   /** Canceladas pela sincronização que voltaram a constar do feed. */
   paraReativar: Array<{ id: string; check_in: string; check_out: string }>
+  /**
+   * UIDs de eventos que **não** se importam: já correspondem a uma reserva
+   * local que mudou de identidade. Sem isto, o mesmo bloqueio entrava outra
+   * vez como reserva nova.
+   */
+  absorvidos: Set<string>
 }
 
 /** Estados que a sincronização nunca mexe: já aconteceram ou já foram fechados à mão. */
@@ -126,9 +164,33 @@ export function reconciliarPropriedade(p: {
   const paraAtualizar: Reconciliacao['paraAtualizar'] = []
   const paraCancelar: Reconciliacao['paraCancelar'] = []
   const paraReativar: Reconciliacao['paraReativar'] = []
+  const absorvidos = new Set<string>()
 
   const esvaziouDeRepente = p.eventos.length === 0 && (p.contagemAnterior ?? 0) > 0
   const podeCancelar = p.todosOsFeedsOk && !esvaziouDeRepente
+
+  /* Eventos que o lado local ainda não conhece — os candidatos a serem a nova
+   * identidade de uma reserva cujo UID desapareceu. */
+  const uidsLocais = new Set(
+    p.locais.filter(l => l.uid_externo).map(l => uidDeOrigem(l.uid_externo)),
+  )
+  const novos = p.eventos.filter(e => !uidsLocais.has(e.uid))
+
+  /** Intervalos meio-abertos: sair no dia em que outro entra não é sobreposição. */
+  const sobrepoe = (a: EventoDoFeed, b: { check_in: string; check_out: string }) =>
+    a.dtstart < b.check_out && a.dtend > b.check_in
+
+  /**
+   * O mesmo bloqueio, com outro UID?
+   *
+   * Só para bloqueios, e só com candidato único: ver a nota no topo. Um
+   * evento já absorvido por outra reserva não volta a servir.
+   */
+  function mesmoBloqueioComOutroNome(local: ReservaImportada): EventoDoFeed | null {
+    if (!textoDizIndisponivel(local.notas)) return null
+    const candidatos = novos.filter(e => !absorvidos.has(e.uid) && sobrepoe(e, local))
+    return candidatos.length === 1 ? candidatos[0] : null
+  }
 
   for (const local of p.locais) {
     if (!local.uid_externo) continue
@@ -161,6 +223,23 @@ export function reconciliarPropriedade(p: {
       continue
     }
 
+    /* O UID desapareceu. Antes de cancelar: será o mesmo bloqueio com outro
+     * nome? O Amenitiz muda o UID quando muda as datas — ver a nota no topo. */
+    const rebatizado = mesmoBloqueioComOutroNome(local)
+    if (rebatizado) {
+      absorvidos.add(rebatizado.uid)
+      const sep = local.uid_externo.indexOf('::')
+      const prefixo = sep === -1 ? '' : local.uid_externo.slice(0, sep + 2)
+      paraAtualizar.push({
+        id: local.id,
+        check_in: rebatizado.dtstart,
+        check_out: rebatizado.dtend,
+        antes: `${local.check_in} → ${local.check_out}`,
+        novoUidExterno: `${prefixo}${rebatizado.uid}`,
+      })
+      continue
+    }
+
     if (!podeCancelar) continue
     // Já terminou: o feed deixou de a publicar por ser antiga, não por ter sido cancelada.
     if (local.check_out <= p.hoje) continue
@@ -168,5 +247,5 @@ export function reconciliarPropriedade(p: {
     paraCancelar.push({ id: local.id, uid_externo: local.uid_externo })
   }
 
-  return { paraAtualizar, paraCancelar, paraReativar }
+  return { paraAtualizar, paraCancelar, paraReativar, absorvidos }
 }

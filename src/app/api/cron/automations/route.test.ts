@@ -14,6 +14,10 @@ function construtor(tabela: string) {
   const obj = {
     eq: (c: string, v: unknown) => { filtros.push(l => l[c] === v); return obj },
     in: (c: string, vs: unknown[]) => { filtros.push(l => vs.includes(l[c])); return obj },
+    order: () => obj,
+    /* A leitura das reservas do gatilho passou a ser paginada
+     * (`carregarTudo`): sem `range`, o duplo não exercitava o caminho real. */
+    range: async (de: number, ate: number) => ({ data: alvo().slice(de, ate + 1), error: null }),
     then: (r: (v: { data: unknown; error: null }) => unknown) => r({ data: alvo(), error: null }),
   }
   return obj

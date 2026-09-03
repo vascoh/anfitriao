@@ -49,7 +49,7 @@ async function syncProperty(
   const { linhas: importadas, erro: erroImportadas } = await carregarTudo<ReservaImportada>(() =>
     supabase
       .from('bookings')
-      .select('id, uid_externo, check_in, check_out, estado, historico')
+      .select('id, uid_externo, check_in, check_out, estado, notas, historico')
       .eq('propriedade_id', propertyId)
       .not('uid_externo', 'is', null)
       .order('id', { ascending: true }),
@@ -77,6 +77,9 @@ async function syncProperty(
   const hoje = today()
 
   const eventosDaPropriedade: EventoDoFeed[] = []
+  /* Linhas prontas a inserir, retidas até a reconciliação decidir se alguma
+   * delas é, afinal, uma reserva local que mudou de UID. */
+  const candidatos: Array<{ feedNome: string; uid: string; linha: Record<string, unknown> }> = []
   let todosOsFeedsOk = true
   const contagemAnterior = feeds.reduce((s, f) => s + (f.last_count ?? 0), 0)
 
@@ -99,7 +102,6 @@ async function syncProperty(
         todosOsFeedsOk = false
       }
 
-      const newBookings: object[] = []
       let skipped = 0
 
       for (const ev of events) {
@@ -111,40 +113,34 @@ async function syncProperty(
 
         if (uidsConhecidos.has(ev.uid)) { skipped++; continue }
 
-        newBookings.push({
-          id: crypto.randomUUID(),
-          propriedade_id: propertyId,
-          owner_id: ownerId,
-          hospede_id: null,
-          check_in: ev.dtstart,
-          check_out: ev.dtend,
-          num_hospedes: 1,
-          estado: 'confirmada',
-          origem: feed.source,
-          preco_total: 0,
-          preco_pago: 0,
-          notas: ev.summary || `Importado de ${feed.nome}`,
-          uid_externo: `${feed.id}::${ev.uid}`,
-          criado_em: new Date().toISOString(),
-          historico: [],
+        /* Candidato a importação — **ainda não se insere**. A reconciliação
+         * corre a seguir e pode reconhecer neste evento uma reserva local que
+         * mudou de identidade (o Amenitiz muda o UID quando muda as datas).
+         * Inserir antes de saber isso criava uma linha nova e deixava a antiga
+         * cancelada: o mesmo bloqueio, duas vezes, todos os dias. */
+        candidatos.push({
+          feedNome: feed.nome,
+          uid: ev.uid,
+          linha: {
+            id: crypto.randomUUID(),
+            propriedade_id: propertyId,
+            owner_id: ownerId,
+            hospede_id: null,
+            check_in: ev.dtstart,
+            check_out: ev.dtend,
+            num_hospedes: 1,
+            estado: 'confirmada',
+            origem: feed.source,
+            preco_total: 0,
+            preco_pago: 0,
+            notas: ev.summary || `Importado de ${feed.nome}`,
+            uid_externo: `${feed.id}::${ev.uid}`,
+            criado_em: new Date().toISOString(),
+            historico: [],
+          },
         })
         // Marcar já, para o feed seguinte não reinserir o mesmo UID.
         uidsConhecidos.add(ev.uid)
-      }
-
-      let imported = 0
-      if (newBookings.length > 0) {
-        const { error: insertErr, data: insertedData } = await supabase
-          .from('bookings')
-          .insert(newBookings)
-          .select('id')
-
-        if (insertErr) {
-          console.error('[ical-sync] batch insert error:', insertErr)
-          skipped += newBookings.length
-        } else {
-          imported = insertedData?.length ?? newBookings.length
-        }
       }
 
       updatedFeeds.push({
@@ -153,7 +149,7 @@ async function syncProperty(
         last_count: events.length,
         error: undefined,
       })
-      results.push({ feed: feed.nome, imported, skipped })
+      results.push({ feed: feed.nome, imported: 0, skipped })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[ical-sync] feed "${feed.nome}" failed:`, msg)
@@ -175,13 +171,39 @@ async function syncProperty(
    * cancelada lá tem de libertar a data cá, e uma data alterada tem de ser
    * aplicada. Feito uma vez por propriedade, contra a união dos eventos de
    * todos os feeds — as travas estão em `lib/ical-reconciliacao.ts`. */
-  const { paraAtualizar, paraCancelar, paraReativar } = reconciliarPropriedade({
+  const { paraAtualizar, paraCancelar, paraReativar, absorvidos } = reconciliarPropriedade({
     locais: importadas,
     eventos: eventosDaPropriedade,
     hoje,
     contagemAnterior,
     todosOsFeedsOk,
   })
+
+  /* Agora sim, insere-se o que sobrou — o que a reconciliação não reconheceu
+   * como sendo já cá dentro com outro nome. */
+  const porInserir = candidatos.filter(c => !absorvidos.has(c.uid))
+  if (porInserir.length > 0) {
+    const { error: insertErr, data: insertedData } = await supabase
+      .from('bookings')
+      .insert(porInserir.map(c => c.linha))
+      .select('id')
+
+    if (insertErr) {
+      console.error('[ical-sync] batch insert error:', insertErr)
+      for (const r of results) if (!r.error) r.skipped += porInserir.length
+    } else {
+      const total = insertedData?.length ?? porInserir.length
+      /* O número volta para o feed de onde os eventos vieram: quem carregou em
+       * «sincronizar» quer saber o que cada calendário trouxe. */
+      for (const c of porInserir) {
+        const r = results.find(x => x.feed === c.feedNome && !x.error)
+        if (r) r.imported++
+      }
+      if (total !== porInserir.length) {
+        console.warn('[ical-sync] inseridas', total, 'de', porInserir.length)
+      }
+    }
+  }
 
   /* O que a sincronização muda fica escrito no histórico da reserva, e as
    * notas não se tocam: são o texto que a plataforma mandou. Sem isto o
@@ -197,11 +219,17 @@ async function syncProperty(
       .update({
         check_in: alt.check_in,
         check_out: alt.check_out,
+        /* O UID acompanha as datas quando a plataforma o recalcula a partir
+         * delas — senão a reserva ficava órfã e amanhã era cancelada outra
+         * vez. Ver a nota sobre UUIDv5 em `ical-reconciliacao.ts`. */
+        ...(alt.novoUidExterno ? { uid_externo: alt.novoUidExterno } : {}),
         historico: [...historicoDe(alt.id), {
           id: crypto.randomUUID(),
           data: new Date().toISOString(),
           tipo: 'sincronizacao',
-          descricao: `Datas alteradas na plataforma: ${alt.antes} → ${alt.check_in} → ${alt.check_out}`,
+          descricao: alt.novoUidExterno
+            ? `Datas alteradas na plataforma: ${alt.antes} → ${alt.check_in} → ${alt.check_out} (identificador do evento mudou do outro lado)`
+            : `Datas alteradas na plataforma: ${alt.antes} → ${alt.check_in} → ${alt.check_out}`,
         }],
       })
       .eq('id', alt.id)

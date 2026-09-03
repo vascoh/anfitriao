@@ -19,6 +19,11 @@ function reserva(over: Partial<ReservaImportada> = {}): ReservaImportada {
   }
 }
 
+/** Um bloqueio como o Amenitiz os manda: sem hóspede e com o texto do feed. */
+function bloqueio(over: Partial<ReservaImportada> = {}): ReservaImportada {
+  return reserva({ notas: 'Quarto indisponível', ...over })
+}
+
 const OK = { hoje: HOJE, todosOsFeedsOk: true }
 
 describe('uidDeOrigem', () => {
@@ -305,5 +310,108 @@ describe('reconciliarPropriedade', () => {
 
     expect(r.paraCancelar).toHaveLength(0)
     expect(r.paraAtualizar).toHaveLength(0)
+  })
+})
+
+describe('quando a plataforma muda o UID sozinha', () => {
+  /**
+   * Medido em dados reais a 2026-09-03: os UIDs do Amenitiz são UUIDv5 — um
+   * hash do conteúdo do evento. O mesmo bloqueio passou de `f199cc0d-…`
+   * (02→23 set) para `ea2b6a7e-…` (03→23 set) só por a data de início ter
+   * avançado um dia. O UID antigo desaparecia (cancelava-se) e o novo entrava
+   * como reserva nova: uma linha cancelada por dia, para sempre.
+   */
+  it('reconhece o mesmo bloqueio com outro nome e atualiza-o', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [bloqueio({ uid_externo: `${FEED}f199cc0d` })],
+      eventos: [{ uid: 'ea2b6a7e', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 14) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraCancelar).toHaveLength(0)
+    expect(r.paraAtualizar).toHaveLength(1)
+    expect(r.paraAtualizar[0]).toMatchObject({
+      id: 'b1',
+      check_in: addDays(HOJE, 11),
+      novoUidExterno: `${FEED}ea2b6a7e`,
+    })
+  })
+
+  it('o evento absorvido não volta a entrar como reserva nova', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [bloqueio({ uid_externo: `${FEED}antigo` })],
+      eventos: [{ uid: 'novo', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 14) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.absorvidos.has('novo')).toBe(true)
+  })
+
+  it('não junta duas reservas de hóspedes que se pareçam', () => {
+    /* Entre pessoas, «parece a mesma» não chega: juntar duas seria misturar
+     * hóspedes diferentes. Cancelar e criar é feio, mas não engana ninguém. */
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [reserva({ uid_externo: `${FEED}antigo`, notas: 'Reserva de João' })],
+      eventos: [{ uid: 'novo', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 14) }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraAtualizar).toHaveLength(0)
+    expect(r.paraCancelar).toHaveLength(1)
+    expect(r.absorvidos.size).toBe(0)
+  })
+
+  it('com dois candidatos possíveis não adivinha — cancela', () => {
+    // Dois bloqueios novos a tocar nas mesmas datas: qual deles é o antigo?
+    // Sem resposta única, mais vale o comportamento antigo do que um palpite.
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [bloqueio({ uid_externo: `${FEED}antigo` })],
+      eventos: [
+        { uid: 'novo-a', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 13) },
+        { uid: 'novo-b', dtstart: addDays(HOJE, 13), dtend: addDays(HOJE, 16) },
+      ],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraAtualizar).toHaveLength(0)
+    expect(r.paraCancelar).toHaveLength(1)
+  })
+
+  it('um bloqueio novo que não toca em nada é mesmo novo', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [bloqueio({ uid_externo: `${FEED}antigo` })],
+      eventos: [
+        { uid: 'antigo', dtstart: addDays(HOJE, 10), dtend: addDays(HOJE, 14) },
+        { uid: 'noutro-mes', dtstart: addDays(HOJE, 60), dtend: addDays(HOJE, 64) },
+      ],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraCancelar).toHaveLength(0)
+    expect(r.absorvidos.size).toBe(0)
+  })
+
+  it('dois bloqueios que trocam de UID ao mesmo tempo não se cruzam', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [
+        bloqueio({ id: 'b-jan', uid_externo: `${FEED}v1`, check_in: addDays(HOJE, 10), check_out: addDays(HOJE, 14) }),
+        bloqueio({ id: 'b-fev', uid_externo: `${FEED}v2`, check_in: addDays(HOJE, 40), check_out: addDays(HOJE, 44) }),
+      ],
+      eventos: [
+        { uid: 'w1', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 14) },
+        { uid: 'w2', dtstart: addDays(HOJE, 41), dtend: addDays(HOJE, 44) },
+      ],
+      contagemAnterior: 2,
+    })
+
+    expect(r.paraCancelar).toHaveLength(0)
+    expect(r.paraAtualizar.map(a => a.id).sort()).toEqual(['b-fev', 'b-jan'])
+    expect(r.absorvidos.size).toBe(2)
   })
 })

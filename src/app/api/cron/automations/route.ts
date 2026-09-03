@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
+import { carregarTudo } from '@/lib/supabase-tudo'
 import { today, addDays, fmtDate } from '@/lib/utils'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
@@ -17,13 +18,25 @@ async function bookingsForTrigger(trigger: AutomationTrigger): Promise<Booking[]
     ? ['confirmada', 'pendente']
     : ['confirmada', 'pendente', 'checkin', 'checkout']
 
-  const { data } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq(coluna, targetDate)
-    .in('estado', estados)
+  /* Paginado: esta consulta atravessa todas as contas — é filtrada por dono
+   * mais abaixo, no ciclo das automações. Cortada às mil linhas, os anfitriões
+   * que ficassem de fora do corte deixavam de receber automações nesse dia, em
+   * silêncio e sem padrão nenhum que se notasse. */
+  const { linhas, erro } = await carregarTudo<Booking>(() =>
+    supabase
+      .from('bookings')
+      .select('*')
+      .eq(coluna, targetDate)
+      .in('estado', estados)
+      .order('id', { ascending: true }),
+  )
 
-  return (data ?? []) as Booking[]
+  if (erro) {
+    console.error('[cron/automations] leitura de reservas', erro)
+    throw new Error(`leitura de reservas falhou: ${erro}`)
+  }
+
+  return linhas
 }
 
 /**
