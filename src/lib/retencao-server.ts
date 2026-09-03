@@ -3,6 +3,7 @@ import { createAdminClient } from './supabase'
 import { logAudit } from './audit'
 import { revelarCampos } from './campos-sensiveis'
 import { today } from './utils'
+import { carregarTudo } from './supabase-tudo'
 import {
   avaliarRetencao,
   camposAnonimizacao,
@@ -104,7 +105,21 @@ export async function aplicarRetencao(ownerId?: string): Promise<{
     return { avaliados: 0, anonimizados: 0, erros: 0 }
   }
 
-  const ultimaSaida = await ultimasSaidas(hospedes.map(h => h.id))
+  const { saidas: ultimaSaida, completo } = await ultimasSaidas(hospedes.map(h => h.id))
+
+  /* Sem a lista completa de saídas não se anonimiza nada.
+   *
+   * Um hóspede cuja reserva não veio na resposta parece não ter estadia
+   * nenhuma, e o prazo passa a contar-se da criação da ficha — que pode ser
+   * anos antes do check-out. O resultado seria apagar dados de documento cedo
+   * de mais, sem volta e sem ninguém dar por isso.
+   *
+   * A rotina corre todos os dias: falhar hoje custa um dia de atraso numa
+   * obrigação que se mede em anos. */
+  if (!completo) {
+    console.error('[retencao] leitura de saídas incompleta — nada foi anonimizado nesta execução')
+    return { avaliados: hospedes.length, anonimizados: 0, erros: 1 }
+  }
 
   let anonimizados = 0
   let erros = 0
@@ -143,10 +158,28 @@ export async function aplicarRetencao(ownerId?: string): Promise<{
  * pessoa, a maioria das pessoas de um grupo só existe no segundo. Sem ele, o
  * prazo caía para a data de criação da ficha e a política escrita
  * ("conta-se da última saída") deixava de descrever o que o código faz.
+ *
+ * ## Porque devolve `completo`
+ *
+ * Uma leitura falhada aqui não é uma leitura a menos: é um hóspede que passa a
+ * parecer não ter estadia nenhuma. E quem chama recua então para a data de
+ * criação da ficha, que pode ser **anos** antes do último check-out — e
+ * anonimiza. Dados de documento apagados não voltam, e sem eles não há boletim
+ * para comunicar.
+ *
+ * Por isso o erro sobe em vez de ser só registado. Adiar uma anonimização um
+ * dia não custa nada; fazê-la um ano cedo de mais é irreversível.
+ *
+ * As leituras são paginadas pela mesma razão: o PostgREST corta às mil linhas
+ * sem o dizer, e uma reserva que não venha na resposta é indistinguível de uma
+ * reserva que não existe.
  */
-async function ultimasSaidas(guestIds: string[]): Promise<Map<string, string>> {
+async function ultimasSaidas(
+  guestIds: string[],
+): Promise<{ saidas: Map<string, string>; completo: boolean }> {
   const supabase = createAdminClient()
   const saidas = new Map<string, string>()
+  let completo = true
 
   function registar(guestId: string, checkOut: string | null, estado: string) {
     if (!checkOut || ESTADOS_SEM_ESTADIA.includes(estado)) return
@@ -160,48 +193,64 @@ async function ultimasSaidas(guestIds: string[]): Promise<Map<string, string>> {
     const lote = guestIds.slice(i, i + LOTE)
 
     const [reservasRes, ligacoesRes] = await Promise.all([
-      supabase
-        .from('bookings')
-        .select('hospede_id, check_out, estado')
-        .in('hospede_id', lote),
-      supabase
-        .from('reserva_hospedes')
-        .select('guest_id, booking_id')
-        .in('guest_id', lote),
+      carregarTudo<{ hospede_id: string | null; check_out: string; estado: string }>(() =>
+        supabase
+          .from('bookings')
+          .select('hospede_id, check_out, estado')
+          .in('hospede_id', lote)
+          .order('id', { ascending: true }),
+      ),
+      carregarTudo<{ guest_id: string; booking_id: string }>(() =>
+        supabase
+          .from('reserva_hospedes')
+          .select('guest_id, booking_id')
+          .in('guest_id', lote)
+          .order('id', { ascending: true }),
+      ),
     ])
 
-    if (reservasRes.error) console.error('[retencao] saidas', reservasRes.error.message)
-
-    for (const b of reservasRes.data ?? []) {
-      if (b.hospede_id) registar(b.hospede_id as string, b.check_out as string, b.estado as string)
+    if (reservasRes.erro) {
+      console.error('[retencao] saidas', reservasRes.erro)
+      completo = false
     }
 
-    const ligacoes = ligacoesRes.data ?? []
-    if (ligacoesRes.error) console.error('[retencao] ligacoes', ligacoesRes.error.message)
+    for (const b of reservasRes.linhas) {
+      if (b.hospede_id) registar(b.hospede_id, b.check_out, b.estado)
+    }
+
+    if (ligacoesRes.erro) {
+      console.error('[retencao] ligacoes', ligacoesRes.erro)
+      completo = false
+    }
+    const ligacoes = ligacoesRes.linhas
     if (ligacoes.length === 0) continue
 
-    const bookingIds = [...new Set(ligacoes.map(l => l.booking_id as string))]
-    const { data: reservasLigadas, error: erroLigadas } = await supabase
-      .from('bookings')
-      .select('id, check_out, estado')
-      .in('id', bookingIds)
+    const bookingIds = [...new Set(ligacoes.map(l => l.booking_id))]
+    const { linhas: reservasLigadas, erro: erroLigadas } = await carregarTudo<{
+      id: string; check_out: string; estado: string
+    }>(() =>
+      supabase
+        .from('bookings')
+        .select('id, check_out, estado')
+        .in('id', bookingIds)
+        .order('id', { ascending: true }),
+    )
 
     if (erroLigadas) {
-      console.error('[retencao] reservas ligadas', erroLigadas.message)
+      console.error('[retencao] reservas ligadas', erroLigadas)
+      completo = false
       continue
     }
 
-    const porId = new Map(
-      (reservasLigadas ?? []).map(b => [b.id as string, b]),
-    )
+    const porId = new Map(reservasLigadas.map(b => [b.id, b]))
 
     for (const l of ligacoes) {
-      const b = porId.get(l.booking_id as string)
-      if (b) registar(l.guest_id as string, b.check_out as string, b.estado as string)
+      const b = porId.get(l.booking_id)
+      if (b) registar(l.guest_id, b.check_out, b.estado)
     }
   }
 
-  return saidas
+  return { saidas, completo }
 }
 
 export interface DadosExportados {

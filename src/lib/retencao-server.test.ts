@@ -27,13 +27,30 @@ let ligacoes: LinhaLigacao[] = []
 const updates: Array<{ id: string; campos: Record<string, unknown> }> = []
 const auditoria: Array<Record<string, unknown>> = []
 
-/** Builder mínimo e thenable, como o do supabase-js. */
-function thenable<T>(valor: T) {
+/** Falhas de leitura a injetar, por tabela. `null` = a leitura corre bem. */
+let erroLeitura: Partial<Record<'bookings' | 'reserva_hospedes' | 'guests', string>> = {}
+
+/**
+ * Builder mínimo, thenable e **paginável** — como o do supabase-js.
+ *
+ * O `range` existe porque as leituras de reservas passaram a usar
+ * `carregarTudo`: sem ele o duplo não exercitava o caminho real.
+ */
+function builder<T>(linhas: () => T[], tabela: 'bookings' | 'reserva_hospedes' | 'guests') {
+  const falha = () => erroLeitura[tabela] ?? null
   const obj = {
     eq: () => obj,
     in: () => obj,
-    then: (resolve: (v: { data: T; error: null }) => unknown) =>
-      resolve({ data: valor, error: null }),
+    order: () => obj,
+    range: async (de: number, ate: number) => {
+      const e = falha()
+      if (e) return { data: null, error: { message: e } }
+      return { data: linhas().slice(de, ate + 1), error: null }
+    },
+    then: (resolve: (v: { data: T[] | null; error: { message: string } | null }) => unknown) => {
+      const e = falha()
+      return resolve(e ? { data: null, error: { message: e } } : { data: linhas(), error: null })
+    },
   }
   return obj
 }
@@ -42,9 +59,9 @@ vi.mock('./supabase', () => ({
   createAdminClient: () => ({
     from: (table: string) => ({
       select: () => {
-        if (table === 'guests') return thenable(guests)
-        if (table === 'reserva_hospedes') return thenable(ligacoes)
-        return thenable(bookings)
+        if (table === 'guests') return builder(() => guests, 'guests')
+        if (table === 'reserva_hospedes') return builder(() => ligacoes, 'reserva_hospedes')
+        return builder(() => bookings, 'bookings')
       },
       update: (campos: Record<string, unknown>) => ({
         eq: async (_col: string, id: string) => {
@@ -76,6 +93,7 @@ beforeEach(() => {
   ligacoes = []
   updates.length = 0
   auditoria.length = 0
+  erroLeitura = {}
 })
 
 describe('aplicarRetencao', () => {
@@ -204,5 +222,59 @@ describe('aplicarRetencao', () => {
       actorId: null,
       detalhes: { grupos: ['boletim'], motivo: 'retencao' },
     })
+  })
+})
+
+describe('aplicarRetencao · leitura incompleta', () => {
+  /**
+   * O bug: `ultimasSaidas` registava o erro e seguia com dados vazios. Um
+   * hóspede cuja reserva não veio na resposta parece não ter estadia nenhuma,
+   * e o prazo passa a contar-se da **criação da ficha** — que pode ser anos
+   * antes do check-out. Uma falha passageira da base às 03:00 apagava dados de
+   * documento cedo de mais, sem volta e sem ninguém dar por isso.
+   */
+  const HA_MUITO = addDays(HOJE, -(PRAZOS.contacto.dias + 30))
+
+  /** Ficha criada há muito, mas com uma estadia recente — não deve ser tocada. */
+  function cenario() {
+    guests = [hospede({ id: 'g1', criado_em: HA_MUITO })]
+    bookings = [{ id: 'b1', hospede_id: 'g1', check_out: HOJE, estado: 'checkout' }]
+  }
+
+  it('sem falhas, a estadia recente protege a ficha antiga', () => {
+    cenario()
+    return aplicarRetencao().then(r => {
+      expect(r.anonimizados).toBe(0)
+      expect(updates).toHaveLength(0)
+    })
+  })
+
+  it('se a leitura das reservas falhar, não anonimiza nada', async () => {
+    cenario()
+    erroLeitura = { bookings: 'timeout' }
+
+    const r = await aplicarRetencao()
+
+    expect(updates, 'anonimizou com dados incompletos').toHaveLength(0)
+    expect(r.anonimizados).toBe(0)
+    expect(r.erros).toBe(1)
+  })
+
+  it('se a leitura dos acompanhantes falhar, também não', async () => {
+    // Um acompanhante só existe em `reserva_hospedes`: perder essa leitura é
+    // perder a única prova de que ele esteve cá.
+    cenario()
+    erroLeitura = { reserva_hospedes: 'timeout' }
+
+    const r = await aplicarRetencao()
+
+    expect(updates).toHaveLength(0)
+    expect(r.erros).toBe(1)
+  })
+
+  it('a falha não é silenciosa — conta como erro no resultado', async () => {
+    cenario()
+    erroLeitura = { bookings: 'timeout' }
+    expect((await aplicarRetencao()).erros).toBeGreaterThan(0)
   })
 })
