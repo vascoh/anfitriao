@@ -7,7 +7,11 @@ function reserva(check_in: string, check_out: string, preco: number, extra?: Par
   return {
     id: `b${++seq}`,
     propriedade_id: 'p1',
-    hospede_id: null,
+    /* Com hóspede, porque uma reserva tem sempre um: `/reservas/nova` exige-o
+     * e o caminho público cria-o. Uma linha sem hóspede **e** sem origem
+     * externa é um bloqueio (`eBloqueio`), e o relatório deixou de a contar
+     * como reserva quando o feed do Amenitiz começou a mandar bloqueios. */
+    hospede_id: 'g1',
     check_in,
     check_out,
     num_hospedes: 2,
@@ -242,5 +246,36 @@ describe('nomeMes', () => {
     expect(nomeMes(0)).toBe('janeiro')
     expect(nomeMes(6)).toBe('julho')
     expect(nomeMes(11)).toBe('dezembro')
+  })
+})
+
+describe('resumoMensal · bloqueios de um feed de disponibilidade', () => {
+  /* O feed do Amenitiz manda «Quarto indisponível» — noites fechadas, sem
+   * hóspede e sem preço. O relatório do mês dizia «3 reservas» num mês em que
+   * ninguém tinha vindo. */
+  const bloqueio = (de: string, ate: string) =>
+    reserva(de, ate, 0, { hospede_id: null, uid_externo: 'f::1', notas: 'Quarto indisponível' })
+
+  it('não contam como reservas', () => {
+    const r = resumoMensal(
+      [bloqueio('2026-09-02', '2026-09-23'), bloqueio('2026-09-03', '2026-09-08')],
+      [propriedade('p1')], 2026, 8,
+    )
+    expect(r.reservas).toBe(0)
+  })
+
+  it('mas contam para a ocupação — o quarto esteve mesmo fechado', () => {
+    const r = resumoMensal([bloqueio('2026-09-02', '2026-09-12')], [propriedade('p1')], 2026, 8)
+    expect(r.noites).toBe(10)
+    expect(r.ocupacaoPct).toBeGreaterThan(0)
+  })
+
+  it('uma reserva a sério continua a contar ao lado de bloqueios', () => {
+    const r = resumoMensal(
+      [bloqueio('2026-09-02', '2026-09-05'), reserva('2026-09-10', '2026-09-12', 200)],
+      [propriedade('p1')], 2026, 8,
+    )
+    expect(r.reservas).toBe(1)
+    expect(r.receita).toBe(200)
   })
 })

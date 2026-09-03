@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
-import { transitionBooking, canTransition, unidadesReservaveis } from '@/lib/reservations'
+import { transitionBooking, canTransition, unidadesReservaveis, geraObrigacoesDeHospede } from '@/lib/reservations'
 import type { Booking, BookingStatus, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 import { estaEmAtraso } from '@/lib/estado-siba'
@@ -152,8 +152,13 @@ export default function HojePage() {
 
   const t = today()
 
+  /* Um bloqueio não é ninguém a chegar. Ver `geraObrigacoesDeHospede`: o feed
+   * do Amenitiz manda «Quarto indisponível», e sem este filtro apareciam três
+   * chegadas sem nome no ecrã de quem quer saber quem entra hoje. */
   const chegadas = useMemo(() =>
-    bookings.filter(b => b.check_in === t && b.estado !== 'cancelada' && b.estado !== 'no_show'),
+    bookings.filter(b =>
+      b.check_in === t && b.estado !== 'cancelada' && b.estado !== 'no_show' &&
+      geraObrigacoesDeHospede(b)),
     [bookings, t]
   )
   const saidas = useMemo(() =>
@@ -178,7 +183,8 @@ export default function HojePage() {
   )
 
   const esquecidosCheckin = useMemo(() =>
-    bookings.filter(b => b.estado === 'confirmada' && b.check_in < t),
+    // Um quarto fechado não tem check-in por fazer.
+    bookings.filter(b => b.estado === 'confirmada' && b.check_in < t && geraObrigacoesDeHospede(b)),
     [bookings, t]
   )
 
@@ -252,6 +258,9 @@ export default function HojePage() {
   const boletinsEmAtraso = useMemo(() =>
     bookings
       .filter(b => !['cancelada', 'no_show', 'pendente'].includes(b.estado))
+      /* Sem pessoas não há boletim — e um alerta legal falso, a vermelho, é
+       * pior do que nenhum: ensina a ignorar os verdadeiros. */
+      .filter(geraObrigacoesDeHospede)
       .filter(b => estaEmAtraso(b, t))
       .slice(0, 5),
     [bookings, t]

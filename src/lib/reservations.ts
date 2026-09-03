@@ -74,6 +74,29 @@ export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas
   return textoDizIndisponivel(b.notas)
 }
 
+/**
+ * Há aqui pessoas? — a pergunta que decide as obrigações.
+ *
+ * Um bloqueio ocupa a data e mais nada: não há a quem mandar um link de
+ * check-in, não há boletim para comunicar ao SIBA, não há nome nem valor para
+ * faturar, e não é ninguém a chegar hoje.
+ *
+ * Antes de os feeds de disponibilidade existirem no projeto, tudo o que
+ * ocupava datas tinha hóspede, e a distinção não fazia falta. A partir do
+ * momento em que o Amenitiz começou a mandar «Quarto indisponível», os três
+ * bloqueios apareceram em `/hoje` como chegadas, como check-ins esquecidos e —
+ * o pior — como **boletins fora do prazo legal das 24 h**, a vermelho. Um
+ * alerta legal falso é pior do que nenhum: ensina a ignorar os verdadeiros.
+ *
+ * O que **não** muda com isto é a ocupação: um quarto fechado está ocupado,
+ * quer o tenha fechado um hóspede ou o anfitrião.
+ */
+export function geraObrigacoesDeHospede(
+  b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas'>,
+): boolean {
+  return !eBloqueio(b)
+}
+
 export function blockedDates(bookings: Booking[], propertyId: string, excludeId?: string): Set<string> {
   const set = new Set<string>()
   bookings

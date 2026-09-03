@@ -1,4 +1,4 @@
-import { occupancyForMonth, unidadesReservaveis } from './reservations'
+import { occupancyForMonth, unidadesReservaveis, geraObrigacoesDeHospede } from './reservations'
 import { agruparReservas } from './grupos'
 import type { Booking, Property } from './types'
 
@@ -63,6 +63,13 @@ export function resumoMensal(
   const ativas = unidadesReservaveis(properties)
   const doMes = bookings.filter(b => conta(b) && b.check_in >= inicio && b.check_in < fim)
 
+  /* «Reservas» conta pessoas que vieram, não noites fechadas.
+   *
+   * Um feed de disponibilidade — o do Amenitiz é um — manda bloqueios, e sem
+   * esta distinção o relatório do mês dizia «3 reservas» num mês com zero. A
+   * **ocupação** continua a contá-los, e deve: o quarto esteve mesmo fechado. */
+  const estadias = doMes.filter(geraObrigacoesDeHospede)
+
   const receita = doMes.reduce((s, b) => s + (b.preco_total || 0), 0)
 
   const ocupacoes = ativas.map(p => occupancyForMonth(bookings, p.id, ano, mes))
@@ -87,7 +94,7 @@ export function resumoMensal(
      * para quem a fez. A lista de reservas na app já a mostra assim; o email
      * dizia "3 reservas" onde o anfitrião via uma, e os dois números eram
      * dele. Receita, noites e ocupação continuam por quarto, como devem. */
-    reservas: agruparReservas(doMes).length,
+    reservas: agruparReservas(estadias).length,
     porOrigem: [...porOrigemMap.entries()]
       .map(([origem, valor]) => ({ origem, valor }))
       .filter(o => o.valor > 0)

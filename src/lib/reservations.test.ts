@@ -16,6 +16,7 @@ import {
   unidadesReservaveis,
   ordenarComQuartos,
   eBloqueio,
+  geraObrigacoesDeHospede,
 } from './reservations'
 import type { Booking, Property, PriceRule, Tarifa, PlatformRate } from './types'
 
@@ -467,5 +468,33 @@ describe('eBloqueio', () => {
 
   it('um hóspede preenchido à mão manda mais do que o texto do feed', () => {
     expect(eBloqueio({ hospede_id: 'g-1', uid_externo: 'f::1', notas: 'Quarto indisponível' })).toBe(false)
+  })
+})
+
+describe('geraObrigacoesDeHospede', () => {
+  /* Um feed de disponibilidade — o do Amenitiz é um — manda bloqueios sem
+   * hóspede. Sem esta distinção apareciam em `/hoje` como chegadas, como
+   * check-ins esquecidos e, o pior, como boletins fora do prazo legal das
+   * 24 h, a vermelho. Um alerta legal falso ensina a ignorar os verdadeiros. */
+  it('um bloqueio importado não gera obrigações', () => {
+    expect(geraObrigacoesDeHospede({
+      hospede_id: null, uid_externo: 'f::1', notas: 'Quarto indisponível',
+    })).toBe(false)
+  })
+
+  it('um bloqueio do anfitrião também não', () => {
+    expect(geraObrigacoesDeHospede({ hospede_id: null, uid_externo: undefined, notas: 'Obras' })).toBe(false)
+  })
+
+  it('uma reserva de canal gera, mesmo sem hóspede preenchido', () => {
+    // O iCal não transporta hóspedes: exigir `hospede_id` deixaria por
+    // comunicar exatamente as reservas que chegam dos canais.
+    expect(geraObrigacoesDeHospede({
+      hospede_id: null, uid_externo: 'f::1', notas: 'Reserved',
+    })).toBe(true)
+  })
+
+  it('uma reserva com hóspede gera sempre', () => {
+    expect(geraObrigacoesDeHospede({ hospede_id: 'g-1', uid_externo: undefined, notas: undefined })).toBe(true)
   })
 })
