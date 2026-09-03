@@ -415,3 +415,45 @@ describe('quando a plataforma muda o UID sozinha', () => {
     expect(r.absorvidos.size).toBe(2)
   })
 })
+
+describe('trocar de gestor de canais para as plataformas', () => {
+  /**
+   * O caso de 2026-09-03: o feed do Amenitiz funde reserva e bloqueio num
+   * intervalo só, portanto vale a pena ligar o Airbnb e o Booking diretamente.
+   * Na troca, os bloqueios antigos são absorvidos pelas reservas novas que
+   * ocupam as mesmas datas — e sem o texto novo continuavam a dizer «Quarto
+   * indisponível», que é precisamente o que `eBloqueio` lê para decidir se há
+   * hóspedes. Uma reserva do Airbnb ficava a passar por bloqueio.
+   */
+  it('o texto acompanha a identidade quando ela muda', () => {
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [bloqueio({ uid_externo: `${FEED}amenitiz-antigo` })],
+      eventos: [{
+        uid: 'airbnb-novo',
+        dtstart: addDays(HOJE, 10),
+        dtend: addDays(HOJE, 14),
+        summary: 'Reserved',
+      }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraAtualizar[0]).toMatchObject({
+      novoUidExterno: `${FEED}airbnb-novo`,
+      novasNotas: 'Reserved',
+    })
+  })
+
+  it('numa alteração de datas normal as notas não se tocam', () => {
+    // São o texto que a plataforma mandou, e o anfitrião pode ter-lhes
+    // acrescentado coisas. Só se substituem quando o evento passa a ser outro.
+    const r = reconciliarPropriedade({
+      ...OK,
+      locais: [reserva({ uid_externo: `${FEED}mesmo`, notas: 'Reserva do João' })],
+      eventos: [{ uid: 'mesmo', dtstart: addDays(HOJE, 11), dtend: addDays(HOJE, 15), summary: 'Reserved' }],
+      contagemAnterior: 1,
+    })
+
+    expect(r.paraAtualizar[0].novasNotas).toBeUndefined()
+  })
+})

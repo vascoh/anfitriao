@@ -109,7 +109,7 @@ async function syncProperty(
         // para a reconciliação (senão cancelavam a reserva que representam).
         if (!ev.dtstart || !ev.dtend || ev.dtstart >= ev.dtend) { skipped++; continue }
 
-        eventosDaPropriedade.push({ uid: ev.uid, dtstart: ev.dtstart, dtend: ev.dtend })
+        eventosDaPropriedade.push({ uid: ev.uid, dtstart: ev.dtstart, dtend: ev.dtend, summary: ev.summary })
 
         if (uidsConhecidos.has(ev.uid)) { skipped++; continue }
 
@@ -223,6 +223,8 @@ async function syncProperty(
          * delas — senão a reserva ficava órfã e amanhã era cancelada outra
          * vez. Ver a nota sobre UUIDv5 em `ical-reconciliacao.ts`. */
         ...(alt.novoUidExterno ? { uid_externo: alt.novoUidExterno } : {}),
+        /* O texto acompanha a identidade, e só ela: ver `novasNotas`. */
+        ...(alt.novasNotas ? { notas: alt.novasNotas } : {}),
         historico: [...historicoDe(alt.id), {
           id: crypto.randomUUID(),
           data: new Date().toISOString(),

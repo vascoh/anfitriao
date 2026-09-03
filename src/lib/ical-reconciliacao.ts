@@ -93,6 +93,8 @@ export interface EventoDoFeed {
   uid: string
   dtstart: string
   dtend: string
+  /** O SUMMARY do evento. Só é usado quando a identidade muda — ver abaixo. */
+  summary?: string
 }
 
 export interface Reconciliacao {
@@ -103,6 +105,18 @@ export interface Reconciliacao {
     antes: string
     /** Presente quando o evento mudou de identidade — ver `absorvidos`. */
     novoUidExterno?: string
+    /**
+     * Texto novo, só quando a identidade mudou.
+     *
+     * Numa alteração de datas as notas não se tocam — são o que a plataforma
+     * mandou, e o anfitrião pode ter-lhes acrescentado coisas. Mas quando o
+     * evento **passa a ser outro**, o texto antigo descreve um evento que já
+     * não existe: ao trocar o feed do Amenitiz pelos do Airbnb e do Booking,
+     * um «Quarto indisponível» era absorvido por uma reserva do Airbnb e
+     * continuava a dizer-se indisponibilidade — e `eBloqueio` lê exatamente
+     * esse texto para decidir se há hóspedes.
+     */
+    novasNotas?: string
   }>
   paraCancelar: Array<{ id: string; uid_externo: string }>
   /** Canceladas pela sincronização que voltaram a constar do feed. */
@@ -236,6 +250,7 @@ export function reconciliarPropriedade(p: {
         check_out: rebatizado.dtend,
         antes: `${local.check_in} → ${local.check_out}`,
         novoUidExterno: `${prefixo}${rebatizado.uid}`,
+        ...(rebatizado.summary ? { novasNotas: rebatizado.summary } : {}),
       })
       continue
     }
