@@ -13,7 +13,7 @@ import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar, eliminar } from '@/lib/guardar'
-import { transitionBooking, canTransition, availableActions, eBloqueio } from '@/lib/reservations'
+import { transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio } from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
@@ -268,6 +268,14 @@ export default function ReservaDetailPage() {
    * na mesma «Registar check-in» — uma ação que, se carregada, punha o
    * bloqueio em «Em casa» e a pessoa inexistente a aparecer em `/hoje`. */
   const bloqueio = eBloqueio(booking)
+  /* De onde veio o bloqueio, para a explicação dizer um nome em vez de «um
+   * calendário externo». O feed guarda-o em `ical_feeds`; se não se encontrar,
+   * fica a fonte, que é o melhor que se sabe. */
+  const origemDoBloqueio = (() => {
+    const feedId = booking.uid_externo?.split('::')[0]
+    const feed = prop?.ical_feeds?.find(f => f.id === feedId)
+    return feed?.nome ?? SOURCE_LABEL[booking.origem] ?? 'um calendário externo'
+  })()
 
   const actions = bloqueio ? [] : availableActions(booking.estado)
 
@@ -287,7 +295,11 @@ export default function ReservaDetailPage() {
           </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg font-semibold tracking-tight truncate">{guest?.nome}</h1>
+              {/* Um bloqueio não tem hóspede, e o título ficava **vazio**. Diz
+                  agora o que o feed lhe chamou, como na lista e no calendário. */}
+              <h1 className="text-lg font-semibold tracking-tight truncate">
+                {bloqueio ? rotuloDeBloqueio(booking) : guest?.nome}
+              </h1>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_CLASS[booking.estado]}`}>
                 {STATUS_LABEL[booking.estado]}
               </span>
@@ -406,7 +418,23 @@ export default function ReservaDetailPage() {
 
         {/* Guest */}
         <Section title="Hóspedes">
-          {(() => {
+          {/* Um bloqueio não tem hóspedes — e a app dizia «Hóspede sem perfil»,
+              que sugere uma ficha por preencher. Não há ficha nenhuma para
+              preencher: o calendário do gestor de canais transporta datas
+              ocupadas e mais nada. Dizer isso poupa a procura. */}
+          {bloqueio && (
+            <div className="px-4 py-3 border-b border-border last:border-0">
+              <p className="text-sm">Sem hóspedes associados</p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                Isto é um período fechado vindo de <strong className="font-semibold">{origemDoBloqueio}</strong>,
+                não uma reserva. O calendário que ele publica só transporta datas
+                ocupadas — o nome, o contacto e os documentos de quem lá fica não
+                vêm no ficheiro, e por isso não há aqui nada para mostrar nem
+                boletim para comunicar.
+              </p>
+            </div>
+          )}
+          {!bloqueio && (() => {
             /* O estado da comunicação existia na base desde o início e não
              * aparecia em ecrã nenhum: o anfitrião não tinha como saber, no
              * dia seguinte, o que tinha sido comunicado. É a obrigação legal
@@ -433,7 +461,7 @@ export default function ReservaDetailPage() {
               </div>
             )
           })()}
-          {boletinsErro && (
+          {!bloqueio && boletinsErro && (
             <div className="px-4 py-3 border-b border-border bg-muted/40">
               <p className="text-xs font-semibold">Não foi possível verificar os boletins</p>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
@@ -441,7 +469,7 @@ export default function ReservaDetailPage() {
               </p>
             </div>
           )}
-          {boletins && boletins.porRegistar > 0 && (
+          {!bloqueio && boletins && boletins.porRegistar > 0 && (
             <div className="px-4 py-3 border-b border-border bg-amber-500/5">
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
                 Faltam os dados de {boletins.porRegistar}{' '}
@@ -453,7 +481,7 @@ export default function ReservaDetailPage() {
               </p>
             </div>
           )}
-          {guest?.id ? (
+          {bloqueio ? null : guest?.id ? (
             <Link href={`/hospedes/${guest.id}`} className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors border-b border-border last:border-0">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <span className="text-base font-bold text-primary">{guest.nome?.[0] ?? '?'}</span>
