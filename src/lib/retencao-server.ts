@@ -288,12 +288,56 @@ export async function exportarDadosHospede(
   if (error) return { error: error.message }
   if (!hospede) return { error: 'nao_encontrado' }
 
-  const { data: reservas } = await supabase
-    .from('bookings')
-    .select('id, propriedade_id, check_in, check_out, num_hospedes, estado, origem, preco_total, notas, criado_em')
-    .eq('hospede_id', guestId)
+  /* As estadias por **ambos** os caminhos.
+   *
+   * O export lia só `bookings.hospede_id` — quem reservou. Desde que o boletim
+   * passou a ser por pessoa, a maioria das pessoas de um grupo existe apenas
+   * em `reserva_hospedes`: um acompanhante recebia um ficheiro a dizer que não
+   * tinha estadia nenhuma, e tinha. A rotina de retenção já olhava para os
+   * dois caminhos; o direito de acesso é que ficou para trás — e é este que
+   * tem um prazo legal em cima.
+   *
+   * Vai também o papel em cada reserva, porque «dormi lá» e «fui eu que
+   * reservei» não são a mesma informação sobre a pessoa. */
+  const { data: ligacoes } = await supabase
+    .from('reserva_hospedes')
+    .select('booking_id, principal')
+    .eq('guest_id', guestId)
     .eq('owner_id', ownerId)
-    .order('check_in', { ascending: true })
+
+  const idsPorLigacao = (ligacoes ?? []).map(l => l.booking_id as string)
+
+  const [proprias, acompanhadas] = await Promise.all([
+    supabase
+      .from('bookings')
+      .select('id, propriedade_id, check_in, check_out, num_hospedes, estado, origem, preco_total, notas, criado_em')
+      .eq('hospede_id', guestId)
+      .eq('owner_id', ownerId)
+      .order('check_in', { ascending: true }),
+    idsPorLigacao.length > 0
+      ? supabase
+          .from('bookings')
+          .select('id, propriedade_id, check_in, check_out, num_hospedes, estado, origem, preco_total, notas, criado_em')
+          .in('id', idsPorLigacao)
+          .eq('owner_id', ownerId)
+          .order('check_in', { ascending: true })
+      : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+  ])
+
+  type LinhaReserva = Record<string, unknown> & { id: string; check_in?: string | null }
+  const doTitular = (proprias.data ?? []) as LinhaReserva[]
+  const comoAcompanhante = (acompanhadas.data ?? []) as LinhaReserva[]
+
+  const idsQueReservou = new Set(doTitular.map(b => b.id))
+  const reservas: Array<Record<string, unknown>> = [
+    ...doTitular.map(b => ({ ...b, papel: 'reservou' })),
+    ...comoAcompanhante
+      .filter(b => !idsQueReservou.has(b.id))
+      .map(b => ({ ...b, papel: 'hospedou-se' })),
+  ]
+    /* Ordenação defensiva: uma linha sem data não pode derrubar um ficheiro
+     * que a lei obriga a entregar em 30 dias. */
+    .sort((a, b) => String(a.check_in ?? '').localeCompare(String(b.check_in ?? '')))
 
   // O titular tem direito aos dados, não ao criptograma (art. 15.º n.º 3:
   // "de forma inteligível").
@@ -304,7 +348,7 @@ export async function exportarDadosHospede(
     dados: {
       gerado_em: new Date().toISOString(),
       hospede: dadosHospede,
-      reservas: reservas ?? [],
+      reservas,
       retencao: {
         politica: 'Ver política de privacidade em /privacidade',
         anonimizado_em: anonimizado_em ?? null,

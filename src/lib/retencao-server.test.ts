@@ -9,16 +9,20 @@ interface LinhaGuest {
   owner_id: string | null
   criado_em: string | null
   anonimizado_grupos: string[] | null
+  retencao_completa?: boolean
 }
 interface LinhaBooking {
   id?: string
   hospede_id: string | null
+  owner_id?: string
+  check_in?: string
   check_out: string
   estado: string
 }
 interface LinhaLigacao {
   guest_id: string
   booking_id: string
+  owner_id?: string
 }
 
 let guests: LinhaGuest[] = []
@@ -38,18 +42,35 @@ let erroLeitura: Partial<Record<'bookings' | 'reserva_hospedes' | 'guests', stri
  */
 function builder<T>(linhas: () => T[], tabela: 'bookings' | 'reserva_hospedes' | 'guests') {
   const falha = () => erroLeitura[tabela] ?? null
+  /* O duplo **respeita os filtros**.
+   *
+   * Enquanto ignorava o `eq`/`in`, devolvia todas as linhas a todas as
+   * consultas — e um teste que pergunta «as reservas deste hóspede» recebia as
+   * de toda a gente. O do `/api/bookings` já tinha aprendido isto: um duplo
+   * permissivo faz os testes passar sem provarem nada. */
+  const filtros: Array<(l: Record<string, unknown>) => boolean> = []
+  const alvo = () =>
+    (linhas() as Record<string, unknown>[]).filter(l => filtros.every(f => f(l))) as T[]
+
   const obj = {
-    eq: () => obj,
-    in: () => obj,
+    eq: (c: string, v: unknown) => { filtros.push(l => l[c] === v); return obj },
+    in: (c: string, vs: unknown[]) => { filtros.push(l => vs.includes(l[c])); return obj },
     order: () => obj,
     range: async (de: number, ate: number) => {
       const e = falha()
       if (e) return { data: null, error: { message: e } }
-      return { data: linhas().slice(de, ate + 1), error: null }
+      return { data: alvo().slice(de, ate + 1), error: null }
+    },
+    /* O export do art. 15.º lê uma ficha só — o duplo tem de saber responder
+     * a `maybeSingle` além do caminho paginado. */
+    maybeSingle: async () => {
+      const e = falha()
+      if (e) return { data: null, error: { message: e } }
+      return { data: (alvo() as unknown[])[0] ?? null, error: null }
     },
     then: (resolve: (v: { data: T[] | null; error: { message: string } | null }) => unknown) => {
       const e = falha()
-      return resolve(e ? { data: null, error: { message: e } } : { data: linhas(), error: null })
+      return resolve(e ? { data: null, error: { message: e } } : { data: alvo(), error: null })
     },
   }
   return obj
@@ -79,12 +100,17 @@ vi.mock('./audit', () => ({
   },
 }))
 
-const { aplicarRetencao } = await import('./retencao-server')
+const { aplicarRetencao, exportarDadosHospede } = await import('./retencao-server')
 
 const HOJE = new Date().toISOString().slice(0, 10)
 
 function hospede(over: Partial<LinhaGuest> = {}): LinhaGuest {
-  return { id: 'g1', owner_id: 'user_1', criado_em: null, anonimizado_grupos: null, ...over }
+  return {
+    id: 'g1', owner_id: 'user_1', criado_em: null, anonimizado_grupos: null,
+    // O varrimento filtra por aqui; sem o campo, o duplo rigoroso não a devolve.
+    retencao_completa: false,
+    ...over,
+  }
 }
 
 beforeEach(() => {
@@ -276,5 +302,52 @@ describe('aplicarRetencao · leitura incompleta', () => {
     cenario()
     erroLeitura = { bookings: 'timeout' }
     expect((await aplicarRetencao()).erros).toBeGreaterThan(0)
+  })
+})
+
+describe('exportarDadosHospede · direito de acesso (art. 15.º)', () => {
+  /**
+   * O export lia só `bookings.hospede_id` — quem reservou. Desde que o boletim
+   * é por pessoa, a maioria das pessoas de um grupo existe apenas em
+   * `reserva_hospedes`: um acompanhante recebia um ficheiro a dizer que não
+   * tinha estadia nenhuma, e tinha. A retenção já olhava para os dois
+   * caminhos; o direito de acesso, que é o que tem prazo legal, é que não.
+   */
+  beforeEach(() => {
+    guests = [hospede({ id: 'g-acompanhante' })]
+  })
+
+  it('inclui as estadias em que a pessoa foi acompanhante', async () => {
+    bookings = [{ id: 'b-grupo', hospede_id: 'quem-reservou', owner_id: 'user_1', check_in: '2026-07-01', check_out: '2026-07-05', estado: 'checkout' }]
+    ligacoes = [{ guest_id: 'g-acompanhante', booking_id: 'b-grupo', owner_id: 'user_1' }]
+
+    const { dados } = await exportarDadosHospede('g-acompanhante', 'user_1')
+
+    expect(dados?.reservas).toHaveLength(1)
+    expect(dados?.reservas[0]).toMatchObject({ id: 'b-grupo', papel: 'hospedou-se' })
+  })
+
+  it('distingue quem reservou de quem só se hospedou', async () => {
+    bookings = [
+      { id: 'b-propria', hospede_id: 'g-acompanhante', owner_id: 'user_1', check_in: '2026-07-01', check_out: '2026-07-05', estado: 'checkout' },
+      { id: 'b-de-outro', hospede_id: 'outro', owner_id: 'user_1', check_in: '2026-08-01', check_out: '2026-08-05', estado: 'checkout' },
+    ]
+    ligacoes = [{ guest_id: 'g-acompanhante', booking_id: 'b-de-outro', owner_id: 'user_1' }]
+
+    const { dados } = await exportarDadosHospede('g-acompanhante', 'user_1')
+
+    const porId = new Map((dados?.reservas ?? []).map(r => [r.id, r.papel]))
+    expect(porId.get('b-propria')).toBe('reservou')
+    expect(porId.get('b-de-outro')).toBe('hospedou-se')
+  })
+
+  it('não repete a reserva de quem reservou e também consta da ligação', async () => {
+    bookings = [{ id: 'b1', hospede_id: 'g-acompanhante', owner_id: 'user_1', check_in: '2026-07-01', check_out: '2026-07-05', estado: 'checkout' }]
+    ligacoes = [{ guest_id: 'g-acompanhante', booking_id: 'b1', owner_id: 'user_1' }]
+
+    const { dados } = await exportarDadosHospede('g-acompanhante', 'user_1')
+
+    expect(dados?.reservas).toHaveLength(1)
+    expect(dados?.reservas[0].papel).toBe('reservou')
   })
 })
