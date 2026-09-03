@@ -7,6 +7,7 @@ import { Download, ArrowLeft, Info, AlertTriangle } from 'lucide-react'
 import { fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { today, fmtDate, fmtMoney } from '@/lib/utils'
 import { regraPara, calcularTmt, REGRAS_TMT } from '@/lib/taxa-turistica'
+import { geraObrigacoesDeHospede } from '@/lib/reservations'
 import { mesAnterior, nomeMes } from '@/lib/relatorio-mensal'
 import { escCsv } from '@/lib/siba'
 import type { Booking, Property } from '@/lib/types'
@@ -68,6 +69,11 @@ export default function TaxaTuristicaPage() {
 
     for (const b of bookings) {
       if (b.estado === 'cancelada' || b.estado === 'no_show') continue
+      /* A taxa é por pessoa e por noite: um quarto fechado não tem quem a
+       * pague. Sem isto, um bloqueio de 21 noites vindo do feed do Amenitiz
+       * entrava no mapa e o anfitrião declarava — e pagava — por um hóspede
+       * que nunca existiu. Ver `geraObrigacoesDeHospede`. */
+      if (!geraObrigacoesDeHospede(b)) continue
       if (b.check_in >= fim || b.check_out <= inicio) continue
 
       const p = props.find(x => x.id === b.propriedade_id)

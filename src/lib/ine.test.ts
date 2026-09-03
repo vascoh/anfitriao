@@ -155,8 +155,15 @@ describe('gerarMapaIne', () => {
     expect(m.linhas[0].pais).toBe(PAIS_DESCONHECIDO)
   })
 
-  it('lida com reserva sem hóspede associado', () => {
-    const m = gerarMapaIne([reserva('2026-07-01', '2026-07-03', 2, null)], [], PROPS, ANO, JULHO)
+  it('lida com uma reserva cuja ficha de hóspede não está disponível', () => {
+    /* Antes, a reserva de teste vinha sem `hospede_id` **e** sem origem
+     * externa — que é a definição de bloqueio desde que `eBloqueio` existe, e
+     * o calendário já a pintava de cinzento. O INE contava-a como 2 hóspedes:
+     * a app dizia duas coisas diferentes sobre a mesma linha.
+     *
+     * O caso que este teste quer cobrir é outro e continua a valer: há
+     * hóspede, mas a ficha dele não veio na consulta. */
+    const m = gerarMapaIne([reserva('2026-07-01', '2026-07-03', 2, 'sem-ficha')], [], PROPS, ANO, JULHO)
     expect(m.linhas[0]).toEqual({ pais: PAIS_DESCONHECIDO, hospedes: 2, dormidas: 4 })
   })
 
@@ -243,5 +250,33 @@ describe('prazoIne', () => {
 
   it('passa para o ano seguinte em dezembro', () => {
     expect(prazoIne(2026, 11)).toBe('2027-01-10')
+  })
+})
+
+describe('gerarMapaIne · bloqueios de um feed de disponibilidade', () => {
+  /* O INE pergunta por pessoas alojadas. Um bloqueio do Amenitiz vem com
+   * `num_hospedes: 1` e sem hóspede — declará-lo era inventar um hóspede
+   * numa resposta oficial. */
+  const bloqueio = () => reserva('2026-07-02', '2026-07-09', 1, null, {
+    uid_externo: 'f::1',
+    notas: 'Quarto indisponível',
+  })
+
+  it('não entram como hóspedes nem como dormidas', () => {
+    const m = gerarMapaIne([bloqueio()], [], [propriedade('p1')], ANO, JULHO)
+    expect(m.totalHospedes).toBe(0)
+    expect(m.totalDormidas).toBe(0)
+    expect(m.semMovimento).toBe(true)
+  })
+
+  it('uma estadia a sério continua a contar ao lado de um bloqueio', () => {
+    const m = gerarMapaIne(
+      [bloqueio(), reserva('2026-07-10', '2026-07-12', 2, 'h1')],
+      [hospede('h1', 'PT', 'PT')],
+      [propriedade('p1')],
+      ANO, JULHO,
+    )
+    expect(m.totalHospedes).toBe(2)
+    expect(m.totalDormidas).toBe(4)
   })
 })

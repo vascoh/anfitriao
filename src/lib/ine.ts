@@ -1,4 +1,5 @@
 import { nights } from './utils'
+import { geraObrigacoesDeHospede } from './reservations'
 import type { Booking, Guest, Property } from './types'
 
 /**
@@ -71,8 +72,18 @@ export interface MapaIne {
   semMovimento: boolean
 }
 
+/**
+ * Esta linha conta como hóspedes e dormidas para o inquérito?
+ *
+ * O INE pergunta por **pessoas alojadas**, não por noites indisponíveis. Um
+ * feed de disponibilidade — o do Amenitiz é um — manda bloqueios com
+ * `num_hospedes: 1`, e sem esta distinção eles entravam no inquérito como
+ * hóspedes que nunca existiram. É uma declaração oficial: o número tem de
+ * descrever o que aconteceu.
+ */
 function conta(b: Booking): boolean {
-  return b.estado !== 'cancelada' && b.estado !== 'no_show'
+  if (b.estado === 'cancelada' || b.estado === 'no_show') return false
+  return geraObrigacoesDeHospede(b)
 }
 
 function primeiroDia(ano: number, mes: number): string {
