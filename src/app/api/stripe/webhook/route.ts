@@ -11,6 +11,21 @@ import {
 import { fulfillCheckoutSession } from '@/lib/checkout-fulfillment'
 import { logAudit } from '@/lib/audit'
 
+/* O preenchimento de uma reserva paga passa por `hasConflict`, que desde
+ * 2026-09-02 confirma a disponibilidade **com as plataformas**, ao vivo. Isso
+ * acrescentou uma ida à rede a este caminho, e esta rota não declarava teto
+ * nenhum — ficava com o que a plataforma de alojamento desse por omissão.
+ *
+ * Um webhook que expira é dinheiro cobrado e calendário vazio até o Stripe
+ * repetir. A repetição é segura (a criação é idempotente pela sessão), mas
+ * contar com ela para o caso normal é contar com a rede de segurança em vez do
+ * chão. A irmã síncrona, `/api/book-checkout-fulfill`, já declarava 20 s.
+ *
+ * `teto-de-execucao.test.ts` segue os imports e exige isto em qualquer rota
+ * que chegue à verificação ao vivo — para a próxima cadeia nova não depender
+ * de alguém se lembrar. */
+export const maxDuration = 30
+
 // Raw body necessário para verificar assinatura do Stripe
 export async function POST(req: NextRequest) {
   const body = await req.text()

@@ -8,7 +8,7 @@ import { fetchExpenses, fetchBookings, fetchProperties, fetchPlatformRates } fro
 import { eliminar } from '@/lib/guardar'
 import { fmtMoney, fmtDate, today } from '@/lib/utils'
 import { SOURCE_LABEL } from '@/lib/labels'
-import { ordenarComQuartos } from '@/lib/reservations'
+import { ordenarComQuartos, geraObrigacoesDeHospede } from '@/lib/reservations'
 import type { Expense, ExpenseCategoria, Booking, Property, PlatformRate } from '@/lib/types'
 
 const CATEGORIA_LABEL: Record<ExpenseCategoria, string> = {
@@ -101,7 +101,12 @@ export default function FinanceiroPage() {
   )
 
   const bookingsAno = useMemo(() =>
-    bookings.filter(b => isActive(b) && b.check_in.startsWith(String(year))),
+    /* Sem bloqueios: não têm preço nem comissão, e entravam no aviso «há
+     * reservas sem preço registado» — que mandava o anfitrião editar um
+     * «Quarto indisponível» para lhe pôr um valor. Ver
+     * `geraObrigacoesDeHospede`. */
+    bookings.filter(b =>
+      isActive(b) && geraObrigacoesDeHospede(b) && b.check_in.startsWith(String(year))),
     [bookings, year],
   )
 
