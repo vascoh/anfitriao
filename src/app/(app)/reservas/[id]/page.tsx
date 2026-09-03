@@ -124,14 +124,21 @@ export default function ReservaDetailPage() {
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentSaved, setPaymentSaved] = useState(false)
   const [checkinCopied, setCheckinCopied] = useState(false)
+  /* Uma leitura falhada não pode passar por «não falta nada».
+   *
+   * O aviso dos boletins só se desenha quando `boletins` chega. Sem esta
+   * distinção, uma falha de rede fazia-o **desaparecer** — e o anfitrião via
+   * um ecrã limpo onde havia hóspedes por registar. É a mesma classe de engano
+   * dos alertas falsos em `/hoje`, ao contrário: aqui a falha esconde. */
+  const [boletinsErro, setBoletinsErro] = useState(false)
   /** As reservas irmãs, quando esta faz parte de uma casa alugada por inteiro. */
   const [grupo, setGrupo] = useState<{ reservas: Booking[]; props: Property[] } | null>(null)
 
   async function load() {
     fetch(`/api/reservas/${id}/hospedes`)
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (d) setBoletins(d.estado) })
-      .catch(() => {})
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then(d => { setBoletins(d.estado); setBoletinsErro(false) })
+      .catch(() => { setBoletins(null); setBoletinsErro(true) })
 
     const [bookings, guests, props] = await Promise.all([fetchBookings(), fetchGuests(), fetchProperties()])
     const b = bookings.find(x => x.id === id) ?? null
@@ -172,11 +179,17 @@ export default function ReservaDetailPage() {
     }
     toast.success(TRANSITION_MSG[to] ?? 'Estado atualizado')
     if (to === 'confirmada') {
+      /* O email ao hóspede é disparado e esquecido — e a mensagem de sucesso
+       * já saiu. Se ele falhar em silêncio, o anfitrião fica convencido de que
+       * o hóspede foi avisado e não foi. Dizer que falhou é o mínimo: a
+       * confirmação em si correu bem, o que falhou foi o aviso. */
       fetch('/api/notify-confirmation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId: booking.id }),
-      }).catch(() => {})
+      })
+        .then(r => { if (!r.ok) throw new Error(String(r.status)) })
+        .catch(() => toast.warning('Reserva confirmada, mas o email ao hóspede não saiu.'))
     }
   }
 
@@ -420,6 +433,14 @@ export default function ReservaDetailPage() {
               </div>
             )
           })()}
+          {boletinsErro && (
+            <div className="px-4 py-3 border-b border-border bg-muted/40">
+              <p className="text-xs font-semibold">Não foi possível verificar os boletins</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                Não sabemos se falta registar alguém. Recarrega a página para tentar outra vez.
+              </p>
+            </div>
+          )}
           {boletins && boletins.porRegistar > 0 && (
             <div className="px-4 py-3 border-b border-border bg-amber-500/5">
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">

@@ -136,12 +136,17 @@ export default function HojePage() {
       if (!res.ok) throw new Error()
       toast.success(TRANSITION_MSG[to] ?? 'Estado atualizado')
       if (to === 'confirmada') {
-        // email de confirmação ao hóspede — mesmo comportamento da página da reserva
+        /* Email de confirmação ao hóspede — mesmo comportamento da página da
+         * reserva, incluindo o aviso. É disparado e esquecido, e a mensagem de
+         * sucesso já saiu: se falhar em silêncio, o anfitrião fica convencido
+         * de que o hóspede foi avisado e não foi. */
         fetch('/api/notify-confirmation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ bookingId: b.id }),
-        }).catch(() => {})
+        })
+          .then(r => { if (!r.ok) throw new Error(String(r.status)) })
+          .catch(() => toast.warning('Reserva confirmada, mas o email ao hóspede não saiu.'))
       }
     } catch {
       setBookings(prev => prev.map(x => x.id === b.id ? b : x))
