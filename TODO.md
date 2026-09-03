@@ -24,6 +24,11 @@ dizer `SUMMARY:Quarto indisponível`, sem hóspede, sem preço, sem canal. A
 **Fase 2 (check-in, SIBA, faturação) fica bloqueada** — precisam de saber quem
 chega, e o ficheiro não diz.
 
+🔴 **E funde o que estiver seguido** (confirmado 03/09): o evento `03→23` do
+Quarto de Casal é, do lado do Amenitiz, uma reserva até dia 8 **mais** um
+bloqueio de 8 a 22. Por iCal, o Anfitrião nunca vê as reservas uma a uma — só
+blocos que podem conter qualquer número delas.
+
 **H3 (API do Amenitiz) subiu ao topo das dependências**: deixou de destrancar
 só a Fase 4 e passou a destrancar também a Fase 2. É um email, e é a única
 coisa da lista cujo atraso não depende de nós.

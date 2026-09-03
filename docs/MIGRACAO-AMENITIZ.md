@@ -132,6 +132,22 @@ Um evento por período fechado. Não diz quem chega, não diz de que plataforma
 veio, e nem sequer diz se aquele bloco é uma reserva ou o anfitrião a fechar o
 quarto. Três quartos, três eventos.
 
+### E funde o que estiver seguido — confirmado a 2026-09-03
+
+O evento acima, `03→23`, não é uma reserva de vinte noites. No Amenitiz há ali
+**uma reserva até dia 8 e um bloqueio de 8 a 22**: duas coisas distintas, com
+naturezas diferentes, exportadas como um intervalo só.
+
+As contas batem certo — ocupado de 3 a 22, livre no dia 23 — mas **a fronteira
+entre elas desapareceu no ficheiro**. Não há como a app a reconstruir: a
+informação não está lá.
+
+Isto é mais grave do que «não traz hóspedes». Significa que, por iCal, o
+Anfitrião **nunca** verá as reservas uma a uma — vê blocos de indisponibilidade
+que podem conter qualquer número delas. A lista de reservas, a contagem, a
+ocupação por reserva e o histórico do hóspede ficam todos fora de alcance,
+independentemente do que se escreva deste lado.
+
 ### O que isto permite, e o que não permite
 
 | | Com o feed do Amenitiz |
@@ -154,10 +170,16 @@ lado: a informação não está no ficheiro.
    Pede-se no painel (Definições → API), custa um email e a resposta demora o
    que demorar. Sem ela, a Fase 2 não existe.
 2. **Ligar o Airbnb e o Booking diretamente** — em vez do Amenitiz, nunca os
-   dois. Dá mais do que o feed do gestor (o Airbnb distingue «Reserved» de
-   «Not available» e leva os últimos dígitos do telefone na descrição), mas
-   continua sem nome nem email. Melhora a atribuição por canal; não resolve o
-   check-in nem o SIBA.
+   dois. Depois do que se confirmou a 03/09, esta opção **subiu de valor**: as
+   OTA exportam um evento **por reserva**, com identificador próprio, em vez de
+   um bloco que funde tudo. Isso devolve as fronteiras entre reservas, a
+   contagem certa e a atribuição por canal — que o feed do Amenitiz não dá de
+   maneira nenhuma.
+   Continua sem nome nem email, portanto não resolve o check-in nem o SIBA.
+   ⚠️ **Por verificar antes de mudar**: que o feed de cada OTA traz mesmo as
+   reservas separadas, e o que acontece aos bloqueios postos no Amenitiz (devem
+   propagar-se às OTA, mas isso vê-se com o ficheiro à frente, não por
+   dedução).
 3. **Aceitar que a operação fica no Amenitiz** e usar o Anfitrião para o que
    não depende de hóspedes: conformidade, dossiê ASAE, financeiro, preços,
    site próprio. É a opção honesta enquanto 1 não chegar.

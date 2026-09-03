@@ -432,6 +432,12 @@ export default function ReservaDetailPage() {
                 vêm no ficheiro, e por isso não há aqui nada para mostrar nem
                 boletim para comunicar.
               </p>
+              <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed">
+                Um período destes pode juntar <strong className="font-semibold">várias reservas
+                e bloqueios seguidos</strong>: o calendário fecha o intervalo todo de uma vez e
+                não diz onde acaba um e começa o outro. Para ver as reservas uma a uma,
+                é do lado de lá que tens de olhar.
+              </p>
             </div>
           )}
           {!bloqueio && (() => {
