@@ -302,7 +302,14 @@ export function getPriceForDay(
   const rule = findBestRule(propRules, date, 1)
   let preco = rule?.preco_noite ?? property.preco_base
   if (rule?.desconto_pct) preco = preco * (1 + rule.desconto_pct / 100)
-  return { preco: Math.max(0, Math.round(preco)), regra: rule?.nome }
+  /* Ao cêntimo, como em `calculatePriceWithRules`.
+   *
+   * Arredondava ao euro, e o calendário — que é onde o anfitrião confere os
+   * preços antes de abrir as datas — mostrava 89 € numa noite que a reserva
+   * cobra a 89,50 €. Duas funções de preço com arredondamentos diferentes dão
+   * dois números certos que não batem certo um com o outro, e o que se conclui
+   * de os ver lado a lado é sempre errado. */
+  return { preco: Math.max(0, Math.round(preco * 100) / 100), regra: rule?.nome }
 }
 
 export const STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
