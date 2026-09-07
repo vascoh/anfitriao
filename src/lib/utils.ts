@@ -32,11 +32,32 @@ export function fmtDate(iso: string, opts?: Intl.DateTimeFormatOptions): string 
   return new Intl.DateTimeFormat('pt-PT', opts ?? { day: 'numeric', month: 'short' }).format(parseDate(iso))
 }
 
+/**
+ * Euros, com os cêntimos só quando os há.
+ *
+ * Estava fixo em zero casas decimais, o que é bom num painel — «1250 €» lê-se
+ * de relance — e é mentira em todo o sítio onde o número é o dinheiro em si.
+ * O lembrete de pagamento dizia «20 € em falta» por um saldo de 19,60 €; o
+ * mapa da taxa turística, que é declarado ao município, arredondava a linha e
+ * o total; a ficha da reserva mostrava um total que não batia certo com a
+ * fatura. Em nenhum desses casos havia como o anfitrião perceber que o número
+ * no ecrã não era o número da conta.
+ *
+ * A regra decide-se pelo próprio valor: um total redondo continua a aparecer
+ * redondo (não se ganha nada em escrever «1250,00 €» num cartão de resumo), e
+ * um valor com cêntimos mostra-os. Assim os 112 sítios que chamam isto ficam
+ * certos sem terem de escolher entre dois formatadores — escolher errado seria
+ * exatamente o que acontecia.
+ */
 export function fmtMoney(n: number): string {
+  // `Number.isInteger` não chega: 19.999 arredonda a 20,00 e mostrá-lo como
+  // «20,00 €» está certo; o que não pode é virar «20 €» sem aviso.
+  const temCentimos = Math.round(n * 100) % 100 !== 0
   return new Intl.NumberFormat('pt-PT', {
     style: 'currency',
     currency: 'EUR',
-    maximumFractionDigits: 0,
+    minimumFractionDigits: temCentimos ? 2 : 0,
+    maximumFractionDigits: temCentimos ? 2 : 0,
   }).format(n)
 }
 

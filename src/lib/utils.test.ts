@@ -87,14 +87,33 @@ describe('escHtml', () => {
 })
 
 describe('fmtMoney', () => {
-  it('formats euros without decimals', () => {
-    // pt-PT uses non-breaking spaces; compare digits and symbol only
-    const out = fmtMoney(1250)
-    expect(out.replace(/\s/g, '')).toBe('1250€')
+  const semEspacos = (n: number) => fmtMoney(n).replace(/\s/g, '')
+
+  it('um total redondo continua sem casas decimais', () => {
+    // pt-PT usa espaços não-quebráveis; compara-se só dígitos e símbolo
+    expect(semEspacos(1250)).toBe('1250€')
   })
 
-  it('rounds to whole euros', () => {
-    expect(fmtMoney(19.6).replace(/\s/g, '')).toBe('20€')
+  it('mostra os cêntimos quando os há, em vez de arredondar', () => {
+    // Era «20 €» por um saldo de 19,60 €: o lembrete de pagamento pedia ao
+    // hóspede um valor que não era o que ele devia.
+    expect(semEspacos(19.6)).toBe('19,60€')
+    expect(semEspacos(4.2)).toBe('4,20€')
+    expect(semEspacos(149.5)).toBe('149,50€')
+  })
+
+  it('o que arredonda ao cêntimo para um valor redondo mostra-se redondo', () => {
+    // 19,999 não é um valor em dinheiro: ao cêntimo são 20,00 €, e «20 €» diz
+    // exatamente isso. A decisão é tomada depois do arredondamento, não sobre
+    // o float — senão o resíduo binário de somas como 0,1+0,2 punha «,00» em
+    // toda a parte.
+    expect(semEspacos(19.999)).toBe('20€')
+    expect(semEspacos(0.1 + 0.2 + 19.7)).toBe('20€')
+  })
+
+  it('zero e negativos mantêm o formato', () => {
+    expect(semEspacos(0)).toBe('0€')
+    expect(semEspacos(-12.5)).toBe('-12,50€')
   })
 })
 
