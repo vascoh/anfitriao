@@ -6,6 +6,44 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-07] Cinco correções: dinheiro arredondado e escritas caladas
+
+Batch de revisão, sem funcionalidade nova. Duas famílias.
+
+**Dinheiro que não batia certo com a conta:**
+- ✅ **`fmtMoney` mostrava zero casas decimais em todo o lado.** Bom num painel,
+  errado onde o número *é* o dinheiro: o lembrete automático pedia «20 €» por
+  um saldo de 19,60 €, o mapa da taxa turística (declarado ao município)
+  arredondava linha e total, e a ficha da reserva não batia certo com a fatura.
+  Passa a mostrar cêntimos só quando os há, decidido **depois** do arredondamento
+  ao cêntimo — 19,999 continua «20 €» e o resíduo de 0,1+0,2 não põe «,00» em
+  toda a parte. 112 sítios de chamada ficam certos sem escolherem formatador.
+- ✅ **`getPriceForDay` arredondava ao euro**, `calculatePriceWithRules` ao
+  cêntimo. O calendário — onde o anfitrião confere os preços antes de abrir as
+  datas — mostrava 89 € numa noite cobrada a 89,50 €.
+
+**Erros que não chegavam a lado nenhum:**
+- ✅ **Quatro escritas a `reserva_hospedes` ignoravam o erro.** Os boletins do
+  SIBA saem dessa tabela, não de `guests`: sem linha, a pessoa não existe para a
+  comunicação. A pior era o acompanhante no check-in — ficha guardada, ecrã a
+  dizer «check-in feito», obrigação legal por cumprir sem sinal nenhum. No
+  check-in passa a devolver 500 com pedido para repetir; nas rotas de criação
+  não pode (a reserva já está gravada e repetir duplicava-a), portanto regista-se
+  no log e, na reserva direta, no histórico da própria reserva.
+- ✅ **`payment-reminders`**: o que impede o email de repetir é a entrada
+  `pagamento_lembrete` no histórico. Se a escrita falhasse, o cron dizia
+  `ok: true, sent: 1` e o hóspede recebia o mesmo pedido **todos os dias**. Erro
+  vai para o log com o id, e as reservas afetadas na resposta do cron.
+- ✅ **`/api/pwa-icon?size=abc`** dava `NaN` — os dois `Math` propagavam-no e a
+  imagem saía `NaN`×`NaN`. Rota pública, parâmetro de fora. Faltava o clamp que
+  o `Math.min`/`Math.max` parecia ser.
+
+Validação: 1094 testes (+13 em `utils.test.ts`), typecheck e lint a zero.
+Commits `fb57631`…`f244f15`. **Por deployar.**
+
+📌 Verificado na mesma passagem: `EMAIL_FROM` **já está** em produção desde
+12/08 (o TODO dizia que faltava). O bloqueio dos emails é só a `RESEND_API_KEY`.
+
 ### [2026-09-02] Dossiê ASAE — a prova sai da tabela e vai para papel
 
 Item 1.2 do TODO, e a única vantagem que resistiu a duas verificações de
