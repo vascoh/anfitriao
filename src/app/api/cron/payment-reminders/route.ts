@@ -56,6 +56,10 @@ export async function GET(req: NextRequest) {
   const paiMap = new Map((pais ?? []).map(p => [p.id, p.nome as string]))
 
   let sent = 0
+  // Reservas cujo email saiu mas cujo registo não ficou gravado — são as que
+  // voltam a ser avisadas amanhã. Vão na resposta do cron para aparecerem nos
+  // logs da Vercel sem ser preciso ir à base confirmar.
+  const porRegistar: string[] = []
 
   for (const grupo of grupos) {
     const primeira = grupo.reservas[0]
@@ -96,11 +100,17 @@ export async function GET(req: NextRequest) {
     })
     if (!result.ok) continue // não falha o cron por um email
 
-    // O registo vai a todas as reservas do grupo: se ficasse só numa, a
-    // execução de amanhã olhava para outra e mandava o email outra vez.
+    /* O registo vai a todas as reservas do grupo: se ficasse só numa, a
+     * execução de amanhã olhava para outra e mandava o email outra vez.
+     *
+     * Pela mesma razão o erro não se ignora. O email já saiu; o que esta
+     * escrita faz é impedir que volte a sair. Falhar aqui em silêncio era o
+     * hóspede a receber o mesmo pedido de pagamento **todos os dias** até
+     * pagar, sem nada nos registos a explicar porquê — o cron dizia
+     * `sent: 1` e passava por bem-sucedido. */
     for (const b of grupo.reservas) {
       const historico = Array.isArray(b.historico) ? b.historico : []
-      await supabase.from('bookings').update({
+      const { error } = await supabase.from('bookings').update({
         historico: [...historico, {
           id: crypto.randomUUID(),
           data: new Date().toISOString(),
@@ -108,10 +118,19 @@ export async function GET(req: NextRequest) {
           descricao: `Lembrete de pagamento enviado automaticamente (${fmtMoney(saldo)} em falta)`,
         }],
       }).eq('id', b.id)
+      if (error) {
+        console.error('[payment-reminders] registo do envio falhou', b.id, error.message)
+        porRegistar.push(b.id)
+      }
     }
 
     sent++
   }
 
-  return NextResponse.json({ ok: true, sent, checked: grupos.length })
+  return NextResponse.json({
+    ok: true,
+    sent,
+    checked: grupos.length,
+    ...(porRegistar.length > 0 ? { porRegistar } : {}),
+  })
 }
