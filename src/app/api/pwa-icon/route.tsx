@@ -3,7 +3,12 @@ import { type NextRequest } from 'next/server'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const size = Math.min(512, Math.max(32, parseInt(searchParams.get('size') ?? '512')))
+  /* `?size=abc` dava `NaN`: os dois `Math` propagam-no e a imagem saía com
+   * largura e altura `NaN`. A rota é pública (está na lista do `proxy.ts`) e
+   * qualquer pessoa lhe podia mandar isso. O `Number.isFinite` é o clamp que
+   * faltava — sem valor utilizável volta-se aos 512 por omissão. */
+  const pedido = Number(searchParams.get('size'))
+  const size = Number.isFinite(pedido) ? Math.min(512, Math.max(32, Math.round(pedido))) : 512
   const r = Math.round(size * 0.18)
   const iconSize = Math.round(size * 0.52)
 
