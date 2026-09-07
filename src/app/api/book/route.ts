@@ -81,10 +81,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Erro ao criar reserva.' }, { status: 500 })
   }
 
-  // Liga quem reservou à reserva: o boletim é por pessoa, e esta é a primeira.
-  await supabase.from('reserva_hospedes').insert({
+  /* Liga quem reservou à reserva: o boletim é por pessoa, e esta é a primeira.
+   *
+   * O erro não pode devolver 500: a reserva já está gravada, e quem submeteu
+   * outra vez ficava com duas. Mas também não pode ficar calado — sem esta
+   * linha a reserva não tem ocupantes, e o SIBA nunca a vê. Fica no registo do
+   * servidor e no histórico da reserva, que é onde o anfitrião chega a ele. */
+  const { error: rhErr } = await supabase.from('reserva_hospedes').insert({
     booking_id: bookingId, guest_id: guestId, principal: true, owner_id,
   })
+  if (rhErr) {
+    console.error('[POST /api/book] ligação reserva-hóspede', bookingId, rhErr.message)
+    await supabase.from('bookings').update({
+      historico: [
+        { id: uuid(), data: now, tipo: 'criada', descricao: 'Reserva criada via website direto' },
+        { id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: 'Falhou a ligação do hóspede à reserva — o boletim SIBA não sai sem ela. Voltar a abrir o check-in resolve.' },
+      ],
+    }).eq('id', bookingId)
+  }
 
   // Notificação por email server-side — falha não bloqueia a reserva
   try {

@@ -112,9 +112,14 @@ export async function POST(req: NextRequest) {
    * `bookings.hospede_id`, que continua em todas as reservas do grupo.
    *
    * Os restantes ocupantes entram no check-in, que é quando se sabem os nomes. */
-  await supabase.from('reserva_hospedes').insert({
+  /* Pela mesma razão de /api/book, o erro regista-se em vez de devolver 500:
+   * os quartos já estão gravados e repetir o pedido duplicava o grupo todo. */
+  const { error: rhErr } = await supabase.from('reserva_hospedes').insert({
     booking_id: linhas[0].id, guest_id: guestId, principal: true, owner_id,
   })
+  if (rhErr) {
+    console.error('[POST /api/book/grupo] ligação reserva-hóspede', linhas[0].id, rhErr.message)
+  }
 
   // Uma notificação, não uma por quarto: o anfitrião recebeu um pedido.
   try {

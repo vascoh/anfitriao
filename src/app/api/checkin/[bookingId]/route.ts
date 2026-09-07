@@ -209,10 +209,14 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
      * darem-se por completas sem os acompanhantes. A ligação do grupo é feita
      * uma única vez, na criação, ao primeiro quarto. */
     if (!booking.reserva_grupo_id) {
-      await supabase.from('reserva_hospedes').upsert(
+      const { error } = await supabase.from('reserva_hospedes').upsert(
         { booking_id: bookingId, guest_id: booking.hospede_id, principal: true, owner_id: booking.owner_id },
         { onConflict: 'booking_id,guest_id' },
       )
+      if (error) {
+        console.error('[checkin] ligação do principal', bookingId, error.message)
+        return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+      }
     }
   }
 
@@ -311,10 +315,21 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
         console.error('[checkin] acompanhante update', error.message)
         return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
       }
-      await supabase.from('reserva_hospedes').upsert(
+      /* A ficha sem a ligação é uma pessoa que não existe para o boletim.
+       *
+       * O erro do `guests` acima já travava o check-in; este ficava calado, e
+       * era o pior dos dois: a ficha do acompanhante ficava guardada, o ecrã
+       * dizia «check-in feito», e a pessoa nunca entrava na comunicação ao
+       * SIBA — porque os boletins saem daqui, não da tabela de hóspedes. Uma
+       * obrigação legal por cumprir sem nada que o assinalasse. */
+      const { error: erroLigacao } = await supabase.from('reserva_hospedes').upsert(
         { booking_id: bookingId, guest_id: idExistente, principal: false, owner_id: booking.owner_id },
         { onConflict: 'booking_id,guest_id' },
       )
+      if (erroLigacao) {
+        console.error('[checkin] ligação do acompanhante', bookingId, erroLigacao.message)
+        return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+      }
       continue
     }
 
@@ -326,9 +341,13 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       console.error('[checkin] acompanhante insert', error.message)
       return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
     }
-    await supabase.from('reserva_hospedes').insert({
+    const { error: erroLigacao } = await supabase.from('reserva_hospedes').insert({
       booking_id: bookingId, guest_id: novoId, principal: false, owner_id: booking.owner_id,
     })
+    if (erroLigacao) {
+      console.error('[checkin] ligação do acompanhante novo', bookingId, erroLigacao.message)
+      return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+    }
   }
 
   const now = new Date().toISOString()
