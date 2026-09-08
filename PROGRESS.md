@@ -6,6 +6,56 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-08] Auditoria de produção: um `OR (id = 1)` que ninguém tinha lido
+
+Sessão de análise, sem funcionalidade nova. Base saudável à entrada — 1094
+testes, typecheck e lint a zero — e o trabalho todo saiu de olhar para o que
+está *em produção*, não para o que está no repositório.
+
+**O que não era problema nenhum:** os seis commits de 07/09 estavam por fazer
+push, mas já estavam deployados (ver a nota corrigida na entrada de 07/09).
+Advisor de segurança do Supabase a **0 ERROR e 0 WARN** — os 17 INFO são o
+padrão intencional de tabelas só-`service_role`.
+
+**O que era, e o advisor só apanhava de raspão:**
+
+- 🔴 **`website_settings` aberta a qualquer autenticado.** As duas policies
+  tinham `((owner_id = requesting_owner_id()) OR (id = 1))`. O segundo ramo é
+  resíduo do modelo single-tenant, de quando id=1 era *a* linha de definições
+  do site; desde a 006 a tabela é por dono, e essa linha passou a ser de um
+  anfitrião concreto — em produção, a do `casadevasco`. Slug, branding e textos
+  ficavam a ler e a escrever por qualquer conta autenticada.
+
+  A migração 026 tinha corrigido exatamente o mesmo resíduo do lado do `DEFAULT`
+  da coluna (era o que fazia toda a conta nova rebentar na chave primária). O
+  predicado do RLS ficou de fora e passou despercebido porque **está inerte**:
+  sem o template JWT do Clerk ligado, o browser entra como `anon` e nunca como
+  `authenticated`, e o acesso real da app é `service_role`. Ligar o template —
+  que é um item aberto no TODO — era o que o armava. Migração 046.
+
+- ✅ **Policy redundante, índices a mais e chaves estrangeiras a menos.** A
+  policy de SELECT tinha o mesmo predicado da de ALL, e as duas avaliavam-se em
+  cada consulta. `accounts` tinha três índices sobre `clerk_user_id`, quando o
+  UNIQUE chega. Três FK (`expenses.propriedade_id`, `automation_log.booking_id`,
+  `website_settings.template_id`) sem índice de cobertura obrigavam a varrimento
+  da filha ao apagar do lado pai. Advisor de performance: **2 WARN → 0**.
+
+- ✅ **Código morto de RLS removido** (item de dívida técnica registada).
+  `lib/supabase-server.ts` inteiro e o `createUserClient`: zero chamadas desde
+  junho, e o `getSupabaseForRequest` devolvia o user client com um `as` para o
+  tipo do admin client — um convite a assumir capacidades que ele não tinha. A
+  decisão de ligar o template JWT fica em aberto, com os passos em
+  `docs/HANDOFF.md`; o que se tirou foi a wiring morta, não a opção.
+
+ℹ️ **Resíduo de outros projetos na mesma base**: `fs_deals`, `fs_alerts`,
+`fs_price_history` (já documentado) e `despedida_items` (novo nesta passagem).
+Têm RLS e estão bloqueadas, portanto não são risco — mas sujam os advisors.
+Apagá-las é destrutivo e não foi feito.
+
+Validação: 1094 testes, typecheck e lint a zero, `/r/casadevasco` a 200 depois
+da migração, advisors relidos. Os 38 `unused_index` que sobram são de uma base
+com 0 reservas — não são acionáveis.
+
 ### [2026-09-07] Cinco correções: dinheiro arredondado e escritas caladas
 
 Batch de revisão, sem funcionalidade nova. Duas famílias.
@@ -39,7 +89,10 @@ Batch de revisão, sem funcionalidade nova. Duas famílias.
   o `Math.min`/`Math.max` parecia ser.
 
 Validação: 1094 testes (+13 em `utils.test.ts`), typecheck e lint a zero.
-Commits `fb57631`…`f244f15`. **Por deployar.**
+Commits `fb57631`…`f244f15`. ~~**Por deployar.**~~ **Deployado** — a nota ficou
+escrita às 12:08 e o deploy foi às 12:11, logo a seguir. Confirmado a 08/09
+contra produção: `/api/pwa-icon?size=abc` devolve 512×512 em vez de `NaN`×`NaN`,
+que é a última das cinco correções (`f244f15`), portanto as cinco lá estão.
 
 📌 Verificado na mesma passagem: `EMAIL_FROM` **já está** em produção desde
 12/08 (o TODO dizia que faltava). O bloqueio dos emails é só a `RESEND_API_KEY`.

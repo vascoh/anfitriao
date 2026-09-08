@@ -15,7 +15,7 @@ Ver `README.md` (raiz do projeto) para setup local, comandos e estrutura de past
 
 ## Padrão para features novas multi-tenant
 1. Migration nova com `owner_id` + RLS via `requesting_owner_id()` (nunca reabrir policies `authenticated_full_*` — removidas deliberadamente, ver `PROGRESS.md` 2026-06-30).
-2. Rota de API: `service_role` (admin client) com filtro explícito por `owner_id`, ou client owner-scoped via JWT Clerk (`getSupabaseForRequest`).
+2. Rota de API: `service_role` (admin client) com filtro explícito por `owner_id`, sempre vindo de `auth()` server-side. Não há alternativa owner-scoped: o `getSupabaseForRequest` via JWT Clerk foi removido a 2026-09-08 por nunca ter tido chamadas (ver `docs/HANDOFF.md` § «Nota crítica — Clerk JWT template» se a decisão de ligar o template for retomada).
 3. Teste unitário (Vitest) para lógica de negócio pura em `lib/`.
 4. Atualizar `PROGRESS.md` no fim da sessão.
 

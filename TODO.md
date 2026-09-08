@@ -86,7 +86,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 ## Dívida técnica registada
 - [x] ~~**Deriva de esquema**~~ — documentada a 2026-08-18: `supabase/schema.sql` é uma fotografia da produção (colunas, tipos e omissões), com `scripts/schema-dump.sql` para regenerar. Os `id` continuam `text` em produção e `UUID` na migração 001 — o ficheiro serve para se ler **antes** de escrever DDL novo, que foi o erro de 03/08
 - [x] ~~**`/financeiro` filtra `!parent_id`**~~ — corrigido a 2026-08-12: o seletor de despesa passa a listar casas **e** quartos (`ordenarComQuartos`), com o quarto indentado sob a casa
-- [ ] **Código morto de RLS** — decidir entre ligar o template JWT do Clerk (RLS a nível de BD) ou remover `getSupabaseUserClient`/`getSupabaseForRequest`
+- [x] ~~**Código morto de RLS**~~ — removido a 2026-09-08 (`lib/supabase-server.ts` inteiro + `createUserClient`). Estava sem chamadas desde junho e o `getSupabaseForRequest` devolvia o user client com um `as` para o tipo do admin client, o que convidava a assumir capacidades que ele não tinha. **A decisão de ligar o template JWT do Clerk continua em aberto** — passos em `docs/HANDOFF.md` § «Nota crítica — Clerk JWT template»; o que se removeu foi a wiring morta, não a opção
 
 ## Dependências humanas do dossiê (arrancar em paralelo)
 - [ ] **H1 · SIBA** — registar cada alojamento no portal em modo "Web Service" e obter NIPC + estabelecimento + chave (1–3 dias úteis). 0 propriedades configuradas. Validar primeiro contra `/bawsdev/` via `SIBA_WS_URL`

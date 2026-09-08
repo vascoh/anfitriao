@@ -22,21 +22,10 @@ export function createAdminClient() {
   })
 }
 
-/**
- * Creates a Supabase client authenticated with a Clerk JWT.
- * The JWT must come from `getToken({ template: 'supabase' })` in Clerk.
- * Enables RLS policies that use requesting_owner_id() to filter by owner.
- *
- * Requires: Clerk Dashboard → JWT Templates → "supabase" template configured,
- * and Supabase Dashboard → Authentication → JWT Secret set to match Clerk's key.
- */
-export function createUserClient(clerkToken: string) {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: { headers: { Authorization: `Bearer ${clerkToken}` } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    }
-  )
-}
+// Houve aqui um `createUserClient(clerkToken)` — cliente com o JWT do Clerk, para
+// o RLS por `requesting_owner_id()` filtrar a nível de base de dados. Nunca teve
+// chamadas: o template JWT do Clerk não chegou a ser configurado, e o isolamento
+// real em produção é `service_role` + filtro explícito por `owner_id`.
+// Removido a 2026-09-08 com os seus dois envolucros (`lib/supabase-server.ts`).
+// A decisão de ligar o template continua em aberto e os passos estão em
+// `docs/HANDOFF.md` § «Nota crítica — Clerk JWT template».
