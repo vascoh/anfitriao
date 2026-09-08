@@ -29,9 +29,23 @@ Quarto de Casal é, do lado do Amenitiz, uma reserva até dia 8 **mais** um
 bloqueio de 8 a 22. Por iCal, o Anfitrião nunca vê as reservas uma a uma — só
 blocos que podem conter qualquer número delas.
 
-**H3 (API do Amenitiz) subiu ao topo das dependências**: deixou de destrancar
-só a Fase 4 e passou a destrancar também a Fase 2. É um email, e é a única
-coisa da lista cujo atraso não depende de nós.
+🔴 **2026-09-08 — a API do Amenitiz sai da lista. Decisão do utilizador: não
+há contacto com o Amenitiz; na altura da verdade, muda-se.** H3 fica
+**cancelado** — não é para pedir mais tarde, é para não pedir.
+
+O que isto muda: a Fase 2 deixa de estar à espera de uma dependência externa e
+passa a depender de um **corte** — ligar os feeds das plataformas diretamente
+ao Anfitrião, sem o Amenitiz no meio. Para os dados isso é melhor do que a API
+que se ia pedir: o feed do Amenitiz não diz nada sobre quem chega, e um feed
+direto do Airbnb distingue reserva (`SUMMARY:Reserved`) de bloqueio
+(`Airbnb (Not available)`).
+
+O que passa a ser o problema não são os dados, é a **frequência**: sem o
+Amenitiz, é o Anfitrião que passa a manter as plataformas em dia umas com as
+outras, e fá-lo por iCal, hoje **uma vez por dia às 04:00** (`vercel.json`,
+limite do plano Hobby). Ver `docs/MIGRACAO-AMENITIZ.md` § «O que tem de ser
+verdade no dia do corte» — a lista é curta e **0.7 (Vercel Pro) deixou de ser
+uma formalidade de licenciamento e passou a ser pré-requisito do corte**.
 
 O que pode arrancar já (Fase 2b): conformidade, dossiê ASAE, financeiro, preços
 e o site próprio — nada disso depende de hóspedes importados. **As reservas
@@ -56,7 +70,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [x] **0.1 Copy da landing** — removidas caixa de entrada, contrato eletrónico e "+12 %"; "atualização contínua" → sincronização diária com FAQ sobre a latência do iCal (2026-08-02)
 - [ ] **0.2 Clerk em instância de produção** — ainda em chaves de desenvolvimento. Obrigatório antes do primeiro utilizador real que não seja o Vasco
 - [~] **0.3 Rate limit distribuído** — `lib/rate-limit-persistente.ts` (contagem na base) cobre as rotas que têm de travar a sério; o `ical-sync` manual passou para lá a 2026-09-02, por causa do endereço de saída da Vercel ser partilhado por todos os anfitriões. O Upstash continua a ser o passo seguinte (a base aguenta, mas paga-se em escritas)
-- [ ] **0.7 Vercel Pro antes do primeiro cliente** — confirmado por API que a conta está em **Hobby**, que é para uso não comercial. Deixa de ser decisão de orçamento no momento em que houver alguém a pagar. Destranca também o cron de 15 em 15 minutos e o wildcard de subdomínio (pendência #6)
+- [ ] 🔴 **0.7 Vercel Pro — antes do primeiro cliente e antes do corte do Amenitiz** — confirmado por API que a conta está em **Hobby**, que é para uso não comercial. Deixa de ser decisão de orçamento no momento em que houver alguém a pagar. Destranca o wildcard de subdomínio (pendência #6) e o cron de 15 em 15 minutos — e **desde a decisão de 2026-09-08 esse cron é o que separa o corte de um risco de dupla reserva**: sem o Amenitiz no meio, é o Anfitrião que mantém as plataformas em dia umas com as outras, e faz isso uma vez por dia às 04:00. Ver `docs/MIGRACAO-AMENITIZ.md` § «O que tem de ser verdade no dia do corte»
 - [ ] **0.4 Observabilidade** — sem Sentry e sem funil PostHog (registo → 1.ª propriedade → 1.º iCal → 1.ª reserva → 1.º check-in). Hoje uma falha em produção só se descobre por acaso — foi o que aconteceu com os emails
 - [x] **0.5 Encriptação em repouso + log de acesso** (2026-08-12) — `numero_documento` e `data_validade_doc` guardados em AES-256-GCM (`lib/campos-sensiveis.ts`, ANF-1.7); saída de dados para fora do sistema (CSV do SIBA, submissão, export do art. 15.º) registada no `audit_log` (ANF-1.8). Feito com 0 hóspedes na base: sem backfill e sem risco
 - [ ] **0.6 MFA no Clerk · PITR + restauro de ensaio**
@@ -91,7 +105,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 ## Dependências humanas do dossiê (arrancar em paralelo)
 - [ ] **H1 · SIBA** — registar cada alojamento no portal em modo "Web Service" e obter NIPC + estabelecimento + chave (1–3 dias úteis). 0 propriedades configuradas. Validar primeiro contra `/bawsdev/` via `SIBA_WS_URL`
 - [ ] **H2 · InvoiceXpress** — abrir conta de parceiro (desbloqueia 1.3)
-- [ ] 🔴 **H3 · API do Amenitiz** — pedir acesso (Definições → API). **Prioridade máxima desde 2026-09-03**: o feed iCal é de disponibilidade e não traz reservas, portanto esta API destranca a Fase 2 (check-in, SIBA, faturação) **e** a Fase 4 da sincronização. Custa um email
+- [x] ~~🔴 **H3 · API do Amenitiz**~~ — **cancelado a 2026-09-08, decisão do utilizador**: não há contacto com o Amenitiz. O caminho é o corte, não a integração. Deixa de haver aqui uma dependência externa; o que a substitui é a checklist de `docs/MIGRACAO-AMENITIZ.md` § «O que tem de ser verdade no dia do corte», que é toda nossa
 - [ ] **H4 · Orçamento** — Upstash → Vercel Pro → Supabase Pro
 - [ ] **H5 · Marca** — `anfitriao.pt` vs `anfitrioes.pt`
 - [ ] **Posicionamento (novo, 2026-08-17)** — decidir se a venda passa a ser "conformidade com prova" em vez de "tudo por conta". Bloqueia 2.1 (preços), 2.3 (marca) e 2.4 (calculadora)

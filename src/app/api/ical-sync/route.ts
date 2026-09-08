@@ -24,6 +24,13 @@ interface ResultadoFeed {
   canceladas?: number
   /** Cancelamentos nossos desfeitos: o UID voltou a constar do feed. */
   reativadas?: number
+  /**
+   * Quantos eventos trouxeram `DESCRIPTION` — a contagem, nunca o conteúdo.
+   * Com os feeds do Amenitiz é sempre 0. Deixa de o ser no dia em que se ligar
+   * um feed direto de uma plataforma, e é esse o sinal de que há informação a
+   * ser deitada fora que vale a pena ir buscar. Ver `lib/ical.ts`.
+   */
+  comDescricao?: number
   error?: string
 }
 
@@ -149,7 +156,15 @@ async function syncProperty(
         last_count: events.length,
         error: undefined,
       })
-      results.push({ feed: feed.nome, imported: 0, skipped })
+
+      /* Quantos eventos deste feed trazem `DESCRIPTION` — e mais nada sobre
+       * eles. O conteúdo não se regista: é lá que o Airbnb põe o que sabe da
+       * reserva, e isso pode ser dado pessoal (ver ANF-1.8). O que interessa
+       * saber, no dia em que se ligar um feed direto de uma plataforma, é se
+       * o feed traz alguma coisa que hoje se está a deitar fora. Com os feeds
+       * do Amenitiz isto é sempre 0 — o export é de disponibilidade. */
+      const comDescricao = events.filter(e => e.description).length
+      results.push({ feed: feed.nome, imported: 0, skipped, comDescricao })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[ical-sync] feed "${feed.nome}" failed:`, msg)

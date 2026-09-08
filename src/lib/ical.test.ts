@@ -29,6 +29,7 @@ describe('parseIcal', () => {
       summary: 'Reserved',
       dtstart: '2026-08-10',
       dtend: '2026-08-15',
+      description: '',
     })
   })
 
@@ -114,6 +115,44 @@ describe('parseIcal', () => {
     expect(parseIcal('')).toHaveLength(0)
     expect(parseIcal('not an ical file')).toHaveLength(0)
   })
+
+  /* O `DESCRIPTION` é onde as plataformas põem o que dizem sobre a reserva, e
+   * era deitado fora antes de alguém lhe poder ver a forma. Guarda-se para ser
+   * medido no dia em que se ligar um feed direto — ver `MIGRACAO-AMENITIZ.md`. */
+  it('guarda o DESCRIPTION quando o evento traz um', () => {
+    const [ev] = parseIcal([
+      'BEGIN:VCALENDAR', 'BEGIN:VEVENT',
+      'UID:abc@airbnb.com',
+      'DTSTART;VALUE=DATE:20260810',
+      'DTEND;VALUE=DATE:20260815',
+      'SUMMARY:Reserved',
+      'DESCRIPTION:Reservation URL: https://www.airbnb.com/hosting/reservations/x',
+      'END:VEVENT', 'END:VCALENDAR',
+    ].join('\r\n'))
+    expect(ev.description).toBe('Reservation URL: https://www.airbnb.com/hosting/reservations/x')
+    expect(ev.summary).toBe('Reserved')
+  })
+
+  it('desdobra um DESCRIPTION partido em várias linhas', () => {
+    const [ev] = parseIcal([
+      'BEGIN:VCALENDAR', 'BEGIN:VEVENT',
+      'UID:x', 'DTSTART;VALUE=DATE:20260810', 'DTEND;VALUE=DATE:20260811',
+      'DESCRIPTION:primeira parte ',
+      ' e a continuacao',
+      'END:VEVENT', 'END:VCALENDAR',
+    ].join('\r\n'))
+    expect(ev.description).toBe('primeira parte e a continuacao')
+  })
+
+  it('deixa o DESCRIPTION vazio quando não vem nenhum', () => {
+    const [ev] = parseIcal([
+      'BEGIN:VCALENDAR', 'BEGIN:VEVENT',
+      'UID:x', 'DTSTART;VALUE=DATE:20260810', 'DTEND;VALUE=DATE:20260811',
+      'SUMMARY:Quarto indisponível',
+      'END:VEVENT', 'END:VCALENDAR',
+    ].join('\r\n'))
+    expect(ev.description).toBe('')
+  })
 })
 
 describe('generateIcal', () => {
@@ -126,7 +165,7 @@ describe('generateIcal', () => {
     expect(text.startsWith('BEGIN:VCALENDAR')).toBe(true)
     expect(text.endsWith('END:VCALENDAR')).toBe(true)
     expect(parseIcal(text)).toEqual(input.map(e => ({
-      uid: e.uid, summary: e.summary, dtstart: e.start, dtend: e.end,
+      uid: e.uid, summary: e.summary, dtstart: e.start, dtend: e.end, description: '',
     })))
   })
 

@@ -18,6 +18,21 @@ export interface IcalEvent {
   dtstart: string
   dtend: string
   summary: string
+  /**
+   * O `DESCRIPTION` do evento, tal como veio.
+   *
+   * Não alimenta nada — em particular **não** entra em `notas`, que é o que
+   * `eBloqueio` lê para decidir se um evento é bloqueio ou reserva. Misturá-lo
+   * lá seria dar à classificação um texto muito maior para casar com as
+   * frases de bloqueio, e um falso «bloqueio» é uma reserva sem boletim SIBA.
+   *
+   * Existe para ser **medido**: enquanto os feeds vieram do Amenitiz, este
+   * campo esteve sempre vazio (o export é de disponibilidade). Nos feeds
+   * diretos das plataformas é onde o Airbnb põe o que diz sobre a reserva. Sem
+   * o guardar aqui, o dia em que se ligar um feed direto não se veria nada:
+   * o leitor deitava-o fora antes de alguém lhe poder olhar para a forma.
+   */
+  description: string
 }
 
 /** `20260810` ou `20260810T140000Z` → `2026-08-10`. */
@@ -36,12 +51,12 @@ export function parseIcal(text: string): IcalEvent[] {
    * cortado a meio, e o resto aparecia como uma linha à parte. */
   const lines = text.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
   let inEvent = false
-  let cur: IcalEvent = { uid: '', dtstart: '', dtend: '', summary: '' }
+  let cur: IcalEvent = { uid: '', dtstart: '', dtend: '', summary: '', description: '' }
 
   for (const line of lines) {
     if (line.trim() === 'BEGIN:VEVENT') {
       inEvent = true
-      cur = { uid: '', dtstart: '', dtend: '', summary: '' }
+      cur = { uid: '', dtstart: '', dtend: '', summary: '', description: '' }
       continue
     }
     if (line.trim() === 'END:VEVENT') {
@@ -62,6 +77,7 @@ export function parseIcal(text: string): IcalEvent[] {
     else if (key === 'DTSTART') cur.dtstart = parseIcalDate(val)
     else if (key === 'DTEND') cur.dtend = parseIcalDate(val)
     else if (key === 'SUMMARY') cur.summary = val
+    else if (key === 'DESCRIPTION') cur.description = val
   }
 
   return events

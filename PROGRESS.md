@@ -6,6 +6,49 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-08] O Amenitiz deixa de ser uma dependência e passa a ser um corte
+
+**Decisão do utilizador: não há contacto com o Amenitiz; na altura da verdade,
+muda-se.** H3 fica **cancelado**, não adiado — era a única pendência da lista
+cujo atraso não dependia de nós, e agora não existe.
+
+Para os **dados** isto resolve o muro de 03/09, e resolve-o melhor do que a API
+que se ia pedir: o feed do Amenitiz diz «Quarto indisponível» a tudo, enquanto
+um feed direto do Airbnb distingue `Reserved` de `Airbnb (Not available)` — o
+fixture nos testes confirma-o desde que existe. Cortar dá mais informação do
+que integrar.
+
+Para a **frequência** agrava. Sem o Amenitiz no meio, é o Anfitrião que mantém
+o Airbnb e o Booking em dia um com o outro, por iCal, e `vercel.json` corre a
+sincronização **uma vez por dia às 04:00** — limite do plano Hobby. Isso muda a
+natureza de um item que estava na lista como formalidade: **0.7 (Vercel Pro)
+passou de licenciamento a pré-requisito do corte**, porque é o que destranca o
+cron de 15 em 15 minutos.
+
+🔴 **O risco mais caro do corte, e não está medido**: `TEXTOS_DE_BLOQUEIO` tem
+`closed`. Do Airbnb sabemos a forma e está certa. **Do Booking não sabemos** —
+e se os eventos de reserva dele disserem `CLOSED`, cada reserva real entra como
+bloqueio: sem link de check-in, **sem boletim SIBA**, sem fatura. É o bug de
+03/09 ao contrário, e este lado custa 100–2.000 € por hóspede não comunicado.
+Fica escrito como coisa a medir contra um feed real antes de cortar, não como
+coisa a adivinhar — que é a regra que a própria lista já impõe.
+
+- ✅ **O leitor deixou de deitar fora o `DESCRIPTION`** (`lib/ical.ts`). É onde
+  as plataformas põem o que dizem sobre a reserva, e era descartado antes de
+  alguém lhe poder ver a forma — no dia do corte não se veria nada. A
+  sincronização devolve `comDescricao` por feed: **quantos** eventos o traziam,
+  nunca o conteúdo, que pode ser dado pessoal (ANF-1.8). Com o Amenitiz é 0 e
+  vai continuar a ser; deixa de o ser no dia em que houver um feed direto.
+- ⚠️ **Nada consome o campo ainda, de propósito.** Não se constrói extração
+  sobre um formato que não se viu — foi exatamente assim que a Fase 2 se
+  escreveu em cima de um feed que se supunha trazer reservas.
+- 📄 **Plano reescrito**: `MIGRACAO-AMENITIZ.md` ganha «O que tem de ser verdade
+  no dia do corte» (quatro pontos e a ordem das operações), que substitui as
+  fases que assentavam na API. A conclusão antiga («o Amenitiz não sai já»)
+  fica marcada como assente numa premissa que já não vale.
+
+Validação: 1097 testes (+3 no leitor de iCal), typecheck e lint a zero.
+
 ### [2026-09-08] Auditoria de produção: um `OR (id = 1)` que ninguém tinha lido
 
 Sessão de análise, sem funcionalidade nova. Base saudável à entrada — 1094

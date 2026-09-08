@@ -5,6 +5,23 @@ _2026-09-01. Plano de execução. Substitui a secção 4 (Recomendação) de
 
 ---
 
+> 🔴 **Atualização 2026-09-08 — não há API do Amenitiz para pedir. Decisão do
+> utilizador: nenhum contacto com o Amenitiz; na altura da verdade, corta-se.**
+>
+> **H3 fica cancelado** — não adiado. Isto reescreve a conclusão abaixo («o
+> Amenitiz não sai já»), que assentava em haver uma integração a caminho.
+>
+> Para os **dados**, a decisão é boa e resolve o muro de 03/09: um feed direto
+> do Airbnb distingue reserva (`SUMMARY:Reserved`) de bloqueio
+> (`Airbnb (Not available)`), enquanto o do Amenitiz diz «Quarto indisponível»
+> a tudo. Cortar dá mais informação do que a API que se ia pedir.
+>
+> Para a **frequência**, não resolve nada — agrava. Sem o Amenitiz no meio, é o
+> Anfitrião que mantém o Airbnb e o Booking em dia um com o outro, por iCal, e
+> hoje isso corre **uma vez por dia às 04:00**. É o assunto da secção «O que tem
+> de ser verdade no dia do corte», mais abaixo, que substitui esta atualização
+> como plano de trabalho.
+
 > 🔴 **Atualização 2026-09-03 — o feed do Amenitiz não traz reservas.**
 > Medido, não suposto: os três feeds respondem
 > `PRODID:Amenitiz Availability iCalendar` e **todos** os eventos dizem
@@ -48,6 +65,79 @@ uma mensalidade por um risco de overbooking. **Não se faz.**
 
 O que se segue é como migrar tudo o que **não** é isso — que é a maior parte do
 valor, e onde estão as horas do teu dia.
+
+---
+
+## O que tem de ser verdade no dia do corte
+
+_Escrito a 2026-09-08, depois de H3 ser cancelado. Substitui as fases que
+assentavam em haver uma API do Amenitiz a caminho._
+
+Cortar é ligar os feeds das plataformas **diretamente** ao Anfitrião e desligar
+o Amenitiz. São quatro coisas, e só a primeira custa dinheiro.
+
+### 1 · A sincronização tem de correr mais do que uma vez por dia
+
+O único ponto que não se resolve com código. Hoje `vercel.json` tem
+`/api/ical-sync` às `0 4 * * *` — **uma vez por dia**, que é o limite do plano
+Hobby. Com o Amenitiz no meio isso não custa nada: ele fala com o Airbnb e o
+Booking por API, e o atraso do iCal afeta só o que o Anfitrião *mostra*. Sem
+ele, esse atraso passa a ser a janela em que duas plataformas podem vender a
+mesma noite — e a janela é **maior do que 24 h**, porque à nossa soma-se a
+latência com que cada plataforma lê o nosso feed.
+
+**Vercel Pro destranca o cron de 15 em 15 minutos e é por isso pré-requisito do
+corte** (item 0.7 do TODO). Não elimina a janela — o iCal não dá para isso —
+mas leva-a de mais de um dia para dezenas de minutos.
+
+> O que **já** está resolvido e não depende disto: nenhuma reserva **nossa** é
+> aceite sem se perguntar às plataformas, naquele segundo, se a noite continua
+> livre (`lib/disponibilidade-ao-vivo.ts`, 02/09). O risco que sobra é entre
+> plataformas, e esse é o que o Amenitiz cobria.
+
+### 2 · Confirmar como o Booking marca uma reserva
+
+**O risco mais caro do corte, e não está medido.** `eBloqueio` decide se um
+evento é bloqueio ou reserva pelo texto que o feed manda, e a lista de frases
+de bloqueio (`TEXTOS_DE_BLOQUEIO`, `lib/reservations.ts`) inclui `closed`.
+
+Do Airbnb sabemos a forma e está certa: `Reserved` para reserva,
+`Airbnb (Not available)` para bloqueio — não casa com nada da lista, logo entra
+como reserva. **Do Booking não sabemos.** Se os eventos de reserva dele também
+disserem `CLOSED`, cada reserva real entra como bloqueio — e um bloqueio não
+gera link de check-in, **não gera boletim SIBA** e não gera fatura. É o bug de
+03/09 ao contrário, e este lado custa 100–2.000 € por hóspede não comunicado.
+
+**Medir antes de cortar**: ligar o feed do Booking a uma propriedade de teste,
+ver o que vem no `SUMMARY` de uma reserva conhecida, e só depois decidir se
+`closed` tem de sair da lista ou de passar a exigir mais contexto. É a mesma
+disciplina que a lista já pede — «acrescentar uma frase nova é barato; o que
+não se pode é adivinhá-la» — aplicada a tirar uma.
+
+### 3 · Ver o que os feeds diretos trazem a mais
+
+O leitor deitava fora o `DESCRIPTION` dos eventos, que é onde as plataformas
+põem o que dizem sobre a reserva. Desde 08/09 é lido e a sincronização devolve
+**quantos** eventos o traziam (`comDescricao` em cada feed), nunca o conteúdo —
+pode ser dado pessoal (ANF-1.8).
+
+Com os feeds do Amenitiz isto é 0 e vai continuar a ser. No dia em que se ligar
+um feed direto, deixa de ser — e o número diz se há informação a ir buscar
+antes de escrever código a extraí-la. **Nada consome o campo ainda, de
+propósito**: não se constrói extração sobre um formato que não se viu.
+
+### 4 · A ordem no dia
+
+1. Vercel Pro e o cron de 15 em 15 minutos, **antes** de tudo o resto.
+2. Ligar um feed direto de cada plataforma a uma propriedade de teste, com o
+   Amenitiz ainda a trabalhar. Ler o `comDescricao` e o `SUMMARY` das reservas.
+3. Corrigir a classificação, se o ponto 2 mostrar que é preciso.
+4. Trocar os feeds em produção, propriedade a propriedade — o Amenitiz continua
+   ligado e é a rede de segurança.
+5. Só no fim, desligar o Amenitiz.
+
+Nada disto precisa de falar com eles. Os passos 2 a 5 são configuração de
+feeds, do nosso lado e do lado das plataformas.
 
 ---
 
