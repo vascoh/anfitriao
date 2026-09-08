@@ -108,11 +108,28 @@ disserem `CLOSED`, cada reserva real entra como bloqueio — e um bloqueio não
 gera link de check-in, **não gera boletim SIBA** e não gera fatura. É o bug de
 03/09 ao contrário, e este lado custa 100–2.000 € por hóspede não comunicado.
 
-**Medir antes de cortar**: ligar o feed do Booking a uma propriedade de teste,
-ver o que vem no `SUMMARY` de uma reserva conhecida, e só depois decidir se
-`closed` tem de sair da lista ou de passar a exigir mais contexto. É a mesma
-disciplina que a lista já pede — «acrescentar uma frase nova é barato; o que
-não se pode é adivinhá-la» — aplicada a tirar uma.
+**Medir antes de cortar**, com `src/lib/medir-feed.test.ts` — que usa o leitor e
+a classificação de produção, não uma cópia:
+
+```bash
+FEED_URL='https://ical.booking.com/v1/export?t=…' \
+  npx vitest run src/lib/medir-feed.test.ts
+```
+
+Diz o `PRODID`, quantos eventos vêm, quantos trazem `DESCRIPTION`, e como cada
+um **seria classificado**. O URL sai do extranet do Booking em *Rates &
+Availability → Calendar sync (Sync calendars) → Export*. Sem `FEED_URL` a
+ferramenta não corre, e o `npm test` normal salta-a.
+
+Linha de base medida a 2026-09-08 nos três feeds do Amenitiz:
+`PRODID:Amenitiz Availability iCalendar`, todos os eventos «Quarto
+indisponível», **`DESCRIPTION` a zero nos três** — como se esperava de um
+calendário de disponibilidade, e útil como termo de comparação.
+
+Só depois de ver o resultado se decide se `closed` tem de sair da lista ou de
+passar a exigir mais contexto. É a mesma disciplina que a lista já pede —
+«acrescentar uma frase nova é barato; o que não se pode é adivinhá-la» —
+aplicada a tirar uma.
 
 ### 3 · Ver o que os feeds diretos trazem a mais
 
