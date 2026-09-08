@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { prontidaoDoSite, motivoParaNaoPublicar, NOME_POR_OMISSAO } from './prontidao-site'
+import { prontidaoDoSite, motivoParaNaoPublicar, NOME_POR_OMISSAO, DESCRICAO_POR_OMISSAO } from './prontidao-site'
 import type { Property } from './types'
 
 function propriedade(over: Partial<Property> = {}): Property {
@@ -40,6 +40,22 @@ describe('prontidaoDoSite', () => {
     expect(r.podePublicar).toBe(false)
     expect(r.emFalta.map(i => i.chave)).toEqual(['nome'])
     expect(r.itens.find(i => i.chave === 'nome')?.ajuda).toContain('fábrica')
+  })
+
+  it('a descrição de fábrica não conta como descrição', () => {
+    /* Mesmo caso do nome, e a razão de ser fácil de deixar passar: a coluna
+     * tem valor de fábrica na base, portanto nunca está vazia. Sem esta
+     * comparação, a lista dá a descrição por feita mal a conta existe — que é
+     * o que se vê na conta real, com a frase de fábrica no site e na meta. */
+    const r = prontidaoDoSite(
+      { ...COMPLETO, descricao: DESCRICAO_POR_OMISSAO },
+      [propriedade({ imagem_url: 'https://exemplo/foto.jpg' })],
+    )
+    const item = r.itens.find(i => i.chave === 'descricao')
+    expect(item?.feito).toBe(false)
+    expect(item?.ajuda).toContain('fábrica')
+    // Não é essencial: não deve travar a publicação.
+    expect(r.podePublicar).toBe(true)
   })
 
   it('sem endereço não há sequer URL para partilhar', () => {

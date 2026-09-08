@@ -6,6 +6,49 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-08] Passagem de análise: o que está limpo, e a descrição de fábrica
+
+Análise a melhorias. Escrevo primeiro o que **não** tem problema, porque isso
+poupa a próxima sessão de o voltar a verificar.
+
+**Verificado e limpo:**
+- **Erros de runtime em produção, 7 dias**: **um** grupo, e é o aviso
+  intencional da `RESEND_API_KEY` no arranque. Zero erros inesperados.
+- **Os 10 crons estão registados e a correr** (`vercel crons ls`). A hipótese de
+  o plano Hobby cortar em 2 estava **errada** — verificada antes de ser dita. O
+  `ical-sync` correu hoje às 04:52 com agendamento para as 04:00.
+- **Escritas caladas**: o veio de 07/09 está esgotado. As duas que restam sem
+  verificação em `faturacao/emitir.ts` libertam o bloqueio de emissão, e esse
+  **expira sozinho** (`estado-fatura.ts`) — auto-corrige. A escrita crítica, a
+  que corre depois de a fatura existir legalmente, está protegida.
+- **Advisors do Supabase**: segurança e performance a 0 depois da migração 046.
+
+**O que estava mal:**
+- 🐛 **A descrição de fábrica contava como descrição.**
+  `website_settings.descricao` tem valor por omissão na base — ao contrário do
+  email e do telefone, que nascem vazios — portanto a coluna nunca está vazia e
+  `Boolean(descricao.trim())` dava sempre verdadeiro. A lista de prontidão do
+  site dizia que estava tratado desde o primeiro dia de qualquer conta.
+
+  É a mesma família de bug que este ficheiro foi escrito para evitar: o
+  `NOME_POR_OMISSAO` já existia exatamente por isto («o site foi publicado a
+  chamar-se *Reservas Diretas* e ninguém reparou durante meses»), mas o
+  raciocínio só tinha sido aplicado ao nome. Agora há `DESCRICAO_POR_OMISSAO` e
+  a comparação é simétrica. Continua a não ser essencial — não trava a
+  publicação, só deixa de mentir sobre o estado.
+
+⚠️ **Conteúdo, não código — para o Vasco.** O site público em
+`anfitrioes.pt/r/casadevasco` está **ativo e a servir valores de demonstração**:
+`host_nome` «O Seu Anfitrião», `logo_texto` «Anfitrião», telefone
+`+351 910 000 000` (não existe) e email `reservas@anfitriao.pt` — num domínio
+que **não é** o `anfitrioes.pt` de produção, e que é precisamente o lado por
+decidir da pendência H5. Nenhum destes é valor por omissão da base: foram
+escritos. A lista de prontidão não os apanha porque, do ponto de vista dela,
+estão preenchidos — e distinguir «preenchido» de «verdadeiro» num telefone não
+é coisa que o código possa fazer.
+
+Validação: 1098 testes (+1), typecheck e lint a zero.
+
 ### [2026-09-08] O Amenitiz deixa de ser uma dependência e passa a ser um corte
 
 **Decisão do utilizador: não há contacto com o Amenitiz; na altura da verdade,

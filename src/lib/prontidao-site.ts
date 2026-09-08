@@ -28,6 +28,18 @@ import type { Property, WebsiteSettings } from './types'
 /** Valor por omissão da coluna `nome` — não é um nome, é a ausência de um. */
 export const NOME_POR_OMISSAO = 'Reservas Diretas'
 
+/**
+ * O mesmo para a descrição, e pela mesma razão.
+ *
+ * `website_settings.descricao` também tem um valor de fábrica na base — ao
+ * contrário do email e do telefone, que nascem vazios. Enquanto isto não se
+ * comparava, a lista dava a descrição por feita mal a conta existia, porque a
+ * coluna nunca está vazia. Na conta real de produção é exatamente o que
+ * acontece: a frase de fábrica está no site e na `<meta name="description">`,
+ * e a lista diz que está tratado.
+ */
+export const DESCRICAO_POR_OMISSAO = 'Reserve diretamente connosco sem taxas de intermediários.'
+
 export interface ItemProntidao {
   chave: 'endereco' | 'nome' | 'contacto' | 'foto' | 'descricao' | 'apresentacao'
   titulo: string
@@ -48,6 +60,9 @@ export function itensDeProntidao(
 
   const nome = s?.nome?.trim() ?? ''
   const temNomeProprio = nome.length > 0 && nome !== NOME_POR_OMISSAO
+
+  const descricao = s?.descricao?.trim() ?? ''
+  const temDescricaoPropria = descricao.length > 0 && descricao !== DESCRICAO_POR_OMISSAO
 
   return [
     {
@@ -85,8 +100,10 @@ export function itensDeProntidao(
     {
       chave: 'descricao',
       titulo: 'Descrição',
-      ajuda: 'Uma frase sobre o que o hóspede vai encontrar.',
-      feito: Boolean(s?.descricao?.trim()),
+      ajuda: temDescricaoPropria
+        ? 'Uma frase sobre o que o hóspede vai encontrar.'
+        : 'Está com a frase de fábrica. Escreve o que o hóspede vai encontrar.',
+      feito: temDescricaoPropria,
       essencial: false,
     },
     {
