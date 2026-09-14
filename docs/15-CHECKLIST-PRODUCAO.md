@@ -14,15 +14,15 @@
 - [ ] CSP headers ativos em produção
 - [ ] 2FA disponível (Clerk MFA) — pelo menos opcional
 
-## SEO/Performance (por template, quando o sistema de templates existir)
+## SEO/Performance
 - [ ] Lighthouse Performance/SEO/Accessibility/Best Practices > 95
-- [ ] Sitemap + robots por tenant
-- [ ] Schema.org `LodgingBusiness` por site
-- [ ] OG/Twitter Cards dinâmicos (já implementado para o domínio principal)
+- [x] Sitemap + robots por tenant
+- [x] Schema.org `LodgingBusiness` por site
+- [x] OG/Twitter Cards dinâmicos (domínio principal)
 
 ## Legal/Compliance
-- [ ] Política de Privacidade, Cookies, Termos publicados no site institucional e nos sites de tenants
-- [ ] RGPD: exportação/eliminação de dados de hóspedes a pedido
+- [x] Política de Privacidade, Cookies, Termos publicados no site institucional e nos sites de tenants
+- [x] RGPD: exportação/anonimização de dados de hóspedes a pedido
 - [ ] SIBA/SEF: exportação validada com um caso real em produção
 
 ## Operacional

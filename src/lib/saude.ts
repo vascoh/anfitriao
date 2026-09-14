@@ -29,15 +29,16 @@ export interface Verificacao {
   accao?: string
 }
 
-function env(nome: string): boolean {
-  return Boolean(process.env[nome])
+function definida(ambiente: NodeJS.ProcessEnv, nome: string): boolean {
+  return Boolean(ambiente[nome]?.trim())
 }
 
 /** Configuração: o que está por definir e o que isso desliga. */
-export function verificarConfiguracao(): Verificacao[] {
+export function verificarConfiguracao(ambiente: NodeJS.ProcessEnv = process.env): Verificacao[] {
   const v: Verificacao[] = []
 
-  for (const problema of diagnosticarEmail()) {
+  const problemasEmail = diagnosticarEmail(ambiente)
+  for (const problema of problemasEmail) {
     v.push({
       chave: 'email',
       titulo: 'Envio de email',
@@ -46,7 +47,7 @@ export function verificarConfiguracao(): Verificacao[] {
       accao: 'Definir RESEND_API_KEY e EMAIL_FROM nas variáveis de ambiente.',
     })
   }
-  if (diagnosticarEmail().length === 0) {
+  if (problemasEmail.length === 0) {
     v.push({ chave: 'email', titulo: 'Envio de email', nivel: 'ok', detalhe: 'Configurado.' })
   }
 
@@ -58,22 +59,51 @@ export function verificarConfiguracao(): Verificacao[] {
         accao: 'openssl rand -base64 32',
       })
 
-  v.push(env('INVOICEXPRESS_PARTNER_API_KEY')
+  v.push(definida(ambiente, 'SUPABASE_SERVICE_ROLE_KEY')
+    ? { chave: 'supabase', titulo: 'Acesso servidor à base de dados', nivel: 'ok', detalhe: 'Chave service_role definida.' }
+    : {
+        chave: 'supabase', titulo: 'Acesso servidor à base de dados', nivel: 'erro',
+        detalhe: 'SUPABASE_SERVICE_ROLE_KEY em falta: as rotas autenticadas não conseguem aceder à base com isolamento por anfitrião.',
+        accao: 'Definir a chave service_role do projeto Supabase nas variáveis de ambiente.',
+      })
+
+  const stripeEmFalta = [
+    ['STRIPE_SECRET_KEY', 'chave secreta'],
+    ['STRIPE_WEBHOOK_SECRET', 'segredo do webhook'],
+    ['STRIPE_STARTER_PRICE_ID', 'preço Starter'],
+    ['STRIPE_PRO_PRICE_ID', 'preço Pro'],
+    ['STRIPE_EMPRESA_PRICE_ID', 'preço Empresa'],
+  ].filter(([nome]) => !definida(ambiente, nome))
+
+  v.push(stripeEmFalta.length === 0
+    ? { chave: 'stripe', titulo: 'Subscrições Stripe', nivel: 'ok', detalhe: 'Chaves e preços dos três planos configurados.' }
+    : {
+        chave: 'stripe', titulo: 'Subscrições Stripe', nivel: 'aviso',
+        detalhe: `Configuração incompleta: ${stripeEmFalta.map(([, descricao]) => descricao).join(', ')}. O checkout ou a ativação de planos pode falhar.`,
+      })
+
+  v.push(definida(ambiente, 'CRON_SECRET')
+    ? { chave: 'cron', titulo: 'Proteção dos cron jobs', nivel: 'ok', detalhe: 'CRON_SECRET definido.' }
+    : {
+        chave: 'cron', titulo: 'Proteção dos cron jobs', nivel: ambiente.VERCEL_ENV === 'production' ? 'erro' : 'aviso',
+        detalhe: 'CRON_SECRET em falta: os jobs agendados recusam executar em produção.',
+        accao: 'Definir um segredo aleatório em CRON_SECRET e no agendamento da Vercel.',
+      })
+
+  v.push(definida(ambiente, 'INVOICEXPRESS_PARTNER_API_KEY')
     ? { chave: 'faturacao', titulo: 'Faturação certificada', nivel: 'ok', detalhe: 'Chave de parceiro definida.' }
     : {
         chave: 'faturacao', titulo: 'Faturação certificada', nivel: 'aviso',
         detalhe: 'Sem INVOICEXPRESS_PARTNER_API_KEY: a página de faturação diz que não está disponível.',
       })
 
-  v.push(env('STRIPE_EMPRESA_PRICE_ID')
-    ? { chave: 'stripe', titulo: 'Plano Empresa no Stripe', nivel: 'ok', detalhe: 'Price ID definido.' }
-    : {
-        chave: 'stripe', titulo: 'Plano Empresa no Stripe', nivel: 'aviso',
-        detalhe: 'O plano existe no código e na página de preços, mas não tem Price ID: o checkout falha.',
-      })
-
-  const clerkDev = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '').startsWith('pk_test')
-  v.push(clerkDev
+  const clerkKey = ambiente.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()
+  v.push(!clerkKey
+    ? {
+        chave: 'clerk', titulo: 'Autenticação', nivel: 'erro',
+        detalhe: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY em falta: não é possível iniciar sessão.',
+      }
+    : clerkKey.startsWith('pk_test')
     ? {
         chave: 'clerk', titulo: 'Autenticação', nivel: 'aviso',
         detalhe: 'Clerk em instância de desenvolvimento — não deve servir utilizadores reais.',

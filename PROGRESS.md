@@ -6,6 +6,28 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-13] Saúde de produção: deixar de chamar «verde» ao que não está configurado
+
+O painel `/admin/saude` já mostrava a ausência de email, encriptação e do preço
+Empresa, mas não via três falhas que deixam a app parcialmente ou totalmente
+inoperacional: `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET` e as quatro peças
+restantes do Stripe (chave, webhook, Starter e Pro). Também classificava uma
+chave pública Clerk ausente como «instância de produção», só porque não começava
+por `pk_test`.
+
+- ✅ `verificarConfiguracao` passa a receber o ambiente como argumento, para
+  ser testável, e valida todas estas dependências. Em produção, cron sem
+  segredo e acesso de servidor à base sem `service_role` são erros; Stripe
+  incompleto é aviso explícito com as peças em falta.
+- ✅ Cinco testes novos cobrem configuração saudável, Clerk ausente, Stripe
+  incompleto, cron sem segredo e prioridade do estado de saúde.
+- 📄 O TODO, handoff e checklist de produção deixam de listar como abertas a
+  encriptação, o registo de saída de dados, sitemap/robots, Schema.org, legais,
+  RGPD, contraste e testemunhos fictícios. As decisões que continuam humanas
+  mantêm-se abertas.
+
+Validação: 1103 testes (+5; 1 ignorado), typecheck e lint a zero.
+
 ### [2026-09-08] Passagem de análise: o que está limpo, e a descrição de fábrica
 
 Análise a melhorias. Escrevo primeiro o que **não** tem problema, porque isso

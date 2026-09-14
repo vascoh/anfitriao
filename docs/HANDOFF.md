@@ -223,10 +223,10 @@ CRON_SECRET=
 - [ ] **Testar fluxo completo de onboarding** — novo utilizador → criar propriedade → receber reserva → check-in
 - [ ] **Definir `MAINTENANCE_MODE=false`** em Vercel — depois de validar o JWT template
 
-### Decisões humanas pendentes (2026-07-13)
+### Decisões humanas pendentes
 
-- [ ] **Testemunhos da landing** — os 3 testemunhos aparentam ser fictícios (produto não lançado): substituir por beta reais, remover ou marcar como ilustrativos
-- [ ] **Contraste AA** — ~54 nós falham WCAG AA (texto branco sobre terracotta `#C2714F` ≈ 3.5:1); corrigir implica escurecer a paleta (ex: `#A85A3B`)
+- [x] **Testemunhos da landing** — a secção fica deliberadamente vazia até existirem testemunhos reais e autorizados; não se publicam depoimentos ilustrativos.
+- [x] **Contraste AA da landing** — a regressão em tons `slate` foi corrigida e `landing-v2/contraste.test.ts` impede o seu regresso. Manter auditoria axe/Lighthouse antes de alterações visuais relevantes.
 - [ ] **Wildcard DNS** para subdomain routing (`*.anfitrioes.pt`)
 
 ### Importante (antes de crescimento)

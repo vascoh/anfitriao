@@ -122,7 +122,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [x] Notificações — sistema de preferências por utilizador (`notification_preferences`) — `CHANGELOG_PHASE_01.md`
 - [x] `MAINTENANCE_MODE` confirmado `false` em produção (verificado por HTTP: `/` e `/sign-up` devolvem 200 sem redirect para `/em-construcao`)
 - [x] Auditoria de isolamento multi-tenant: **correção de risco** — `requesting_owner_id()`/RLS via JWT Clerk nunca chegou a ser ligado (`getSupabaseForRequest` é código morto, zero chamadas). O isolamento real em produção é `service_role` + filtro `.eq('owner_id', userId)` com `userId` sempre vindo de `auth()` server-side — auditado em todas as 20 rotas de API, consistente em 100%. Já não é bloqueante para lançamento (downgrade de 🔴 crítico para 🟡 defesa em profundidade recomendada).
-- [ ] **Pendência humana**: decidir se vale a pena ativar o Clerk JWT template como camada extra de defesa (RLS a nível de BD), ou remover o código morto (`getSupabaseUserClient`/`getSupabaseForRequest`) — ver `docs/SAAS_ARCHITECTURE.md` §13
+- [ ] **Pendência humana**: decidir se vale a pena ativar o Clerk JWT template como camada extra de defesa (RLS a nível de BD) — ver `docs/HANDOFF.md` § «Nota crítica — Clerk JWT template». O código cliente morto foi removido a 2026-09-08.
 - [x] Onboarding ponta-a-ponta testado E2E em produção (2026-07-27): conta Clerk descartável → `ensureAccount` na primeira visita a `/hoje` → propriedade → ativar website + slug próprio → site público em `/r/[slug]` → hóspede pede reserva (`/book/[id]`) → check-in online (dados SIBA preenchidos e gravados) → tudo confirmado na BD. Dados de teste e utilizador Clerk removidos no final. **Bug crítico encontrado e corrigido no mesmo incremento**: `website_settings.id` tinha `DEFAULT 1` fixo (não sequência) desde a migração para multi-tenant — toda conta nova falhava ao gravar `/website` pela primeira vez (23505 na PK, mascarado como "URL já em uso"). Nenhuma conta nova tinha conseguido publicar o site até agora. Corrigido (migration 026 + mapeamento de erro em `api/website-settings`)
 
 ## Fora de ordem — Correção crítica de segurança ✅ (2026-07-26, ver `CHANGELOG_PHASE_04.md`)
@@ -169,7 +169,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 ## Fase 2 (plano estratégico) — RGPD ✅ (2026-07-30)
 - [x] **2.16 / ANF-1.10, 1.11, 1.12** — retenção aplicada por código (`lib/retencao.ts` + cron diário às 03:00), exportação e apagamento a pedido (`/api/guests/[id]/dados`, art. 15.º/17.º/20.º) e registo de atividades de tratamento (`docs/RGPD-REGISTO-TRATAMENTOS.md`, art. 30.º). Anonimiza em vez de apagar — a reserva tem de ser conservada 10 anos (art. 52.º do CIVA). Migração 029 aplicada em produção.
 - [ ] **Pendência humana**: prazo de conservação dos dados da conta após cancelamento e do `audit_log` — os únicos campos que faltam ao registo de tratamentos e à política de privacidade nesta matéria
-- [ ] Falta da mesma família (não feito neste incremento): encriptação em repouso dos campos de documento (ANF-1.7) e log de acesso a dados sensíveis (ANF-1.8)
+- [x] Encriptação em repouso dos campos de documento (ANF-1.7) e registo de saída de dados sensíveis (ANF-1.8) — concluídos a 2026-08-12. O que resta é definir os prazos de conservação acima.
 
 ## Pendências para Validação Humana (não bloqueiam desenvolvimento)
 Ver `docs/SAAS_ARCHITECTURE.md` §13 — lista viva, atualizada conforme surgem novas decisões de negócio:
