@@ -42,6 +42,11 @@ const STRINGS = {
   footer_privacy: { pt: 'Privacidade', en: 'Privacy' },
   footer_cookies: { pt: 'Cookies', en: 'Cookies' },
   footer_terms: { pt: 'Termos', en: 'Terms' },
+  // Menção obrigatória na publicidade do alojamento (DL 128/2014). Em inglês
+  // fica o termo português entre parênteses, porque é o que o hóspede vai
+  // reconhecer no anúncio da plataforma e no título de registo.
+  footer_registo_um: { pt: 'Registo AL n.º', en: 'Local Accommodation registration (AL) no.' },
+  footer_registo_varios: { pt: 'Registos AL n.º', en: 'Local Accommodation registrations (AL) no.' },
 } as const
 
 type Key = keyof typeof STRINGS

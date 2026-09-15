@@ -1,4 +1,5 @@
 import { nights } from './utils'
+import { verificarRnal } from './rnal'
 
 /**
  * Cofre de conformidade — obrigações legais do Alojamento Local em Portugal.
@@ -21,7 +22,7 @@ import { nights } from './utils'
 /** Dias de antecedência com que um documento passa a "a expirar". */
 export const DIAS_AVISO_EXPIRACAO = 30
 
-export type EstadoItem = 'ok' | 'a_expirar' | 'expirado' | 'em_falta'
+export type EstadoItem = 'ok' | 'a_expirar' | 'expirado' | 'em_falta' | 'invalido'
 
 export type ChaveItem =
   | 'rnal'
@@ -90,6 +91,10 @@ function textoValidade(estado: EstadoItem, dias: number | undefined, oQue: strin
       return `${oQue} válido.`
     case 'em_falta':
       return `Sem data de validade registada.`
+    // `invalido` é dos itens verificados por forma (o RNAL), que não passam
+    // por aqui. Existe para o switch ficar exaustivo.
+    case 'invalido':
+      return `${oQue} inválido.`
   }
 }
 
@@ -102,15 +107,21 @@ export function avaliarConformidade(p: CamposConformidade, hoje: string): ItemCo
   const itens: ItemConformidade[] = []
 
   // ── RNAL ──────────────────────────────────────────────────────────────
-  const temRnal = Boolean(p.rnal_numero && p.rnal_numero.trim())
+  /* Verificado, não só contado. Um número mal escrito passava antes por «em
+   * dia» e seguia para a publicidade, para o cartaz e para os anúncios — onde
+   * o Reg. (UE) 2024/1028 obriga as plataformas a verificá-lo. A verificação é
+   * de forma: não há como confirmar que o registo existe (ver `rnal.ts`). */
+  const rnal = verificarRnal(p.rnal_numero)
   itens.push({
     chave: 'rnal',
     titulo: 'Número de registo (RNAL)',
     base: 'DL 128/2014, alterado pela Lei 56/2023',
-    estado: temRnal ? 'ok' : 'em_falta',
-    detalhe: temRnal
-      ? `Registo ${p.rnal_numero!.trim()}.`
-      : 'Obrigatório em toda a publicidade do alojamento, incluindo anúncios em plataformas.',
+    estado: rnal.valido ? 'ok' : rnal.motivo === 'vazio' ? 'em_falta' : 'invalido',
+    detalhe: rnal.valido
+      ? `Registo ${rnal.normalizado}.`
+      : rnal.motivo === 'vazio'
+        ? 'Obrigatório em toda a publicidade do alojamento, incluindo anúncios em plataformas.'
+        : `${rnal.mensagem} Confirme no título de registo — as plataformas verificam este número e suspendem o anúncio quando não bate certo.`,
     obrigatorio: true,
   })
 
@@ -189,7 +200,9 @@ export interface ResumoConformidade {
 
 export function resumirConformidade(itens: ItemConformidade[]): ResumoConformidade {
   const obrigatorios = itens.filter(i => i.obrigatorio)
-  const criticos = obrigatorios.filter(i => i.estado === 'em_falta' || i.estado === 'expirado').length
+  const criticos = obrigatorios.filter(
+    i => i.estado === 'em_falta' || i.estado === 'expirado' || i.estado === 'invalido',
+  ).length
   const aExpirar = obrigatorios.filter(i => i.estado === 'a_expirar').length
 
   return {
@@ -240,9 +253,12 @@ export function itensParaAlertar(itens: ItemConformidade[]): ItemConformidade[] 
 /** Ordem de gravidade para ordenar a lista: o que exige ação vem primeiro. */
 const PESO: Record<EstadoItem, number> = {
   expirado: 0,
-  em_falta: 1,
-  a_expirar: 2,
-  ok: 3,
+  // Um número errado é mais urgente do que um número que falta: quem não tem
+  // registo sabe-o, quem tem um errado julga estar em dia.
+  invalido: 1,
+  em_falta: 2,
+  a_expirar: 3,
+  ok: 4,
 }
 
 export function ordenarPorGravidade(itens: ItemConformidade[]): ItemConformidade[] {

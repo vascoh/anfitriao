@@ -15,6 +15,7 @@ import {
   type EstadoItem,
   type ItemConformidade,
 } from '@/lib/compliance'
+import { verificarRnal } from '@/lib/rnal'
 import type { Property } from '@/lib/types'
 
 /** Portal oficial do Livro de Reclamações Eletrónico. */
@@ -25,6 +26,7 @@ const ESTILO: Record<EstadoItem, { Icon: typeof ShieldCheck; classe: string; rot
   a_expirar: { Icon: Clock, classe: 'text-amber-600 dark:text-amber-400', rotulo: 'A expirar' },
   expirado: { Icon: ShieldAlert, classe: 'text-red-600 dark:text-red-400', rotulo: 'Expirado' },
   em_falta: { Icon: Circle, classe: 'text-muted-foreground', rotulo: 'Em falta' },
+  invalido: { Icon: ShieldAlert, classe: 'text-red-600 dark:text-red-400', rotulo: 'Inválido' },
 }
 
 function Semaforo({ estado }: { estado: EstadoItem }) {
@@ -35,6 +37,19 @@ function Semaforo({ estado }: { estado: EstadoItem }) {
       {rotulo}
     </span>
   )
+}
+
+/**
+ * Diz ao anfitrião, enquanto escreve, se o número de registo tem a forma certa.
+ * Em branco não é erro — é o estado inicial de quem ainda não o tem à mão.
+ */
+function dicaRnal(valor: string): string | undefined {
+  const r = verificarRnal(valor)
+  if (r.motivo === 'vazio') return undefined
+  if (!r.valido) return r.mensagem
+  // Só vale a pena dizer alguma coisa quando o que fica gravado é diferente do
+  // que está escrito.
+  return r.normalizado === valor.trim() ? undefined : `Vai ser guardado como ${r.normalizado}.`
 }
 
 function Campo({
@@ -290,6 +305,7 @@ export default function ConformidadePage() {
                   value={rascunho.rnal_numero}
                   onChange={v => setRascunho({ ...rascunho, rnal_numero: v })}
                   placeholder="12345/AL"
+                  hint={dicaRnal(rascunho.rnal_numero)}
                 />
                 <Campo
                   label="Data de registo"

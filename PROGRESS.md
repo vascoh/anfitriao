@@ -6,6 +6,42 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-15] O número de registo AL: verificado, e publicado onde a lei manda
+
+Fechada a pendência **1.5 (I8)**. Duas coisas, uma encontrada por causa da outra.
+
+**O campo do RNAL não era verificado.** Qualquer texto contava como cumprido:
+`12345`, `xpto`, um NIF colado por engano. O número seguia dali para o cartaz do
+livro de reclamações, para o dossiê ASAE e para os anúncios — onde o
+Reg. (UE) 2024/1028 obriga as plataformas a verificá-lo e a suspender o anúncio
+quando falha.
+
+- ✅ `lib/rnal.ts` — normaliza o que os anfitriões escrevem (`n.º 12345 al`,
+  `12.345/AL`, `AL 12345` → `12345/AL`) e verifica a forma. **Não cose dois
+  grupos de dígitos**: `12345/AL/2024` daria `123452024/AL`, que é um número
+  inventado com ar de bom — o pior resultado possível num campo que acaba na
+  publicidade. Devolve `null` em vez de adivinhar.
+- ✅ O cofre ganha o estado `invalido`, que conta como crítico e ordena **antes**
+  de «em falta»: quem não tem registo sabe-o, quem tem um errado julga estar em
+  dia. O formulário avisa enquanto se escreve.
+- ✅ `/api/compliance` grava a forma canónica e **nunca recusa a gravação** — um
+  formato que não conhecemos não pode trancar o anfitrião fora do resto do cofre.
+  O erro fica visível, não engolido.
+- ⚠️ Verifica a **forma**, não a existência. Não há serviço público que permita
+  consultar o RNAL; um número bem formado pode ser de outra pessoa ou ter
+  caducado. Está escrito no módulo e dito ao anfitrião.
+
+**E ao fazê-lo: o número nunca esteve no site do anfitrião.** O DL 128/2014
+obriga a que conste da publicidade do estabelecimento, e o site `/r/[slug]` é
+publicidade tanto como o anúncio no Airbnb. Faltava nas nove páginas desde que o
+site existe — mais uma ausência, que é o tipo de falha que este projeto não vê
+sozinho. Agora está no rodapé (`adminGetRegistosAl`, PT/EN), e só saem os
+números que passam na verificação: publicar um mal escrito seria pior do que não
+publicar nada. É o rodapé que o vai buscar, não as páginas que o passam, para
+que a próxima página não nasça sem ele.
+
+Validação: 1121 testes (+18; 1 ignorado), typecheck, lint e `next build` a zero.
+
 ### [2026-09-13] Saúde de produção: deixar de chamar «verde» ao que não está configurado
 
 O painel `/admin/saude` já mostrava a ausência de email, encriptação e do preço

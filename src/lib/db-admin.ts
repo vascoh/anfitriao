@@ -7,6 +7,7 @@
 import { createAdminClient } from './supabase'
 import { carregarTudo } from './supabase-tudo'
 import { revelarCampos } from './campos-sensiveis'
+import { verificarRnal } from './rnal'
 import type { Booking, Guest, Property, WebsiteSettings, Post } from './types'
 
 const DEFAULT_WEBSITE: WebsiteSettings = {
@@ -129,6 +130,39 @@ export async function adminGetWebsiteSettingsBySlug(slug: string): Promise<Websi
     .maybeSingle()
   if (error || !data) return null
   return data as WebsiteSettings
+}
+
+/**
+ * Números de registo (RNAL) dos alojamentos ativos de um anfitrião, para o
+ * rodapé do site público.
+ *
+ * **Isto é publicação deliberada, não uma fuga.** `property-publica.ts` mantém
+ * o RNAL fora do que vai para o browser nas páginas de reserva, e bem — mas o
+ * DL 128/2014 obriga a que o número conste da publicidade do estabelecimento, e
+ * o site do anfitrião é publicidade. Quem vier limpar campos sensíveis um dia:
+ * este é para ficar.
+ *
+ * Só sai o que passa na verificação de forma (`lib/rnal.ts`): publicar um
+ * número mal escrito seria pior do que não publicar nada, porque dá ao hóspede
+ * e ao inspetor a impressão de cumprimento. O que não passa aparece ao
+ * anfitrião em `/conformidade` como «Inválido».
+ */
+export async function adminGetRegistosAl(ownerId: string): Promise<string[]> {
+  const { data, error } = await getSupabase()
+    .from('properties')
+    .select('rnal_numero')
+    .eq('owner_id', ownerId)
+    .neq('ativo', false)
+    .not('rnal_numero', 'is', null)
+  if (error) { console.error('[adminGetRegistosAl]', error.message); return [] }
+
+  const validos = (data as { rnal_numero: string | null }[])
+    .map(p => verificarRnal(p.rnal_numero))
+    .filter(r => r.valido)
+    .map(r => r.normalizado!)
+
+  // Quartos da mesma casa partilham o registo do estabelecimento.
+  return [...new Set(validos)].sort()
 }
 
 /** Slugs de todos os sites públicos ativos — usado para listar os sitemaps por tenant no robots.txt raiz. */

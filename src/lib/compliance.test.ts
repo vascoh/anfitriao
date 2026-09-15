@@ -85,6 +85,32 @@ describe('avaliarConformidade', () => {
     expect(itens.find(i => i.chave === 'rnal')!.estado).toBe('em_falta')
   })
 
+  it('assinala RNAL mal formado como inválido, não como em dia', () => {
+    // Antes da verificação, qualquer texto no campo contava como cumprido — e
+    // seguia para o cartaz, o dossiê e os anúncios.
+    const itens = avaliarConformidade({ ...completo, rnal_numero: '12345/AL/2024' }, HOJE)
+    const rnal = itens.find(i => i.chave === 'rnal')!
+    expect(rnal.estado).toBe('invalido')
+    expect(resumirConformidade(itens).criticos).toBe(1)
+  })
+
+  it('aceita o número escrito à mão e mostra-o na forma canónica', () => {
+    const itens = avaliarConformidade({ ...completo, rnal_numero: 'n.º 12345 al' }, HOJE)
+    const rnal = itens.find(i => i.chave === 'rnal')!
+    expect(rnal.estado).toBe('ok')
+    expect(rnal.detalhe).toContain('12345/AL')
+  })
+
+  it('um RNAL inválido vem antes de um item em falta na ordenação', () => {
+    // Quem não tem registo sabe-o; quem tem um errado julga estar em dia.
+    const itens = avaliarConformidade(
+      { ...completo, rnal_numero: 'xpto', livro_reclamacoes_registado: false },
+      HOJE,
+    )
+    const ordem = ordenarPorGravidade(itens).map(i => i.chave)
+    expect(ordem.indexOf('rnal')).toBeLessThan(ordem.indexOf('livro_reclamacoes'))
+  })
+
   it('assinala seguro em falta quando não há apólice, ignorando a validade', () => {
     const itens = avaliarConformidade(
       { ...completo, seguro_apolice: null, seguro_validade: '2027-01-15' },

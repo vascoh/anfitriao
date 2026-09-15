@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { WebsiteSettings } from '@/lib/types'
 import { resolveLang, t } from '@/lib/i18n'
+import { adminGetRegistosAl } from '@/lib/db-admin'
 
 export const WA_SVG = (
   <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
@@ -52,9 +53,22 @@ export function SiteNav({ slug, settings, active }: { slug: string; settings: We
   )
 }
 
-export function SiteFooter({ slug, settings }: { slug: string; settings: WebsiteSettings }) {
+/**
+ * Rodapé do site do anfitrião.
+ *
+ * Traz o número de registo de Alojamento Local: o DL 128/2014 obriga a que
+ * conste da publicidade do estabelecimento, e o site próprio é publicidade
+ * tanto como o anúncio no Airbnb. Faltava em todas as páginas desde que o site
+ * existe — uma ausência, que é o tipo de falha que este projeto não vê sozinho.
+ *
+ * Vai buscá-lo aqui em vez de o receber por prop porque são nove páginas a
+ * desenhar este rodapé e só duas carregam propriedades; passá-lo à mão era
+ * garantir que a próxima página nascia sem ele.
+ */
+export async function SiteFooter({ slug, settings }: { slug: string; settings: WebsiteSettings }) {
   const brandName = settings.logo_texto || settings.nome
   const lang = resolveLang(settings.idioma)
+  const registos = settings.owner_id ? await adminGetRegistosAl(settings.owner_id) : []
   return (
     <footer className="border-t border-border">
       <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-4 text-xs text-muted-foreground">
@@ -75,6 +89,12 @@ export function SiteFooter({ slug, settings }: { slug: string; settings: Website
           <Link href={`/r/${slug}/cookies`} className="hover:text-foreground transition-colors">{t(lang, 'footer_cookies')}</Link>
           <Link href={`/r/${slug}/termos`} className="hover:text-foreground transition-colors">{t(lang, 'footer_terms')}</Link>
         </div>
+        {registos.length > 0 && (
+          <p className="text-[11px]">
+            {t(lang, registos.length === 1 ? 'footer_registo_um' : 'footer_registo_varios')}{' '}
+            {registos.join(' · ')}
+          </p>
+        )}
       </div>
     </footer>
   )

@@ -25,6 +25,7 @@ const ROTULO: Record<EstadoItem, string> = {
   a_expirar: 'A expirar',
   expirado: 'Expirado',
   em_falta: 'Em falta',
+  invalido: 'Inválido',
 }
 
 function dataHora(iso: string): string {

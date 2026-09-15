@@ -166,7 +166,9 @@ export function limitacoes(p: {
     'Este documento é gerado pelo próprio titular a partir dos seus registos. Não é emitido, validado nem reconhecido por nenhuma entidade oficial.',
   ]
 
-  const emFalta = p.conformidade.filter(i => i.obrigatorio && (i.estado === 'em_falta' || i.estado === 'expirado'))
+  const emFalta = p.conformidade.filter(
+    i => i.obrigatorio && (i.estado === 'em_falta' || i.estado === 'expirado' || i.estado === 'invalido'),
+  )
   if (emFalta.length > 0) {
     notas.push(
       `${emFalta.length === 1 ? 'Há uma obrigação' : `Há ${emFalta.length} obrigações`} por cumprir à data de emissão: ${emFalta.map(i => i.titulo).join(', ')}.`,

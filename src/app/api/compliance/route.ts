@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
 import { encriptar, estaConfigurada as encriptacaoConfigurada } from '@/lib/crypto'
+import { rnalParaGravar } from '@/lib/rnal'
 
 const supabase = createAdminClient()
 
@@ -86,6 +87,15 @@ export async function PATCH(req: NextRequest) {
 
   for (const campo of CAMPOS_TEXTO) {
     if (campo in body) patch[campo] = limparTexto(body[campo], 200)
+  }
+
+  /* O RNAL é guardado na forma canónica (`12345/AL`) para que o cartaz, o
+   * dossiê e o site público mostrem todos o mesmo. Quando o número não passa na
+   * verificação guarda-se como veio: recusar a gravação trancaria o anfitrião
+   * fora do resto do cofre por um formato que podemos não conhecer. O erro
+   * aparece no cofre como «Inválido» (ver `lib/rnal.ts`). */
+  if (typeof patch.rnal_numero === 'string') {
+    patch.rnal_numero = rnalParaGravar(patch.rnal_numero)
   }
 
   for (const campo of CAMPOS_DATA) {
