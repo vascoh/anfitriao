@@ -22,10 +22,19 @@ e não dá erro — o produto parece funcionar e não funciona.
 
 1. [resend.com/api-keys](https://resend.com/api-keys) → *Create API Key* (chega
    permissão *Sending access*). Começa por `re_`.
-2. Confirmar que `anfitrioes.pt` está **verificado** em
-   [resend.com/domains](https://resend.com/domains). Os registos DNS já existem
-   (DKIM, SPF do subdomínio `send.`, DMARC) — falta confirmar que o painel os dá
-   como válidos.
+2. ~~Confirmar que `anfitrioes.pt` está **verificado**~~ — **verificado por DNS a
+   2026-09-15, os quatro registos estão publicados e certos**:
+
+   | Registo | Valor no DNS |
+   |---|---|
+   | `resend._domainkey.anfitrioes.pt` TXT | chave DKIM de 1024 bits presente |
+   | `send.anfitrioes.pt` TXT | `v=spf1 include:amazonses.com ~all` |
+   | `send.anfitrioes.pt` MX | `10 feedback-smtp.eu-west-1.amazonses.com` |
+   | `_dmarc.anfitrioes.pt` TXT | `v=DMARC1; p=none;` |
+
+   Não há aqui nada por fazer nem nada por esperar: o painel do Resend dá o
+   domínio como verificado assim que olhar para isto. **O único passo que falta
+   neste guião é criar a chave e colá-la** — não há propagação de DNS pelo meio.
 3. Definir no Vercel, em **Production**:
    ```
    RESEND_API_KEY=re_...

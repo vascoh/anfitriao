@@ -42,6 +42,19 @@ que a próxima página não nasça sem ele.
 
 Validação: 1121 testes (+18; 1 ignorado), typecheck, lint e `next build` a zero.
 
+**Deployado** em `anfitriao-nfjutk3jp`, alias `anfitrioes.pt` confirmado por
+`vercel inspect` com a data do momento (a primeira tentativa devolveu
+«Not authorized» e passou à segunda — o CLI estava autenticado, foi falha
+transitória). `/` e `/sign-up` a 200.
+
+**Verificado de passagem — o DNS do email está todo de pé.** O guião da primeira
+reserva dizia «falta confirmar que o painel do Resend os dá como válidos»;
+confirmado por consulta direta que os quatro registos estão publicados e certos
+(DKIM `resend._domainkey`, SPF `send.` com `include:amazonses.com`, MX
+`feedback-smtp.eu-west-1`, DMARC `p=none`). Não há propagação por esperar: entre
+o estado atual e o primeiro email enviado está **só** gerar a chave em
+`resend.com/api-keys`, colá-la em Production e voltar a deployar.
+
 ### [2026-09-13] Saúde de produção: deixar de chamar «verde» ao que não está configurado
 
 O painel `/admin/saude` já mostrava a ausência de email, encriptação e do preço
