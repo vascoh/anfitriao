@@ -66,11 +66,14 @@ export function normalizarRnal(bruto: string | null | undefined): string | null 
   const limpo = bruto.trim()
   if (limpo === '') return null
 
-  // Ruído tipográfico à volta do número: o prefixo/sufixo AL em qualquer caixa
-  // e o "n.º"/"nº"/"no".
+  // Ruído tipográfico à volta do número: o "n.º"/"nº"/"no" e o prefixo/sufixo
+  // AL em qualquer caixa — mas só nas pontas. Apagar «AL» em qualquer posição
+  // cosia `12345 AL 2024` num 123452024 inventado: o AL virava espaço e os
+  // espaços internos contam como separadores de milhar.
   const semRuido = limpo
     .replace(/n\.?[ºo°]\.?/gi, ' ')
-    .replace(/a\.?\s*l\.?/gi, ' ')
+    .replace(/^[\s/\\.-]*a\.?\s*l\.?(?=[\d\s/\\.-]|$)/i, ' ')
+    .replace(/(?<=[\d\s/\\.-])a\.?\s*l\.?[\s/\\.-]*$/i, ' ')
 
   /* O que pode sobrar é **um** grupo de dígitos, com pontos ou espaços de
    * milhar lá dentro, rodeado de barras e espaços. Deliberadamente não se

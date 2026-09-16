@@ -6,6 +6,20 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-16] O AL no meio do número cosia dois grupos num registo inventado
+
+Auditoria à sessão anterior encontrou um furo no próprio `lib/rnal.ts`: o ruído
+`AL` era apagado **em qualquer posição**, não só nas pontas. O `AL` virava
+espaço, o espaço interno contava como separador de milhar, e `12345 AL 2024`
+normalizava para `123452024/AL` — um número inventado com ar de bom, exatamente
+o que o docstring do módulo promete recusar (o teste cobria a variante com
+barras, `12345/AL/2024`, mas não a com espaços).
+
+- ✅ O strip do `AL` está agora ancorado às pontas (prefixo/sufixo), com
+  lookahead/lookbehind para continuar a aceitar `AL12345` e `12345AL`.
+- ✅ Testes novos: `12345 AL 2024`, `123AL45` e `12345 AL e 67890 AL` → `null`.
+- ✅ Suite completa verde (1122), typecheck e lint a zero, build de produção ok.
+
 ### [2026-09-15] O número de registo AL: verificado, e publicado onde a lei manda
 
 Fechada a pendência **1.5 (I8)**. Duas coisas, uma encontrada por causa da outra.

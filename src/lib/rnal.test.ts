@@ -8,9 +8,17 @@ describe('normalizarRnal', () => {
 
   it('aceita o que os anfitriões escrevem à mão', () => {
     // Todos estes são o mesmo registo, escrito de seis maneiras diferentes.
-    for (const escrito of ['12345', '12345 AL', '12345/al', 'AL 12345', 'n.º 12345/AL', ' 12345 / AL ']) {
+    for (const escrito of ['12345', '12345 AL', '12345/al', 'AL 12345', 'n.º 12345/AL', ' 12345 / AL ', 'AL12345', '12345AL']) {
       expect(normalizarRnal(escrito)).toBe('12345/AL')
     }
+  })
+
+  it('só trata o AL como ruído nas pontas — no meio é texto a mais', () => {
+    // Antes, o AL do meio virava espaço, o espaço contava como separador de
+    // milhar, e `12345 AL 2024` saía como 123452024/AL — um número inventado.
+    expect(normalizarRnal('12345 AL 2024')).toBeNull()
+    expect(normalizarRnal('123AL45')).toBeNull()
+    expect(normalizarRnal('12345 AL e 67890 AL')).toBeNull()
   })
 
   it('tira zeros à esquerda, que são erro de transcrição', () => {
