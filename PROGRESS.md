@@ -6,6 +6,31 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-17] O lembrete de checkout nunca chegava a quem já estava marcado como hospedado
+
+Continuação da auditoria: `cron/automations` decidia os estados de reserva a
+considerar com `coluna === 'check_in' || offsetDias >= 0`, que junta
+`checkout_hoje` (desvio 0) ao mesmo grupo de `checkin_amanha` — "reservas
+ainda não iniciadas", `confirmada`/`pendente` só. Mas `checkout_hoje` não
+observa uma reserva que ainda não começou: observa uma estadia que pode estar
+**em curso**, com o hóspede já marcado como `checkin` pelo anfitrião (botão
+"Registar check-in" em `/hoje`, uma ação manual e frequente — o check-in
+online do hóspede não muda este estado). Excluir `checkin` da consulta
+significava que o lembrete de checkout nunca era enviado a quem já lá estava
+assinalado como hospedado, que é a maioria das estadias que chegam ao último
+dia.
+
+- ✅ `estadosParaGatilho` (novo, `lib/automations.ts`) substitui a heurística
+  inline por gatilho explícito: `checkin_amanha` fica em
+  `confirmada`/`pendente`; `checkout_hoje` ganha `checkin`;
+  `pedir_avaliacao` mantém-se sem alteração (`checkin`/`checkout` já lá
+  estavam).
+- ✅ A lógica sai da rota (não tinha um único teste, a mesma família de falha
+  de outras sessões) para uma função testável.
+- ✅ Três testes novos cobrem os três gatilhos.
+
+Validação: 1130 testes (+3; 1 ignorado), typecheck e lint a zero.
+
 ### [2026-09-17] O aviso do limite de noites disparava em estadias que nunca iam ser cobradas
 
 Continuação da auditoria: `calcularTmt` (`lib/taxa-turistica.ts`) conta o

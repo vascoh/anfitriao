@@ -1,4 +1,4 @@
-import type { AutomationTrigger } from './types'
+import type { AutomationTrigger, BookingStatus } from './types'
 
 export const TRIGGER_LABEL: Record<AutomationTrigger, string> = {
   checkin_amanha: 'Check-in amanhã',
@@ -11,6 +11,28 @@ export const TRIGGER_DATE: Record<AutomationTrigger, { coluna: 'check_in' | 'che
   checkin_amanha: { coluna: 'check_in', offsetDias: 1 },
   checkout_hoje: { coluna: 'check_out', offsetDias: 0 },
   pedir_avaliacao: { coluna: 'check_out', offsetDias: -1 },
+}
+
+/**
+ * Estados de reserva em que cada gatilho ainda faz sentido disparar.
+ *
+ * `checkin_amanha` observa uma reserva que **ainda não começou** — só pode
+ * estar em `pendente`/`confirmada`. `pedir_avaliacao` observa uma estadia
+ * **já terminada** — qualquer estado excepto cancelamento serve.
+ *
+ * `checkout_hoje` fica no meio, e é onde isto já esteve errado: a estadia
+ * pode estar em curso, com o hóspede já marcado como `checkin` (o botão
+ * "Registar check-in" em `/hoje`, ou o check-in online, não muda o estado —
+ * mas o anfitrião pode tê-lo feito manualmente). Tratar `checkout_hoje` como
+ * "ainda não começou" excluía `checkin` da consulta, e a maioria das
+ * reservas que chegam ao dia de saída já lá está — o lembrete de checkout
+ * nunca chegava a ser enviado a quem o anfitrião já tinha assinalado como
+ * hospedado.
+ */
+export function estadosParaGatilho(trigger: AutomationTrigger): BookingStatus[] {
+  if (trigger === 'checkin_amanha') return ['confirmada', 'pendente']
+  if (trigger === 'checkout_hoje') return ['confirmada', 'pendente', 'checkin']
+  return ['confirmada', 'pendente', 'checkin', 'checkout']
 }
 
 export function renderAutomationMessage(template: string, vars: Record<string, string>): string {

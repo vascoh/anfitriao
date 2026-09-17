@@ -4,7 +4,7 @@ import { carregarTudo } from '@/lib/supabase-tudo'
 import { today, addDays, fmtDate } from '@/lib/utils'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
-import { TRIGGER_DATE, renderAutomationMessage, envioPorGrupo } from '@/lib/automations'
+import { TRIGGER_DATE, estadosParaGatilho, renderAutomationMessage, envioPorGrupo } from '@/lib/automations'
 import type { Automation, AutomationTrigger, Booking } from '@/lib/types'
 
 const supabase = createAdminClient()
@@ -12,11 +12,7 @@ const supabase = createAdminClient()
 async function bookingsForTrigger(trigger: AutomationTrigger): Promise<Booking[]> {
   const { coluna, offsetDias } = TRIGGER_DATE[trigger]
   const targetDate = addDays(today(), offsetDias)
-  // Gatilhos "futuros" (check-in amanhã) só fazem sentido para reservas ainda
-  // não iniciadas; "pedir avaliação" é pós-estadia — exclui só cancelamentos.
-  const estados = coluna === 'check_in' || offsetDias >= 0
-    ? ['confirmada', 'pendente']
-    : ['confirmada', 'pendente', 'checkin', 'checkout']
+  const estados = estadosParaGatilho(trigger)
 
   /* Paginado: esta consulta atravessa todas as contas — é filtrada por dono
    * mais abaixo, no ciclo das automações. Cortada às mil linhas, os anfitriões

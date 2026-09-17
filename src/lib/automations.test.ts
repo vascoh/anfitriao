@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { envioPorGrupo, renderAutomationMessage, TRIGGER_DATE } from './automations'
+import { envioPorGrupo, renderAutomationMessage, TRIGGER_DATE, estadosParaGatilho } from './automations'
 
 function reserva(id: string, grupo?: string) {
   return { id, reserva_grupo_id: grupo ?? null }
@@ -69,5 +69,23 @@ describe('TRIGGER_DATE', () => {
     expect(TRIGGER_DATE.checkin_amanha).toEqual({ coluna: 'check_in', offsetDias: 1 })
     expect(TRIGGER_DATE.checkout_hoje).toEqual({ coluna: 'check_out', offsetDias: 0 })
     expect(TRIGGER_DATE.pedir_avaliacao).toEqual({ coluna: 'check_out', offsetDias: -1 })
+  })
+})
+
+describe('estadosParaGatilho', () => {
+  it('checkin_amanha só considera reservas ainda não iniciadas', () => {
+    expect(estadosParaGatilho('checkin_amanha')).toEqual(['confirmada', 'pendente'])
+  })
+
+  it('checkout_hoje inclui quem já foi marcado como checkin (estadia em curso)', () => {
+    expect(estadosParaGatilho('checkout_hoje')).toEqual(['confirmada', 'pendente', 'checkin'])
+  })
+
+  it('pedir_avaliacao inclui checkin e checkout — só exclui cancelamentos', () => {
+    const estados = estadosParaGatilho('pedir_avaliacao')
+    expect(estados).toContain('checkin')
+    expect(estados).toContain('checkout')
+    expect(estados).not.toContain('cancelada')
+    expect(estados).not.toContain('no_show')
   })
 })
