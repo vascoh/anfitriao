@@ -182,3 +182,4 @@ Ver `docs/SAAS_ARCHITECTURE.md` §13 — lista viva, atualizada conforme surgem 
 6. Orçamento Vercel Pro / Supabase Pro (necessário para Fase 2/4)
 7. MBWay requer PSP adicional (Ifthenpay/SIBS) — vale o custo? (`docs/08-INTEGRACOES.md`)
 8. Os sites `/r/[slug]` devem passar a ser indexáveis pelo Google? — **decidido (2026-07-27): sim, mas só depois do utilizador aprovar o site finalizado**; mecanismo pronto (sitemap/Schema.org), `noindex` mantido por agora, ver Fase 2 acima
+9. **(novo, 2026-09-17)** O CRM (`/hospedes/[id]`) conta `totalGasto`/`numEstadias` só pelas reservas em que este hóspede é o contacto principal (`hospede_id`) — quem só dorme como acompanhante numa reserva de grupo (ligado via `reserva_hospedes`) fica invisível no seu próprio histórico. É intencional (perfil = quem reservou) ou deve juntar as estadias como acompanhante? Sem decisão, não tocado.
