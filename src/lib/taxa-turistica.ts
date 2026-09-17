@@ -209,7 +209,11 @@ export function calcularTmt(
         }
       }
     } else if (dentroDoMes) {
-      noitesIsentas++
+      // Só conta como "isenta pelo limite" a noite que seria cobrada se o
+      // limite não existisse — senão uma estadia inteira em época baixa
+      // (0 € em qualquer caso) ganhava o aviso de "acima do limite", que é
+      // falso: essas noites nunca iam ser cobradas, limite ou não.
+      if (valorDaNoite(regra, noite) > 0) noitesIsentas++
     }
 
     noite = addDays(noite, 1)

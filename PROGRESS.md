@@ -6,6 +6,27 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-17] O aviso do limite de noites disparava em estadias que nunca iam ser cobradas
+
+Continuação da auditoria: `calcularTmt` (`lib/taxa-turistica.ts`) conta o
+`indice` da noite (0, 1, 2…) contra `maxNoites` para saber quando parar de
+cobrar — correto para uma estadia em época alta. Mas o ramo "acima do
+limite" incrementava `noitesIsentas` **sempre**, mesmo em noites de época
+baixa que já valem 0 € por conta própria (Albufeira, Loulé, Faro). Uma
+estadia de 11 noites em janeiro na Albufeira (fora de época o ano inteiro)
+dava `valor = 0 €`, correto, mas ainda assim mostrava ao anfitrião «Estadia
+acima do limite de 7 noites — as noites seguintes não são cobradas» — um
+aviso enganador, porque nenhuma noite ia ser cobrada de qualquer forma.
+
+- ✅ `noitesIsentas` só conta a noite que **seria** tributável se o limite
+  não existisse (`valorDaNoite(regra, noite) > 0`); época baixa deixa de
+  disparar o aviso do limite.
+- ✅ Teste novo: 11 noites em janeiro na Albufeira → `noitesIsentas = 0`,
+  sem aviso de limite. Os casos existentes (estadia toda tributável acima do
+  limite) continuam a dar o aviso, sem alteração de comportamento.
+
+Validação: 1127 testes (+1; 1 ignorado), typecheck e lint a zero.
+
 ### [2026-09-16] O AL no meio do número cosia dois grupos num registo inventado
 
 Auditoria à sessão anterior encontrou um furo no próprio `lib/rnal.ts`: o ruído

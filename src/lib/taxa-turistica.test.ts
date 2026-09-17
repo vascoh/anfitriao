@@ -172,6 +172,15 @@ describe('calcularTmt', () => {
     expect(r.noitesTributaveis).toBe(0)
   })
 
+  it('não avisa sobre o limite de noites numa estadia inteira em época baixa', () => {
+    // 11 noites em janeiro, todas fora de época em Albufeira: nenhuma seria
+    // cobrada mesmo sem limite, por isso o limite de 7 não devia gerar aviso
+    const r = calcularTmt(reserva('2026-01-05', '2026-01-16', 2), ALBUFEIRA)
+    expect(r.valor).toBe(0)
+    expect(r.noitesIsentas).toBe(0)
+    expect(r.avisos.some(a => a.includes('limite'))).toBe(false)
+  })
+
   it('cobra só as noites dentro da época numa estadia que atravessa a fronteira', () => {
     // 29/10 a 02/11: noites 29, 30, 31 dentro da época; 1 de nov fora
     const r = calcularTmt(reserva('2026-10-29', '2026-11-02', 1), ALBUFEIRA)
