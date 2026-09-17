@@ -6,6 +6,28 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-17] O histórico de pagamentos dizia um valor que nunca entrou no saldo
+
+Continuação da auditoria, agora em `/reservas/[id]`. `registerPayment` já
+travava `preco_pago` no `preco_total` (sem saldo negativo) — mas o histórico
+gravava sempre o `amount` **escrito na caixa**, não o que o travão deixou
+passar. Um anfitrião que escrevesse 500 € para uma reserva com 50 € em falta
+(o caso óbvio é um lapso de escrita, mas serve qualquer excesso — um sinal, um
+extra) ficava com o saldo certo (0 €) e uma linha **permanente** no histórico
+a dizer "Pagamento registado: 500,00 €". Esse histórico é o recibo a que se
+volta depois — é a mesma classe de falha que a prova de submissão SIBA foi
+escrita para evitar, só que aqui ninguém tinha reparado.
+
+- ✅ O histórico regista agora o valor **aplicado** ao saldo
+  (`Math.min(amount, saldo em falta)`), nunca o valor escrito.
+- ✅ Quando o valor escrito excede o saldo, um aviso diz que só parte foi
+  aplicada, em vez de um "sucesso" silencioso que esconde a diferença.
+- Verificado de passagem: `reservas/[id]/editar` tem o mesmo travão em
+  `preco_pago`, mas grava um histórico genérico ("Reserva editada
+  manualmente"), sem afirmar um valor — não tem a mesma falha.
+
+Validação: 1130 testes, typecheck e lint a zero.
+
 ### [2026-09-17] O alerta mais caro do produto disparava um dia tarde em `/hoje`
 
 Continuação da auditoria, agora em `/hoje`. `lib/canais.ts` já tem

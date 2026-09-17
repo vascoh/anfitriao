@@ -211,7 +211,16 @@ export default function ReservaDetailPage() {
     if (!booking) return
     const amount = parseFloat(paymentAmount)
     if (isNaN(amount) || amount <= 0) return
-    const newPago = Math.min(booking.preco_pago + amount, booking.preco_total)
+    /* O que entra na base é o que entra no histórico — nunca o valor pedido.
+     *
+     * `preco_pago` já ficava travado no total (não há saldo negativo), mas o
+     * histórico registava sempre o `amount` escrito na caixa, mesmo quando o
+     * excesso era descartado pelo travão. Um anfitrião que escrevesse 500 €
+     * para uma reserva com 50 € em falta ficava com o saldo a zero — correto —
+     * e uma linha permanente a dizer "Pagamento registado: 500,00 €", que é o
+     * recibo a que ele volta depois. A diferença nunca existiu em lado nenhum. */
+    const aplicado = Math.min(amount, Math.max(0, booking.preco_total - booking.preco_pago))
+    const newPago = booking.preco_pago + aplicado
     const updated: Booking = {
       ...booking,
       preco_pago: newPago,
@@ -219,7 +228,7 @@ export default function ReservaDetailPage() {
         id: uuid(),
         data: new Date().toISOString(),
         tipo: 'pagamento',
-        descricao: `Pagamento registado: ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)}`,
+        descricao: `Pagamento registado: ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(aplicado)}`,
       }],
     }
     // Um pagamento dado como registado e não guardado é a pior das versões:
@@ -228,7 +237,11 @@ export default function ReservaDetailPage() {
     setBooking(updated)
     setPaymentAmount('')
     setPaymentSaved(true)
-    toast.success(`Pagamento de ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)} registado`)
+    if (aplicado < amount) {
+      toast.warning(`Só foram aplicados ${fmtMoney(aplicado)} — o valor escrito era maior do que o saldo em falta.`)
+    } else {
+      toast.success(`Pagamento de ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(amount)} registado`)
+    }
     setTimeout(() => { setPaymentSaved(false); setShowPayment(false) }, 1500)
   }
 
