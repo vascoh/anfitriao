@@ -11,6 +11,7 @@ import { transitionBooking, canTransition, unidadesReservaveis, geraObrigacoesDe
 import type { Booking, BookingStatus, Property, Guest, WebsiteSettings } from '@/lib/types'
 import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 import { estaEmAtraso } from '@/lib/estado-siba'
+import { estadoDoFeed } from '@/lib/canais'
 import { OnboardingCard } from '@/components/onboarding-card'
 
 function useTodayLabel() {
@@ -197,16 +198,22 @@ export default function HojePage() {
    * Sincronizações partidas ou paradas. Um feed que deixa de sincronizar é a
    * falha mais cara do produto — traz dupla reserva — e era invisível: só
    * aparecia a quem entrasse na página de edição da propriedade.
-   * O cron corre 1×/dia, por isso 48h sem sincronizar são duas execuções
-   * falhadas, não um atraso.
+   *
+   * O limiar vem de `estadoDoFeed` (`lib/canais.ts`), a mesma pergunta feita
+   * em `/canais` e nos avisos push/email — não uma segunda conta em paralelo.
+   * A versão anterior comparava datas (`addDays(t, -2)`) em vez de horas: o
+   * comentário dizia "48h sem sincronizar", mas comparar `YYYY-MM-DD` com
+   * `<` só dispara ao **terceiro** dia (72h), porque um `last_sync` de
+   * exactamente dois dias atrás não é "menor que" o limite de dois dias atrás
+   * — é igual. Esta página ficava um dia inteiro mais tolerante do que
+   * `/canais` para o mesmo alerta, com o hóspede já a chegar a uma casa que
+   * outra plataforma também vendeu.
    */
   const feedsComProblema = useMemo(() => {
-    // Comparação por data (não por timestamp): mantém o memo puro e usa o
-    // mesmo `today()` do resto da página, sem o bug de fuso dos milissegundos.
-    const limite = addDays(t, -2)
+    const agora = new Date()
     return props.flatMap(p =>
       (p.ical_feeds ?? [])
-        .filter(f => f.error || !f.last_sync || f.last_sync.slice(0, 10) < limite)
+        .filter(f => f.error || !f.last_sync || estadoDoFeed(f, agora) === 'desatualizado')
         .map(f => ({
           propId: p.id,
           propNome: p.nome,
@@ -218,7 +225,7 @@ export default function HojePage() {
               : `sem sincronizar desde ${fmtDate(f.last_sync.slice(0, 10))}`,
         })),
     )
-  }, [props, t])
+  }, [props])
 
   const proximasChegadas = useMemo(() => {
     const tomorrowStr = addDays(t, 1)

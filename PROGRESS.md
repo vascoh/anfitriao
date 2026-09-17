@@ -6,6 +6,35 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-17] O alerta mais caro do produto disparava um dia tarde em `/hoje`
+
+Continuação da auditoria, agora em `/hoje`. `lib/canais.ts` já tem
+`estadoDoFeed`/`HORAS_ATE_DESATUALIZADO` (36 h) precisamente para não haver
+uma segunda conta em paralelo — o próprio ficheiro diz que é "a mesma
+pergunta feita em três sítios: a página de canais, o cartão do alojamento e o
+aviso do calendário". O aviso do calendário (`feedsComProblema`, o banner
+vermelho "Calendário por sincronizar — risco de dupla reserva" em `/hoje`)
+não usava essa função — tinha a sua própria conta, por data:
+`f.last_sync.slice(0, 10) < addDays(t, -2)`.
+
+O comentário dizia "48h sem sincronizar são duas execuções falhadas". A conta
+não fazia isso: comparar strings `YYYY-MM-DD` com `<` só dispara no
+**terceiro** dia, porque um `last_sync` de exatamente dois dias atrás não é
+"menor que" o limite de dois dias atrás — é igual, e por isso passava. Nos
+36 h que `/canais` já usa para o mesmo alerta, `/hoje` — o ecrã que se abre
+todos os dias — continuava a mostrar "tudo bem" até quase três dias depois.
+Um anfitrião que só olhasse a este ecrã (é a promessa da página) descobria a
+dupla reserva um dia inteiro depois de `/canais` já a saber.
+
+- ✅ `feedsComProblema` passa a chamar `estadoDoFeed` diretamente — sem
+  segunda conta, sem string de data, alinhado por construção com `/canais` e
+  com os avisos push/email de `canais-alertas.ts`.
+- Sem teste novo: a função reutilizada já está testada em `canais.test.ts`
+  (inclui o caso "à beira do limite"); o que havia de errado era a página ter
+  a sua própria lógica não testada em vez de chamar a que já existia.
+
+Validação: 1130 testes, typecheck e lint a zero.
+
 ### [2026-09-17] Auditoria: verificado e limpo (poupa a próxima sessão de repetir)
 
 Depois do lembrete de checkout (abaixo), percorri a cadeia SIBA e o
