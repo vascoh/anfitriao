@@ -26,6 +26,8 @@ function reserva(check_in: string, check_out: string, num_hospedes = 2): Booking
 const LISBOA = regraPara('Lisboa')!
 const ALBUFEIRA = regraPara('Albufeira')!
 const LOULE = regraPara('Loulé')!
+const FARO = regraPara('Faro')!
+const SINTRA = regraPara('Sintra')!
 
 describe('REGRAS_TMT', () => {
   it('tem fonte e data de verificação em todas as regras', () => {
@@ -60,10 +62,11 @@ describe('regraPara', () => {
   })
 
   it('devolve null para concelho não configurado', () => {
-    // Deliberadamente fora da lista por fontes contraditórias
-    expect(regraPara('Faro')).toBeNull()
+    // Deliberadamente fora da lista por fontes contraditórias ou por não terem
+    // TMT — ver a nota do ficheiro sobre a regra de admissão.
     expect(regraPara('Lagos')).toBeNull()
     expect(regraPara('Braga')).toBeNull()
+    expect(regraPara('Seixal')).toBeNull()
   })
 
   it('devolve null para vazio ou nulo', () => {
@@ -108,6 +111,14 @@ describe('valorDaNoite', () => {
   it('alterna entre épocas em Loulé', () => {
     expect(valorDaNoite(LOULE, '2026-08-15')).toBe(2)
     expect(valorDaNoite(LOULE, '2026-01-15')).toBe(1)
+  })
+
+  it('alterna entre épocas em Faro, incluindo 29 de fevereiro bissexto', () => {
+    expect(valorDaNoite(FARO, '2026-03-01')).toBe(2)
+    expect(valorDaNoite(FARO, '2026-10-31')).toBe(2)
+    expect(valorDaNoite(FARO, '2026-11-01')).toBe(1)
+    expect(valorDaNoite(FARO, '2027-02-28')).toBe(1)
+    expect(valorDaNoite(FARO, '2028-02-29')).toBe(1) // 2028 é bissexto
   })
 })
 
@@ -220,6 +231,25 @@ describe('calcularTmt', () => {
       const b = reserva('2026-07-01', '2026-07-05', 2)
       expect(calcularTmt(b, LISBOA, { ano: 2026, mes: 8 }).valor).toBe(0)
     })
+  })
+
+  it('aplica o limite de 7 noites em Faro', () => {
+    const r = calcularTmt(reserva('2026-08-01', '2026-08-11', 1), FARO)
+    expect(r.noitesTributaveis).toBe(7)
+    expect(r.valor).toBe(14)
+  })
+
+  it('mistura época alta e baixa em Faro numa estadia que atravessa 31/10', () => {
+    // 30/10 e 31/10 a 2€, 01/11 a 1€ = 5€ para 1 pessoa
+    const r = calcularTmt(reserva('2026-10-30', '2026-11-02', 1), FARO)
+    expect(r.valor).toBe(5)
+    expect(r.noitesTributaveis).toBe(3)
+  })
+
+  it('aplica o limite de 3 noites em Sintra', () => {
+    const r = calcularTmt(reserva('2026-08-01', '2026-08-06', 2), SINTRA)
+    expect(r.noitesTributaveis).toBe(3)
+    expect(r.valor).toBe(12)
   })
 
   it('arredonda a dois decimais', () => {

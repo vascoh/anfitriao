@@ -98,6 +98,26 @@ export const REGRAS_TMT: RegraTmt[] = [
     fonte: 'Regulamento da Taxa Municipal Turística de Loulé',
     verificadoEm: '2026-07-28',
   },
+  {
+    concelho: 'Faro',
+    // 1 mar-31 out: época alta; 1 nov-fim fev: época baixa
+    estacoes: [
+      { de: '03-01', ate: '10-31', valor: 2 },
+      { de: '11-01', ate: '02-29', valor: 1 }, // '29' cobre também anos bissextos; nos outros o dia nunca existe
+    ],
+    maxNoites: 7,
+    isencaoIdade: 16,
+    fonte: 'Regulamento n.º 1207/2024, Diário da República 2.ª série n.º 205/2024 (22-10-2024), em vigor desde 01-11-2024 — art. 2.º (valor), art. 3.º (7 noites), art. 4.º (isenção 16 anos)',
+    verificadoEm: '2026-09-17',
+  },
+  {
+    concelho: 'Sintra',
+    valor: 2,
+    maxNoites: 3,
+    isencaoIdade: 13,
+    fonte: 'cm-sintra.pt/sintra/turismo/taxa-municipal-turistica — taxa em vigor desde 29-03-2023 (Assembleia Municipal, 17-02-2023): 2€/pessoa/dormida, máximo de 3 noites por estadia, isentos os menores de 13 anos',
+    verificadoEm: '2026-09-17',
+  },
 ]
 
 export function regraPara(concelho: string | null | undefined): RegraTmt | null {
