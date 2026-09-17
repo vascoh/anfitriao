@@ -6,6 +6,29 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-17] Auditoria: verificado e limpo (poupa a próxima sessão de repetir)
+
+Depois do lembrete de checkout (abaixo), percorri a cadeia SIBA e o
+financeiro à procura da mesma família de falha (lógica inline sem teste,
+estado por comunicar). Nada para corrigir, registado para não se repetir a
+verificação:
+
+- **`siba-mapping.ts`/`siba-xml.ts`** — cobertura de testes já cobre os
+  limites óbvios (nome só com uma palavra, código postal sem CP3, país
+  desconhecido, documento em branco). A decifragem do número de documento
+  acontece sempre antes de `boletimDaLinha` (`siba-fetch.ts` e
+  `siba-submit/route.ts` chamam `revelarLista` primeiro) — não há caminho em
+  que o boletim saia com o valor encriptado.
+- **`disponibilidade-ao-vivo.ts`** — fecha por omissão corretamente (feed
+  que falha conta como indisponível, não como livre); `ignorarUid` evita o
+  falso conflito de uma reserva importada consigo própria.
+- **`estado-siba.ts`** — `estaEmAtraso` já testado nas fronteiras (mesmo dia,
+  falha depois de entrega, sem check-in).
+- **`financeiro/page.tsx`** — `new Date().getFullYear()` para o ano do KPI é
+  estilisticamente diferente de `today()`, mas ambos leem a data local do
+  dispositivo da mesma forma — não é bug, só inconsistência de estilo, não
+  vale a pena tocar.
+
 ### [2026-09-17] O lembrete de checkout nunca chegava a quem já estava marcado como hospedado
 
 Continuação da auditoria: `cron/automations` decidia os estados de reserva a
