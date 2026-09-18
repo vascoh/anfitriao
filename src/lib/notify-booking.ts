@@ -17,6 +17,17 @@ export interface BookingNotification {
   numHospedes: number
   total: number
   notas: string | null
+  /**
+   * Verdadeiro quando a reserva nasce já `confirmada` — o caminho pago por
+   * Stripe (`checkout-fulfillment.ts`), em que não há confirmação do
+   * anfitrião a esperar. Sem isto, o hóspede que já pagou recebia o mesmo
+   * "recebemos o teu pedido, o anfitrião confirma em breve" de quem ainda
+   * não pagou nada — a contradizer o ecrã de confirmação, que lhe diz que a
+   * reserva "está garantida" — e nunca chegava a receber o link de check-in
+   * online por email, porque esse só sai do lado de `/api/notify-confirmation`,
+   * que só corre quando um anfitrião confirma uma reserva pendente à mão.
+   */
+  jaConfirmada?: boolean
 }
 
 /**
@@ -49,10 +60,11 @@ export async function sendBookingNotification(p: BookingNotification): Promise<v
   }
 
   if (p.guestEmail) {
-    sends.push(emailService.sendReservationRequest({
-      ...p,
-      numNights,
-    }))
+    sends.push(
+      p.jaConfirmada
+        ? emailService.sendReservationConfirmation({ ...p, numNights })
+        : emailService.sendReservationRequest({ ...p, numNights }),
+    )
   }
 
   await Promise.all(sends)

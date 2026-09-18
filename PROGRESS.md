@@ -6,6 +6,38 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-18] Quem pagava por cartão nunca recebia o link de check-in por email
+
+Continuação da auditoria: uma reserva paga por Stripe
+(`checkout-fulfillment.ts`) nasce já `estado: 'confirmada'` — não há
+confirmação do anfitrião a esperar. Mas a notificação ao hóspede
+(`sendBookingNotification` → `emailService.sendReservationRequest`) era
+sempre a mesma, pago ou não: "Recebemos o teu pedido! O anfitrião irá
+confirmar em breve." Duas coisas erradas ao mesmo tempo:
+
+1. **Contradiz o ecrã.** A página de confirmação diz "o pagamento foi
+   confirmado e a tua reserva está garantida" e promete que os detalhes
+   foram enviados por email — mas o email que sai diz o oposto.
+2. **Nunca chega o link de check-in.** Esse link só vai no email de
+   "reserva confirmada" (`sendReservationConfirmation`), e essa função só é
+   chamada por `/api/notify-confirmation` — a rota que corre quando um
+   anfitrião confirma à mão uma reserva `pendente`. Uma reserva que nasce
+   já confirmada nunca passa por aí. Sem o email, o hóspede só recebe o link
+   se o anfitrião lho mandar manualmente pelo WhatsApp.
+
+Os caminhos sem pagamento (`/api/book`, `/api/book/grupo`) continuam a criar
+a reserva em `pendente` e a mandar o email certo — o problema era só do
+caminho pago, que salta a confirmação humana.
+
+- ✅ `BookingNotification` ganha `jaConfirmada?: boolean`; quando verdadeiro,
+  `sendBookingNotification` manda `sendReservationConfirmation` (com o link
+  de check-in) em vez do email de pedido pendente.
+- ✅ `checkout-fulfillment.ts` passa `jaConfirmada: true`.
+- ✅ Testes novos: `notify-booking.test.ts` (não existia) cobre os dois
+  ramos; `checkout-fulfillment.test.ts` confirma que a flag chega.
+
+Validação: 1136 testes (+5; 1 ignorado), typecheck e lint a zero.
+
 ### [2026-09-18] Dois campos do boletim nunca eram anonimizados — nem a pedido
 
 Continuação da auditoria: `CAMPOS_BOLETIM` (`lib/retencao.ts`) lista os

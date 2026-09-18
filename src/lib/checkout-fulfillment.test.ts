@@ -116,6 +116,15 @@ describe('fulfillCheckoutSession', () => {
     expect(notificacoes).toHaveLength(1)
   })
 
+  it('avisa que a reserva já está confirmada — sem isto o hóspede recebia "aguarda confirmação" depois de já ter pago', async () => {
+    /* Esta reserva nasce `confirmada`, não há anfitrião nenhum a confirmar
+     * depois. `sendBookingNotification` sem `jaConfirmada` manda ao hóspede o
+     * email de pedido pendente — e nunca o de reserva confirmada, que é o
+     * único que leva o link de check-in online. */
+    await fulfillCheckoutSession('acct_1', 'cs_1')
+    expect((notificacoes[0] as Record<string, unknown>).jaConfirmada).toBe(true)
+  })
+
   it('liga quem pagou à reserva — o boletim é por pessoa', async () => {
     /* Todos os outros caminhos ligam quem reservou; este não ligava ninguém,
      * e o SIBA respondia "reserva sem hóspedes" numa reserva com nome, email

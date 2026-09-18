@@ -166,6 +166,10 @@ export async function fulfillCheckoutSession(connectAccountId: string, sessionId
       numHospedes: num_hospedes,
       total: preco_total,
       notas: m.notas || null,
+      /* Já paga e já confirmada — não há confirmação do anfitrião a
+       * esperar. Ver a nota em `notify-booking.ts`: sem isto o hóspede
+       * recebia "aguarda confirmação" e nunca o link de check-in. */
+      jaConfirmada: true,
     })
   } catch (err) {
     console.error('[fulfillCheckoutSession] notify', err)
