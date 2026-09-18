@@ -6,6 +6,35 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-18] O crachá «SIBA ✓» dizia completo um boletim que o SIBA recusava
+
+Continuação da auditoria: `sibaComplete` (`lib/labels.ts`) — o crachá verde
+em `/hoje`, em `/hospedes` e no email de "check-in concluído" ao anfitrião —
+só verificava `numero_documento`, `data_nascimento`, `tipo_documento` e
+(`sexo` ou `pais_emissao`). Nunca verificava `nacionalidade` nem
+`pais_residencia`, apesar de o próprio tipo `Guest` já dizer, no comentário do
+campo, que `pais_residencia` é "Obrigatório no boletim de alojamento" — e
+`camposEmFalta`/`boletimDaLinha` (`siba-xml.ts`/`siba-mapping.ts`), a função
+que decide de facto se um boletim pode ser submetido, exige as duas.
+
+`sibaComplete` nasceu antes de a submissão ao web service existir (a era do
+CSV, quando bastava ter documento e data de nascimento). Ficou por atualizar
+quando o boletim ganhou os campos que o SIBA realmente exige — e ninguém
+tinha ligado os dois: um hóspede sem nacionalidade nem país de residência
+preenchidos mostrava ✓ verde em todo o lado, e só se descobria que faltava
+algo ao tentar de facto submeter em `/documentos`, já depois — ou em cima —
+do prazo legal de 24 h.
+
+- ✅ `sibaComplete` passa a exigir `nacionalidade` e `pais_residencia`,
+  alinhado com `camposEmFalta`.
+- ✅ Teste novo cobre os dois campos que faltavam.
+- Não alinhei ao ponto de validar se o país é reconhecido (`codigoPais`) —
+  isso exigiria importar `siba-xml.ts` em `labels.ts` para uma diferença que
+  já se vê em `/documentos` no momento de submeter; o que faltava aqui era só
+  a presença dos campos, não a validação do conteúdo.
+
+Validação: 1131 testes (+1; 1 ignorado), typecheck e lint a zero.
+
 ### [2026-09-17] O histórico de pagamentos dizia um valor que nunca entrou no saldo
 
 Continuação da auditoria, agora em `/reservas/[id]`. `registerPayment` já

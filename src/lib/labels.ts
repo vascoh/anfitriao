@@ -1,7 +1,23 @@
 import type { BookingStatus, BookingSource, GuestTag, PropertyType, Guest } from './types'
 
-export function sibaComplete(g: Pick<Guest, 'numero_documento' | 'data_nascimento' | 'tipo_documento' | 'sexo' | 'pais_emissao'>): boolean {
-  return !!(g.numero_documento && g.data_nascimento && g.tipo_documento && (g.sexo || g.pais_emissao))
+/**
+ * O crachá "SIBA ✓" — mostrado em `/hoje`, `/hospedes` e no email de
+ * check-in concluído — dizia completo um hóspede sem `nacionalidade` nem
+ * `pais_residencia`. As duas são exigidas pelo boletim
+ * (`camposEmFalta`/`boletimDaLinha` em `siba-xml.ts`/`siba-mapping.ts`:
+ * `pais_residencia` está documentado no próprio tipo `Guest` como
+ * "Obrigatório no boletim de alojamento"), mas nunca entraram aqui — esta
+ * função nasceu antes da submissão ao web service existir, quando o que
+ * importava era só ter documento e data de nascimento para o CSV. Um
+ * anfitrião via ✓ na véspera da chegada e só descobria o campo em falta ao
+ * tentar submeter, já depois do prazo de 24 h.
+ */
+export function sibaComplete(g: Pick<Guest, 'numero_documento' | 'data_nascimento' | 'tipo_documento' | 'sexo' | 'pais_emissao' | 'nacionalidade' | 'pais_residencia'>): boolean {
+  return !!(
+    g.numero_documento && g.data_nascimento && g.tipo_documento &&
+    (g.sexo || g.pais_emissao) &&
+    g.nacionalidade && g.pais_residencia
+  )
 }
 
 export const STATUS_LABEL: Record<BookingStatus, string> = {

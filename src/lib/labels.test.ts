@@ -8,6 +8,8 @@ describe('sibaComplete', () => {
     tipo_documento: 'passaporte',
     sexo: 'M',
     pais_emissao: 'PT',
+    nacionalidade: 'Portugal',
+    pais_residencia: 'Portugal',
   }
 
   it('is complete with all fields', () => {
@@ -24,6 +26,11 @@ describe('sibaComplete', () => {
     expect(sibaComplete({ ...base, sexo: undefined })).toBe(true)
     expect(sibaComplete({ ...base, pais_emissao: undefined })).toBe(true)
     expect(sibaComplete({ ...base, sexo: undefined, pais_emissao: undefined })).toBe(false)
+  })
+
+  it('requires nationality and country of residence — o boletim recusa-os sem isso', () => {
+    expect(sibaComplete({ ...base, nacionalidade: undefined })).toBe(false)
+    expect(sibaComplete({ ...base, pais_residencia: undefined })).toBe(false)
   })
 })
 
