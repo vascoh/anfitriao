@@ -57,7 +57,18 @@ export const PRAZO_FISCAL = {
 
 export type GrupoDados = keyof typeof PRAZOS
 
-/** Campos do boletim de alojamento em `guests`. */
+/**
+ * Campos do boletim de alojamento em `guests`.
+ *
+ * `pais_residencia` e `local_residencia` (`Pais_Residencia_Origem`/
+ * `Local_Residencia_Origem` no boletim, ver `siba-xml.ts`) ficaram de fora
+ * desta lista desde que existem — chegaram ao esquema depois desta política
+ * ter sido escrita, e ninguém os veio acrescentar aqui. O cron de retenção e
+ * o apagamento a pedido (art. 17.º) anonimizavam os outros sete campos do
+ * boletim ao fim de um ano e deixavam estes dois para sempre — os únicos que
+ * dizem onde a pessoa vive, guardados sem prazo apesar de recolhidos ao
+ * abrigo da mesma Lei 23/2007 que justifica o prazo curto de todo o resto.
+ */
 export const CAMPOS_BOLETIM = [
   'numero_documento',
   'tipo_documento',
@@ -66,6 +77,8 @@ export const CAMPOS_BOLETIM = [
   'data_nascimento',
   'sexo',
   'nacionalidade',
+  'pais_residencia',
+  'local_residencia',
 ] as const
 
 /** Campos de contacto em `guests`. */

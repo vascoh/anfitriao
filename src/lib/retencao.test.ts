@@ -70,6 +70,12 @@ describe('camposAnonimizacao', () => {
     expect(campos.email).toBeUndefined()
   })
 
+  it('boletim: inclui país e localidade de residência — ficaram de fora até aqui', () => {
+    const campos = camposAnonimizacao(['boletim'])
+    expect(campos.pais_residencia).toBeNull()
+    expect(campos.local_residencia).toBeNull()
+  })
+
   it('contacto: apaga contactos e notas, e substitui o nome', () => {
     const campos = camposAnonimizacao(['contacto'])
     for (const campo of CAMPOS_CONTACTO) expect(campos[campo]).toBeNull()

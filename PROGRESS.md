@@ -6,6 +6,32 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-18] Dois campos do boletim nunca eram anonimizados — nem a pedido
+
+Continuação da auditoria: `CAMPOS_BOLETIM` (`lib/retencao.ts`) lista os
+campos do boletim de alojamento que o cron de retenção anonimiza ao fim de 1
+ano e que o apagamento a pedido (`/api/guests/[id]/dados`, art. 17.º) apaga
+de imediato. A lista tinha sete campos — mas faltavam `pais_residencia` e
+`local_residencia`. Os dois são campos do boletim (`Pais_Residencia_Origem`/
+`Local_Residencia_Origem` no SIBA; o próprio tipo `Guest` já documenta
+`pais_residencia` como "Obrigatório no boletim de alojamento") e foram
+recolhidos com a mesma base legal (Lei 23/2007) que os outros sete — mas
+chegaram ao esquema depois de `CAMPOS_BOLETIM` já estar escrito, e ninguém os
+veio acrescentar. O resultado: onde uma pessoa vive ficava guardado **para
+sempre**, mesmo depois do resto do boletim já ter sido anonimizado, e mesmo
+que essa pessoa pedisse explicitamente o apagamento dos dados.
+
+O mesmo par está ausente do comentário em `campos-sensiveis.ts` que enumera o
+que fica "em claro, cobertos pela política de retenção" — confirma que a
+lacuna é sistemática (os dois campos nunca chegaram a entrar na conversa
+sobre retenção), não um esquecimento isolado.
+
+- ✅ `pais_residencia` e `local_residencia` juntam-se a `CAMPOS_BOLETIM`.
+- ✅ Teste novo nomeia os dois campos explicitamente — a versão anterior do
+  teste já cobria a lista dinamicamente, mas passava sem eles lá dentro.
+
+Validação: 1132 testes (+1; 1 ignorado), typecheck e lint a zero.
+
 ### [2026-09-18] O crachá «SIBA ✓» dizia completo um boletim que o SIBA recusava
 
 Continuação da auditoria: `sibaComplete` (`lib/labels.ts`) — o crachá verde
