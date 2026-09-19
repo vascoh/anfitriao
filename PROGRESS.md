@@ -6,6 +6,92 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-19] Três correções que a auditoria anterior deixou meio feitas
+
+Sessão de auditoria. Base saudável à entrada — 1136 testes, typecheck e lint a
+zero. Os três bugs desta passagem têm a mesma forma: **a regra certa existia,
+escrita e testada, mas não em todos os sítios onde é aplicada.**
+
+**1. O concelho escrito sem acento não era o mesmo concelho.**
+`properties.cidade` é um `<input type="text">` — o anfitrião escreve o que
+quiser. Duas listas fechadas dependem de acertar com o que lá está, e ambas
+comparavam só em minúsculas:
+
+- `regraPara` (`taxa-turistica.ts`): «Loule» não encontrava a regra de
+  «Loulé». O ecrã dizia «concelho não configurado» e a taxa municipal
+  turística **nunca era cobrada ao hóspede nem declarada ao município**.
+  Loulé é o único concelho acentuado da lista, por isso o furo é estreito —
+  mas é dinheiro e é uma obrigação legal.
+- `regiaoDoConcelho` (`faturacao/iva.ts`): «Camara de Lobos», «Sao Vicente»,
+  «Povoacao», «Angra do Heroismo» caíam todos em `continente`. A fatura saía a
+  **6 % em vez de 5 % (Madeira) ou 4 % (Açores)** e era comunicada assim à AT.
+  Trinta dos trinta concelhos das regiões autónomas têm acento ou cedilha em
+  alguma variante; a lista das ilhas é quase toda vulnerável.
+
+  O teste que já existia escrevia `'câmara de lobos'` em minúsculas — alguém
+  pensou no problema e só testou metade dele.
+
+- ✅ `lib/concelhos.ts` (novo) com `chaveDeConcelho`, que dobra acentos,
+  maiúsculas e espaços a mais. É o mesmo raciocínio que `nomes.ts` já fazia
+  para nomes de pessoas («deliberadamente tolerante ao que muda entre dois
+  preenchimentos») e que nunca tinha sido aplicado a concelhos.
+- ✅ Os dois lados comparam agora chave contra chave, **incluindo as entradas
+  das listas** — senão a normalização só valia para um dos lados.
+- ✅ Testes: variantes sem acento nos dois módulos, e o caso que não podia
+  partir-se ao dobrar acentos — «Santa Cruz» (Madeira) contra «Santa Cruz da
+  Graciosa» (Açores), «Calheta» contra «Calheta de São Jorge».
+
+**2. O crachá «SIBA ✓» do email continuava a ser o antigo.**
+A correção de 2026-09-18 pôs `nacionalidade` e `pais_residencia` em
+`sibaComplete` (`lib/labels.ts`) — e o docstring dessa função nomeia três
+sítios onde o crachá aparece: `/hoje`, `/hospedes` e **o email de check-in
+concluído**. Os dois ecrãs chamam a função. O email não: `notify-checkin.ts`
+tinha uma reimplementação inline da regra, a versão anterior à correção.
+
+O resultado era a pior combinação possível: a app dizia «faltam campos» e o
+email — que é o que o anfitrião lê primeiro, no telemóvel, e muitas vezes o
+único — dizia «SIBA ✓». Quem confiasse no email descobria o campo em falta ao
+tentar submeter, depois das 24 h de prazo.
+
+- ✅ `notify-checkin.ts` importa `sibaComplete` de `lib/labels`. Não há mais
+  cópias — verificado por busca.
+- ✅ `notify-checkin.test.ts` (novo, não existia) prende o email à função
+  partilhada, com testes explícitos para os dois campos que a cópia ignorava.
+
+**3. Os crons de alerta liam as primeiras mil propriedades.**
+`lib/supabase-tudo.ts` existe porque o PostgREST corta a 1000 linhas sem erro
+nenhum, e o próprio docstring diz que é usado «em tudo o que tem de estar
+completo». O relatório mensal foi corrigido em 2026-09-08; os crons irmãos
+ficaram para trás.
+
+- 🐛 `cron/canais-alertas` e `cron/compliance-alerts` varriam `properties`
+  sem `range`. Passadas mil propriedades na plataforma, o alojamento 1001
+  deixava de ser avaliado — o anfitrião nunca sabia que o calendário dele
+  tinha deixado de ser lido (e portanto que as reservas diretas estavam a ser
+  recusadas), nem que o seguro tinha expirado. O cron respondia `ok`.
+- ✅ Ambos passam por `carregarTudo` com `.order('id')`, como manda o módulo.
+- ⚠️ **Fica um teto por tapar, de propósito**: a leitura de `accounts` por
+  `.in(ownerIds)` em `canais-alertas`, `compliance-alerts`, `noites-orfas` e
+  `relatorio-mensal` continua sem paginar. Está limitada ao número de
+  anfitriões **com alerta nesse dia**, e passar de mil traz também um
+  problema de comprimento de URL no `.in()` — que é outra correção, não esta.
+  Escrito aqui para não voltar a ser descoberto do zero.
+
+**Verificado e limpo** (para poupar a próxima passagem):
+- `cron/faturacao` e `cron/payment-reminders` não paginam mas não precisam:
+  o primeiro tem `.limit(MAX_POR_EXECUCAO)` deliberado, o segundo deriva os
+  `.in()` de uma consulta já limitada por janela de datas.
+- `disponibilidade-ao-vivo` em `hasConflict` recebe `nome, ical_feeds` — é
+  exatamente o que a função lê, o `select` estreito não lhe esconde nada.
+- `booking-request.ts` continua sem testes (369 linhas, o maior da lib), mas
+  não se lhe encontrou defeito nesta leitura. A distribuição de pessoas por
+  quarto no caminho de grupo público é uma cópia inline de
+  `distribuirPessoas` (`grupos.ts`) sem o desempate por nome que a app
+  interna usa — com dois quartos de igual capacidade, quem leva quem é
+  arbitrário. Não muda preço nem total; fica anotado, não corrigido.
+
+Validação: 1145 testes (+9; 1 ignorado), typecheck, lint e `next build` a zero.
+
 ### [2026-09-18] Quem pagava por cartão nunca recebia o link de check-in por email
 
 Continuação da auditoria: uma reserva paga por Stripe

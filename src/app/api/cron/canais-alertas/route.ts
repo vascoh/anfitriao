@@ -6,6 +6,7 @@ import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { sendPushToOwner } from '@/lib/push'
 import { today } from '@/lib/utils'
 import { canaisEmRisco, agruparPorAnfitriao, resumoParaPush } from '@/lib/canais-alertas'
+import { carregarTudo } from '@/lib/supabase-tudo'
 import type { AlojamentoComFeeds } from '@/lib/canais-alertas'
 
 const supabase = createAdminClient()
@@ -30,17 +31,24 @@ export async function GET(req: NextRequest) {
   const authError = checkCronAuth(req)
   if (authError) return authError
 
-  const { data: propriedades, error } = await supabase
-    .from('properties')
-    .select('nome, owner_id, ativo, ical_feeds')
-    .not('owner_id', 'is', null)
+  /* Paginado: este cron tem de ver os alojamentos **todos**. O PostgREST corta
+   * a 1000 linhas sem erro nenhum (ver `lib/supabase-tudo.ts`), e o que se
+   * perdia aqui não era uma vista incompleta — era o anfitrião do alojamento
+   * 1001 a nunca saber que o calendário dele deixou de ser lido, e portanto
+   * que as reservas diretas estão a ser recusadas. O cron responderia `ok`. */
+  const { linhas: propriedades, erro } = await carregarTudo<AlojamentoComFeeds>(() =>
+    supabase
+      .from('properties')
+      .select('nome, owner_id, ativo, ical_feeds')
+      .not('owner_id', 'is', null)
+      .order('id', { ascending: true }))
 
-  if (error) {
-    console.error('[canais-alertas]', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (erro) {
+    console.error('[canais-alertas]', erro)
+    return NextResponse.json({ error: erro }, { status: 500 })
   }
 
-  const riscos = canaisEmRisco((propriedades ?? []) as AlojamentoComFeeds[])
+  const riscos = canaisEmRisco(propriedades)
   const porAnfitriao = agruparPorAnfitriao(riscos)
 
   if (porAnfitriao.size === 0) {

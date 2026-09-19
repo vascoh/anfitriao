@@ -69,8 +69,18 @@ describe('regraPara', () => {
     expect(regraPara('Seixal')).toBeNull()
   })
 
-  it('devolve null para vazio ou nulo', () => {
+  // `properties.cidade` é texto livre. Escrever "Loule" sem acento dava
+  // "concelho não configurado": a taxa nunca era cobrada ao hóspede nem
+  // declarada ao município.
+  it('encontra o concelho ignorando acentos', () => {
+    expect(regraPara('Loule')?.concelho).toBe('Loulé')
+    expect(regraPara('loule')?.concelho).toBe('Loulé')
+    expect(regraPara('  LOULE  ')?.concelho).toBe('Loulé')
+  })
+
+  it('devolve null para vazio, nulo ou só espaços', () => {
     expect(regraPara('')).toBeNull()
+    expect(regraPara('   ')).toBeNull()
     expect(regraPara(null)).toBeNull()
     expect(regraPara(undefined)).toBeNull()
   })

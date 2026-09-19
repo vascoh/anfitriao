@@ -8,6 +8,8 @@
  *   O código de isenção a indicar na fatura é **M99**.
  */
 
+import { chaveDeConcelho } from '../concelhos'
+
 export type Regiao = 'continente' | 'madeira' | 'acores'
 
 export const IVA_ALOJAMENTO: Record<Regiao, number> = {
@@ -37,12 +39,13 @@ const CONCELHOS_ACORES = [
   'vila franca do campo',
 ]
 
-function normalizar(s: string): string {
-  return s.trim().toLowerCase()
-}
-
 /**
  * Infere a região a partir do concelho.
+ *
+ * A comparação ignora acentos e maiúsculas (`chaveDeConcelho`): `cidade` é
+ * texto livre e "Camara de Lobos" é tão comum quanto "Câmara de Lobos" — a
+ * versão anterior só dobrava maiúsculas, e quem escrevia sem acento levava a
+ * taxa do continente numa propriedade da Madeira ou dos Açores.
  *
  * ⚠️ Ambiguidades conhecidas: "Calheta" existe na Madeira e em São Jorge;
  * "Lagoa" existe no Algarve e em São Miguel; "Santa Cruz" existe na Madeira,
@@ -51,10 +54,10 @@ function normalizar(s: string): string {
  * contribuinte) e quem chama deve poder sobrepor manualmente.
  */
 export function regiaoDoConcelho(concelho: string | null | undefined): Regiao {
-  if (!concelho) return 'continente'
-  const c = normalizar(concelho)
-  if (CONCELHOS_MADEIRA.includes(c)) return 'madeira'
-  if (CONCELHOS_ACORES.includes(c)) return 'acores'
+  const c = chaveDeConcelho(concelho)
+  if (!c) return 'continente'
+  if (CONCELHOS_MADEIRA.some(m => chaveDeConcelho(m) === c)) return 'madeira'
+  if (CONCELHOS_ACORES.some(a => chaveDeConcelho(a) === c)) return 'acores'
   return 'continente'
 }
 

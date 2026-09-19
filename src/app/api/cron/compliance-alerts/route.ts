@@ -6,8 +6,16 @@ import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { sendPushToOwner } from '@/lib/push'
 import { today } from '@/lib/utils'
 import { avaliarConformidade, itensParaAlertar } from '@/lib/compliance'
+import type { CamposConformidade } from '@/lib/compliance'
+import { carregarTudo } from '@/lib/supabase-tudo'
 
 const supabase = createAdminClient()
+
+type PropriedadeConformidade = CamposConformidade & {
+  nome: string
+  owner_id: string | null
+  ativo: boolean | null
+}
 
 /**
  * Cron: avisa o anfitrião quando documentos legais estão a expirar ou já
@@ -23,21 +31,29 @@ export async function GET(req: NextRequest) {
 
   const hoje = today()
 
-  // Só alojamentos ativos e com dono: sem owner_id não há a quem notificar.
-  const { data: propriedades, error } = await supabase
-    .from('properties')
-    .select('id, nome, owner_id, ativo, rnal_numero, seguro_seguradora, seguro_apolice, seguro_validade, livro_reclamacoes_registado, certificado_energetico_validade')
-    .not('owner_id', 'is', null)
+  /* Só alojamentos ativos e com dono: sem owner_id não há a quem notificar.
+   *
+   * Paginado: o PostgREST corta a 1000 linhas em silêncio (ver
+   * `lib/supabase-tudo.ts`). Num cron que avisa de seguros e certificados
+   * expirados, o alojamento 1001 deixava de ser avaliado — o anfitrião não
+   * recebia aviso nenhum e o cron respondia `ok`. É o mesmo corte que já tinha
+   * sido tapado no relatório mensal; os crons irmãos ficaram para trás. */
+  const { linhas: propriedades, erro } = await carregarTudo<PropriedadeConformidade>(() =>
+    supabase
+      .from('properties')
+      .select('id, nome, owner_id, ativo, rnal_numero, seguro_seguradora, seguro_apolice, seguro_validade, livro_reclamacoes_registado, certificado_energetico_validade')
+      .not('owner_id', 'is', null)
+      .order('id', { ascending: true }))
 
-  if (error) {
-    console.error('[compliance-alerts]', error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (erro) {
+    console.error('[compliance-alerts]', erro)
+    return NextResponse.json({ error: erro }, { status: 500 })
   }
 
   // owner_id → linhas para a tabela do email
   const porAnfitriao = new Map<string, { linhas: Array<[string, string]>; temExpirado: boolean }>()
 
-  for (const p of propriedades ?? []) {
+  for (const p of propriedades) {
     if (p.ativo === false) continue
 
     const alertas = itensParaAlertar(avaliarConformidade(p, hoje))

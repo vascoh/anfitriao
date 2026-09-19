@@ -1,4 +1,5 @@
 import { addDays } from './reservations'
+import { chaveDeConcelho } from './concelhos'
 import type { Booking } from './types'
 
 /**
@@ -122,8 +123,9 @@ export const REGRAS_TMT: RegraTmt[] = [
 
 export function regraPara(concelho: string | null | undefined): RegraTmt | null {
   if (!concelho) return null
-  const alvo = concelho.trim().toLowerCase()
-  return REGRAS_TMT.find(r => r.concelho.toLowerCase() === alvo) ?? null
+  const alvo = chaveDeConcelho(concelho)
+  if (!alvo) return null
+  return REGRAS_TMT.find(r => chaveDeConcelho(r.concelho) === alvo) ?? null
 }
 
 /** True quando MM-DD cai dentro do intervalo, incluindo intervalos que passam o ano. */

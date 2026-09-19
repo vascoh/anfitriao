@@ -53,6 +53,27 @@ describe('regiaoDoConcelho', () => {
     expect(regiaoDoConcelho('Angra do Heroísmo')).toBe('acores')
   })
 
+  /* `properties.cidade` é um campo de texto livre. O teste acima já escrevia
+   * "câmara de lobos" em minúsculas — mas ninguém tinha escrito a variante
+   * sem acento, que é o que sai de um teclado com pressa. Sem ela, a fatura
+   * de uma casa na Madeira ou nos Açores saía à taxa do continente. */
+  it('reconhece o concelho escrito sem acentos', () => {
+    expect(regiaoDoConcelho('Camara de Lobos')).toBe('madeira')
+    expect(regiaoDoConcelho('Sao Vicente')).toBe('madeira')
+    expect(regiaoDoConcelho('Angra do Heroismo')).toBe('acores')
+    expect(regiaoDoConcelho('Povoacao')).toBe('acores')
+    expect(regiaoDoConcelho('SAO ROQUE DO PICO')).toBe('acores')
+  })
+
+  it('tolera espaços a mais no meio do nome', () => {
+    expect(regiaoDoConcelho('Câmara  de   Lobos')).toBe('madeira')
+  })
+
+  it('não confunde concelhos com prefixo comum', () => {
+    expect(regiaoDoConcelho('Santa Cruz da Graciosa')).toBe('acores')
+    expect(regiaoDoConcelho('Calheta de Sao Jorge')).toBe('acores')
+  })
+
   it('resolve nomes ambíguos para continente', () => {
     // "Lagoa" existe no Algarve e em São Miguel; "Calheta" na Madeira e em
     // São Jorge. Erra para a taxa mais alta, a favor do Estado.

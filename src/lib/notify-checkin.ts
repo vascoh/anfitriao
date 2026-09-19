@@ -3,6 +3,7 @@ import { adminGetBookingById, adminGetGuestById, adminGetPropertyById, adminGetW
 import { emailService } from '@/lib/email'
 import { sendPushToOwner } from '@/lib/push'
 import { mascarar } from '@/lib/crypto'
+import { sibaComplete } from '@/lib/labels'
 
 /**
  * Notifica o anfitrião quando um hóspede conclui o check-in online.
@@ -28,12 +29,15 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
 
   if (!settings.email) return
 
-  const sibaComplete = !!(
-    guest?.numero_documento &&
-    guest?.data_nascimento &&
-    guest?.tipo_documento &&
-    (guest?.sexo || guest?.pais_emissao)
-  )
+  /* A mesma função dos crachás de `/hoje` e `/hospedes`, não uma cópia.
+   *
+   * Havia aqui uma reimplementação — a versão antiga, sem `nacionalidade` nem
+   * `pais_residencia`. Quando `lib/labels.ts` foi corrigido (2026-09-18), esta
+   * cópia ficou para trás, apesar de o docstring de lá nomear este email como
+   * um dos três sítios onde o crachá aparece. Resultado: os ecrãs diziam
+   * «faltam campos» e o email que chega ao anfitrião, que é o que ele lê
+   * primeiro, continuava a dizer «SIBA ✓». */
+  const completo = guest ? sibaComplete(guest) : false
 
   await emailService.sendCheckinComplete({
     ownerId: booking.owner_id ?? null,
@@ -50,6 +54,6 @@ export async function sendCheckinCompleteNotification(bookingId: string): Promis
       ? `${guest.tipo_documento ?? ''} ${mascarar(guest.numero_documento)}`.trim()
       : null,
     nacionalidade: guest?.nacionalidade ?? null,
-    sibaComplete,
+    sibaComplete: completo,
   })
 }
