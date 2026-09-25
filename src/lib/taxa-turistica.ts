@@ -33,10 +33,27 @@ export interface Estacao {
 export interface RegraTmt {
   /** Nome do concelho, como aparece em `properties.cidade`. */
   concelho: string
+  /** Outras formas comuns do nome (ex.: «Gaia»). Nunca um nome que seja de outro concelho. */
+  aliases?: string[]
+  /**
+   * Primeira noite para a qual o valor foi verificado (YYYY-MM-DD). Antes
+   * disso o regulamento pode ter tido outros valores que não confirmámos: o
+   * cálculo continua, mas avisa — em vez de aplicar calado um valor que
+   * pode estar errado.
+   */
+  valoresDesde?: string
   /** Valor por pessoa por noite quando não há sazonalidade. */
   valor?: number
   /** Épocas com valores diferentes. Fora das épocas listadas não se cobra. */
   estacoes?: Estacao[]
+  /**
+   * Alterações ao valor ao longo do tempo, por ordem de `desde` (YYYY-MM-DD).
+   * Cada noite usa a última alteração com `desde` <= noite; antes da primeira,
+   * vale `valor`/`estacoes`. Sem isto, uma subida a meio do ano (Gaia, 21/08/2026)
+   * recalculava as estadias de julho ao valor novo — e o mapa mensal declarava
+   * ao município mais do que foi cobrado ao hóspede.
+   */
+  alteracoes?: Array<{ desde: string; valor?: number; estacoes?: Estacao[] }>
   /** Máximo de noites cobradas por estadia. */
   maxNoites: number
   /** Idade abaixo da qual o hóspede está isento (ex.: 13 = isentos os menores de 13). */
@@ -85,6 +102,7 @@ export const REGRAS_TMT: RegraTmt[] = [
     estacoes: [{ de: '04-01', ate: '10-31', valor: 2 }],
     maxNoites: 7,
     isencaoIdade: 13,
+    // Revisão do regulamento em curso desde fev/2026 (cm-albufeira.pt), ainda sem texto novo publicado
     fonte: 'Regulamento da Taxa Municipal Turística de Albufeira',
     verificadoEm: '2026-07-28',
   },
@@ -119,13 +137,68 @@ export const REGRAS_TMT: RegraTmt[] = [
     fonte: 'cm-sintra.pt/sintra/turismo/taxa-municipal-turistica — taxa em vigor desde 29-03-2023 (Assembleia Municipal, 17-02-2023): 2€/pessoa/dormida, máximo de 3 noites por estadia, isentos os menores de 13 anos',
     verificadoEm: '2026-09-17',
   },
+  {
+    concelho: 'Vila Nova de Gaia',
+    aliases: ['Gaia'],
+    valor: 2.5,
+    alteracoes: [{ desde: '2026-08-21', valor: 3 }],
+    maxNoites: 7,
+    isencaoIdade: 16,
+    valoresDesde: '2024-04-01',
+    fonte: 'Regulamento n.º 195/2024, Diário da República 2.ª série n.º 31 (13-02-2024), art. 3.º: 2,5 €/dormida todo o ano, hóspedes com 16 anos ou mais, máximo de 7 noites seguidas; em vigor no 1.º dia do 2.º mês após publicação (01-04-2024). 3,00 € a partir de 21-08-2026 (3.ª alteração, Assembleia Municipal de 19-06-2026, taxadecidade.cm-gaia.pt)',
+    verificadoEm: '2026-09-25',
+  },
+  {
+    concelho: 'Braga',
+    valor: 1.5,
+    maxNoites: 4,
+    isencaoIdade: 16,
+    valoresDesde: '2025-07-30',
+    fonte: 'Regulamento n.º 927/2025, Diário da República 2.ª série n.º 142 (25-07-2025), Título H-4: art. H-4/2.º (1,50 €/dormida), art. H-4/3.º n.º 2 (todo o ano, máximo 4 noites seguidas), art. H-4/4.º (hóspedes com 16 anos ou mais); em vigor no 5.º dia após publicação. Antes cobrava-se só na época alta — estadias anteriores não verificadas',
+    verificadoEm: '2026-09-25',
+  },
+  {
+    concelho: 'Portimão',
+    estacoes: [
+      { de: '04-01', ate: '10-31', valor: 2 },
+      { de: '11-01', ate: '03-31', valor: 1 },
+    ],
+    maxNoites: 7,
+    isencaoIdade: 13,
+    valoresDesde: '2024-03-14',
+    fonte: 'Aviso n.º 5384/2024/2, Diário da República 2.ª série n.º 52 (13-03-2024), Regulamento da Taxa Turística de Portimão: art. 3.º (2 € época alta 1/abr–31/out, 1 € época baixa 1/nov–31/mar), art. 4.º (máximo 7 noites seguidas), hóspedes com 13 anos ou mais; em vigor desde 14-03-2024 (cm-portimao.pt)',
+    verificadoEm: '2026-09-25',
+  },
+  {
+    concelho: 'Mafra',
+    estacoes: [
+      { de: '05-01', ate: '10-31', valor: 2.5 },
+      { de: '11-01', ate: '04-30', valor: 1.2 },
+    ],
+    maxNoites: 7,
+    isencaoIdade: 13,
+    valoresDesde: '2026-01-01',
+    fonte: 'Regulamento n.º 859-A/2018 (DR 2.ª série n.º 251, 31-12-2018), art. 3.º, alterado pelo Regulamento n.º 207/2023: época alta 1/mai–31/out, baixa 1/nov–30/abr, hóspedes com mais de 12 anos, máximo 7 noites; o valor tem atualização anual — 2,50 €/1,20 € com efeitos a 01-01-2026 (cm-mafra.pt/pages/1182). Parques de campismo e Tapada pagam metade (não modelado)',
+    verificadoEm: '2026-09-25',
+  },
+  {
+    concelho: 'Óbidos',
+    valor: 1,
+    maxNoites: 5,
+    isencaoIdade: 13,
+    valoresDesde: '2022-01-01',
+    fonte: 'Regulamento da Taxa Municipal Turística de Óbidos, Diário da República 2.ª série n.º 219 (14-11-2018): máximo 5 noites consecutivas no mesmo estabelecimento (a interrupção reinicia a contagem); 1 €/hóspede/noite, hóspedes com 13 anos ou mais, em vigor desde 01-01-2022 (cm-obidos.pt)',
+    verificadoEm: '2026-09-25',
+  },
 ]
 
 export function regraPara(concelho: string | null | undefined): RegraTmt | null {
   if (!concelho) return null
   const alvo = chaveDeConcelho(concelho)
   if (!alvo) return null
-  return REGRAS_TMT.find(r => chaveDeConcelho(r.concelho) === alvo) ?? null
+  return REGRAS_TMT.find(r =>
+    chaveDeConcelho(r.concelho) === alvo || (r.aliases ?? []).some(a => chaveDeConcelho(a) === alvo),
+  ) ?? null
 }
 
 /** True quando MM-DD cai dentro do intervalo, incluindo intervalos que passam o ano. */
@@ -139,11 +212,17 @@ export function dentroDaEstacao(mesDia: string, estacao: Estacao): boolean {
 
 /** Valor por pessoa aplicável a uma noite concreta. 0 quando não se cobra. */
 export function valorDaNoite(regra: RegraTmt, dataIso: string): number {
-  if (regra.estacoes) {
-    const mesDia = dataIso.slice(5, 10)
-    return regra.estacoes.find(e => dentroDaEstacao(mesDia, e))?.valor ?? 0
+  const noite = dataIso.slice(0, 10)
+  const vigente = [...(regra.alteracoes ?? [])]
+    .sort((a, b) => a.desde.localeCompare(b.desde))
+    .filter(a => a.desde <= noite)
+    .pop()
+  const { valor, estacoes } = vigente ?? regra
+  if (estacoes) {
+    const mesDia = noite.slice(5, 10)
+    return estacoes.find(e => dentroDaEstacao(mesDia, e))?.valor ?? 0
   }
-  return regra.valor ?? 0
+  return valor ?? 0
 }
 
 export interface CalculoTmt {
@@ -222,6 +301,11 @@ export function calcularTmt(
     indice++
   }
 
+  if (regra.valoresDesde && b.check_in < regra.valoresDesde) {
+    avisos.push(
+      `O valor da taxa de ${regra.concelho} só está verificado para noites a partir de ${regra.valoresDesde}. Confirma o valor que vigorava nas datas desta estadia.`,
+    )
+  }
   if (isentas === 0 && pessoas > 1) {
     avisos.push(
       `Menores de ${regra.isencaoIdade} anos estão isentos. Se houve crianças nesta reserva, ajusta o número de hóspedes isentos.`,

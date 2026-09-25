@@ -65,7 +65,10 @@ describe('regraPara', () => {
     // Deliberadamente fora da lista por fontes contraditórias ou por não terem
     // TMT — ver a nota do ficheiro sobre a regra de admissão.
     expect(regraPara('Lagos')).toBeNull()
-    expect(regraPara('Braga')).toBeNull()
+    // Coimbra: subida para 2 € aprovada pelo executivo a 21-07-2026, sem data de
+    // entrada em vigor. Lagoa: existe no Algarve e nos Açores, com taxas diferentes.
+    expect(regraPara('Coimbra')).toBeNull()
+    expect(regraPara('Lagoa')).toBeNull()
     expect(regraPara('Seixal')).toBeNull()
   })
 
@@ -278,5 +281,78 @@ describe('calcularTmt', () => {
     }
     const r = calcularTmt(reserva('2026-08-01', '2026-08-02', 1), regra)
     expect(r.valor).toBe(1.34)
+  })
+})
+
+describe('concelhos acrescentados a 2026-09-25 (fontes primárias)', () => {
+  const GAIA = regraPara('Vila Nova de Gaia')!
+  const BRAGA = regraPara('Braga')!
+  const PORTIMAO = regraPara('Portimão')!
+  const MAFRA = regraPara('Mafra')!
+  const OBIDOS = regraPara('Óbidos')!
+
+  it('chegam a 12 concelhos, todos com regra', () => {
+    expect(REGRAS_TMT).toHaveLength(12)
+    for (const r of [GAIA, BRAGA, PORTIMAO, MAFRA, OBIDOS]) expect(r).toBeTruthy()
+  })
+
+  it('«Gaia» encontra Vila Nova de Gaia, sem acento nem maiúsculas', () => {
+    expect(regraPara('gaia')?.concelho).toBe('Vila Nova de Gaia')
+    expect(regraPara('Portimao')?.concelho).toBe('Portimão')
+    expect(regraPara('obidos')?.concelho).toBe('Óbidos')
+  })
+
+  it('nenhum alias é o nome de outro concelho com regra', () => {
+    const nomes = REGRAS_TMT.map(r => r.concelho.toLowerCase())
+    for (const r of REGRAS_TMT) for (const a of r.aliases ?? []) expect(nomes).not.toContain(a.toLowerCase())
+  })
+
+  it('Gaia: 2,5 € até 20/08/2026, 3 € a partir de 21/08/2026 (3.ª alteração)', () => {
+    expect(valorDaNoite(GAIA, '2026-08-20')).toBe(2.5)
+    expect(valorDaNoite(GAIA, '2026-08-21')).toBe(3)
+    expect(valorDaNoite(GAIA, '2027-01-15')).toBe(3)
+    // Estadia que atravessa a mudança: 2 noites a 2,5 € e 2 a 3 €, por 2 pessoas
+    const c = calcularTmt(reserva('2026-08-19', '2026-08-23'), GAIA)
+    expect(c.valor).toBe((2.5 * 2 + 3 * 2) * 2)
+  })
+
+  it('Braga: 1,50 € todo o ano, mas só 4 noites', () => {
+    const c = calcularTmt(reserva('2026-01-10', '2026-01-17', 1), BRAGA)
+    expect(c.noitesTributaveis).toBe(4)
+    expect(c.valor).toBe(6)
+  })
+
+  it('Portimão: 2 € de abril a outubro, 1 € no resto; cobre todos os dias do ano', () => {
+    expect(valorDaNoite(PORTIMAO, '2026-10-31')).toBe(2)
+    expect(valorDaNoite(PORTIMAO, '2026-11-01')).toBe(1)
+    expect(valorDaNoite(PORTIMAO, '2028-02-29')).toBe(1)
+  })
+
+  it('Mafra: 2,50 € de maio a outubro, 1,20 € de novembro a abril', () => {
+    expect(valorDaNoite(MAFRA, '2026-04-30')).toBe(1.2)
+    expect(valorDaNoite(MAFRA, '2026-05-01')).toBe(2.5)
+    expect(valorDaNoite(MAFRA, '2026-10-31')).toBe(2.5)
+    expect(valorDaNoite(MAFRA, '2026-11-01')).toBe(1.2)
+  })
+
+  it('Óbidos: 1 €, máximo 5 noites', () => {
+    const c = calcularTmt(reserva('2026-06-01', '2026-06-09', 2), OBIDOS)
+    expect(c.noitesTributaveis).toBe(5)
+    expect(c.valor).toBe(10)
+  })
+
+  it('estações cobrem todos os dias do ano, incluindo 29 de fevereiro', () => {
+    for (const r of [PORTIMAO, MAFRA]) {
+      for (let d = new Date(Date.UTC(2028, 0, 1)); d.getUTCFullYear() === 2028; d.setUTCDate(d.getUTCDate() + 1)) {
+        expect(valorDaNoite(r, d.toISOString().slice(0, 10)), `${r.concelho} ${d.toISOString()}`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('avisa quando a estadia é anterior aos valores verificados', () => {
+    const antiga = calcularTmt(reserva('2025-06-01', '2025-06-03'), MAFRA)
+    expect(antiga.avisos.some(a => a.includes('só está verificado'))).toBe(true)
+    const actual = calcularTmt(reserva('2026-06-01', '2026-06-03'), MAFRA)
+    expect(actual.avisos.some(a => a.includes('só está verificado'))).toBe(false)
   })
 })

@@ -6,6 +6,30 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-25] Taxa turística: 12 concelhos, com datas de vigência — 1.4
+
+Cinco concelhos novos, todos por Diário da República ou site oficial do
+município: Vila Nova de Gaia, Braga, Portimão, Mafra e Óbidos.
+
+**Gaia obrigou a mudar o modelo.** A taxa subiu de 2,50 € para 3 € a
+21-08-2026. Com um valor único por concelho, a estadia de julho passava a
+calcular-se a 3 € — e o mapa mensal declarava ao município mais do que foi
+cobrado ao hóspede. `RegraTmt.alteracoes` guarda os valores com a data de
+vigência; `valorDaNoite` usa o que vigorava em cada noite. Teste com uma
+estadia que atravessa a mudança.
+
+**Mafra atualiza o valor todos os anos** (o próprio regulamento o diz): os
+2,20 €/1,10 € que os blogues repetem são de 2023; o site do município dá
+2,50 €/1,20 € com efeitos a 01-01-2026. `valoresDesde` faz o cálculo avisar
+quando a estadia é anterior ao valor verificado, em vez de aplicar calado um
+valor que pode estar errado.
+
+Deixados de fora de propósito (escrito no TODO): Coimbra (subida aprovada sem
+data), Lagoa (o nome existe no Algarve e nos Açores, com taxas diferentes),
+Funchal (em revisão), Lagos (sem TMT).
+
+Validação: 1189 testes (+10), typecheck e lint a zero.
+
 ### [2026-09-25] Mapa fiscal IRS (B vs F) e pacote para o contabilista — 1.6
 
 O último item da Fase 1 do dossiê. `/financeiro/fiscal` responde à pergunta
