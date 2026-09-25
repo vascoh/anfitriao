@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://img.clerk.com https://*.public.blob.vercel-storage.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://clerk.anfitrioes.pt https://*.clerk.accounts.dev https://*.ingest.sentry.io",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://clerk.anfitrioes.pt https://*.clerk.accounts.dev https://*.ingest.sentry.io https://*.ingest.de.sentry.io",
               "frame-src 'self' https://clerk.anfitrioes.pt https://*.clerk.accounts.dev",
               "worker-src 'self' blob:",
               "media-src 'self'",
