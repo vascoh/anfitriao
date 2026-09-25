@@ -278,7 +278,10 @@ CREATE TABLE public.properties (
   siba_codigo_postal text,
   siba_telefone text,
   siba_nome_contacto text,
-  siba_email_contacto text
+  siba_email_contacto text,
+  al_modalidade text,
+  al_area_contencao boolean NOT NULL DEFAULT false,
+  vpt numeric(12,2)
 );
 
 CREATE TABLE public.push_subscriptions (

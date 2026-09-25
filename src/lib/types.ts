@@ -55,6 +55,14 @@ export interface Property {
   livro_reclamacoes_url?: string | null
   certificado_energetico_validade?: string | null
 
+  // ─── Dados fiscais (migration 047) — ver lib/fiscal-irs.ts ────────────
+  /** Modalidade registada no RNAL: decide o coeficiente do art. 31.º CIRS e se há opção pela F */
+  al_modalidade?: 'apartamento' | 'hospedagem' | 'moradia' | 'quartos' | null
+  /** Em área de contenção o coeficiente de moradia/apartamento sobe para 0,50 */
+  al_area_contencao?: boolean | null
+  /** Valor patrimonial tributário — 4 % conta como despesa no n.º 13 do art. 31.º */
+  vpt?: number | null
+
   /* Registo no web service do SIBA — credenciais do anfitrião, por
      estabelecimento. A chave nunca chega ao cliente: as rotas devolvem
      `siba_chave_definida` no seu lugar. */

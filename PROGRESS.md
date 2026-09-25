@@ -6,6 +6,37 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-25] Mapa fiscal IRS (B vs F) e pacote para o contabilista — 1.6
+
+O último item da Fase 1 do dossiê. `/financeiro/fiscal` responde à pergunta
+que todo o anfitrião faz ao contabilista em abril: fico na B ou opto pela F?
+
+**Fontes primárias, não blogues.** Tudo lido no CIRS consolidado do Portal
+das Finanças; um blogue dizia que o AL em moradia/apartamento tinha 0,15,
+o art. 31.º, n.º 1, a) exclui-o expressamente — cai na c), 0,35, e **por isso
+lhe aplica a regra dos 15 % do n.º 13** (com 4 % do VPT a contar como
+despesa, alínea d)). A área de contenção (alínea h), 0,50) não tem regra dos
+15 %. A F para AL é 28 % (art. 72.º, n.º 1, e)) — os 25 % do n.º 2 são só
+para arrendamento habitacional, e o AL não o é.
+
+- ✅ `lib/fiscal-irs.ts` — coeficientes, n.º 13, escalões 2026 (Lei 73-A/2025),
+  solidariedade, quociente conjugal; imposto **incremental** sobre o resto do
+  agregado, que é o que decide. Testado contra a coluna B (taxa média) do
+  art. 68.º, que é uma verificação independente dos escalões copiados.
+  Primeira versão do teste falhou por um motivo certo: a 86 634 € já se paga
+  solidariedade, que a coluna B não inclui — escalões e solidariedade ficaram
+  separados para cada um se testar contra o seu artigo.
+- ✅ Migração 047 (`al_modalidade`, `al_area_contencao`, `vpt`), aplicada.
+  `tipo` não servia: é a descrição do site, não a modalidade do RNAL. Sem
+  default — um alojamento sem modalidade fica fora da conta e a página di-lo.
+- ✅ `lib/pacote-contabilista.ts` — quartos sobem para a casa; comissões
+  registadas **ou** estimadas, nunca as duas; despesas sem alojamento
+  repartidas pela receita; IVA entregue fora; TMT não é receita. CSV com `;`
+  e vírgula decimal, com os critérios escritos no próprio ficheiro.
+- ✅ `/api/fiscal/alojamento` — só três campos, `ownsProperty`.
+
+Validação: 1179 testes (+33), typecheck, lint e `next build` a zero.
+
 ### [2026-09-25] A correção de segurança do Next não estava em produção
 
 Sessão de fecho. À entrada, `main` tinha dois commits por publicar — e um deles

@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { Plus, Trash2, Wallet, Download } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Trash2, Wallet, Download, Scale } from 'lucide-react'
 import { fetchExpenses, fetchBookings, fetchProperties, fetchPlatformRates } from '@/lib/fetcher'
 import { eliminar } from '@/lib/guardar'
 import { fmtMoney, fmtDate, today } from '@/lib/utils'
@@ -194,11 +195,18 @@ export default function FinanceiroPage() {
     <div className="flex flex-col min-h-full pb-8">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Financeiro</h1>
+        <div className="flex items-center gap-2">
+        <Link href="/financeiro/fiscal"
+          className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground border border-input rounded-lg px-3 py-1.5 transition-colors"
+          title="IRS: categoria B vs F e pacote para o contabilista">
+          <Scale className="h-3.5 w-3.5" /> Mapa fiscal
+        </Link>
         <button onClick={exportCsv}
           className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground border border-input rounded-lg px-3 py-1.5 transition-colors"
           title={`Exportar financeiro ${year} para CSV`}>
           <Download className="h-3.5 w-3.5" /> CSV
         </button>
+        </div>
       </header>
 
       <div className="max-w-xl flex flex-col gap-6 p-4">

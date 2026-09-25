@@ -93,6 +93,7 @@ describe('todas as páginas têm porta', () => {
     'conformidade/dossie/[propertyId]': 'aberto a partir de /conformidade',
     'conformidade/ine': 'atalho no cabeçalho de /conformidade',
     'conformidade/taxa-turistica': 'atalho no cabeçalho de /conformidade',
+    'financeiro/fiscal': 'atalho no cabeçalho de /financeiro',
   }
 
   /** Uma rota é contextual quando tem um parâmetro ou é uma ação sobre uma lista. */

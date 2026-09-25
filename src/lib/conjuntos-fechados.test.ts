@@ -23,6 +23,7 @@ import { join } from 'node:path'
 const RAIZ = process.cwd()
 const TYPES = readFileSync(join(RAIZ, 'src/lib/types.ts'), 'utf-8')
 const ACCOUNTS = readFileSync(join(RAIZ, 'src/lib/accounts.ts'), 'utf-8')
+const FISCAL = readFileSync(join(RAIZ, 'src/lib/fiscal-irs.ts'), 'utf-8')
 
 /** Valores de um tipo união de literais: `type X = 'a' | 'b'`. */
 function valoresDoTipo(codigo: string, nome: string): string[] {
@@ -58,6 +59,7 @@ describe('os conjuntos fechados do código e da base coincidem', () => {
     ['BookingStatus', valoresDoTipo(TYPES, 'BookingStatus'), 'bookings_estado_check'],
     ['BookingSource', valoresDoTipo(TYPES, 'BookingSource'), 'bookings_origem_check'],
     ['AccountPlano', valoresDoTipo(ACCOUNTS, 'AccountPlano'), 'accounts_plano_check'],
+    ['ModalidadeAl', valoresDoTipo(FISCAL, 'ModalidadeAl'), 'properties_al_modalidade_check'],
   ]
 
   for (const [nome, doCodigo, constraint] of casos) {
