@@ -1,5 +1,6 @@
-import { escHtml, fmtDate, fmtMoney } from '@/lib/utils'
+import { escHtml, fmtMoney } from '@/lib/utils'
 import type { EmailIdentity } from '../types'
+import { linguaDoEmail, dataEmail, tx, frases } from './lingua'
 import { renderEmail, themeFromIdentity, kicker, heading, paragraph, detailsTable, hostFooter } from './layout'
 
 /** Hóspede: lembrete de pagamento em falta antes do check-in. */
@@ -15,24 +16,21 @@ export function paymentReminderEmail(p: {
   saldo: number
 }): string {
   const theme = themeFromIdentity(p.identity)
+  const lang = linguaDoEmail(p.identity)
   const firstName = p.guestName.split(' ')[0]
   return renderEmail(theme, `
-    ${kicker('Lembrete automático', theme)}
-    ${heading('Pagamento pendente')}
-    ${paragraph(`Olá ${escHtml(firstName)}, o teu check-in em <strong>${escHtml(p.propertyName)}</strong> é daqui a poucos dias. Existe ainda um valor em aberto.`)}
+    ${kicker(tx(lang, 'pagamento_kicker'), theme)}
+    ${heading(tx(lang, 'pagamento_titulo'))}
+    ${paragraph(frases.pagamentoOla(lang, escHtml(firstName), escHtml(p.propertyName)))}
     ${detailsTable([
-      ['Check-in', fmtDate(p.checkIn)],
-      ['Check-out', fmtDate(p.checkOut)],
-      ['Noites', String(p.numNights)],
-      ['Total reserva', fmtMoney(p.total)],
-      ['Já pago', fmtMoney(p.pago)],
-      ['Valor em falta', fmtMoney(p.saldo)],
+      [tx(lang, 'checkin'), dataEmail(p.checkIn, lang)],
+      [tx(lang, 'checkout'), dataEmail(p.checkOut, lang)],
+      [tx(lang, 'noites'), String(p.numNights)],
+      [tx(lang, 'total_reserva'), fmtMoney(p.total)],
+      [tx(lang, 'ja_pago'), fmtMoney(p.pago)],
+      [tx(lang, 'em_falta'), fmtMoney(p.saldo)],
     ], theme, { title: p.propertyName, highlightLast: true })}
-    ${paragraph(
-      p.identity.replyTo
-        ? 'Por favor entra em contacto para combinar o pagamento antes da chegada. Podes responder diretamente a este email.'
-        : 'Por favor entra em contacto com o anfitrião para combinar o pagamento antes da chegada.',
-    )}
-    ${hostFooter(p.identity.displayName, p.identity.contact, theme)}
-  `)
+    ${paragraph(tx(lang, p.identity.replyTo ? 'pagamento_resposta' : 'pagamento_sem_resposta'))}
+    ${hostFooter(p.identity.displayName, p.identity.contact, theme, lang)}
+  `, lang)
 }

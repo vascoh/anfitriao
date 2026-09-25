@@ -21,7 +21,14 @@ estava fixo em português.
 - ✅ `i18n-paginas.test.ts` falha se uma página nova de `/r/[slug]` não
   resolver o idioma; `paginas-en.test.tsx` renderiza as páginas em inglês.
 
-Validação: 1204 testes, typecheck e lint a zero.
+**E os emails.** O mesmo hóspede que reservava num site em inglês recebia a
+confirmação, o link de check-in e o lembrete de pagamento em português — com
+os meses em português, porque `fmtDate` é fixo em `pt-PT`. Os emails ao
+hóspede passam a seguir `website_settings.idioma` (`templates/lingua.ts`):
+assunto, corpo, datas («12 Sept») e rodapé. Os emails ao anfitrião ficam em
+português. A versão portuguesa sai igual à de antes (testes existentes).
+
+Validação: 1207 testes, typecheck e lint a zero.
 
 ### [2026-09-25] Taxa turística: 12 concelhos, com datas de vigência — 1.4
 

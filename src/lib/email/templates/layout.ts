@@ -1,6 +1,7 @@
 import { escHtml } from '@/lib/utils'
 import { PLATFORM_NAME } from '../config'
 import type { EmailIdentity } from '../types'
+import { tx, type EmailLang } from './lingua'
 
 // Paleta neutra partilhada por todos os templates
 const INK = '#1a1209'
@@ -92,10 +93,10 @@ export function finePrint(text: string, theme: EmailTheme): string {
 }
 
 /** Bloco de contacto do anfitrião no fim do corpo. */
-export function hostFooter(hostName: string, contact: string, theme: EmailTheme): string {
+export function hostFooter(hostName: string, contact: string, theme: EmailTheme, lang: EmailLang = 'pt'): string {
   return `<div style="border-top:1px solid ${BORDER};padding-top:18px;">
-    <p style="margin:0 0 4px;font-size:12px;color:${theme.secondaryColor};">Anfitrião: <strong style="color:${INK};">${escHtml(hostName)}</strong></p>
-    ${contact ? `<p style="margin:0;font-size:12px;color:${theme.secondaryColor};">Contacto: <strong style="color:${INK};">${escHtml(contact)}</strong></p>` : ''}
+    <p style="margin:0 0 4px;font-size:12px;color:${theme.secondaryColor};">${tx(lang, 'anfitriao')}: <strong style="color:${INK};">${escHtml(hostName)}</strong></p>
+    ${contact ? `<p style="margin:0;font-size:12px;color:${theme.secondaryColor};">${tx(lang, 'contacto')}: <strong style="color:${INK};">${escHtml(contact)}</strong></p>` : ''}
   </div>`
 }
 
@@ -105,9 +106,9 @@ export function hostFooter(hostName: string, contact: string, theme: EmailTheme)
  * Envolve o conteúdo no layout comum: barra da cor da marca, cabeçalho com o
  * nome do alojamento, assinatura opcional e rodapé "Powered by Anfitriões".
  */
-export function renderEmail(theme: EmailTheme, bodyHtml: string): string {
+export function renderEmail(theme: EmailTheme, bodyHtml: string, lang: EmailLang = 'pt'): string {
   return `<!DOCTYPE html>
-<html lang="pt">
+<html lang="${lang === 'en' ? 'en' : 'pt-PT'}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:${BG};padding:32px 16px;margin:0;">
   <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid ${BORDER};">

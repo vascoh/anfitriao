@@ -1,6 +1,7 @@
 import { escHtml } from '@/lib/utils'
 import type { EmailIdentity } from '../types'
 import { renderEmail, themeFromIdentity, kicker, heading, paragraph } from './layout'
+import { linguaDoEmail } from './lingua'
 
 /** Hóspede: mensagem de uma automação (lembrete, código da porta, etc.), texto livre do anfitrião. */
 export function automationMessageEmail(p: {
@@ -15,5 +16,6 @@ export function automationMessageEmail(p: {
     ${heading(p.subject)}
     ${paragraph(bodyHtml)}
   `
-  return renderEmail(theme, body)
+  // O texto é do anfitrião; só o invólucro segue a língua do site.
+  return renderEmail(theme, body, linguaDoEmail(p.identity))
 }

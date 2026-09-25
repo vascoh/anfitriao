@@ -16,6 +16,7 @@ import {
   canaisEmRiscoEmail,
 } from './templates/platform'
 import { automationMessageEmail } from './templates/automation'
+import { assuntos, linguaDoEmail } from './templates/lingua'
 
 /**
  * EmailService — ponto único de envio de emails da aplicação.
@@ -59,7 +60,7 @@ class EmailService {
     return this.sendAsProperty(
       identity,
       p.guestEmail,
-      `Pedido de reserva recebido — ${p.propertyName}`,
+      assuntos.pedido(linguaDoEmail(identity), p.propertyName),
       reservationRequestEmail({ ...p, identity }),
     )
   }
@@ -76,7 +77,7 @@ class EmailService {
     return this.sendAsProperty(
       identity,
       p.guestEmail,
-      `Reserva confirmada — ${p.propertyName}`,
+      assuntos.confirmada(linguaDoEmail(identity), p.propertyName),
       reservationConfirmedEmail({ ...p, identity, checkinLink: `${APP_URL}/checkin/${p.bookingId}` }),
     )
   }
@@ -140,7 +141,7 @@ class EmailService {
     return this.sendAsProperty(
       identity,
       p.guestEmail,
-      `Pagamento pendente — ${p.propertyName} · ${fmtDate(p.checkIn)}`,
+      assuntos.pagamento(linguaDoEmail(identity), p.propertyName, p.checkIn),
       paymentReminderEmail({ ...p, identity }),
     )
   }

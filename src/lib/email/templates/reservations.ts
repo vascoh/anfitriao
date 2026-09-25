@@ -4,6 +4,7 @@ import {
   renderEmail, themeFromIdentity, kicker, heading, paragraph,
   detailsTable, noteBox, ctaButton, finePrint, hostFooter,
 } from './layout'
+import { linguaDoEmail, dataEmail, tx, frases, type EmailLang } from './lingua'
 
 export interface StayDetails {
   propertyName: string
@@ -14,13 +15,13 @@ export interface StayDetails {
   total: number
 }
 
-function stayRows(s: StayDetails): Array<[string, string]> {
+function stayRows(s: StayDetails, lang: EmailLang): Array<[string, string]> {
   return [
-    ['Check-in', fmtDate(s.checkIn)],
-    ['Check-out', fmtDate(s.checkOut)],
-    ['Noites', String(s.numNights)],
-    ['Hóspedes', String(s.numHospedes)],
-    ['Total', fmtMoney(s.total)],
+    [tx(lang, 'checkin'), dataEmail(s.checkIn, lang)],
+    [tx(lang, 'checkout'), dataEmail(s.checkOut, lang)],
+    [tx(lang, 'noites'), String(s.numNights)],
+    [tx(lang, 'hospedes'), String(s.numHospedes)],
+    [tx(lang, 'total'), fmtMoney(s.total)],
   ]
 }
 
@@ -31,20 +32,17 @@ export function reservationRequestEmail(p: StayDetails & {
   notas: string | null
 }): string {
   const theme = themeFromIdentity(p.identity)
+  const lang = linguaDoEmail(p.identity)
   const firstName = p.guestName.split(' ')[0]
   return renderEmail(theme, `
-    ${kicker('Pedido de reserva', theme)}
-    ${heading('Recebemos o teu pedido!')}
-    ${paragraph(`Olá ${escHtml(firstName)}, o teu pedido de reserva em <strong>${escHtml(p.propertyName)}</strong> foi recebido com sucesso. O anfitrião irá confirmar em breve.`)}
-    ${detailsTable(stayRows(p), theme, { title: p.propertyName, highlightLast: true })}
-    ${p.notas ? noteBox('As tuas notas', p.notas, theme) : ''}
-    ${paragraph(
-      p.identity.replyTo
-        ? 'O anfitrião irá confirmar a reserva e combinar o pagamento diretamente contigo. Podes responder a este email para falar com ele.'
-        : 'O anfitrião irá confirmar a reserva e combinar o pagamento diretamente contigo.',
-    )}
-    ${hostFooter(p.identity.displayName, p.identity.contact, theme)}
-  `)
+    ${kicker(tx(lang, 'pedido_kicker'), theme)}
+    ${heading(tx(lang, 'pedido_titulo'))}
+    ${paragraph(frases.pedidoOla(lang, escHtml(firstName), escHtml(p.propertyName)))}
+    ${detailsTable(stayRows(p, lang), theme, { title: p.propertyName, highlightLast: true })}
+    ${p.notas ? noteBox(tx(lang, 'pedido_notas'), p.notas, theme) : ''}
+    ${paragraph(tx(lang, p.identity.replyTo ? 'pedido_resposta' : 'pedido_sem_resposta'))}
+    ${hostFooter(p.identity.displayName, p.identity.contact, theme, lang)}
+  `, lang)
 }
 
 /** Hóspede: reserva confirmada, com link para check-in online. */
@@ -55,17 +53,18 @@ export function reservationConfirmedEmail(p: StayDetails & {
   instrucoes?: string | null
 }): string {
   const theme = themeFromIdentity(p.identity)
+  const lang = linguaDoEmail(p.identity)
   const firstName = p.guestName.split(' ')[0]
   return renderEmail(theme, `
-    ${kicker('Reserva confirmada ✓', theme)}
-    ${heading('A tua estadia está confirmada!')}
-    ${paragraph(`Olá ${escHtml(firstName)}, a tua reserva em <strong>${escHtml(p.propertyName)}</strong> foi confirmada. Estamos a aguardar a tua chegada!`)}
-    ${detailsTable(stayRows(p), theme, { title: p.propertyName, highlightLast: true })}
-    ${p.instrucoes ? noteBox('Instruções de check-in', p.instrucoes, theme) : ''}
-    ${ctaButton('Fazer check-in online →', p.checkinLink, theme)}
-    ${finePrint('Demora menos de 1 minuto. Obrigatório por lei (boletim de alojamento, SIBA/AIMA).', theme)}
-    ${hostFooter(p.identity.displayName, p.identity.contact, theme)}
-  `)
+    ${kicker(tx(lang, 'confirmada_kicker'), theme)}
+    ${heading(tx(lang, 'confirmada_titulo'))}
+    ${paragraph(frases.confirmadaOla(lang, escHtml(firstName), escHtml(p.propertyName)))}
+    ${detailsTable(stayRows(p, lang), theme, { title: p.propertyName, highlightLast: true })}
+    ${p.instrucoes ? noteBox(tx(lang, 'instrucoes'), p.instrucoes, theme) : ''}
+    ${ctaButton(tx(lang, 'checkin_cta'), p.checkinLink, theme)}
+    ${finePrint(tx(lang, 'checkin_nota'), theme)}
+    ${hostFooter(p.identity.displayName, p.identity.contact, theme, lang)}
+  `, lang)
 }
 
 /** Anfitrião: nova reserva pendente no painel. */
