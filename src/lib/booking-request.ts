@@ -4,6 +4,7 @@ import { uuid, nights, today } from './utils'
 import { calculatePriceWithRules } from './reservations'
 import { adminGetPriceRules, adminGetTarifas, adminGetPlatformRates } from './db-admin'
 import { ehCasaComQuartos } from './ownership'
+import { distribuirPessoas } from './grupos'
 import { verificarDisponibilidadeAoVivo, mensagemAoVivo } from './disponibilidade-ao-vivo'
 import type { Property } from './types'
 
@@ -305,17 +306,17 @@ export async function validateGroupBookingRequest(
     adminGetPlatformRates(owner_id ?? undefined),
   ])
 
-  // Maiores primeiro: é a mesma ordem da app interna, para o hóspede e o
-  // anfitrião verem a mesma distribuição.
-  const ordenados = [...quartos].sort((a, b) => b.capacidade - a.capacidade)
-  let porAlojar = num_hospedes
+  // A mesma função da app interna, para o hóspede e o anfitrião verem a mesma
+  // distribuição — a cópia que aqui estava não desempatava pelo nome.
+  const pessoasPorQuarto = distribuirPessoas(quartos, num_hospedes)
 
+  const ordenados = [...quartos].sort(
+    (a, b) => b.capacidade - a.capacidade || a.nome.localeCompare(b.nome, 'pt'),
+  )
   const detalhe = ordenados.map(quarto => {
-    const pessoas = Math.min(quarto.capacidade, Math.max(porAlojar, 0))
-    porAlojar -= pessoas
     return {
       quarto,
-      pessoas,
+      pessoas: pessoasPorQuarto.get(quarto.id) ?? 0,
       preco: calculatePriceWithRules(quarto, check_in, check_out, rules, tarifas, rates, 'direto').total,
     }
   })

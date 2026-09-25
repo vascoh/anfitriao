@@ -129,18 +129,24 @@ export function sugerirQuartos<Q extends QuartoParaGrupo>(
 /**
  * Distribui as pessoas pelos quartos escolhidos.
  *
- * Enche os maiores primeiro. Serve para o `num_hospedes` de cada reserva ficar
- * certo — sem isso a ocupação por quarto mentiria, e os boletins do SIBA não
- * saberiam quantas pessoas dormiram em cada sítio.
+ * Enche os maiores primeiro, com desempate pelo nome — a ordem é decidida
+ * aqui e não por quem chama, para a app interna e o site público (que antes
+ * tinha uma cópia sem desempate) darem sempre a mesma distribuição. Serve para
+ * o `num_hospedes` de cada reserva ficar certo — sem isso a ocupação por
+ * quarto mentiria, e os boletins do SIBA não saberiam quantas pessoas
+ * dormiram em cada sítio.
  */
 export function distribuirPessoas(
-  quartos: Array<{ id: string; capacidade: number }>,
+  quartos: Array<{ id: string; capacidade: number; nome?: string }>,
   pessoas: number,
 ): Map<string, number> {
   const mapa = new Map<string, number>()
   let restantes = pessoas
+  const ordenados = [...quartos].sort(
+    (a, b) => b.capacidade - a.capacidade || (a.nome ?? '').localeCompare(b.nome ?? '', 'pt'),
+  )
 
-  for (const quarto of quartos) {
+  for (const quarto of ordenados) {
     const neste = Math.min(quarto.capacidade, Math.max(restantes, 0))
     mapa.set(quarto.id, neste)
     restantes -= neste
@@ -148,8 +154,8 @@ export function distribuirPessoas(
 
   // Se ainda sobram pessoas, a capacidade não chegava — quem chama já devia
   // ter validado, mas não se perde ninguém em silêncio.
-  if (restantes > 0 && quartos.length > 0) {
-    const ultimo = quartos[quartos.length - 1]
+  if (restantes > 0 && ordenados.length > 0) {
+    const ultimo = ordenados[ordenados.length - 1]
     mapa.set(ultimo.id, (mapa.get(ultimo.id) ?? 0) + restantes)
   }
 

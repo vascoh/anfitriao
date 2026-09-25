@@ -177,6 +177,22 @@ describe('distribuirPessoas', () => {
     }
   })
 
+  it('a ordem de entrada não muda a distribuição (desempate pelo nome)', () => {
+    const a = { id: 'q-a', capacidade: 2, nome: 'Azul' }
+    const b = { id: 'q-b', capacidade: 2, nome: 'Branco' }
+    const m1 = distribuirPessoas([a, b], 3)
+    const m2 = distribuirPessoas([b, a], 3)
+    expect(m1).toEqual(m2)
+    expect(m1.get('q-a')).toBe(2)
+    expect(m1.get('q-b')).toBe(1)
+  })
+
+  it('ordena por capacidade mesmo que quem chama não ordene', () => {
+    const m = distribuirPessoas([INDIVIDUAL, CASAL, FAMILIAR], 5)
+    expect(m.get('q-fam')).toBe(5)
+    expect(m.get('q-ind')).toBe(0)
+  })
+
   it('não perde ninguém em silêncio se a capacidade não chegar', () => {
     const m = distribuirPessoas([CASAL], 5)
     expect([...m.values()].reduce((a, b) => a + b, 0)).toBe(5)

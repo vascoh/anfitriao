@@ -6,6 +6,27 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-25] A correção de segurança do Next não estava em produção
+
+Sessão de fecho. À entrada, `main` tinha dois commits por publicar — e um deles
+era o Next 16.2.6 → 16.3.5 de 19/09 (RCE não autenticado na Image
+Optimization via AVIF, bypass do proxy). Produção estava no deploy das 11:58
+desse dia, **onze minutos antes do commit**: seis dias exposta.
+
+- ✅ Publicado (`dpl_Dt7Dz9GAS8dFKYKCUCoiBiFpWzve`, confirmado com `vercel inspect`).
+- ✅ **Sentry ligado, inerte até haver DSN.** `@sentry/nextjs` estava instalado e
+  nunca inicializado. `instrumentation.ts` (servidor/edge + `onRequestError`),
+  `instrumentation-client.ts`, `global-error.tsx`. `sendDefaultPii: false`, sem
+  tracing. CSP aceita o ingest UE. Falta só `SENTRY_DSN` e
+  `NEXT_PUBLIC_SENTRY_DSN` na Vercel — e acrescentar o Sentry como
+  subcontratante no registo de tratamentos/política de privacidade.
+- ✅ **Distribuição de pessoas por quarto numa só função.** O caminho público de
+  grupo (`booking-request.ts`) tinha uma cópia de `distribuirPessoas` sem
+  desempate pelo nome (anotado a 19/09). `distribuirPessoas` passa a ordenar
+  ela própria (capacidade, depois nome) e o site público usa-a. +2 testes.
+
+Validação: testes, typecheck, lint e `next build` a zero.
+
 ### [2026-09-19] Três correções que a auditoria anterior deixou meio feitas
 
 Sessão de auditoria. Base saudável à entrada — 1136 testes, typecheck e lint a
