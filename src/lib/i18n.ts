@@ -47,9 +47,36 @@ const STRINGS = {
   // reconhecer no anúncio da plataforma e no título de registo.
   footer_registo_um: { pt: 'Registo AL n.º', en: 'Local Accommodation registration (AL) no.' },
   footer_registo_varios: { pt: 'Registos AL n.º', en: 'Local Accommodation registrations (AL) no.' },
+  // Páginas Sobre / Galeria / Localização
+  gallery_empty: { pt: 'Ainda não há fotografias disponíveis.', en: 'No photos available yet.' },
+  location_empty: { pt: 'Sem alojamentos disponíveis neste momento.', en: 'No accommodation available right now.' },
+  address_after_booking: {
+    pt: 'A morada exata é partilhada após confirmação da reserva.',
+    en: 'The exact address is shared once the booking is confirmed.',
+  },
+  see_map: { pt: 'Ver mapa', en: 'View map' },
+  // Páginas legais
+  legal_privacy_title: { pt: 'Política de Privacidade', en: 'Privacy Policy' },
+  legal_cookies_title: { pt: 'Política de Cookies', en: 'Cookie Policy' },
+  legal_terms_title: { pt: 'Termos e Condições', en: 'Terms and Conditions' },
+  legal_disclaimer: {
+    pt: 'Este texto é um modelo genérico gerado automaticamente. O anfitrião é responsável por o rever e adaptar às suas condições específicas.',
+    en: 'This is an automatically generated generic template. The host is responsible for reviewing it and adapting it to their own terms.',
+  },
 } as const
 
 type Key = keyof typeof STRINGS
+
+/** Valor do atributo `lang` do HTML para o site do anfitrião. */
+export function htmlLang(lang: SiteLang): string {
+  return lang === 'en' ? 'en' : 'pt-PT'
+}
+
+export function hostFallbackBio(lang: SiteLang, nome: string): string {
+  return lang === 'en'
+    ? `${nome} welcomes guests with attention to detail and is on hand for whatever you need.`
+    : `${nome} recebe hóspedes com atenção ao detalhe e disponibilidade para o que precisares.`
+}
 
 export function t(lang: SiteLang, key: Key): string {
   return STRINGS[key][lang]

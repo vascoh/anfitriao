@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { APP_URL } from '@/lib/config'
+import { resolveLang, t, htmlLang, hostFallbackBio } from '@/lib/i18n'
 import { SiteNav, SiteFooter, WA_SVG } from '../_components/site-chrome'
 
 export async function generateMetadata(
@@ -10,8 +11,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
+  const lang = resolveLang(settings?.idioma)
   return {
-    title: { absolute: settings ? `Sobre — ${settings.nome}` : 'Sobre' },
+    title: { absolute: settings ? `${lang === 'en' ? 'About' : 'Sobre'} — ${settings.nome}` : 'Sobre' },
     alternates: { canonical: `${APP_URL}/r/${slug}/sobre` },
     robots: { index: false, follow: false },
   }
@@ -23,10 +25,11 @@ export default async function SobrePage({ params }: { params: Promise<{ slug: st
   if (!settings || !settings.enabled) notFound()
 
   const theme = siteTheme(settings)
+  const lang = resolveLang(settings.idioma)
   const waLink = settings.telefone ? `https://wa.me/${settings.telefone.replace(/\D/g, '')}` : null
 
   return (
-    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
+    <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       <SiteNav slug={slug} settings={settings} active="/sobre" />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-16 flex flex-col items-center text-center gap-6">
@@ -37,20 +40,20 @@ export default async function SobrePage({ params }: { params: Promise<{ slug: st
         </div>
         <div>
           <h1 className="font-bold text-2xl">{settings.host_nome ?? settings.nome}</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Anfitrião</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t(lang, 'host_role')}</p>
         </div>
         {settings.host_bio ? (
           <p className="text-base text-muted-foreground leading-relaxed max-w-lg">{settings.host_bio}</p>
         ) : (
           <p className="text-base text-muted-foreground leading-relaxed max-w-lg">
-            {settings.descricao || `${settings.nome} recebe hóspedes com atenção ao detalhe e disponibilidade para o que precisares.`}
+            {settings.descricao || hostFallbackBio(lang, settings.nome)}
           </p>
         )}
         {waLink && (
           <a href={waLink} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#075E54] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
             {WA_SVG}
-            Falar com o anfitrião
+            {t(lang, 'talk_to_host')}
           </a>
         )}
       </main>

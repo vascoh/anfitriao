@@ -10,7 +10,7 @@ import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { APP_URL } from '@/lib/config'
 import { siteTheme } from '@/lib/site-theme'
 import { SiteNav, SiteFooter, WA_SVG } from './_components/site-chrome'
-import { resolveLang, t, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
+import { resolveLang, t, htmlLang, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ export default async function ReservasPage(
   }
 
   return (
-    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
+    <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       {props.some(p => p.ativo) && (
         <script type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />

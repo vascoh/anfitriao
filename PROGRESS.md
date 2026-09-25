@@ -6,6 +6,23 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-25] O site em inglês mostrava metade das páginas em português
+
+Um anfitrião que escolhesse inglês em `/website` tinha o cabeçalho, o rodapé
+e a homepage em inglês — e Sobre, Galeria, Localização, Privacidade, Cookies
+e Termos em português. O hóspede estrangeiro lia «Falar com o anfitrião» e a
+política de privacidade numa língua que não percebe; o `<title>` também
+estava fixo em português.
+
+- ✅ As seis páginas usam `resolveLang`; textos legais em `legal-texts.tsx`
+  (o inglês é tradução do mesmo modelo — nunca condições diferentes).
+- ✅ `lang` no HTML em todas as páginas do site (`htmlLang`), para os leitores
+  de ecrã lerem com a pronúncia certa.
+- ✅ `i18n-paginas.test.ts` falha se uma página nova de `/r/[slug]` não
+  resolver o idioma; `paginas-en.test.tsx` renderiza as páginas em inglês.
+
+Validação: 1204 testes, typecheck e lint a zero.
+
 ### [2026-09-25] Taxa turística: 12 concelhos, com datas de vigência — 1.4
 
 Cinco concelhos novos, todos por Diário da República ou site oficial do

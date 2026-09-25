@@ -154,7 +154,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [ ] 2FA (ativar Clerk MFA — configuração no Clerk Dashboard, não código)
 
 ## Fase 4 — Crescimento e canais reais (em curso)
-- [x] Multi-idioma nos sites de clientes (PT/EN) — chrome + homepage traduzidos, seletor em `/website` — ver `CHANGELOG_PHASE_11.md`. Falta: emails, páginas Sobre/Galeria/Localização/legal
+- [x] Multi-idioma nos sites de clientes (PT/EN) — chrome + homepage traduzidos, seletor em `/website` — ver `CHANGELOG_PHASE_11.md`. **2026-09-25: Sobre, Galeria, Localização e as três páginas legais também**, com `lang` no HTML e títulos traduzidos; `i18n-paginas.test.ts` obriga cada página nova de `/r/[slug]` a resolver o idioma. Falta: emails ao hóspede
 - [x] Dashboard super-admin — KPI de MRR adicionado a `/admin/contas`
 - [ ] Wildcard subdomínio + custom domain — **bloqueado**: exige upgrade pago a Vercel Pro (pendência #6, decisão de orçamento)
 - [ ] `ChannelAdapter` + candidatura a Booking Connectivity Partner / Airbnb API — **adiado deliberadamente** (mesma lógica do RBAC: sem parceria real, é trabalho especulativo)

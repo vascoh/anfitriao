@@ -4,7 +4,7 @@ import Image from 'next/image'
 import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetPublishedPosts } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
-import { resolveLang, t } from '@/lib/i18n'
+import { resolveLang, t, htmlLang } from '@/lib/i18n'
 import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 
@@ -30,7 +30,7 @@ export default async function BlogListPage({ params }: { params: Promise<{ slug:
   const posts = settings.owner_id ? await adminGetPublishedPosts(settings.owner_id) : []
 
   return (
-    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
+    <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       <SiteNav slug={slug} settings={settings} active="/blog" />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-6">

@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { APP_URL } from '@/lib/config'
+import { resolveLang, t, htmlLang } from '@/lib/i18n'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 
 export async function generateMetadata(
@@ -11,8 +12,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
+  const lang = resolveLang(settings?.idioma)
   return {
-    title: { absolute: settings ? `Galeria — ${settings.nome}` : 'Galeria' },
+    title: { absolute: settings ? `${lang === 'en' ? 'Gallery' : 'Galeria'} — ${settings.nome}` : 'Galeria' },
     alternates: { canonical: `${APP_URL}/r/${slug}/galeria` },
     robots: { index: false, follow: false },
   }
@@ -24,6 +26,7 @@ export default async function GaleriaPage({ params }: { params: Promise<{ slug: 
   if (!settings || !settings.enabled) notFound()
 
   const theme = siteTheme(settings)
+  const lang = resolveLang(settings.idioma)
   const allProps = settings.owner_id ? await adminGetProperties(settings.owner_id) : []
   const photos = allProps
     .filter(p => p.ativo)
@@ -33,14 +36,14 @@ export default async function GaleriaPage({ params }: { params: Promise<{ slug: 
     })
 
   return (
-    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
+    <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       <SiteNav slug={slug} settings={settings} active="/galeria" />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
-        <h1 className="text-2xl font-bold tracking-tight">Galeria</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t(lang, 'nav_galeria')}</h1>
 
         {photos.length === 0 ? (
-          <p className="text-muted-foreground text-sm py-12 text-center">Ainda não há fotografias disponíveis.</p>
+          <p className="text-muted-foreground text-sm py-12 text-center">{t(lang, 'gallery_empty')}</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {photos.map((photo, i) => (

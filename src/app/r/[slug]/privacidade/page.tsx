@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { APP_URL } from '@/lib/config'
+import { resolveLang, t, htmlLang } from '@/lib/i18n'
+import { PrivacidadeTexto } from '../_components/legal-texts'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
 import { LegalPage } from '../_components/legal-page'
 
@@ -11,8 +13,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
+  const lang = resolveLang(settings?.idioma)
   return {
-    title: { absolute: settings ? `Política de Privacidade — ${settings.nome}` : 'Privacidade' },
+    title: { absolute: settings ? `${lang === 'en' ? 'Privacy Policy' : 'Política de Privacidade'} — ${settings.nome}` : 'Política de Privacidade' },
     alternates: { canonical: `${APP_URL}/r/${slug}/privacidade` },
     robots: { index: false, follow: false },
   }
@@ -24,21 +27,14 @@ export default async function PrivacidadePage({ params }: { params: Promise<{ sl
   if (!settings || !settings.enabled) notFound()
 
   const theme = siteTheme(settings)
-  const contacto = settings.email || settings.telefone || 'através dos contactos indicados neste site'
+  const lang = resolveLang(settings.idioma)
+  const contacto = settings.email || settings.telefone || null
 
   return (
-    <div className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
+    <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       <SiteNav slug={slug} settings={settings} active="" />
-      <LegalPage title="Política de Privacidade">
-        <p>Esta política descreve como <strong>{settings.nome}</strong> trata os dados pessoais recolhidos através deste site e do processo de reserva.</p>
-        <h2>Dados recolhidos</h2>
-        <p>Ao efetuar uma reserva ou check-in online, recolhemos nome, contacto, datas de estadia e, quando legalmente exigido, dados do documento de identificação para cumprimento das obrigações de comunicação às autoridades (boletim de alojamento, entregue através do SIBA, sob a tutela da AIMA).</p>
-        <h2>Finalidade</h2>
-        <p>Os dados são usados exclusivamente para gerir a reserva, comunicar contigo sobre a estadia e cumprir obrigações legais de registo de hóspedes.</p>
-        <h2>Partilha de dados</h2>
-        <p>Os dados não são vendidos nem partilhados com terceiros, exceto quando exigido por lei (ex.: comunicação obrigatória às autoridades competentes).</p>
-        <h2>Os teus direitos</h2>
-        <p>Podes solicitar acesso, retificação ou eliminação dos teus dados a qualquer momento, contactando {contacto}.</p>
+      <LegalPage title={t(lang, 'legal_privacy_title')} lang={lang}>
+        <PrivacidadeTexto lang={lang} nome={settings.nome} contacto={contacto} />
       </LegalPage>
       <SiteFooter slug={slug} settings={settings} />
     </div>

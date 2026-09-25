@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
+import { t, type SiteLang } from '@/lib/i18n'
 
 /** Layout partilhado pelas páginas legais (privacidade/cookies/termos). */
-export function LegalPage({ title, children }: { title: string; children: ReactNode }) {
+export function LegalPage({ title, lang, children }: { title: string; lang: SiteLang; children: ReactNode }) {
   return (
     <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-4">
       <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
@@ -9,7 +10,7 @@ export function LegalPage({ title, children }: { title: string; children: ReactN
         {children}
       </div>
       <p className="text-[11px] text-muted-foreground/70 pt-6 border-t border-border mt-4">
-        Este texto é um modelo genérico gerado automaticamente. O anfitrião é responsável por o rever e adaptar às suas condições específicas.
+        {t(lang, 'legal_disclaimer')}
       </p>
     </main>
   )
