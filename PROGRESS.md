@@ -6,6 +6,36 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-25] O Booking faria de cada reserva um bloqueio — e uma nota fazia de um bloqueio uma reserva
+
+**1. Booking (ponto 2 do corte do Amenitiz, que estava por medir).** O export
+iCal do Booking diz `CLOSED - Not available` em **todos** os eventos, reservas
+pagas incluídas — confirmado em duas implementações independentes que
+perderam as reservas do Booking exatamente assim. `TEXTOS_DE_BLOQUEIO` inclui
+`closed`: no dia do corte, cada reserva do Booking entrava como bloqueio —
+sem link de check-in, **sem boletim SIBA**, sem fatura.
+
+- ✅ `ambiguoDoBooking`: evento de feed com origem `booking` e esse texto
+  conta como **reserva**. É o erro barato: um fecho tratado como reserva
+  custa um alerta; o anfitrião resolve-o em `/reservas/[id]` («É um fecho meu,
+  sem hóspedes», reversível). O mesmo texto noutra origem continua bloqueio.
+- Em produção não há reservas do Booking — nada foi reclassificado.
+
+**2. «Adicionar nota» apagava o texto da plataforma.** Numa reserva importada,
+`notas` guarda o SUMMARY do feed, e é por ele que `eBloqueio` decide. A nota
+do anfitrião **substituía** o campo: um «Quarto indisponível» do Amenitiz com
+a nota «obras» passava a reserva, com boletim SIBA em falta para ninguém.
+
+- ✅ A primeira linha é o texto da plataforma (`linhaDoFeed`); a classificação
+  só olha para ela. `partesDasNotas`/`juntarNotas` separam as duas partes na
+  página da reserva e na de edição, que mostra o texto da plataforma à parte.
+
+**3. O feed exportado dizia «Reservado» em todos os importados** — o `select`
+não trazia `notas` nem `origem`, e `eBloqueio` não via nada. Cosmético (as
+plataformas tratam qualquer evento como ocupado), corrigido de passagem.
+
+Validação: 1216 testes (+12), typecheck e lint a zero.
+
 ### [2026-09-25] O site em inglês mostrava metade das páginas em português
 
 Um anfitrião que escolhesse inglês em `/website` tinha o cabeçalho, o rodapé

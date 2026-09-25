@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
 import { fetchBookings } from '@/lib/fetcher'
 import { guardar } from '@/lib/guardar'
+import { partesDasNotas, juntarNotas } from '@/lib/reservations'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import type { Booking, BookingSource, BookingStatus } from '@/lib/types'
 import { SOURCE_LABEL, STATUS_LABEL } from '@/lib/labels'
@@ -46,7 +47,9 @@ export default function EditarReservaPage() {
       setEstado(b.estado)
       setPrecoTotal(String(b.preco_total))
       setPrecoPago(String(b.preco_pago))
-      setNotas(b.notas ?? '')
+      // Só a nota do anfitrião é editável; o texto da plataforma (1.ª linha
+      // numa reserva importada) decide se isto é reserva ou fecho.
+      setNotas(partesDasNotas(b).anfitriao)
     }).catch(() => setFalha('rede'))
   }, [id])
 
@@ -63,7 +66,7 @@ export default function EditarReservaPage() {
       estado,
       preco_total: total,
       preco_pago: pago,
-      notas: notas.trim() || undefined,
+      notas: juntarNotas(booking, notas),
       historico: [...booking.historico, {
         id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: 'Reserva editada manualmente'
       }],

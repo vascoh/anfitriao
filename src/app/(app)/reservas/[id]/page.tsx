@@ -13,7 +13,10 @@ import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar, eliminar } from '@/lib/guardar'
-import { transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio } from '@/lib/reservations'
+import {
+  transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio,
+  ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING,
+} from '@/lib/reservations'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
@@ -197,7 +200,9 @@ export default function ReservaDetailPage() {
     if (!booking || !note.trim()) return
     const updated: Booking = {
       ...booking,
-      notas: note.trim(),
+      // Numa reserva importada a primeira linha é o texto da plataforma, que
+      // decide se isto é reserva ou fecho — a nota vai depois dela.
+      notas: juntarNotas(booking, note),
       historico: [...booking.historico, { id: uuid(), data: new Date().toISOString(), tipo: 'nota', descricao: `Nota: ${note.trim()}` }],
     }
     if (!await guardar('/api/bookings', updated)) return
@@ -205,6 +210,26 @@ export default function ReservaDetailPage() {
     setNote('')
     setShowNote(false)
     toast.success('Nota guardada')
+  }
+
+  /** O Booking não distingue reservas de fechos: o anfitrião é quem sabe. */
+  async function marcarFechoDoBooking(eFecho: boolean) {
+    if (!booking) return
+    const { anfitriao } = partesDasNotas(booking)
+    const linha = eFecho ? MARCA_FECHO_BOOKING : 'CLOSED - Not available'
+    const updated: Booking = {
+      ...booking,
+      notas: anfitriao ? `${linha}\n${anfitriao}` : linha,
+      historico: [...booking.historico, {
+        id: uuid(), data: new Date().toISOString(), tipo: 'nota',
+        descricao: eFecho
+          ? 'Marcado como fecho no Booking (sem hóspedes) pelo anfitrião'
+          : 'Marcado outra vez como reserva do Booking pelo anfitrião',
+      }],
+    }
+    if (!await guardar('/api/bookings', updated)) return
+    setBooking(updated)
+    toast.success(eFecho ? 'Marcado como fecho — sem boletim a comunicar' : 'Marcado como reserva')
   }
 
   async function registerPayment() {
@@ -281,6 +306,7 @@ export default function ReservaDetailPage() {
    * na mesma «Registar check-in» — uma ação que, se carregada, punha o
    * bloqueio em «Em casa» e a pessoa inexistente a aparecer em `/hoje`. */
   const bloqueio = eBloqueio(booking)
+  const { feed: textoPlataforma, anfitriao: notaAnfitriao } = partesDasNotas(booking)
   /* De onde veio o bloqueio, para a explicação dizer um nome em vez de «um
    * calendário externo». O feed guarda-o em `ical_feeds`; se não se encontrar,
    * fica a fonte, que é o melhor que se sabe. */
@@ -435,6 +461,30 @@ export default function ReservaDetailPage() {
               que sugere uma ficha por preencher. Não há ficha nenhuma para
               preencher: o calendário do gestor de canais transporta datas
               ocupadas e mais nada. Dizer isso poupa a procura. */}
+          {ambiguoDoBooking(booking) && (
+            <div className="px-4 py-3 border-b border-border last:border-0 bg-amber-500/5">
+              <p className="text-sm font-medium">Reserva do Booking — ou um fecho teu?</p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                O calendário do Booking diz «CLOSED - Not available» em tudo: numa
+                reserva paga e num dia que fechaste no extranet. Por segurança
+                trata-se como reserva — um hóspede não comunicado ao SIBA é coima.
+                Se foste tu que fechaste estas datas, diz aqui e o boletim deixa de
+                ser pedido.
+              </p>
+              <button onClick={() => marcarFechoDoBooking(true)}
+                className="mt-2 text-xs font-semibold border border-input rounded-lg px-3 py-1.5 hover:bg-muted transition-colors">
+                É um fecho meu, sem hóspedes
+              </button>
+            </div>
+          )}
+          {bloqueio && booking.origem === 'booking' && partesDasNotas(booking).feed === MARCA_FECHO_BOOKING && (
+            <div className="px-4 py-3 border-b border-border last:border-0">
+              <button onClick={() => marcarFechoDoBooking(false)}
+                className="text-xs font-semibold text-muted-foreground underline underline-offset-2">
+                Afinal é uma reserva do Booking
+              </button>
+            </div>
+          )}
           {bloqueio && (
             <div className="px-4 py-3 border-b border-border last:border-0">
               <p className="text-sm">Sem hóspedes associados</p>
@@ -649,11 +699,18 @@ export default function ReservaDetailPage() {
         </Section>
 
         {/* Notes */}
-        {(booking.notas || showNote) && (
+        {(notaAnfitriao || textoPlataforma || showNote) && (
           <Section title="Notas internas">
-            {booking.notas && (
+            {textoPlataforma && (
+              <div className="px-4 py-2.5 border-b border-border last:border-0">
+                <p className="text-[11px] text-muted-foreground">
+                  Texto da plataforma: <span className="font-mono">{textoPlataforma}</span>
+                </p>
+              </div>
+            )}
+            {notaAnfitriao && (
               <div className="px-4 py-3.5 border-b border-border last:border-0">
-                <p className="text-sm text-foreground/80 leading-relaxed">{booking.notas}</p>
+                <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{notaAnfitriao}</p>
               </div>
             )}
             {showNote && (
@@ -674,13 +731,13 @@ export default function ReservaDetailPage() {
           </Section>
         )}
 
-        {!showNote && !booking.notas && (
+        {!showNote && !notaAnfitriao && (
           <button onClick={() => setShowNote(true)} className="flex items-center gap-2 text-sm text-muted-foreground mx-4 py-2">
             <Plus className="h-3.5 w-3.5" /> Adicionar nota
           </button>
         )}
-        {!showNote && booking.notas && (
-          <button onClick={() => { setNote(booking.notas ?? ''); setShowNote(true) }} className="flex items-center gap-2 text-sm text-muted-foreground mx-4 py-1">
+        {!showNote && notaAnfitriao && (
+          <button onClick={() => { setNote(notaAnfitriao); setShowNote(true) }} className="flex items-center gap-2 text-sm text-muted-foreground mx-4 py-1">
             <Edit2 className="h-3.5 w-3.5" /> Editar nota
           </button>
         )}

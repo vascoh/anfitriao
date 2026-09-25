@@ -43,11 +43,47 @@ function semAcentos(s: string): string {
   return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
+/**
+ * Numa reserva importada, a **primeira linha** de `notas` é o texto que a
+ * plataforma mandou (o SUMMARY do iCal, gravado pelo `ical-sync`); o que o
+ * anfitrião escrever vai nas linhas seguintes.
+ *
+ * Antes, «Adicionar nota» substituía o campo inteiro: um «Quarto
+ * indisponível» do Amenitiz com a nota «obras» passava a dizer só «obras», e
+ * `eBloqueio` — que decide pelo texto do feed — fazia do fecho uma reserva
+ * com boletim SIBA em falta. Ver `partesDasNotas`/`juntarNotas`.
+ */
+export function linhaDoFeed(notas: string | null | undefined): string {
+  return (notas ?? '').split('\n', 1)[0].trim()
+}
+
 /** O texto que o feed mandou diz que a data está fechada, e não vendida? */
 export function textoDizIndisponivel(notas: string | null | undefined): boolean {
-  if (!notas) return false
-  const t = semAcentos(notas)
+  const linha = linhaDoFeed(notas)
+  if (!linha) return false
+  const t = semAcentos(linha)
   return TEXTOS_DE_BLOQUEIO.some(p => t.includes(p))
+}
+
+/** Texto da plataforma e nota do anfitrião, separados. */
+export function partesDasNotas(b: Pick<Booking, 'uid_externo' | 'notas'>): {
+  feed: string | null
+  anfitriao: string
+} {
+  if (!b.uid_externo) return { feed: null, anfitriao: b.notas ?? '' }
+  const [primeira, ...resto] = (b.notas ?? '').split('\n')
+  return { feed: primeira.trim() || null, anfitriao: resto.join('\n').trim() }
+}
+
+/** Junta a nota do anfitrião sem tocar no texto da plataforma. */
+export function juntarNotas(b: Pick<Booking, 'uid_externo' | 'notas'>, nota: string): string | undefined {
+  const limpa = nota.trim()
+  if (!b.uid_externo) return limpa || undefined
+  const { feed } = partesDasNotas(b)
+  // Sem texto da plataforma, a primeira linha fica vazia: a nota nunca sobe a
+  // «texto do feed» (seria classificada como tal).
+  if (!feed) return limpa ? `\n${limpa}` : undefined
+  return limpa ? `${feed}\n${limpa}` : feed
 }
 
 /**
@@ -68,11 +104,38 @@ export function textoDizIndisponivel(notas: string | null | undefined): boolean 
  * A resposta está no texto que o feed mandou, que é a única coisa que ele diz
  * sobre a natureza do evento. Fica guardado em `notas` pelo `ical-sync`.
  */
-export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas'>): boolean {
+export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas' | 'origem'>): boolean {
   if (b.hospede_id) return false
   if (!b.uid_externo) return true
+  if (ambiguoDoBooking(b)) return false
   return textoDizIndisponivel(b.notas)
 }
+
+/** O texto que o Booking põe em **todos** os eventos do export iCal. */
+const TEXTO_DO_BOOKING = /^closed\s*[-–—]\s*not available$/
+
+/**
+ * O Booking não distingue reservas de fechos no iCal.
+ *
+ * Todos os eventos do export dizem `CLOSED - Not available` — uma reserva paga
+ * e um dia que o anfitrião fechou no extranet chegam iguais, e sem nome de
+ * hóspede. Confirmado em duas implementações independentes que perderam as
+ * reservas do Booking exatamente por isto (2026-09-25; `docs/MIGRACAO-AMENITIZ.md`).
+ * Com `closed` na lista de bloqueios, cada reserva do Booking entrava aqui como
+ * bloqueio: sem check-in, **sem boletim SIBA**, sem fatura.
+ *
+ * Entre os dois erros possíveis escolhe-se o barato: tratar como reserva. Um
+ * fecho tratado como reserva custa um alerta de boletim em falta, e o
+ * anfitrião resolve-o em `/reservas/[id]` com um toque (`MARCA_FECHO_BOOKING`).
+ * Uma reserva tratada como fecho é um hóspede não comunicado.
+ */
+export function ambiguoDoBooking(b: Pick<Booking, 'uid_externo' | 'notas' | 'origem'>): boolean {
+  if (b.origem !== 'booking' || !b.uid_externo) return false
+  return TEXTO_DO_BOOKING.test(semAcentos(linhaDoFeed(b.notas)))
+}
+
+/** Texto que o anfitrião põe num evento do Booking que era um fecho seu. */
+export const MARCA_FECHO_BOOKING = 'Fechado no Booking (marcado pelo anfitrião)'
 
 /**
  * Há aqui pessoas? — a pergunta que decide as obrigações.
@@ -92,7 +155,7 @@ export function eBloqueio(b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas
  * quer o tenha fechado um hóspede ou o anfitrião.
  */
 export function geraObrigacoesDeHospede(
-  b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas'>,
+  b: Pick<Booking, 'hospede_id' | 'uid_externo' | 'notas' | 'origem'>,
 ): boolean {
   return !eBloqueio(b)
 }

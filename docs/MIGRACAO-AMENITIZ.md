@@ -97,7 +97,18 @@ mas leva-a de mais de um dia para dezenas de minutos.
 
 ### 2 · Confirmar como o Booking marca uma reserva
 
-**O risco mais caro do corte, e não está medido.** `eBloqueio` decide se um
+> ✅ **Respondido e corrigido a 2026-09-25.** O export iCal do Booking diz
+> `CLOSED - Not available` em **todos** os eventos, reservas pagas incluídas, e
+> não traz hóspede — confirmado em duas implementações independentes que
+> perderam as reservas do Booking exatamente por isto (doorstep PR #16,
+> guestFlow PR #570). Com `closed` na lista, cada reserva do Booking entrava
+> como bloqueio. `ambiguoDoBooking` (`lib/reservations.ts`): um evento de feed
+> com origem `booking` e esse texto conta como **reserva** (gera boletim); se
+> for um fecho do anfitrião, ele marca-o em `/reservas/[id]` com um toque.
+> Continua a valer a pena correr o `medir-feed` no dia 2 da ordem abaixo — para
+> confirmar o texto exato do teu feed, não para descobrir a regra.
+
+**O risco mais caro do corte, e não estava medido.** `eBloqueio` decide se um
 evento é bloqueio ou reserva pelo texto que o feed manda, e a lista de frases
 de bloqueio (`TEXTOS_DE_BLOQUEIO`, `lib/reservations.ts`) inclui `closed`.
 

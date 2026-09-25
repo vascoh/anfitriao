@@ -1,3 +1,4 @@
+import type { BookingSource } from '@/lib/types'
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase'
@@ -80,9 +81,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prop
   const { linhas: bookings, erro } = await carregarTudo<{
     id: string; hospede_id: string | null; uid_externo?: string
     check_in: string; check_out: string; estado: string
+    // Sem estes dois, `eBloqueio` não via o texto do feed e todo o importado
+    // saía como «Reservado» — incluindo os fechos do Amenitiz.
+    notas?: string; origem: BookingSource
   }>(() =>
     supabase
-      .from('bookings').select('id, hospede_id, uid_externo, check_in, check_out, estado')
+      .from('bookings').select('id, hospede_id, uid_externo, check_in, check_out, estado, notas, origem')
       .in('propriedade_id', idsOcupacao)
       .not('estado', 'in', '("cancelada","no_show")')
       .gte('check_out', today())

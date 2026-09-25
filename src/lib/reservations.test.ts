@@ -17,7 +17,7 @@ import {
   ordenarComQuartos,
   eBloqueio,
   geraObrigacoesDeHospede,
-  rotuloDeBloqueio,
+  rotuloDeBloqueio, ambiguoDoBooking, MARCA_FECHO_BOOKING, partesDasNotas, juntarNotas,
 } from './reservations'
 import type { Booking, Property, PriceRule, Tarifa, PlatformRate } from './types'
 
@@ -424,11 +424,11 @@ describe('unidadesReservaveis', () => {
 
 describe('eBloqueio', () => {
   it('sem hóspede e sem origem externa é um bloqueio do anfitrião', () => {
-    expect(eBloqueio({ hospede_id: null, uid_externo: undefined })).toBe(true)
+    expect(eBloqueio({ origem: 'outro', hospede_id: null, uid_externo: undefined })).toBe(true)
   })
 
   it('com hóspede nunca é bloqueio', () => {
-    expect(eBloqueio({ hospede_id: 'guest-1', uid_externo: undefined })).toBe(false)
+    expect(eBloqueio({ origem: 'outro', hospede_id: 'guest-1', uid_externo: undefined })).toBe(false)
   })
 
   /* O caso que motivou a função: o iCal não transporta hóspedes, portanto o
@@ -437,7 +437,7 @@ describe('eBloqueio', () => {
    * cinzento — precisamente as reservas que a cor por canal existe para
    * mostrar. */
   it('uma reserva importada de um canal não é bloqueio, apesar de não ter hóspede', () => {
-    expect(eBloqueio({ hospede_id: null, uid_externo: 'feed-1::abc@airbnb.com', notas: 'Reserved' })).toBe(false)
+    expect(eBloqueio({ origem: 'outro', hospede_id: null, uid_externo: 'feed-1::abc@airbnb.com', notas: 'Reserved' })).toBe(false)
   })
 
   /* O caso oposto, e o que aconteceu com dados reais a 2026-09-02: o export do
@@ -448,7 +448,7 @@ describe('eBloqueio', () => {
    * anfitrião viu no calendário qualquer coisa que não sabia identificar. */
   it('um bloqueio vindo de um feed de disponibilidade é bloqueio', () => {
     expect(eBloqueio({
-      hospede_id: null,
+      origem: 'outro', hospede_id: null,
       uid_externo: '75088eec::995e14f8',
       notas: 'Quarto indisponível',
     })).toBe(true)
@@ -456,19 +456,87 @@ describe('eBloqueio', () => {
 
   it('reconhece o fecho nas várias formas em que as plataformas o escrevem', () => {
     for (const texto of ['Quarto indisponível', 'Airbnb (Not available)', 'Blocked', 'CLOSED']) {
-      expect(eBloqueio({ hospede_id: null, uid_externo: 'f::1', notas: texto }), texto).toBe(true)
+      expect(eBloqueio({ origem: 'outro', hospede_id: null, uid_externo: 'f::1', notas: texto }), texto).toBe(true)
     }
   })
 
   it('um texto desconhecido conta como reserva, não como bloqueio', () => {
     // A dúvida resolve-se do lado que dá mais informação a quem olha: uma
     // reserva mostra o canal e a cor; um bloqueio é cinzento e mudo.
-    expect(eBloqueio({ hospede_id: null, uid_externo: 'f::1', notas: 'Joao Silva' })).toBe(false)
-    expect(eBloqueio({ hospede_id: null, uid_externo: 'f::1', notas: undefined })).toBe(false)
+    expect(eBloqueio({ origem: 'outro', hospede_id: null, uid_externo: 'f::1', notas: 'Joao Silva' })).toBe(false)
+    expect(eBloqueio({ origem: 'outro', hospede_id: null, uid_externo: 'f::1', notas: undefined })).toBe(false)
   })
 
   it('um hóspede preenchido à mão manda mais do que o texto do feed', () => {
-    expect(eBloqueio({ hospede_id: 'g-1', uid_externo: 'f::1', notas: 'Quarto indisponível' })).toBe(false)
+    expect(eBloqueio({ origem: 'outro', hospede_id: 'g-1', uid_externo: 'f::1', notas: 'Quarto indisponível' })).toBe(false)
+  })
+})
+
+describe('eBloqueio — o Booking não distingue reservas de fechos', () => {
+  const doBooking = (notas: string) =>
+    ({ origem: 'booking' as const, hospede_id: null, uid_externo: 'feed-b::123', notas })
+
+  /* Confirmado em duas implementações independentes (2026-09-25): o export
+   * iCal do Booking diz «CLOSED - Not available» em **todos** os eventos,
+   * reservas pagas incluídas. Com `closed` na lista de bloqueios, cada reserva
+   * do Booking entrava como bloqueio — sem boletim SIBA. */
+  it('o «CLOSED - Not available» do Booking conta como reserva, com obrigações', () => {
+    expect(eBloqueio(doBooking('CLOSED - Not available'))).toBe(false)
+    expect(geraObrigacoesDeHospede(doBooking('CLOSED - Not available'))).toBe(true)
+    expect(ambiguoDoBooking(doBooking('CLOSED - Not available'))).toBe(true)
+    expect(ambiguoDoBooking(doBooking('closed – not available'))).toBe(true)
+  })
+
+  it('o mesmo texto noutra origem continua a ser bloqueio', () => {
+    expect(eBloqueio({ ...doBooking('CLOSED - Not available'), origem: 'outro' })).toBe(true)
+    expect(eBloqueio({ ...doBooking('CLOSED - Not available'), origem: 'airbnb' })).toBe(true)
+  })
+
+  it('marcado pelo anfitrião como fecho, é bloqueio e deixa de ser ambíguo', () => {
+    expect(eBloqueio(doBooking(MARCA_FECHO_BOOKING))).toBe(true)
+    expect(ambiguoDoBooking(doBooking(MARCA_FECHO_BOOKING))).toBe(false)
+  })
+
+  it('uma reserva criada à mão com origem booking não é ambígua', () => {
+    expect(ambiguoDoBooking({ origem: 'booking', uid_externo: undefined, notas: 'CLOSED - Not available' })).toBe(false)
+  })
+})
+
+describe('notas de uma reserva importada — o texto do feed não se perde', () => {
+  const amenitiz = { origem: 'outro' as const, hospede_id: null, uid_externo: 'f::1', notas: 'Quarto indisponível' }
+
+  /* O bug: «Adicionar nota» substituía o campo, e um fecho do Amenitiz com a
+   * nota «obras» passava a reserva — com boletim SIBA em falta. */
+  it('uma nota do anfitrião não transforma um fecho em reserva', () => {
+    const comNota = { ...amenitiz, notas: juntarNotas(amenitiz, 'obras na casa de banho') }
+    expect(comNota.notas).toBe('Quarto indisponível\nobras na casa de banho')
+    expect(eBloqueio(comNota)).toBe(true)
+    expect(partesDasNotas(comNota)).toEqual({ feed: 'Quarto indisponível', anfitriao: 'obras na casa de banho' })
+  })
+
+  it('uma nota não tira a ambiguidade a uma reserva do Booking', () => {
+    const booking = { origem: 'booking' as const, hospede_id: null, uid_externo: 'b::1', notas: 'CLOSED - Not available' }
+    const comNota = { ...booking, notas: juntarNotas(booking, 'chega tarde') }
+    expect(eBloqueio(comNota)).toBe(false)
+    expect(ambiguoDoBooking(comNota)).toBe(true)
+  })
+
+  it('substituir a nota mantém o texto da plataforma; apagá-la também', () => {
+    const b1 = { ...amenitiz, notas: 'Quarto indisponível\nprimeira' }
+    expect(juntarNotas(b1, 'segunda')).toBe('Quarto indisponível\nsegunda')
+    expect(juntarNotas(b1, '')).toBe('Quarto indisponível')
+  })
+
+  it('sem texto da plataforma, a nota nunca sobe à primeira linha', () => {
+    const vazio = { ...amenitiz, notas: undefined }
+    expect(juntarNotas(vazio, 'Airbnb (Not available)')).toBe('\nAirbnb (Not available)')
+    expect(eBloqueio({ ...vazio, notas: juntarNotas(vazio, 'Airbnb (Not available)') })).toBe(false)
+  })
+
+  it('numa reserva criada à mão, a nota é o campo inteiro', () => {
+    const manual = { uid_externo: undefined, notas: 'antiga' }
+    expect(juntarNotas(manual, 'nova')).toBe('nova')
+    expect(partesDasNotas(manual)).toEqual({ feed: null, anfitriao: 'antiga' })
   })
 })
 
@@ -479,24 +547,24 @@ describe('geraObrigacoesDeHospede', () => {
    * 24 h, a vermelho. Um alerta legal falso ensina a ignorar os verdadeiros. */
   it('um bloqueio importado não gera obrigações', () => {
     expect(geraObrigacoesDeHospede({
-      hospede_id: null, uid_externo: 'f::1', notas: 'Quarto indisponível',
+      origem: 'outro', hospede_id: null, uid_externo: 'f::1', notas: 'Quarto indisponível',
     })).toBe(false)
   })
 
   it('um bloqueio do anfitrião também não', () => {
-    expect(geraObrigacoesDeHospede({ hospede_id: null, uid_externo: undefined, notas: 'Obras' })).toBe(false)
+    expect(geraObrigacoesDeHospede({ origem: 'outro', hospede_id: null, uid_externo: undefined, notas: 'Obras' })).toBe(false)
   })
 
   it('uma reserva de canal gera, mesmo sem hóspede preenchido', () => {
     // O iCal não transporta hóspedes: exigir `hospede_id` deixaria por
     // comunicar exatamente as reservas que chegam dos canais.
     expect(geraObrigacoesDeHospede({
-      hospede_id: null, uid_externo: 'f::1', notas: 'Reserved',
+      origem: 'outro', hospede_id: null, uid_externo: 'f::1', notas: 'Reserved',
     })).toBe(true)
   })
 
   it('uma reserva com hóspede gera sempre', () => {
-    expect(geraObrigacoesDeHospede({ hospede_id: 'g-1', uid_externo: undefined, notas: undefined })).toBe(true)
+    expect(geraObrigacoesDeHospede({ origem: 'outro', hospede_id: 'g-1', uid_externo: undefined, notas: undefined })).toBe(true)
   })
 })
 
