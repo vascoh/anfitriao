@@ -6,6 +6,25 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-27] Funil de ativação sem PostHog — 0.4
+
+O 0.4 pedia um funil no PostHog: registo → 1.ª propriedade → 1.º iCal → 1.ª
+reserva → 1.º check-in. Todos estes passos são factos que a base já guarda, e
+contá-los não precisa de credenciais nem de um script de tracking no browser
+dos anfitriões. `/admin/funil` (menu de administração) mostra, por conta, a
+data em que chegou a cada passo e **onde ficou parada** — o primeiro passo
+que falta, que é onde a ajuda serve.
+
+- Reserva real = `geraObrigacoesDeHospede`: bloqueios não contam; as do
+  Booking contam (ver 25/09). Check-in = entrada `checkin_online` no histórico.
+- Duas datas que a base não guarda: a primeira sincronização de um calendário
+  (o `last_sync` é reescrito) e a publicação do site. Nesses passos o funil diz
+  que se chegou lá, não quando — escrito na página e no módulo.
+- A conta do administrador aparece marcada como interna e fica fora dos
+  totais. Hoje: 0 contas externas; a interna parada em «1.ª reserva real».
+
+Validação: 1222 testes (+6), typecheck, lint e `next build` a zero.
+
 ### [2026-09-25] O Booking faria de cada reserva um bloqueio — e uma nota fazia de um bloqueio uma reserva
 
 **1. Booking (ponto 2 do corte do Amenitiz, que estava por medir).** O export

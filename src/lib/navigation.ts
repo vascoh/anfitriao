@@ -1,7 +1,7 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
   Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
-  UserRound, CreditCard, Receipt, Rss, Activity,
+  UserRound, CreditCard, Receipt, Rss, Activity, Filter,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -114,6 +114,7 @@ export const CONTA_NAV: SubItem[] = [
 export const ADMIN_NAV: SubItem[] = [
   { href: '/admin/contas', label: 'Contas', Icon: ShieldCheck, descricao: 'Todas as contas da plataforma' },
   { href: '/admin/saude', label: 'Saúde', Icon: Activity, descricao: 'Estado dos crons e da base de dados' },
+  { href: '/admin/funil', label: 'Funil', Icon: Filter, descricao: 'Onde cada anfitrião fica parado' },
 ]
 
 /** True quando `pathname` é `href` ou uma rota abaixo dele. */
