@@ -12,6 +12,24 @@ apagam-se no fim. Está na secção 8.
 
 ---
 
+## Com hóspedes reais, enquanto o Amenitiz estiver ligado (2026-09-27)
+
+As reservas do Airbnb e do Booking chegam como «Quarto indisponível», sem
+hóspede. Para pôr um hóspede real no fluxo, **sem desligar nada**:
+
+1. Abre o bloqueio em `/reservas` (ou no calendário) → **«Registar a reserva
+   deste período»**.
+2. Acerta as datas à reserva real (o Amenitiz junta reservas seguidas num
+   bloco — regista cada uma), escolhe a plataforma e o hóspede.
+3. A partir daí é uma reserva como outra qualquer: link de check-in, boletim,
+   dossiê. **Continua a comunicar ao SIBA pela forma de sempre** até o
+   Anfitrião ter provado que o faz bem — e compara os dois.
+
+A reserva não volta ao Amenitiz (não está no feed «diretas»). Se a plataforma
+mudar as datas ou cancelar, a reserva diz-to.
+
+---
+
 ## 0. Antes de começar (5 min, e sem isto não vale a pena)
 
 ### 0.1 Ligar o email — **é o único passo mesmo bloqueante**

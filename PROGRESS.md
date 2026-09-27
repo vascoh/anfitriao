@@ -6,6 +6,38 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-09-27] Hóspedes reais com o Amenitiz no meio: a reserva dentro do bloqueio
+
+Para o Vasco começar a usar o Anfitrião com os seus hóspedes reais, **em
+paralelo** com o Amenitiz, faltava uma coisa: as reservas do Airbnb/Booking
+chegam como «Quarto indisponível», sem hóspede, e não havia caminho para o
+check-in, o boletim SIBA ou a fatura. Criar a reserva à mão nessas datas dava
+409 (conflito com o próprio bloqueio) e a verificação ao vivo dizia «ocupado».
+
+- ✅ **«Registar a reserva deste período»** no bloqueio → `/reservas/nova` já
+  preenchida; a reserva fica ligada por `bloqueio_id` (migração 048, aplicada).
+  Validada no servidor (`lib/reserva-no-bloqueio.ts`): mesmo dono e alojamento,
+  bloqueio real e não cancelado, datas dentro dele (pode haver várias — o
+  Amenitiz funde reservas seguidas). Só então a sobreposição **com esse
+  bloqueio** deixa de ser conflito e não se pergunta às plataformas; com outras
+  reservas continua a chocar.
+- ✅ **Nunca volta ao Amenitiz** no feed «diretas» — é a reserva que ele tem.
+- ✅ O bloqueio lista as reservas lá dentro; a reserva avisa se o período mudou
+  de datas ou foi cancelado do lado da plataforma.
+- ✅ **De caminho, dois erros de contas**: `occupancyForMonth` somava linhas (um
+  bloqueio com a reserva lá dentro dava 200 %) — passa a contar noites
+  distintas; e `/relatorios` contava bloqueios como reservas (diluía o ADR com
+  noites a 0 €; a sincronização inflacionava a taxa de cancelamento).
+
+**E2E em produção** (utilizador Clerk descartável + dados `TESTE-E2E`, tudo
+apagado no fim; a base ficou com as 10 reservas e 4 alojamentos de antes):
+botão no bloqueio → formulário com o aviso e as datas → reserva dentro aceite
+(200), fora das datas recusada (400, com a mensagem), sem a ligação recusada
+(409) → o bloqueio lista-a, a reserva mostra a origem → feed completo com 2
+eventos, «diretas» com 0.
+
+Validação: 1238 testes (+16), typecheck, lint e `next build` a zero.
+
 ### [2026-09-27] Funil de ativação sem PostHog — 0.4
 
 O 0.4 pedia um funil no PostHog: registo → 1.ª propriedade → 1.º iCal → 1.ª

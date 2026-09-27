@@ -1,4 +1,5 @@
 import { eBloqueio } from './reservations'
+import { fmtDate } from './utils'
 import type { Booking } from './types'
 
 /**
@@ -54,7 +55,7 @@ export function validarReservaNoBloqueio(
   if (reserva.check_in < bloqueio.check_in || reserva.check_out > bloqueio.check_out) {
     return {
       ok: false,
-      erro: `As datas têm de ficar dentro do período bloqueado (${bloqueio.check_in} a ${bloqueio.check_out}).`,
+      erro: `As datas têm de ficar dentro do período bloqueado (${fmtDate(bloqueio.check_in)} a ${fmtDate(bloqueio.check_out)}).`,
       status: 400,
     }
   }

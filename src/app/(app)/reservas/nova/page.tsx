@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { uuid, today, addDays } from '@/lib/utils'
+import { uuid, today, addDays, fmtDate } from '@/lib/utils'
 import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
 import { detectConflict, calculatePriceWithRules, unidadesReservaveis } from '@/lib/reservations'
 import { quartosDaCasa, capacidadeTotal, disponibilidadeDosQuartos, sugerirQuartos } from '@/lib/grupos'
@@ -390,7 +390,7 @@ function NovaReservaInner() {
                 <p className="font-semibold text-sm">Reserva dentro de um período bloqueado</p>
                 <p className="mt-1 text-muted-foreground">
                   {bloqueio
-                    ? <>O calendário externo tem este quarto fechado de <strong>{bloqueio.check_in}</strong> a <strong>{bloqueio.check_out}</strong>. </>
+                    ? <>O calendário externo tem este quarto fechado de <strong>{fmtDate(bloqueio.check_in)}</strong> a <strong>{fmtDate(bloqueio.check_out)}</strong>. </>
                     : null}
                   Põe as datas desta reserva — podem ser só parte do período, se ele juntar várias
                   reservas seguidas. Ela não volta a ser enviada para o gestor de canais: é a reserva que ele já tem.
