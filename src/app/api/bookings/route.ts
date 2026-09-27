@@ -7,6 +7,7 @@ import { verificarDisponibilidadeAoVivo } from '@/lib/disponibilidade-ao-vivo'
 import { uidDeOrigem } from '@/lib/ical-reconciliacao'
 import { logAudit } from '@/lib/audit'
 import { carregarTudo } from '@/lib/supabase-tudo'
+import { validarReservaNoBloqueio, type BloqueioParaValidar } from '@/lib/reserva-no-bloqueio'
 
 /* Esta rota lê os calendários das plataformas ao vivo antes de aceitar a
  * reserva (`lib/disponibilidade-ao-vivo.ts`), o que lhe acrescenta uma ida à
@@ -166,6 +167,27 @@ export async function POST(req: NextRequest) {
   const estado = typeof campos.estado === 'string' ? campos.estado : 'confirmada'
   const libertaDatas = estado === 'cancelada' || estado === 'no_show'
 
+  /* Reserva registada dentro de um bloqueio importado — ver
+   * `lib/reserva-no-bloqueio.ts`. A ligação vem do browser e por isso é
+   * verificada aqui: sem isto, qualquer reserva podia apontar para um bloqueio
+   * e saltar a verificação de conflitos. Uma reserva a ser cancelada não
+   * precisa de caber em lado nenhum. */
+  const bloqueioId = typeof campos.bloqueio_id === 'string' && campos.bloqueio_id ? campos.bloqueio_id : null
+  campos.bloqueio_id = bloqueioId
+  if (bloqueioId && !libertaDatas) {
+    const { data: bloqueio } = await supabase
+      .from('bookings')
+      .select('id, propriedade_id, owner_id, check_in, check_out, estado, hospede_id, uid_externo, notas, origem, bloqueio_id')
+      .eq('id', bloqueioId)
+      .maybeSingle()
+    const v = validarReservaNoBloqueio(
+      bloqueio as BloqueioParaValidar | null,
+      { propriedade_id: campos.propriedade_id as string, check_in: checkIn, check_out: checkOut },
+      userId,
+    )
+    if (!v.ok) return NextResponse.json({ error: v.erro, code: 'BLOQUEIO' }, { status: v.status })
+  }
+
   if (!libertaDatas && permitir_sobreposicao !== true) {
     let q = supabase
       .from('bookings')
@@ -180,6 +202,8 @@ export async function POST(req: NextRequest) {
 
     // Numa alteração, a própria reserva não conta como conflito consigo mesma.
     if (typeof campos.id === 'string' && campos.id) q = q.neq('id', campos.id)
+    // Dentro de um bloqueio (já validado acima), sobrepor-se a ele é o normal.
+    if (bloqueioId) q = q.neq('id', bloqueioId)
 
     const { data: conflitos, error: cErr } = await q.limit(1)
 
@@ -210,6 +234,8 @@ export async function POST(req: NextRequest) {
      *
      * O `uid_externo` é lido da base e não do corpo do pedido: é o servidor
      * que sabe se esta reserva veio de um feed. */
+    /* Dentro de um bloqueio a pergunta às plataformas não se faz: o feed diz
+     * «ocupado» precisamente por causa desta reserva. */
     const aEditar = typeof campos.id === 'string' && campos.id ? campos.id : null
     const { data: existente } = aEditar
       ? await supabase.from('bookings').select('uid_externo').eq('id', aEditar).eq('owner_id', userId).maybeSingle()
@@ -218,7 +244,7 @@ export async function POST(req: NextRequest) {
     const { data: propFeeds } = await supabase
       .from('properties').select('nome, ical_feeds').eq('id', campos.propriedade_id as string).maybeSingle()
 
-    const aoVivo = propFeeds
+    const aoVivo = propFeeds && !bloqueioId
       ? await verificarDisponibilidadeAoVivo([propFeeds], checkIn, checkOut, {
           ignorarUid: existente?.uid_externo ? uidDeOrigem(existente.uid_externo as string) : null,
         })

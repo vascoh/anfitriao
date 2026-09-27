@@ -203,6 +203,20 @@ describe('GET /api/ical/[propertyId]', () => {
     expect(ics).toContain('(reservas diretas)')
   })
 
+  it('?origem=diretas também deixa de fora a reserva registada dentro de um bloqueio', async () => {
+    /* O bloqueio veio do Amenitiz; a reserva lá dentro é a dele. Devolvê-la
+     * como «direta» fazia-o fechar as plataformas por cima da própria reserva. */
+    reservas = [
+      reserva({ id: 'b-direta' }),
+      reserva({ id: 'blq', uid_externo: 'feed-1::amen', notas: 'Quarto indisponível', hospede_id: null }),
+      reserva({ id: 'b-no-bloqueio', bloqueio_id: 'blq' }),
+    ]
+    const diretas = uids(await (await pedir('casa', '?origem=diretas')).text())
+    expect(diretas).toHaveLength(1)
+    // no feed completo continuam as três: tudo o que ocupa, ocupa
+    expect(uids(await (await pedir()).text())).toHaveLength(3)
+  })
+
   it('um valor desconhecido em ?origem não esconde nada', async () => {
     // Falhar para o lado que exporta a mais: uma data a mais bloqueia, uma
     // data a menos vende duas vezes.

@@ -451,3 +451,93 @@ describe('POST /api/bookings · conjuntos fechados', () => {
     expect((await POST(pedido(semEstado))).status).toBe(200)
   })
 })
+
+describe('POST /api/bookings · reserva dentro de um bloqueio do Amenitiz', () => {
+  /* O Amenitiz manda as reservas do Airbnb/Booking como «Quarto
+   * indisponível»: sem isto não havia forma de registar o hóspede real — a
+   * reserva chocava com o próprio bloqueio e o feed dizia «ocupado». */
+  const BLOQUEIO = {
+    id: 'blq-1', owner_id: 'user_1', propriedade_id: 'p-com-feed',
+    check_in: '2026-10-01', check_out: '2026-10-10', estado: 'confirmada',
+    hospede_id: null, uid_externo: 'f1::amen-1', notas: 'Quarto indisponível', origem: 'outro',
+  }
+  const DENTRO = {
+    id: 'b-dentro', propriedade_id: 'p-com-feed', hospede_id: 'g-meu',
+    check_in: '2026-10-02', check_out: '2026-10-05', estado: 'confirmada',
+    origem: 'airbnb', bloqueio_id: 'blq-1',
+  }
+  const feedOcupado = [
+    'BEGIN:VCALENDAR', 'BEGIN:VEVENT', 'UID:amen-1',
+    'DTSTART;VALUE=DATE:20261001', 'DTEND;VALUE=DATE:20261010',
+    'SUMMARY:Quarto indisponível', 'END:VEVENT', 'END:VCALENDAR',
+  ].join('\r\n')
+
+  beforeEach(() => {
+    tabelas.properties = [
+      { id: 'p-com-feed', owner_id: 'user_1', nome: 'Quarto de Casal',
+        ical_feeds: [{ id: 'f1', url: 'https://amenitiz.com/ical/q.ics', nome: 'Amenitiz', source: 'outro' }] },
+      { id: 'p-outra', owner_id: 'user_1', nome: 'Quarto Individual', ical_feeds: [] },
+    ]
+    tabelas.guests = [{ id: 'g-meu', owner_id: 'user_1' }]
+    tabelas.bookings = [{ ...BLOQUEIO }]
+    feedAoVivo = feedOcupado
+  })
+
+  it('aceita a reserva dentro do bloqueio, apesar da sobreposição e do feed «ocupado»', async () => {
+    const res = await POST(pedido(DENTRO))
+    expect(res.status).toBe(200)
+    expect(escritas[0].row.bloqueio_id).toBe('blq-1')
+  })
+
+  it('sem a ligação, as mesmas datas continuam recusadas', async () => {
+    const res = await POST(pedido({ ...DENTRO, bloqueio_id: undefined }))
+    expect(res.status).toBe(409)
+    expect(escritas).toHaveLength(0)
+  })
+
+  it('recusa datas que saem do bloqueio', async () => {
+    const res = await POST(pedido({ ...DENTRO, check_out: '2026-10-12' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe('BLOQUEIO')
+  })
+
+  it('duas reservas no mesmo bloqueio não se podem pisar', async () => {
+    tabelas.bookings.push({ ...DENTRO, owner_id: 'user_1' })
+    const res = await POST(pedido({ ...DENTRO, id: 'b-outra', check_in: '2026-10-04', check_out: '2026-10-07' }))
+    expect(res.status).toBe(409)
+  })
+
+  it('mas podem ficar seguidas dentro do mesmo bloqueio', async () => {
+    tabelas.bookings.push({ ...DENTRO, owner_id: 'user_1' })
+    const res = await POST(pedido({ ...DENTRO, id: 'b-outra', check_in: '2026-10-05', check_out: '2026-10-09' }))
+    expect(res.status).toBe(200)
+  })
+
+  it('não deixa apontar para uma reserva normal para fugir aos conflitos', async () => {
+    tabelas.bookings.push({
+      id: 'b-normal', owner_id: 'user_1', propriedade_id: 'p-com-feed', check_in: '2026-10-01',
+      check_out: '2026-10-10', estado: 'confirmada', hospede_id: 'g-meu', uid_externo: null, notas: null, origem: 'direto',
+    })
+    const res = await POST(pedido({ ...DENTRO, bloqueio_id: 'b-normal' }))
+    expect(res.status).toBe(400)
+  })
+
+  it('não deixa usar o bloqueio de outro anfitrião, nem de outro alojamento', async () => {
+    tabelas.bookings[0].owner_id = 'user_2'
+    expect((await POST(pedido(DENTRO))).status).toBe(404)
+    tabelas.bookings[0].owner_id = 'user_1'
+    expect((await POST(pedido({ ...DENTRO, propriedade_id: 'p-outra' }))).status).toBe(400)
+  })
+
+  it('um bloqueio cancelado pela sincronização já não aceita reservas', async () => {
+    tabelas.bookings[0].estado = 'cancelada'
+    const res = await POST(pedido(DENTRO))
+    expect(res.status).toBe(409)
+  })
+
+  it('cancelar a reserva nunca é bloqueado, mesmo com o bloqueio cancelado', async () => {
+    tabelas.bookings[0].estado = 'cancelada'
+    const res = await POST(pedido({ ...DENTRO, estado: 'cancelada' }))
+    expect(res.status).toBe(200)
+  })
+})

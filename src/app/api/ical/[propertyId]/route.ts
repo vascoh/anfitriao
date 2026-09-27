@@ -84,9 +84,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prop
     // Sem estes dois, `eBloqueio` não via o texto do feed e todo o importado
     // saía como «Reservado» — incluindo os fechos do Amenitiz.
     notas?: string; origem: BookingSource
+    bloqueio_id?: string | null
   }>(() =>
     supabase
-      .from('bookings').select('id, hospede_id, uid_externo, check_in, check_out, estado, notas, origem')
+      .from('bookings').select('id, hospede_id, uid_externo, check_in, check_out, estado, notas, origem, bloqueio_id')
       .in('propriedade_id', idsOcupacao)
       .not('estado', 'in', '("cancelada","no_show")')
       .gte('check_out', today())
@@ -107,8 +108,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prop
   /* Ao gestor de canais, só o que ele não sabe. Ver a nota sobre `?origem`:
    * as importadas foram ele que as criou, e devolver-lhas cria um bloqueio
    * nosso por cima de uma reserva dele. */
+  /* Uma reserva registada dentro de um bloqueio do Amenitiz também é dele:
+   * foi ele que nos mandou o bloqueio. Devolver-lha como «direta» punha um
+   * fecho nosso por cima de uma reserva que ele já tem, e ele empurrava-o para
+   * as plataformas. */
   const aExportar = origem === 'diretas'
-    ? bookings.filter(b => !b.uid_externo)
+    ? bookings.filter(b => !b.uid_externo && !b.bloqueio_id)
     : bookings
 
   // Sem nomes de hóspedes: o feed é acessível a qualquer pessoa que conheça o

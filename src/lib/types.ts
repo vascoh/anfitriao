@@ -211,6 +211,13 @@ export interface Booking {
    * quarto, ligadas por este id. Ver `lib/grupos.ts`.
    */
   reserva_grupo_id?: string | null
+  /**
+   * Bloqueio importado de onde esta reserva veio (migration 048). O Amenitiz
+   * manda as reservas das plataformas como «Quarto indisponível», sem hóspede;
+   * o anfitrião regista a reserva real dentro desse período. Ver
+   * `lib/reserva-no-bloqueio.ts`.
+   */
+  bloqueio_id?: string | null
   // ─── Faturação certificada (migration 028) ───────────────────────────
   // O documento legal vive no fornecedor certificado; aqui só a referência.
   fatura_estado?: 'nao_emitida' | 'a_emitir' | 'emitida' | 'falhou'

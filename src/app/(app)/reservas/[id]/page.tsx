@@ -17,6 +17,7 @@ import {
   transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio,
   ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING,
 } from '@/lib/reservations'
+import { aindaDentro } from '@/lib/reserva-no-bloqueio'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 
@@ -136,6 +137,10 @@ export default function ReservaDetailPage() {
   const [boletinsErro, setBoletinsErro] = useState(false)
   /** As reservas irmãs, quando esta faz parte de uma casa alugada por inteiro. */
   const [grupo, setGrupo] = useState<{ reservas: Booking[]; props: Property[] } | null>(null)
+  /** Num bloqueio importado: as reservas reais registadas dentro dele. */
+  const [filhas, setFilhas] = useState<Booking[]>([])
+  /** Numa reserva registada dentro de um bloqueio: esse bloqueio. */
+  const [pai, setPai] = useState<Booking | null>(null)
 
   async function load() {
     fetch(`/api/reservas/${id}/hospedes`)
@@ -154,6 +159,11 @@ export default function ReservaDetailPage() {
        * mostra como uma linha; esta página mostrava uma delas como se fosse
        * a reserva toda — o anfitrião via 300 € de 920 €, sem nada que
        * dissesse que havia mais dois quartos. */
+      setFilhas(bookings
+        .filter(x => x.bloqueio_id === b.id && x.estado !== 'cancelada')
+        .sort((x, y) => x.check_in.localeCompare(y.check_in)))
+      setPai(b.bloqueio_id ? (bookings.find(x => x.id === b.bloqueio_id) ?? null) : null)
+
       if (b.reserva_grupo_id) {
         const irmas = bookings.filter(x => x.reserva_grupo_id === b.reserva_grupo_id)
         setGrupo(irmas.length > 1 ? { reservas: irmas, props } : null)
@@ -501,6 +511,46 @@ export default function ReservaDetailPage() {
                 não diz onde acaba um e começa o outro. Para ver as reservas uma a uma,
                 é do lado de lá que tens de olhar.
               </p>
+              {/* O caminho para pôr o hóspede real no fluxo (check-in, SIBA,
+                  fatura) sem desligar o Amenitiz — ver lib/reserva-no-bloqueio.ts */}
+              {booking.estado !== 'cancelada' && booking.uid_externo && (
+                <Link
+                  href={`/reservas/nova?propriedade=${booking.propriedade_id}&checkin=${booking.check_in}&checkout=${booking.check_out}&bloqueio=${booking.id}`}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Registar a reserva deste período
+                </Link>
+              )}
+              {filhas.length > 0 && (
+                <div className="mt-3 flex flex-col gap-1.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Reservas registadas neste período
+                  </p>
+                  {filhas.map(f => (
+                    <Link key={f.id} href={`/reservas/${f.id}`}
+                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs hover:bg-muted">
+                      <span>{fmtDate(f.check_in)} → {fmtDate(f.check_out)}</span>
+                      <span className="text-muted-foreground">{SOURCE_LABEL[f.origem] ?? f.origem} · {STATUS_LABEL[f.estado]}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {booking.bloqueio_id && (
+            <div className={`px-4 py-3 border-b border-border last:border-0 ${aindaDentro(pai, booking) ? '' : 'bg-amber-500/5'}`}>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Registada dentro de um período bloqueado vindo de um calendário externo
+                {pai ? <> (<Link href={`/reservas/${pai.id}`} className="underline">{fmtDate(pai.check_in)} → {fmtDate(pai.check_out)}</Link>)</> : null}.
+                Não é exportada de volta para o gestor de canais — é a reserva que ele já tem.
+              </p>
+              {!aindaDentro(pai, booking) && (
+                <p className="mt-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                  {pai && pai.estado !== 'cancelada'
+                    ? 'O período mudou de datas do lado da plataforma e esta reserva já não cabe nele. Confirma lá as datas.'
+                    : 'O período foi cancelado do lado da plataforma. Confirma lá se esta reserva ainda existe — se não, cancela-a aqui.'}
+                </p>
+              )}
             </div>
           )}
           {!bloqueio && (() => {

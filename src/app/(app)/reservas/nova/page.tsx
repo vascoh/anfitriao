@@ -58,11 +58,18 @@ function NovaReservaInner() {
   // Form state
   const [propId, setPropId] = useState(() => searchParams.get('propriedade') ?? '')
   const [checkIn, setCheckIn] = useState(() => searchParams.get('checkin') ?? today())
-  const [checkOut, setCheckOut] = useState(() => addDays(searchParams.get('checkin') ?? today(), 2))
+  const [checkOut, setCheckOut] = useState(() =>
+    searchParams.get('checkout') ?? addDays(searchParams.get('checkin') ?? today(), 2))
+  /* Vinda de um bloqueio importado («Registar a reserva deste período»): a
+   * reserva vive dentro dele. O servidor valida a ligação —
+   * `lib/reserva-no-bloqueio.ts`; aqui só se ajuda a acertar as datas. */
+  const bloqueioId = searchParams.get('bloqueio')
+  const bloqueio = bloqueioId ? bookings.find(b => b.id === bloqueioId) ?? null : null
   const [guestId, setGuestId] = useState('')
   const [newGuestNome, setNewGuestNome] = useState('')
   const [numHospedes, setNumHospedes] = useState(2)
-  const [origem, setOrigem] = useState<BookingSource>('direto')
+  // Dentro de um bloqueio do gestor de canais a reserva veio de uma plataforma.
+  const [origem, setOrigem] = useState<BookingSource>(() => (searchParams.get('bloqueio') ? 'airbnb' : 'direto'))
   const [precoTotal, setPrecoTotal] = useState('')
   const [precoPago, setPrecoPago] = useState('')
   const [notas, setNotas] = useState('')
@@ -223,13 +230,18 @@ function NovaReservaInner() {
           { id: uuid(), data: new Date().toISOString(), tipo: 'confirmada', descricao: 'Confirmada na criação' },
         ],
         owner_id: ownerId,
+        ...(bloqueioId ? { bloqueio_id: bloqueioId } : {}),
       }
       const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(booking) })
-      if (!res.ok) throw new Error('Erro ao guardar reserva')
+      if (!res.ok) {
+        // O servidor diz porquê (datas fora do bloqueio, conflito, …) — dizê-lo.
+        const msg = (await res.json().catch(() => null))?.error
+        throw new Error(typeof msg === 'string' ? msg : 'Erro ao criar reserva. Tenta novamente.')
+      }
       router.push(`/reservas/${booking.id}`)
-    } catch {
+    } catch (e) {
       setSubmitting(false)
-      setSubmitError('Erro ao criar reserva. Tenta novamente.')
+      setSubmitError(e instanceof Error ? e.message : 'Erro ao criar reserva. Tenta novamente.')
     }
   }
 
@@ -373,6 +385,21 @@ function NovaReservaInner() {
                 </div>
               )
             })()}
+            {bloqueioId && (
+              <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs leading-relaxed">
+                <p className="font-semibold text-sm">Reserva dentro de um período bloqueado</p>
+                <p className="mt-1 text-muted-foreground">
+                  {bloqueio
+                    ? <>O calendário externo tem este quarto fechado de <strong>{bloqueio.check_in}</strong> a <strong>{bloqueio.check_out}</strong>. </>
+                    : null}
+                  Põe as datas desta reserva — podem ser só parte do período, se ele juntar várias
+                  reservas seguidas. Ela não volta a ser enviada para o gestor de canais: é a reserva que ele já tem.
+                </p>
+                {bloqueio && (checkIn < bloqueio.check_in || checkOut > bloqueio.check_out) && (
+                  <p className="mt-1.5 font-medium text-destructive">As datas têm de ficar dentro do período bloqueado.</p>
+                )}
+              </div>
+            )}
             {conflito && (
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive font-medium">
                 Conflito de datas: já existe uma reserva neste período para esta propriedade.
@@ -443,7 +470,10 @@ function NovaReservaInner() {
                 if (propId) {
                   const atuais = await fetchBookings()
                   setBookings(atuais)
-                  const conflict = detectConflict(atuais, propId, checkIn, checkOut)
+                  // Dentro de um bloqueio, sobrepor-se a ele é o normal — às
+                  // outras reservas continua a não poder.
+                  const semOBloqueio = bloqueioId ? atuais.filter(b => b.id !== bloqueioId) : atuais
+                  const conflict = detectConflict(semOBloqueio, propId, checkIn, checkOut)
                   if (conflict) { setConflito(true); return }
                 }
                 setConflito(false)
@@ -451,7 +481,8 @@ function NovaReservaInner() {
               }}
               disabled={
                 !checkIn || !checkOut || checkIn >= checkOut ||
-                Boolean(casaEscolhida && !sugestao?.ok)
+                Boolean(casaEscolhida && !sugestao?.ok) ||
+                Boolean(bloqueio && (checkIn < bloqueio.check_in || checkOut > bloqueio.check_out))
               }
               className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity"
             >

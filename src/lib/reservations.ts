@@ -437,19 +437,22 @@ export function occupancyForMonth(
     ? `${year + 1}-01-01`
     : `${year}-${String(month + 2).padStart(2, '0')}-01`
 
-  const occupied = bookings
-    .filter(b =>
-      b.propriedade_id === propertyId &&
-      b.estado !== 'cancelada' &&
-      b.estado !== 'no_show' &&
-      b.check_in < nextMonthStart &&
-      b.check_out > monthStart
-    )
-    .reduce((acc, b) => {
-      const start = b.check_in > monthStart ? b.check_in : monthStart
-      const end = b.check_out < nextMonthStart ? b.check_out : nextMonthStart
-      return acc + Math.max(0, Math.round((new Date(end + 'T00:00:00').getTime() - new Date(start + 'T00:00:00').getTime()) / 86400000))
-    }, 0)
+  /* Noites **distintas**, não a soma das linhas. Uma reserva registada dentro
+   * de um bloqueio do Amenitiz (`bloqueio_id`) ocupa as mesmas noites que ele:
+   * somar dava 200% num quarto cheio. Vale para qualquer sobreposição — um
+   * quarto não fica mais ocupado por ter duas linhas na mesma noite. */
+  const noites = new Set<string>()
+  for (const b of bookings) {
+    if (
+      b.propriedade_id !== propertyId ||
+      b.estado === 'cancelada' || b.estado === 'no_show' ||
+      b.check_in >= nextMonthStart || b.check_out <= monthStart
+    ) continue
+    const start = b.check_in > monthStart ? b.check_in : monthStart
+    const end = b.check_out < nextMonthStart ? b.check_out : nextMonthStart
+    for (let n = start; n < end; n = addDays(n, 1)) noites.add(n)
+  }
+  const occupied = noites.size
 
   return { occupied, total: daysInMonth, pct: Math.round((occupied / daysInMonth) * 100) }
 }

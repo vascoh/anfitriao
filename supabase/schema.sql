@@ -108,7 +108,8 @@ CREATE TABLE public.bookings (
   nota_credito_id_externo text,
   nota_credito_numero text,
   nota_credito_emitida_em timestamp with time zone,
-  reserva_grupo_id text
+  reserva_grupo_id text,
+  bloqueio_id text
 );
 
 CREATE TABLE public.envios_unicos (

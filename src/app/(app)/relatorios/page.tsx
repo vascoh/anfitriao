@@ -6,7 +6,7 @@ import { Download, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
 import { useUser } from '@clerk/nextjs'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
-import { occupancyForMonth, unidadesReservaveis } from '@/lib/reservations'
+import { occupancyForMonth, unidadesReservaveis, geraObrigacoesDeHospede } from '@/lib/reservations'
 import { calcularRevPar } from '@/lib/revpar'
 import { agruparReservas } from '@/lib/grupos'
 import { fmtMoney, nights, today as localToday, addDays } from '@/lib/utils'
@@ -16,8 +16,14 @@ import type { Booking, Property, Guest, BookingSource } from '@/lib/types'
 const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 const CHART_H = 120
 
+/* Reserva real e não cancelada. Os bloqueios importados (o Amenitiz manda
+ * «Quarto indisponível») não são reservas: entravam no número de reservas, nas
+ * noites vendidas e na estadia média, e diluíam o ADR com noites a 0 €. E uma
+ * reserva registada dentro de um bloqueio (`bloqueio_id`) contava as mesmas
+ * noites duas vezes. A **ocupação** continua a contar tudo o que ocupa — é
+ * `occupancyForMonth`, que não passa por aqui. */
 function isActive(b: Booking) {
-  return b.estado !== 'cancelada' && b.estado !== 'no_show'
+  return b.estado !== 'cancelada' && b.estado !== 'no_show' && geraObrigacoesDeHospede(b)
 }
 
 function buildRevenueCsv(bookings: Booking[], properties: Property[], guests: Guest[], year: number): string {
@@ -142,7 +148,9 @@ function calcAvgLOS(bookings: Booking[], year: number): number {
  * reserva de grupo cancelada e três reservas soltas mantidas, a taxa dava
  * 50 % onde o anfitrião contaria 25 %. */
 function calcCancellationRate(bookings: Booking[], year: number): number {
-  const doAno = agruparReservas(bookings.filter(b => b.check_in.startsWith(String(year))))
+  // Sem bloqueios: a sincronização cancela um sempre que o calendário externo
+  // muda um período, e isso não é um hóspede a desistir.
+  const doAno = agruparReservas(bookings.filter(b => b.check_in.startsWith(String(year)) && geraObrigacoesDeHospede(b)))
   if (doAno.length === 0) return 0
   const canceladas = doAno.filter(g => g.estado === 'cancelada' || g.estado === 'no_show').length
   return Math.round((canceladas / doAno.length) * 100)
