@@ -191,6 +191,7 @@ describe('InvoiceXpressAdapter', () => {
 
     it('cria a conta e devolve subdomínio e chave', async () => {
       vi.stubEnv('INVOICEXPRESS_PARTNER_API_KEY', 'chave-parceiro')
+      vi.stubEnv('INVOICEXPRESS_PARTNER_ACCOUNT', 'parceiro')
       vi.mocked(fetch).mockResolvedValueOnce(json({
         account: {
           id: '999', name: 'Casa do Vasco',
@@ -215,6 +216,7 @@ describe('InvoiceXpressAdapter', () => {
 
     it('usa a chave de parceiro, não a da conta', async () => {
       vi.stubEnv('INVOICEXPRESS_PARTNER_API_KEY', 'chave-parceiro')
+      vi.stubEnv('INVOICEXPRESS_PARTNER_ACCOUNT', 'parceiro')
       vi.mocked(fetch).mockResolvedValueOnce(json({
         account: { url: 'https://x.app.invoicexpress.com', api_key: 'k' },
       }, 201))
@@ -225,8 +227,31 @@ describe('InvoiceXpressAdapter', () => {
       expect(urlDe(0)).toContain('/api/accounts/create.json')
     })
 
+    it('chama o subdomínio da conta de parceiro, não um fixo', async () => {
+      vi.stubEnv('INVOICEXPRESS_PARTNER_API_KEY', 'chave-parceiro')
+      vi.stubEnv('INVOICEXPRESS_PARTNER_ACCOUNT', 'minhaconta')
+      vi.mocked(fetch).mockResolvedValueOnce(json({
+        account: { url: 'https://x.app.invoicexpress.com', api_key: 'k' },
+      }, 201))
+
+      await adaptador.criarConta({ nomeOrganizacao: 'X', email: 'x@exemplo.pt' })
+
+      expect(urlDe(0)).toMatch(/^https:\/\/minhaconta\.app\.invoicexpress\.com\/api\/accounts\/create\.json\?/)
+    })
+
+    it('com chave mas sem conta de parceiro não cria nada', async () => {
+      vi.stubEnv('INVOICEXPRESS_PARTNER_API_KEY', 'chave-parceiro')
+      vi.stubEnv('INVOICEXPRESS_PARTNER_ACCOUNT', '')
+      expect(adaptador.podeCriarContas()).toBe(false)
+
+      const r = await adaptador.criarConta({ nomeOrganizacao: 'X', email: 'x@exemplo.pt' })
+      expect(r.sucesso).toBe(false)
+      expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+    })
+
     it('falha quando o serviço não devolve credenciais', async () => {
       vi.stubEnv('INVOICEXPRESS_PARTNER_API_KEY', 'chave-parceiro')
+      vi.stubEnv('INVOICEXPRESS_PARTNER_ACCOUNT', 'parceiro')
       vi.mocked(fetch).mockResolvedValueOnce(json({ account: { id: '1' } }, 201))
 
       const r = await adaptador.criarConta({ nomeOrganizacao: 'X', email: 'x@exemplo.pt' })

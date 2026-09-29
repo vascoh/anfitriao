@@ -19,6 +19,7 @@ const AMBIENTE_VALIDO: NodeJS.ProcessEnv = {
   STRIPE_EMPRESA_PRICE_ID: 'price_empresa',
   CRON_SECRET: 'segredo',
   INVOICEXPRESS_PARTNER_API_KEY: 'partner',
+  INVOICEXPRESS_PARTNER_ACCOUNT: 'parceiro',
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_live_123',
 }
 

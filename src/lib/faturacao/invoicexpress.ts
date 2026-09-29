@@ -35,8 +35,6 @@ const TIPO_ENDPOINT: Record<PedidoFatura['tipo'], string> = {
   credit_note: 'credit_notes',
 }
 
-/** Conta usada para criar contas de anfitriões (chave de parceiro). */
-const CONTA_PARCEIRO = 'api'
 
 /** O InvoiceXpress espera datas em dd/mm/yyyy, não ISO. */
 function paraDataPt(iso: string): string {
@@ -88,11 +86,21 @@ export class InvoiceXpressAdapter implements InvoicingAdapter {
 
   /** Chave de parceiro: só serve para criar contas de anfitriões. */
   private get chaveParceiro(): string | undefined {
-    return process.env.INVOICEXPRESS_PARTNER_API_KEY
+    return process.env.INVOICEXPRESS_PARTNER_API_KEY?.trim() || undefined
+  }
+
+  /**
+   * Subdomínio da conta InvoiceXpress dona da chave de parceiro. A API de
+   * contas vive em `https://<conta>.app.invoicexpress.com`, como todas as
+   * outras: a chave só autentica no subdomínio da própria conta. Esteve fixo
+   * em `api`, que não é conta de ninguém — o InvoiceXpress respondia 401.
+   */
+  private get contaParceiro(): string | undefined {
+    return process.env.INVOICEXPRESS_PARTNER_ACCOUNT?.trim() || undefined
   }
 
   podeCriarContas(): boolean {
-    return Boolean(this.chaveParceiro)
+    return Boolean(this.chaveParceiro && this.contaParceiro)
   }
 
   private url(conta: string, caminho: string, apiKey: string, params?: Record<string, string>): string {
@@ -137,8 +145,12 @@ export class InvoiceXpressAdapter implements InvoicingAdapter {
 
   async criarConta(pedido: PedidoConta): Promise<ResultadoConta> {
     const chave = this.chaveParceiro
-    if (!chave) {
-      return { sucesso: false, erro: 'Falta INVOICEXPRESS_PARTNER_API_KEY — não é possível criar contas de faturação.' }
+    const contaParceiro = this.contaParceiro
+    if (!chave || !contaParceiro) {
+      return {
+        sucesso: false,
+        erro: 'Faltam INVOICEXPRESS_PARTNER_API_KEY e/ou INVOICEXPRESS_PARTNER_ACCOUNT — não é possível criar contas de faturação.',
+      }
     }
 
     // A palavra-passe é gerada e nunca guardada: o anfitrião entra na conta
@@ -163,7 +175,7 @@ export class InvoiceXpressAdapter implements InvoicingAdapter {
     }
 
     try {
-      const r = await this.pedir('POST', CONTA_PARCEIRO, chave, 'api/accounts/create.json', corpo)
+      const r = await this.pedir('POST', contaParceiro, chave, 'api/accounts/create.json', corpo)
       const conta = r.account
       if (!conta?.api_key || !conta.url) {
         return { sucesso: false, erro: 'O InvoiceXpress criou a conta mas não devolveu credenciais.' }

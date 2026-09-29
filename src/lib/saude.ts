@@ -90,11 +90,11 @@ export function verificarConfiguracao(ambiente: NodeJS.ProcessEnv = process.env)
         accao: 'Definir um segredo aleatório em CRON_SECRET e no agendamento da Vercel.',
       })
 
-  v.push(definida(ambiente, 'INVOICEXPRESS_PARTNER_API_KEY')
-    ? { chave: 'faturacao', titulo: 'Faturação certificada', nivel: 'ok', detalhe: 'Chave de parceiro definida.' }
+  v.push(definida(ambiente, 'INVOICEXPRESS_PARTNER_API_KEY') && definida(ambiente, 'INVOICEXPRESS_PARTNER_ACCOUNT')
+    ? { chave: 'faturacao', titulo: 'Faturação certificada', nivel: 'ok', detalhe: 'Chave e conta de parceiro definidas.' }
     : {
         chave: 'faturacao', titulo: 'Faturação certificada', nivel: 'aviso',
-        detalhe: 'Sem INVOICEXPRESS_PARTNER_API_KEY: a página de faturação diz que não está disponível.',
+        detalhe: 'Sem INVOICEXPRESS_PARTNER_API_KEY e INVOICEXPRESS_PARTNER_ACCOUNT: a página de faturação diz que não está disponível.',
       })
 
   const clerkKey = ambiente.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.trim()

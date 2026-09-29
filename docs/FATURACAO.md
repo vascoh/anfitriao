@@ -33,7 +33,7 @@ ao utilizador e o obriga a percebê-la.
 ### 1. Criar a conta — `POST /api/faturacao/conta`
 
 Dois campos: nome ou designação social e NIF. Por trás:
-`POST /api/accounts/create.json` com a chave de parceiro. A resposta traz o
+`POST https://<conta-parceiro>.app.invoicexpress.com/api/accounts/create.json` com a chave de parceiro. A resposta traz o
 subdomínio e a chave da nova conta, que é **encriptada** (AES-256-GCM,
 `lib/crypto.ts`) antes de ser guardada em `faturacao_contas`.
 
@@ -105,6 +105,7 @@ turística com o alojamento inflacionaria o IVA liquidado.
 | Variável | Para quê |
 |---|---|
 | `INVOICEXPRESS_PARTNER_API_KEY` | Criar contas de anfitriões. Sem ela a página diz que a faturação não está disponível. |
+| `INVOICEXPRESS_PARTNER_ACCOUNT` | Subdomínio da conta dona da chave (`<conta>.app.invoicexpress.com`). A API de contas só aceita a chave no subdomínio da própria conta. |
 | `APP_ENCRYPTION_KEY` | Encriptar a chave de cada conta. Sem ela a criação de conta é **recusada** — guardar a chave em claro seria pior do que não guardar. |
 
 ---

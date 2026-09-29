@@ -122,6 +122,8 @@ export async function criarContaParaAnfitriao(
 
   const criada = await adaptador.criarConta(pedido)
   if (!criada.sucesso || !criada.conta || !criada.apiKey) {
+    // Sem isto a falha só existia no toast do anfitrião, que desaparece.
+    console.error('[faturacao] criação de conta falhou:', criada.erro)
     return { ok: false, estado: 502, erro: criada.erro ?? 'Não foi possível criar a conta de faturação.' }
   }
 
