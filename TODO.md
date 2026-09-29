@@ -60,7 +60,7 @@ diretas são hoje as únicas em que temos a informação toda.**
 Cada uma desliga **em silêncio** funcionalidade que já está escrita e deployada. Verificado com `npx vercel env ls production`.
 
 - [x] **`RESEND_API_KEY`** — ✅ **2026-09-17: definida em produção e testada ponta-a-ponta.** Deploy confirmado (`vercel inspect`, data de agora). Pedido de reserva real via `/api/book` (Quarto Individual, dados `TESTE-E2E`, removidos no fim): email ao hóspede **delivered**, email ao anfitrião enviado — confirmado na API do Resend (`GET /emails`). `EMAIL_FROM` já estava definida desde 12/08 e o domínio `anfitrioes.pt` está verificado no Resend (sending enabled). Já não bloqueia pedidos/confirmações de reserva, check-in, lembretes de pagamento, fim de trial, alertas de conformidade, relatório mensal nem o motor de automações
-- [ ] **`INVOICEXPRESS_PARTNER_API_KEY`** — sem ela a página de faturação diz que não está disponível (depende de H2, abrir conta de parceiro)
+- [x] **`INVOICEXPRESS_PARTNER_API_KEY`** — ✅ **2026-09-29: definida em produção** (deployment `dpl_HApC8egy7pS3oqHh5gVTijX5MGB7`, alias confirmado). Falta o primeiro teste real: criar a conta de faturação da Casa de Vasco em `/financeiro` e ligar a AT (subutilizador WFA)
 - [ ] **`STRIPE_EMPRESA_PRICE_ID`** — o plano Empresa (99 €) existe no código e na página de preços, mas o checkout não tem price ID. ⚠️ **A base recusava `plano='empresa'`** (o CHECK ficara nos três planos originais): configurar o price ID sem isso corrigido fazia o webhook falhar num pagamento de 99 € e o Stripe repetir três dias — dinheiro cobrado, conta por ativar. Corrigido a 2026-09-03 (migração 045), com guarda em `conjuntos-fechados.test.ts`
 - [x] **`APP_ENCRYPTION_KEY`** — gerada e definida em produção a 2026-08-12 (só em Production; preview/dev ficam de fora de propósito). Desbloqueou o cofre da chave SIBA e a criação de contas de faturação. ⚠️ Perdê-la depois de haver dados encriptados é perder as credenciais SIBA e de faturação — está guardada fora do repositório
 
@@ -105,7 +105,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 
 ## Dependências humanas do dossiê (arrancar em paralelo)
 - [ ] **H1 · SIBA** — registar cada alojamento no portal em modo "Web Service" e obter NIPC + estabelecimento + chave (1–3 dias úteis). 0 propriedades configuradas. Validar primeiro contra `/bawsdev/` via `SIBA_WS_URL`
-- [ ] **H2 · InvoiceXpress** — abrir conta de parceiro (desbloqueia 1.3)
+- [x] **H2 · InvoiceXpress** — conta de parceiro aberta e chave em produção a 2026-09-29 (desbloqueia 1.3)
 - [x] ~~🔴 **H3 · API do Amenitiz**~~ — **cancelado a 2026-09-08, decisão do utilizador**: não há contacto com o Amenitiz. O caminho é o corte, não a integração. Deixa de haver aqui uma dependência externa; o que a substitui é a checklist de `docs/MIGRACAO-AMENITIZ.md` § «O que tem de ser verdade no dia do corte», que é toda nossa
 - [ ] **H4 · Orçamento** — Upstash → Vercel Pro → Supabase Pro
 - [ ] **H5 · Marca** — `anfitriao.pt` vs `anfitrioes.pt`
