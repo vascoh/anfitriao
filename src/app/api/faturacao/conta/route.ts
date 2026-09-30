@@ -7,12 +7,14 @@ import {
   obterConta, criarContaParaAnfitriao, contaComCredenciais, paraPublica,
   getInvoicingAdapter, podeProvisionarFaturacao,
 } from '@/lib/faturacao'
+import { estaConfigurada as encriptacaoConfigurada } from '@/lib/crypto'
 
 /**
  * Conta de faturação do anfitrião.
  *
  * GET    — estado atual (nunca a chave).
  * POST   — cria a conta no fornecedor, em nome do anfitrião.
+ *          (Quem já tem conta liga-a em `./ligar`.)
  * PUT    — liga as credenciais da AT e cria a série. É o passo que torna a
  *          conta capaz de emitir com numeração legal.
  * PATCH  — liga/desliga a emissão automática.
@@ -32,6 +34,9 @@ export async function GET() {
   const conta = await obterConta(userId)
   return NextResponse.json({
     disponivel: podeProvisionarFaturacao(),
+    // Ligar uma conta que já existe não precisa da chave de parceiro — só de
+    // poder guardar a chave do anfitrião encriptada.
+    podeLigar: encriptacaoConfigurada(),
     conta: conta ? paraPublica(conta) : null,
   })
 }

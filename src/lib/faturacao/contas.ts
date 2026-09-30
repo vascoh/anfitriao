@@ -3,6 +3,7 @@ import { createAdminClient } from '../supabase'
 import { encriptar, decifrar, estaConfigurada as encriptacaoConfigurada } from '../crypto'
 import { getInvoicingAdapter } from './index'
 import type { CredenciaisConta, PedidoConta } from './types'
+import { escolherSerie } from './ligar'
 
 /**
  * Conta de faturação de cada anfitrião: criação, leitura e estado.
@@ -157,4 +158,89 @@ export async function criarContaParaAnfitriao(
   }
 
   return { ok: true, conta: data as ContaFaturacao }
+}
+
+export interface PedidoLigacao {
+  /** Subdomínio já normalizado (`normalizarSubdominio`). */
+  conta: string
+  apiKey: string
+  nomeFiscal: string
+  nif: string | null
+}
+
+/**
+ * Liga uma conta de faturação que o anfitrião já tinha.
+ *
+ * Antes de guardar, lê as séries da conta: se a chave ou o subdomínio
+ * estiverem errados, falha aqui e não na primeira fatura. Se houver série
+ * registada na AT, a conta fica logo pronta a emitir nela, com a numeração
+ * onde estava.
+ *
+ * ⚠️ A emissão automática fica **desligada**. Quem liga uma conta existente
+ * está quase sempre a faturar noutro sítio (o Amenitiz, por exemplo). Ligá-la
+ * sozinha era emitir uma segunda fatura por cada estadia, e as duas iam para a
+ * AT. Liga-a o anfitrião, no dia em que deixar de faturar no outro programa.
+ */
+export async function ligarContaExistente(
+  ownerId: string,
+  pedido: PedidoLigacao,
+): Promise<ResultadoCriacao & { serieEscolhida?: string | null }> {
+  const existente = await obterConta(ownerId)
+  if (existente) {
+    if (existente.conta === pedido.conta) return { ok: true, conta: existente }
+    return {
+      ok: false,
+      estado: 409,
+      erro: 'Já tens outra conta de faturação ligada. Fala connosco antes de a trocar — mudar a meio parte a numeração.',
+    }
+  }
+
+  if (!encriptacaoConfigurada()) {
+    return {
+      ok: false,
+      estado: 503,
+      erro: 'O servidor não tem chave de encriptação configurada (APP_ENCRYPTION_KEY). A chave da conta de faturação não pode ser guardada em segurança.',
+    }
+  }
+
+  const lidas = await getInvoicingAdapter().lerSeries({ conta: pedido.conta, apiKey: pedido.apiKey })
+  if (!lidas.sucesso) {
+    console.error('[faturacao] ligação de conta existente recusada:', lidas.erro, { conta: pedido.conta })
+    return {
+      ok: false,
+      estado: 422,
+      erro: 'O InvoiceXpress não aceitou este endereço e esta chave. Confirma o nome da conta e copia outra vez a chave da API.',
+    }
+  }
+
+  const serie = escolherSerie(lidas.series ?? [])
+  const agora = new Date().toISOString()
+
+  const supabase = createAdminClient()
+  const { data, error } = await supabase
+    .from('faturacao_contas')
+    .insert({
+      owner_id: ownerId,
+      fornecedor: 'invoicexpress',
+      conta: pedido.conta,
+      api_key: encriptar(pedido.apiKey),
+      nome_fiscal: pedido.nomeFiscal,
+      nif: pedido.nif,
+      // Uma série com ATCUD só existe porque a AT a aceitou: a comunicação
+      // está feita. Sem série registada, o passo da AT continua por dar.
+      at_estado: serie ? 'configurada' : 'por_configurar',
+      at_configurada_em: serie ? agora : null,
+      serie_id: serie?.id ?? null,
+      serie_nome: serie?.nome ?? null,
+      emissao_automatica: false,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('[faturacao] conta existente não guardada:', error.message, { conta: pedido.conta })
+    return { ok: false, estado: 500, erro: 'Não foi possível guardar a ligação. Tenta outra vez.' }
+  }
+
+  return { ok: true, conta: data as ContaFaturacao, serieEscolhida: serie?.nome ?? null }
 }

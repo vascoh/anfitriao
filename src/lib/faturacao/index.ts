@@ -21,6 +21,8 @@ export function getInvoicingAdapter(): InvoicingAdapter {
   return instancia
 }
 
+export { normalizarSubdominio, escolherSerie } from './ligar'
+
 /** True quando a plataforma consegue criar contas de faturação a anfitriões. */
 export function podeProvisionarFaturacao(): boolean {
   return getInvoicingAdapter().podeCriarContas()
@@ -29,7 +31,7 @@ export function podeProvisionarFaturacao(): boolean {
 export type {
   InvoicingAdapter, PedidoFatura, ResultadoFatura, LinhaFatura, ClienteFatura, TipoDocumento,
   CredenciaisConta, PedidoConta, ResultadoConta, PedidoComunicacaoAt,
-  ResultadoSimples, ResultadoSerie, ResultadoSaft,
+  ResultadoSimples, ResultadoSerie, ResultadoSaft, ResultadoSeries, SerieExistente,
 } from './types'
 export {
   decomporReserva, linhasDaReserva, pedidoDaReserva, totalComIva, descricaoEstadia,
@@ -37,6 +39,6 @@ export {
 } from './mapping'
 export { taxaIvaAlojamento, regiaoDoConcelho, semIva, valorIva, ISENCAO_TAXA_TURISTICA } from './iva'
 export {
-  obterConta, contaComCredenciais, criarContaParaAnfitriao, contaPronta, paraPublica,
+  obterConta, contaComCredenciais, criarContaParaAnfitriao, ligarContaExistente, contaPronta, paraPublica,
   type ContaFaturacao, type ContaPublica,
 } from './contas'

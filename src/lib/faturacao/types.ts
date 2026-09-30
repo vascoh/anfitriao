@@ -122,6 +122,26 @@ export interface ResultadoSerie extends ResultadoSimples {
   serieNome?: string
 }
 
+/** Uma série que já existe na conta do anfitrião. */
+export interface SerieExistente {
+  id: string
+  nome: string
+  /** A série que o fornecedor usa quando não se indica nenhuma. */
+  padrao: boolean
+  /**
+   * Registada na AT para faturas-recibo **e** notas de crédito — os dois
+   * documentos que o Anfitrião emite. Sem isso não há ATCUD e o documento
+   * não pode ser emitido nessa série.
+   */
+  comunicada: boolean
+  /** Último número de fatura-recibo emitido nesta série. */
+  ultimaFaturaRecibo: number
+}
+
+export interface ResultadoSeries extends ResultadoSimples {
+  series?: SerieExistente[]
+}
+
 export interface ResultadoSaft extends ResultadoSimples {
   /** URL do ficheiro. Ausente com `aIndaAGerar` a true. */
   url?: string
@@ -141,6 +161,12 @@ export interface InvoicingAdapter {
 
   /** Cria a conta do anfitrião no fornecedor, com a chave de parceiro. */
   criarConta(pedido: PedidoConta): Promise<ResultadoConta>
+
+  /**
+   * Lê as séries de uma conta que o anfitrião já tinha. Serve também para
+   * provar que o subdomínio e a chave estão certos antes de os guardar.
+   */
+  lerSeries(c: CredenciaisConta): Promise<ResultadoSeries>
 
   /** Liga as credenciais da AT à conta, para o fornecedor comunicar as séries. */
   configurarComunicacaoAt(c: CredenciaisConta, p: PedidoComunicacaoAt): Promise<ResultadoSimples>

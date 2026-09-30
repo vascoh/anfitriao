@@ -58,6 +58,7 @@ export default function FaturacaoPage() {
   const ownerId = user?.id
 
   const [disponivel, setDisponivel] = useState(true)
+  const [podeLigar, setPodeLigar] = useState(false)
   const [conta, setConta] = useState<Conta | null>(null)
   const [reservas, setReservas] = useState<LinhaReserva[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,6 +73,7 @@ export default function FaturacaoPage() {
     ])
     return {
       disponivel: rc.disponivel !== false,
+      podeLigar: rc.podeLigar === true,
       conta: (rc.conta ?? null) as Conta | null,
       reservas: (Array.isArray(rf) ? rf : []) as LinhaReserva[],
     }
@@ -79,6 +81,7 @@ export default function FaturacaoPage() {
 
   const aplicar = useCallback((d: Awaited<ReturnType<typeof carregar>>) => {
     setDisponivel(d.disponivel)
+    setPodeLigar(d.podeLigar)
     setConta(d.conta)
     setReservas(d.reservas)
     setLoading(false)
@@ -232,7 +235,7 @@ export default function FaturacaoPage() {
         </div>
       </div>
 
-      {!conta && <Arranque disponivel={disponivel} onCriada={recarregar} />}
+      {!conta && <Arranque disponivel={disponivel} podeLigar={podeLigar} onCriada={recarregar} />}
 
       {conta && !conta.pronta && <LigarAt conta={conta} onLigada={recarregar} />}
 
@@ -270,6 +273,12 @@ export default function FaturacaoPage() {
                   Todas as manhãs verificamos as reservas que terminaram e emitimos o que falta.
                   Continuas a poder emitir à mão a qualquer momento.
                 </span>
+                {!conta.emissao_automatica && (
+                  <span className="mt-2 block text-xs text-amber-700 dark:text-amber-400">
+                    Se outro programa (o Amenitiz, por exemplo) ainda fatura estas reservas, não
+                    emitas aqui — nem sozinho nem à mão. Cada estadia ficava com duas faturas na AT.
+                  </span>
+                )}
               </span>
             </label>
           </section>
@@ -305,19 +314,37 @@ function Kpi({ valor, rotulo, alerta }: { valor: string; rotulo: string; alerta?
   )
 }
 
-/** Passo 1: criar a conta. Dois campos, e nada sobre o fornecedor. */
-function Arranque({ disponivel, onCriada }: { disponivel: boolean; onCriada: () => void }) {
+/**
+ * Passo 1: criar a conta — ou ligar a que o anfitrião já tem.
+ *
+ * Criar são dois campos e nada sobre o fornecedor. Ligar existe porque quem
+ * vem do Amenitiz já fatura numa conta InvoiceXpress: abrir-lhe outra para o
+ * mesmo NIF partia a numeração em duas séries.
+ */
+function Arranque({ disponivel, podeLigar, onCriada }: {
+  disponivel: boolean; podeLigar: boolean; onCriada: () => void
+}) {
   const [nomeFiscal, setNomeFiscal] = useState('')
   const [nif, setNif] = useState('')
   const [aCriar, setACriar] = useState(false)
+  const [modo, setModo] = useState<'criar' | 'ligar'>(disponivel ? 'criar' : 'ligar')
 
-  if (!disponivel) {
+  if (!disponivel && !podeLigar) {
     return (
       <section className="rounded-2xl border border-dashed border-border p-8 text-center">
         <p className="text-sm text-muted-foreground">
           A faturação ainda não está disponível nesta conta. Escreve para suporte@anfitrioes.pt.
         </p>
       </section>
+    )
+  }
+
+  if (modo === 'ligar') {
+    return (
+      <LigarExistente
+        onLigada={onCriada}
+        onVoltar={disponivel ? () => setModo('criar') : undefined}
+      />
     )
   }
 
@@ -390,6 +417,152 @@ function Arranque({ disponivel, onCriada }: { disponivel: boolean; onCriada: () 
         {aCriar && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
         {aCriar ? 'A criar…' : 'Criar conta de faturação'}
       </button>
+
+      {podeLigar && (
+        <p className="mt-4 text-xs text-muted-foreground">
+          Já emites faturas no InvoiceXpress (por exemplo, através do Amenitiz)?{' '}
+          <button
+            type="button"
+            onClick={() => setModo('ligar')}
+            className="font-semibold text-primary hover:underline"
+          >
+            Liga a conta que já tens
+          </button>{' '}
+          — não cries outra para o mesmo NIF.
+        </p>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Ligar uma conta InvoiceXpress que já existe. A série e a numeração ficam
+ * onde estavam; a emissão automática fica desligada até o anfitrião deixar
+ * de faturar no outro programa.
+ */
+function LigarExistente({ onLigada, onVoltar }: { onLigada: () => void; onVoltar?: () => void }) {
+  const [endereco, setEndereco] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [nomeFiscal, setNomeFiscal] = useState('')
+  const [nif, setNif] = useState('')
+  const [aLigar, setALigar] = useState(false)
+
+  async function ligar() {
+    setALigar(true)
+    try {
+      const res = await fetch('/api/faturacao/conta/ligar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conta: endereco, apiKey, nomeFiscal, nif }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error ?? 'Não foi possível ligar a conta')
+        return
+      }
+      const serie = json.conta?.serie_nome
+      toast.success(serie ? `Conta ligada — as faturas continuam na série ${serie}` : 'Conta ligada')
+      onLigada()
+    } finally {
+      setALigar(false)
+    }
+  }
+
+  const campo = 'min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary'
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-6">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10">
+          <Receipt className="h-5 w-5 text-primary" aria-hidden="true" />
+        </span>
+        <div>
+          <h2 className="font-bold">Ligar a conta InvoiceXpress que já tens</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            As faturas continuam na tua série, com a numeração onde está. Não criamos
+            conta nova.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          <strong className="text-foreground">A emissão automática fica desligada.</strong> Se
+          outro programa (o Amenitiz, por exemplo) já fatura estas reservas, emitir aqui também
+          era faturar cada estadia duas vezes — e as duas faturas iam para a AT. Liga-a só no
+          dia em que desligares a faturação no outro programa.
+        </p>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <label className="block sm:col-span-2">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+            Endereço da conta
+          </span>
+          <input
+            value={endereco}
+            onChange={e => setEndereco(e.target.value)}
+            placeholder="a-tua-conta.web.invoicexpress.com"
+            autoComplete="off"
+            className={campo}
+          />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Cola o endereço que vês no browser dentro do InvoiceXpress, ou só o nome antes do primeiro ponto.
+          </span>
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Chave da API</span>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={e => setApiKey(e.target.value.trim())}
+            autoComplete="off"
+            className={campo}
+          />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            No InvoiceXpress: Definições → API. Fica guardada encriptada e nunca volta a ser mostrada.
+          </span>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+            Nome ou designação social
+          </span>
+          <input
+            value={nomeFiscal}
+            onChange={e => setNomeFiscal(e.target.value)}
+            placeholder="Como aparece nas Finanças"
+            className={campo}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">NIF</span>
+          <input
+            value={nif}
+            onChange={e => setNif(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            inputMode="numeric"
+            placeholder="123456789"
+            className={`${campo} tabular-nums`}
+          />
+        </label>
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center gap-4">
+        <button
+          type="button"
+          onClick={ligar}
+          disabled={aLigar || !endereco.trim() || !apiKey || !nomeFiscal.trim() || nif.length !== 9}
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-6 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+        >
+          {aLigar && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+          {aLigar ? 'A verificar…' : 'Ligar conta'}
+        </button>
+        {onVoltar && (
+          <button type="button" onClick={onVoltar} className="text-sm text-muted-foreground hover:text-foreground">
+            Não tenho conta — criar uma
+          </button>
+        )}
+      </div>
     </section>
   )
 }

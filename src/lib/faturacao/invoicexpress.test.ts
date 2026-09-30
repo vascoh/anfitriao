@@ -259,6 +259,40 @@ describe('InvoiceXpressAdapter', () => {
     })
   })
 
+  describe('lerSeries', () => {
+    it('lê as séries e só dá por registadas as que têm código da AT para FR e NC', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(json({
+        sequences: [
+          {
+            id: 4705193, serie: 'NOVA', default_sequence: 0, current_invoice_receipt_number: 0,
+            current_invoice_receipt_validation_code: 'JJVPVNFV', current_credit_note_validation_code: 'N/A',
+          },
+          {
+            id: 4705210, serie: 'seria-a', default_sequence: 1, current_invoice_receipt_number: 152,
+            current_invoice_receipt_validation_code: 'JJVX1234', current_credit_note_validation_code: 'JJVY5678',
+          },
+        ],
+      }))
+
+      const r = await adaptador.lerSeries(CREDENCIAIS)
+
+      expect(r.sucesso).toBe(true)
+      expect(r.series).toEqual([
+        { id: '4705193', nome: 'NOVA', padrao: false, comunicada: false, ultimaFaturaRecibo: 0 },
+        { id: '4705210', nome: 'seria-a', padrao: true, comunicada: true, ultimaFaturaRecibo: 152 },
+      ])
+      expect(urlDe(0)).toContain('/sequences.json')
+    })
+
+    it('falha quando a chave é recusada', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce(json({ errors: [{ error: 'Authentication Error' }] }, 401))
+
+      const r = await adaptador.lerSeries(CREDENCIAIS)
+      expect(r.sucesso).toBe(false)
+      expect(r.erro).toContain('401')
+    })
+  })
+
   describe('configurarComunicacaoAt', () => {
     it('comunica em modo automático', async () => {
       vi.mocked(fetch).mockResolvedValueOnce(json({ success: 'true' }))

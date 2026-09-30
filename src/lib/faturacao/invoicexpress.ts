@@ -2,7 +2,7 @@ import 'server-only'
 import type {
   InvoicingAdapter, PedidoFatura, ResultadoFatura, LinhaFatura,
   CredenciaisConta, PedidoConta, ResultadoConta, PedidoComunicacaoAt,
-  ResultadoSimples, ResultadoSerie, ResultadoSaft,
+  ResultadoSimples, ResultadoSerie, ResultadoSaft, ResultadoSeries,
 } from './types'
 
 /**
@@ -186,6 +186,26 @@ export class InvoiceXpressAdapter implements InvoicingAdapter {
         conta: subdominioDe(conta.url),
         apiKey: conta.api_key,
       }
+    } catch (e) {
+      return { sucesso: false, erro: mensagemDeErro(e) }
+    }
+  }
+
+  async lerSeries(c: CredenciaisConta): Promise<ResultadoSeries> {
+    try {
+      const r = await this.pedir('GET', c.conta, c.apiKey, 'sequences.json') as RespostaInvoiceXpress & {
+        sequences?: Array<Record<string, unknown>>
+      }
+      const registada = (v: unknown) => typeof v === 'string' && v.trim() !== '' && v !== 'N/A'
+      const series = (r.sequences ?? []).map(q => ({
+        id: String(q.id),
+        nome: String(q.serie ?? q.id),
+        padrao: q.default_sequence === 1 || q.default_sequence === true || q.default_sequence === '1',
+        comunicada: registada(q.current_invoice_receipt_validation_code)
+          && registada(q.current_credit_note_validation_code),
+        ultimaFaturaRecibo: Number(q.current_invoice_receipt_number ?? 0) || 0,
+      }))
+      return { sucesso: true, series }
     } catch (e) {
       return { sucesso: false, erro: mensagemDeErro(e) }
     }

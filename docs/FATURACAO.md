@@ -41,6 +41,22 @@ subdomínio e a chave da nova conta, que é **encriptada** (AES-256-GCM,
 NIF partiria a numeração em duas séries paralelas — um dos poucos erros de
 faturação sem volta atrás.
 
+### 1b. Ou ligar a conta que já tem — `POST /api/faturacao/conta/ligar`
+
+Para quem já fatura no InvoiceXpress (quem vem do Amenitiz fatura lá). Criar
+outra conta para o mesmo NIF partia a numeração em duas séries. O anfitrião
+dá o endereço da conta (aceita o URL `…web.invoicexpress.com/…` que vê no
+browser), a chave da API, o nome fiscal e o NIF. Antes de guardar lê-se
+`GET /sequences.json`: prova que a chave serve e escolhe a série
+(`lib/faturacao/ligar.ts` — a padrão se tiver código da AT para FR **e** NC,
+senão a registada mais usada). Com série registada a conta fica logo pronta;
+sem ela segue para o passo 2, que cria uma.
+
+⚠️ **A emissão automática fica desligada** (`emissao_automatica: false`,
+contra o `DEFAULT true` da tabela). Quem liga uma conta existente está quase
+sempre a faturar noutro programa, e emitir aqui também era duas faturas por
+estadia na AT. Liga-se no dia em que o outro programa deixa de faturar.
+
 ### 2. Autorizar a AT — `PUT /api/faturacao/conta`
 
 O único passo que o anfitrião tem mesmo de dar, porque só ele o pode fazer:
