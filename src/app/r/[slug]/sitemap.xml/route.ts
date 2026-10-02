@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties, adminGetPublishedPosts } from '@/lib/db-admin'
 import { APP_URL } from '@/lib/config'
+import { baseUrlDoSite } from '@/lib/site-request'
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -19,7 +20,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     return new NextResponse('Not found', { status: 404 })
   }
 
-  const base = `${APP_URL}/r/${slug}`
+  const base = await baseUrlDoSite(slug)
   const staticPaths = ['', '/sobre', '/galeria', '/localizacao', '/blog', '/privacidade', '/cookies', '/termos']
 
   const [properties, posts] = await Promise.all([

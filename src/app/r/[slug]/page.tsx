@@ -8,6 +8,7 @@ import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admi
 import type { Property } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { APP_URL } from '@/lib/config'
+import { baseUrlDoSite } from '@/lib/site-request'
 import { siteTheme } from '@/lib/site-theme'
 import { SiteNav, SiteFooter, WA_SVG } from './_components/site-chrome'
 import { resolveLang, t, htmlLang, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
@@ -20,6 +21,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
+  const siteUrl = await baseUrlDoSite(slug)
   if (!settings) return { title: 'Reservas' }
 
   const title = settings.nome
@@ -45,7 +47,7 @@ export async function generateMetadata(
       description,
       images: [ogImage],
     },
-    alternates: { canonical: `${APP_URL}/r/${slug}` },
+    alternates: { canonical: siteUrl },
     robots: { index: false, follow: false },
   }
 }

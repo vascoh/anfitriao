@@ -5,8 +5,8 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetPublishedPostBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { resolveLang, t, htmlLang } from '@/lib/i18n'
-import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../../_components/site-chrome'
+import { basePathDoSite, baseUrlDoSite } from '@/lib/site-request'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string; postSlug: string }> }
@@ -14,13 +14,14 @@ export async function generateMetadata(
   const { slug, postSlug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
   const post = settings?.owner_id ? await adminGetPublishedPostBySlug(settings.owner_id, postSlug) : null
+  const siteUrl = await baseUrlDoSite(slug)
   if (!post) return { title: { absolute: 'Blog' }, robots: { index: false, follow: false } }
 
   const title = `${post.titulo} — ${settings?.nome}`
   return {
     title,
     description: post.resumo ?? undefined,
-    alternates: { canonical: `${APP_URL}/r/${slug}/blog/${postSlug}` },
+    alternates: { canonical: `${siteUrl}/blog/${postSlug}` },
     robots: { index: false, follow: false },
     openGraph: post.imagem_capa
       ? { type: 'article', title, description: post.resumo ?? undefined, images: [{ url: post.imagem_capa }] }
@@ -39,13 +40,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const theme = siteTheme(settings)
   const lang = resolveLang(settings.idioma)
   const paragraphs = post.conteudo.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+  const basePath = await basePathDoSite(slug)
 
   return (
     <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       <SiteNav slug={slug} settings={settings} active="/blog" />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
-        <Link href={`/r/${slug}/blog`} className="text-xs font-semibold text-primary hover:underline">
+        <Link href={`${basePath}/blog`} className="text-xs font-semibold text-primary hover:underline">
           {t(lang, 'blog_back')}
         </Link>
 

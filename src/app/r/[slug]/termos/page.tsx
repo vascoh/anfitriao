@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
-import { APP_URL } from '@/lib/config'
+import { baseUrlDoSite } from '@/lib/site-request'
 import { resolveLang, t, htmlLang } from '@/lib/i18n'
 import { TermosTexto } from '../_components/legal-texts'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
@@ -13,10 +13,11 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
+  const siteUrl = await baseUrlDoSite(slug)
   const lang = resolveLang(settings?.idioma)
   return {
     title: { absolute: settings ? `${lang === 'en' ? 'Terms and Conditions' : 'Termos e Condições'} — ${settings.nome}` : 'Termos e Condições' },
-    alternates: { canonical: `${APP_URL}/r/${slug}/termos` },
+    alternates: { canonical: `${siteUrl}/termos` },
     robots: { index: false, follow: false },
   }
 }

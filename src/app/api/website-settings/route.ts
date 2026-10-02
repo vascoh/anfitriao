@@ -64,6 +64,20 @@ export async function POST(req: NextRequest) {
     if (problemaSlug) {
       return NextResponse.json({ error: problemaSlug }, { status: 400 })
     }
+
+    /* Um domínio próprio aponta para este slug. Apagá-lo deixaria o domínio
+     * online a servir um 404; primeiro é preciso desligar o domínio na página
+     * própria, onde também é removido da Vercel. */
+    if (!slug) {
+      const { data: dominioLigado } = await supabase
+        .from('custom_domains')
+        .select('dominio')
+        .eq('owner_id', userId)
+        .maybeSingle()
+      if (dominioLigado) {
+        return NextResponse.json({ error: 'Remove primeiro o domínio próprio antes de apagares este endereço.' }, { status: 409 })
+      }
+    }
   }
 
   const row = {

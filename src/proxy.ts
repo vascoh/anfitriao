@@ -1,5 +1,64 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
+import { createAdminClient } from '@/lib/supabase'
+
+const ROTAS_SITE = [
+  '/', '/sobre', '/galeria', '/localizacao', '/blog', '/privacidade', '/cookies', '/termos', '/sitemap.xml',
+]
+
+function hostname(req: NextRequest): string {
+  return (req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '')
+    .split(',')[0].trim().split(':')[0].toLowerCase()
+}
+
+function hostDaPlataforma(host: string): boolean {
+  let principal = 'anfitrioes.pt'
+  try { principal = new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://anfitrioes.pt').hostname }
+  catch { /* usa a origem de produção */ }
+  return !host || host === 'localhost' || host === principal || host.endsWith(`.${principal}`) ||
+    host === 'anfitrioes.pt' || host.endsWith('.anfitrioes.pt') || host.endsWith('.vercel.app')
+}
+
+async function encaminharDominioProprio(req: NextRequest) {
+  const host = hostname(req)
+  if (hostDaPlataforma(host)) return null
+
+  const supabase = createAdminClient()
+  const { data: associacao, error } = await supabase
+    .from('custom_domains')
+    .select('owner_id')
+    .eq('dominio', host)
+    .maybeSingle()
+  if (error || !associacao?.owner_id) return null
+
+  // O slug pode ser alterado nas definições do site. Lê-lo na fonte evita
+  // deixar um domínio preso ao endereço antigo.
+  const { data: site } = await supabase
+    .from('website_settings')
+    .select('slug')
+    .eq('owner_id', associacao.owner_id)
+    .maybeSingle()
+  if (!site?.slug) return null
+
+  const path = req.nextUrl.pathname
+  const prefixoInterno = `/r/${site.slug}`
+  if (path === prefixoInterno || path.startsWith(`${prefixoInterno}/`)) {
+    const limpo = path.slice(prefixoInterno.length) || '/'
+    return NextResponse.redirect(new URL(`${limpo}${req.nextUrl.search}`, req.url), 308)
+  }
+
+  const rotaDoSite = ROTAS_SITE.includes(path) || path.startsWith('/blog/')
+  if (!rotaDoSite) return null
+
+  const destino = req.nextUrl.clone()
+  destino.pathname = path === '/sitemap.xml'
+    ? `${prefixoInterno}/sitemap.xml`
+    : `${prefixoInterno}${path === '/' ? '' : path}`
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-anfitriao-custom-domain', host)
+  requestHeaders.set('x-anfitriao-site-slug', site.slug)
+  return NextResponse.rewrite(destino, { request: { headers: requestHeaders } })
+}
 
 const isPublicRoute = createRouteMatcher([
   // Landing page de marketing
@@ -56,6 +115,9 @@ const isAccountRoute = createRouteMatcher([
 ])
 
 export default clerkMiddleware(async (auth, req) => {
+  const dominioProprio = await encaminharDominioProprio(req)
+  if (dominioProprio) return dominioProprio
+
   // 1. Rotas públicas passam sempre
   if (isPublicRoute(req)) return
 

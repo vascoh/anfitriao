@@ -5,17 +5,18 @@ import type { Metadata } from 'next'
 import { adminGetWebsiteSettingsBySlug, adminGetPublishedPosts } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { resolveLang, t, htmlLang } from '@/lib/i18n'
-import { APP_URL } from '@/lib/config'
 import { SiteNav, SiteFooter } from '../_components/site-chrome'
+import { basePathDoSite, baseUrlDoSite } from '@/lib/site-request'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
+  const siteUrl = await baseUrlDoSite(slug)
   return {
     title: { absolute: settings ? `Blog — ${settings.nome}` : 'Blog' },
-    alternates: { canonical: `${APP_URL}/r/${slug}/blog` },
+    alternates: { canonical: `${siteUrl}/blog` },
     robots: { index: false, follow: false },
   }
 }
@@ -28,6 +29,7 @@ export default async function BlogListPage({ params }: { params: Promise<{ slug:
   const theme = siteTheme(settings)
   const lang = resolveLang(settings.idioma)
   const posts = settings.owner_id ? await adminGetPublishedPosts(settings.owner_id) : []
+  const basePath = await basePathDoSite(slug)
 
   return (
     <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
@@ -41,7 +43,7 @@ export default async function BlogListPage({ params }: { params: Promise<{ slug:
         ) : (
           <div className="flex flex-col gap-4">
             {posts.map(post => (
-              <Link key={post.id} href={`/r/${slug}/blog/${post.slug}`}
+              <Link key={post.id} href={`${basePath}/blog/${post.slug}`}
                 className="group flex gap-4 rounded-xl border border-border bg-card p-4 hover:border-primary/30 transition-colors">
                 {post.imagem_capa && (
                   <div className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-muted">

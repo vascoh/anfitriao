@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, Plus, Trash2, Rss } from 'lucide-react'
+import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, Plus, Trash2, Rss, Network } from 'lucide-react'
 import { fmtMoney, fmtDate, nights } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { WebsiteSettings, Property } from '@/lib/types'
@@ -206,6 +206,11 @@ export default function WebsitePage() {
             className="flex items-center gap-1.5 text-xs text-primary font-medium w-fit">
             <ExternalLink className="h-3.5 w-3.5" /> Abrir website
           </a>
+          <Link href="/website/dominio" className="mt-1 pt-3 border-t border-border flex items-center gap-3 group">
+            <span className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><Network className="h-4 w-4" /></span>
+            <span className="flex-1"><span className="block text-sm font-medium">Ligar domínio próprio</span><span className="block text-xs text-muted-foreground">Usa casadomar.pt em vez de /r/{settings.slug || 'o-teu-site'}</span></span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          </Link>
         </div>
 
         {/* Stats */}

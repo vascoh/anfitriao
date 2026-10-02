@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { WebsiteSettings } from '@/lib/types'
 import { resolveLang, t } from '@/lib/i18n'
 import { adminGetRegistosAl } from '@/lib/db-admin'
+import { basePathDoSite } from '@/lib/site-request'
 
 export const WA_SVG = (
   <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
@@ -9,10 +10,11 @@ export const WA_SVG = (
   </svg>
 )
 
-export function SiteNav({ slug, settings, active }: { slug: string; settings: WebsiteSettings; active?: string }) {
+export async function SiteNav({ slug, settings, active }: { slug: string; settings: WebsiteSettings; active?: string }) {
   const brandName = settings.logo_texto || settings.nome
   const waLink = settings.telefone ? `https://wa.me/${settings.telefone.replace(/\D/g, '')}` : null
   const lang = resolveLang(settings.idioma)
+  const basePath = await basePathDoSite(slug)
   const subPages = [
     { href: '', label: t(lang, 'nav_inicio') },
     { href: '/sobre', label: t(lang, 'nav_sobre') },
@@ -24,10 +26,10 @@ export function SiteNav({ slug, settings, active }: { slug: string; settings: We
   return (
     <nav className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link href={`/r/${slug}`} className="font-bold text-sm tracking-tight shrink-0">{brandName}</Link>
+        <Link href={basePath || '/'} className="font-bold text-sm tracking-tight shrink-0">{brandName}</Link>
         <div className="hidden md:flex items-center gap-4 text-xs font-medium text-muted-foreground">
           {subPages.map(p => (
-            <Link key={p.href} href={`/r/${slug}${p.href}`}
+            <Link key={p.href} href={`${basePath}${p.href}` || '/'}
               className={`hover:text-foreground transition-colors ${active === p.href ? 'text-foreground font-semibold' : ''}`}>
               {p.label}
             </Link>
@@ -69,6 +71,7 @@ export async function SiteFooter({ slug, settings }: { slug: string; settings: W
   const brandName = settings.logo_texto || settings.nome
   const lang = resolveLang(settings.idioma)
   const registos = settings.owner_id ? await adminGetRegistosAl(settings.owner_id) : []
+  const basePath = await basePathDoSite(slug)
   return (
     <footer className="border-t border-border">
       <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-4 text-xs text-muted-foreground">
@@ -85,9 +88,9 @@ export async function SiteFooter({ slug, settings }: { slug: string; settings: W
           </div>
         </div>
         <div className="flex items-center gap-4 flex-wrap pt-3 border-t border-border">
-          <Link href={`/r/${slug}/privacidade`} className="hover:text-foreground transition-colors">{t(lang, 'footer_privacy')}</Link>
-          <Link href={`/r/${slug}/cookies`} className="hover:text-foreground transition-colors">{t(lang, 'footer_cookies')}</Link>
-          <Link href={`/r/${slug}/termos`} className="hover:text-foreground transition-colors">{t(lang, 'footer_terms')}</Link>
+          <Link href={`${basePath}/privacidade`} className="hover:text-foreground transition-colors">{t(lang, 'footer_privacy')}</Link>
+          <Link href={`${basePath}/cookies`} className="hover:text-foreground transition-colors">{t(lang, 'footer_cookies')}</Link>
+          <Link href={`${basePath}/termos`} className="hover:text-foreground transition-colors">{t(lang, 'footer_terms')}</Link>
         </div>
         {registos.length > 0 && (
           <p className="text-[11px]">

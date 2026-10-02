@@ -1,7 +1,7 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
   Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
-  UserRound, CreditCard, Receipt, Rss, Activity, Filter,
+  UserRound, CreditCard, Receipt, Rss, Activity, Filter, Network,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -66,6 +66,7 @@ export const NAV: NavSection[] = [
       { href: '/precos', label: 'Preços', Icon: Tag, descricao: 'Regras, tarifas e plataformas' },
       { href: '/conformidade', label: 'Conformidade', Icon: ShieldCheck, descricao: 'RNAL, seguro, Livro de Reclamações' },
       { href: '/website', label: 'Site de reservas', Icon: Globe, descricao: 'O teu site público' },
+      { href: '/website/dominio', label: 'Domínio próprio', Icon: Network, descricao: 'Liga um domínio externo ao site' },
       { href: '/blog', label: 'Blog', Icon: Newspaper, descricao: 'Artigos do site público' },
     ],
   },
