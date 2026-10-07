@@ -31,6 +31,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     // Sitemap raiz + um por tenant (site público de cada anfitrião — ver
     // docs/SAAS_ARCHITECTURE.md §6.3). Só assim o Google descobre os
     // sitemaps por tenant sem submissão manual em Search Console.
-    sitemap: [`${APP_URL}/sitemap.xml`, ...slugs.map(slug => `${APP_URL}/r/${slug}/sitemap.xml`)],
+    sitemap: [`${APP_URL}/sitemap.xml`, ...slugs.map(slug => `${APP_URL}/r/${slug}/sitemap`)],
   }
 }

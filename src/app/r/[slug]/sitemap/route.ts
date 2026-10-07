@@ -9,7 +9,7 @@ function xmlEscape(s: string): string {
 }
 
 /**
- * GET /r/[slug]/sitemap.xml — sitemap dedicado por tenant, referenciado a
+ * GET /r/[slug]/sitemap (e /r/[slug]/sitemap.xml, encaminhado no proxy) — sitemap dedicado por tenant, referenciado a
  * partir do sitemap raiz (ver docs/SAAS_ARCHITECTURE.md §6.3). Gerado a
  * pedido (sem cache de build) porque o conteúdo (propriedades, posts) muda
  * fora de deploys.

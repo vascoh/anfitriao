@@ -52,7 +52,7 @@ async function encaminharDominioProprio(req: NextRequest) {
 
   const destino = req.nextUrl.clone()
   destino.pathname = path === '/sitemap.xml'
-    ? `${prefixoInterno}/sitemap.xml`
+    ? `${prefixoInterno}/sitemap`
     : `${prefixoInterno}${path === '/' ? '' : path}`
   const requestHeaders = new Headers(req.headers)
   requestHeaders.set('x-anfitriao-custom-domain', host)
@@ -114,7 +114,20 @@ const isAccountRoute = createRouteMatcher([
   '/api/og(.*)',
 ])
 
+/* O sitemap de cada site vive em `/r/<slug>/sitemap`. Em `/r/<slug>/sitemap.xml`
+ * (uma pasta com `.xml` no nome) a rota existia no build mas a Vercel servia
+ * sempre a página 404 — e era esse o endereço que o robots.txt dava ao Google.
+ * O endereço antigo continua a responder, encaminhado para o novo. */
+const SITEMAP_ANTIGO = /^\/r\/([^/]+)\/sitemap\.xml$/
+
 export default clerkMiddleware(async (auth, req) => {
+  const sitemapAntigo = req.nextUrl.pathname.match(SITEMAP_ANTIGO)
+  if (sitemapAntigo) {
+    const destino = req.nextUrl.clone()
+    destino.pathname = `/r/${sitemapAntigo[1]}/sitemap`
+    return NextResponse.rewrite(destino)
+  }
+
   const dominioProprio = await encaminharDominioProprio(req)
   if (dominioProprio) return dominioProprio
 
