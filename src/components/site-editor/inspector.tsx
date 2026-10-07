@@ -8,7 +8,7 @@ import { ArrowRight, Check, Eye, EyeOff, Plus, RotateCcw, Trash2, Lock, Upload, 
 import type { Property, WebsiteSettings } from '@/lib/types'
 import {
   LIMITES, SECOES_OBRIGATORIAS, entradasDoMenu, itensPorque, nomePaginaFixa,
-  type PaginaFixa, type PaginaPropria, type SecaoInicio, type SiteSecoes,
+  type Opiniao, type PaginaFixa, type PaginaPropria, type SecaoInicio, type SiteSecoes,
 } from '@/lib/site-mapa'
 import { NOME_SECAO, type NoDoMapa } from '@/lib/site-editor'
 import { resolveLang } from '@/lib/i18n'
@@ -430,6 +430,62 @@ function PainelSecao(props: InspectorProps & { id: 'hero' | SecaoInicio }) {
     )
   }
 
+  if (id === 'opinioes') {
+    const lista = secoes.opinioes ?? []
+    const mudar = (nova: Opiniao[]) => onSecoes(s => ({ ...s, opinioes: nova }))
+    return (
+      <div className="flex flex-col gap-4">
+        <Cabecalho titulo={NOME_SECAO.opinioes}
+          descricao="Copia as melhores opiniões que já recebeste, e diz de onde vêm — um hóspede desconfiado pode ir confirmá-las. Não inventes nem mudes o sentido: opiniões falsas são uma prática comercial desleal, proibida por lei." />
+        {visibilidade}
+        {lista.map((o, i) => (
+          <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+            <textarea aria-label={`Opinião ${i + 1}`} value={o.texto} maxLength={LIMITES.textoOpiniao} rows={3}
+              placeholder="«A casa é ainda melhor do que nas fotos…»"
+              onChange={e => mudar(lista.map((x, j) => j === i ? { ...x, texto: e.target.value } : x))}
+              className="resize-y rounded-md border border-input bg-background px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <div className="flex items-center gap-2">
+              <input aria-label={`Nome de quem escreveu a opinião ${i + 1}`} value={o.nome} maxLength={LIMITES.nomeOpiniao}
+                placeholder="Nome (ex.: Marta, Lisboa)"
+                onChange={e => mudar(lista.map((x, j) => j === i ? { ...x, nome: e.target.value } : x))}
+                className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <select aria-label={`Origem da opinião ${i + 1}`} value={o.origem ?? ''}
+                onChange={e => mudar(lista.map((x, j) => j === i ? { ...x, origem: (e.target.value || undefined) as Opiniao['origem'] } : x))}
+                className="rounded-md border border-input bg-background px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="">Origem…</option>
+                <option value="airbnb">Airbnb</option>
+                <option value="booking">Booking.com</option>
+                <option value="google">Google</option>
+                <option value="direto">Reserva direta</option>
+              </select>
+              <button type="button" onClick={() => mudar(lista.filter((_, j) => j !== i))}
+                className="p-1.5 text-muted-foreground hover:text-destructive" title="Apagar opinião">
+                <Trash2 className="h-4 w-4" /><span className="sr-only">Apagar opinião {i + 1}</span>
+              </button>
+            </div>
+          </div>
+        ))}
+        {lista.length < LIMITES.opinioes && (
+          <button type="button" onClick={() => mudar([...lista, { nome: '', texto: '' }])}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2.5 text-xs font-semibold text-primary">
+            <Plus className="h-3.5 w-3.5" /> Adicionar opinião
+          </button>
+        )}
+        <p className="text-[11px] leading-relaxed text-muted-foreground">Uma opinião sem texto não é guardada. Duas a quatro chegam; seis no máximo é o que se lê.</p>
+      </div>
+    )
+  }
+
+  if (id === 'zona') {
+    return (
+      <div className="flex flex-col gap-4">
+        <Cabecalho titulo={NOME_SECAO.zona} descricao="Mostra as localidades dos teus alojamentos e o texto que escreveres sobre a zona. O mesmo texto aparece na página Localização." />
+        {visibilidade}
+        <CampoZona secoes={secoes} onSecoes={onSecoes} />
+      </div>
+    )
+  }
+
   // anfitrião
   return (
     <div className="flex flex-col gap-4">
@@ -437,6 +493,15 @@ function PainelSecao(props: InspectorProps & { id: 'hero' | SecaoInicio }) {
       {visibilidade}
       <CamposAnfitriao settings={settings} onCampo={onCampo} />
     </div>
+  )
+}
+
+function CampoZona({ secoes, onSecoes }: Pick<InspectorProps, 'secoes' | 'onSecoes'>) {
+  return (
+    <Campo id="zona_texto" rotulo="Sobre a zona" valor={secoes.zona_texto ?? ''} max={LIMITES.zonaTexto} linhas={8}
+      onChange={v => onSecoes(s => ({ ...s, zona_texto: v }))}
+      placeholder={'A praia de Ribeira d’Ilhas fica a 5 minutos a pé. Há padaria e farmácia na mesma rua.\n\nDe Lisboa são 40 minutos de carro; o autocarro pára a 200 m.'}
+      ajuda="O que um hóspede pergunta antes de reservar: praia, restaurantes, transportes, estacionamento. Também ajuda o Google a perceber onde estás." />
   )
 }
 
@@ -486,9 +551,12 @@ function PainelPaginaFixa(props: InspectorProps & { id: PaginaFixa }) {
       </Origem>
     ),
     localizacao: (
+      <>
+      <CampoZona secoes={secoes} onSecoes={onSecoes} />
       <Origem href="/propriedades" acao="Ver alojamentos">
         Um ponto por alojamento, com ligação ao mapa. A morada completa só aparece nos alojamentos onde escolheste mostrá-la; nos outros vê-se só a localidade.
       </Origem>
+      </>
     ),
     blog: (
       <Origem href="/blog" acao="Escrever no blog">

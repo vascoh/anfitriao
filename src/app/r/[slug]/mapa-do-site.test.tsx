@@ -67,7 +67,7 @@ describe('página inicial segue o mapa', () => {
     const html = await render('./page', {}, { editar: '1' })
     expect(ordem(html)).toContain('porque(oculta)')
     // As fotografias nascem escondidas; o FAQ vazio aparece como espaço por preencher.
-    expect(ordem(html)).toEqual(['porque(oculta)', 'alojamentos', 'fotos(oculta)', 'faq', 'anfitriao'])
+    expect(ordem(html)).toEqual(['porque(oculta)', 'alojamentos', 'fotos(oculta)', 'opinioes(oculta)', 'zona(oculta)', 'faq', 'anfitriao'])
     expect(html).toContain('Secção vazia')
   })
 
@@ -89,6 +89,30 @@ describe('página inicial segue o mapa', () => {
     expect(await render('./page', {})).toContain('Website em manutenção')
     dono = true
     expect(await render('./page', {})).toContain('T1 Mar')
+  })
+})
+
+describe('opiniões e zona', () => {
+  it('opiniões com a origem, para o hóspede as poder confirmar', async () => {
+    secoes = {
+      inicio: [{ id: 'opinioes', visivel: true }],
+      opinioes: [{ nome: 'Marta', texto: 'Casa impecável.', origem: 'airbnb' }, { nome: '', texto: 'Voltamos!', origem: 'direto' }],
+    }
+    const html = await render('./page', {})
+    expect(ordem(html)[0]).toBe('opinioes')
+    expect(html).toContain('Casa impecável.')
+    expect(html).toContain('via Airbnb')
+    expect(html).toContain('Hóspede')
+    expect(html).toContain('reserva direta')
+  })
+
+  it('a zona mostra as localidades e o texto, na inicial e na Localização', async () => {
+    secoes = { inicio: [{ id: 'zona', visivel: true }], zona_texto: 'Praia a 5 minutos.\n\nPadaria na rua.' }
+    const html = await render('./page', {})
+    expect(html).toContain('Ericeira')
+    expect(html).toContain('Praia a 5 minutos.')
+    const loc = await render('./localizacao/page', {})
+    expect(loc).toContain('Padaria na rua.')
   })
 })
 

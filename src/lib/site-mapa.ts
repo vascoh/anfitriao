@@ -34,19 +34,29 @@ export const PAGINAS_FIXAS = ['sobre', 'galeria', 'localizacao', 'blog'] as cons
 export type PaginaFixa = (typeof PAGINAS_FIXAS)[number]
 
 /** Secções da página inicial que se podem mover. O topo (hero) fica sempre em cima. */
-export const SECOES_INICIO = ['alojamentos', 'fotos', 'porque', 'faq', 'anfitriao'] as const
+export const SECOES_INICIO = ['alojamentos', 'fotos', 'porque', 'opinioes', 'zona', 'faq', 'anfitriao'] as const
 export type SecaoInicio = (typeof SECOES_INICIO)[number]
 
 /** Os alojamentos são a razão de ser do site: movem-se, mas não se escondem. */
 export const SECOES_OBRIGATORIAS: readonly SecaoInicio[] = ['alojamentos']
 
-const SECOES_OCULTAS_POR_OMISSAO: readonly SecaoInicio[] = ['fotos']
+const SECOES_OCULTAS_POR_OMISSAO: readonly SecaoInicio[] = ['fotos', 'opinioes', 'zona']
 
 export interface PaginaPropria {
   slug: string
   titulo: string
   texto: string
   visivel: boolean
+}
+
+/** Origem de uma opinião — diz ao hóspede onde a pode confirmar. */
+export const ORIGENS_OPINIAO = ['airbnb', 'booking', 'google', 'direto'] as const
+export type OrigemOpiniao = (typeof ORIGENS_OPINIAO)[number]
+
+export interface Opiniao {
+  nome: string
+  texto: string
+  origem?: OrigemOpiniao
 }
 
 export interface ItemPorque {
@@ -68,6 +78,10 @@ export interface SiteSecoes {
   porque?: ItemPorque[]
   /** Texto longo da página Sobre, por baixo da frase do anfitrião. */
   sobre_texto?: string
+  /** Opiniões reais de hóspedes, escritas (copiadas) pelo anfitrião. */
+  opinioes?: Opiniao[]
+  /** O que há à volta: praia, restaurantes, como se chega. Inicial e página Localização. */
+  zona_texto?: string
   paginas_proprias?: PaginaPropria[]
 }
 
@@ -85,6 +99,10 @@ export const LIMITES = {
   tituloPagina: 80,
   textoPagina: 12000,
   url: 1000,
+  opinioes: 12,
+  nomeOpiniao: 60,
+  textoOpiniao: 600,
+  zonaTexto: 4000,
 } as const
 
 /** Slugs que já são rotas do site — uma página própria com um destes ficaria tapada. */
@@ -209,6 +227,19 @@ export function normalizarSecoes(raw: unknown, fotoPermitida?: ReadonlySet<strin
 
   const sobre = texto(r.sobre_texto, LIMITES.sobreTexto)
   if (sobre) out.sobre_texto = sobre
+
+  if (Array.isArray(r.opinioes)) {
+    out.opinioes = r.opinioes.slice(0, LIMITES.opinioes).flatMap(item => {
+      const i = (item ?? {}) as Record<string, unknown>
+      const textoOp = texto(i.texto, LIMITES.textoOpiniao)
+      if (!textoOp) return []
+      const origem = (ORIGENS_OPINIAO as readonly unknown[]).includes(i.origem) ? i.origem as OrigemOpiniao : undefined
+      return [{ nome: texto(i.nome, LIMITES.nomeOpiniao), texto: textoOp, ...(origem ? { origem } : {}) }]
+    })
+  }
+
+  const zona = texto(r.zona_texto, LIMITES.zonaTexto)
+  if (zona) out.zona_texto = zona
 
   return out
 }

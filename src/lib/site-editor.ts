@@ -89,6 +89,8 @@ export const NOME_SECAO: Record<'hero' | SecaoInicio, string> = {
   alojamentos: 'Alojamentos',
   fotos: 'Fotografias',
   porque: 'Porquê reservar direto',
+  opinioes: 'Opiniões de hóspedes',
+  zona: 'A zona',
   faq: 'Perguntas frequentes',
   anfitriao: 'O anfitrião',
 }

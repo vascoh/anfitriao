@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { ArrowLeft, Check, Loader2, Map as MapIcon, PencilLine, Eye } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Map as MapIcon, PencilLine, Eye, Undo2 } from 'lucide-react'
 import { useUser } from '@clerk/nextjs'
 import type { Property, WebsiteSettings } from '@/lib/types'
 import { fetchPosts, fetchProperties, fetchSettings } from '@/lib/fetcher'
@@ -72,6 +72,7 @@ export default function EditorDoSitePage() {
         // Sem definições não há site a editar — nem endereço; mostra-se o caminho para /website.
         if (!s) { setSemSite(true); return }
         setSettings(s)
+        setGravado(s)
         setPropriedades(p)
       })
       .catch(() => setErro(true))
@@ -89,10 +90,46 @@ export default function EditorDoSitePage() {
   const secoes: SiteSecoes = useMemo(() => settings?.secoes ?? {}, [settings?.secoes])
   const lang = resolveLang(settings?.idioma)
 
+  /* Desfazer: uma pilha de estados anteriores. Teclas seguidas no mesmo campo
+   * contam como um passo — desfazer letra a letra não serve a ninguém. */
+  const [gravado, setGravado] = useState<WebsiteSettings | null>(null)
+  const [historico, setHistorico] = useState<WebsiteSettings[]>([])
+  const ultimoPasso = useRef(0)
+  /* O estado atual, lido e escrito em sincronia: duas mudanças no mesmo
+   * instante (ex.: criar uma página mexe nas páginas e no menu) não se
+   * pisam, e o histórico não depende de efeitos dentro de atualizadores. */
+  const atual = useRef<WebsiteSettings | null>(null)
+  useEffect(() => { atual.current = settings }, [settings])
   const mudarSettings = useCallback((mudar: (s: WebsiteSettings) => WebsiteSettings) => {
-    setSettings(s => (s ? mudar(s) : s))
+    const antes = atual.current
+    if (!antes) return
+    const agora = Date.now()
+    if (agora - ultimoPasso.current > 800) setHistorico(h => [...h.slice(-49), antes])
+    ultimoPasso.current = agora
+    const depois = mudar(antes)
+    atual.current = depois
+    setSettings(depois)
     setPorGuardar(true)
   }, [])
+  const desfazer = useCallback(() => {
+    const anterior = historico.at(-1)
+    if (!anterior) return
+    atual.current = anterior
+    setSettings(anterior)
+    setHistorico(historico.slice(0, -1))
+    setPorGuardar(JSON.stringify(anterior) !== JSON.stringify(gravado))
+    ultimoPasso.current = 0
+  }, [historico, gravado])
+  const descartar = () => {
+    if (!gravado) return
+    if (!window.confirm('Descartar todas as alterações que ainda não guardaste?')) return
+    atual.current = gravado
+    setSettings(gravado)
+    setHistorico([])
+    setPaginasNovas([])
+    setPorGuardar(false)
+    setVersao(v => v + 1)
+  }
   const onCampo = useCallback((campo: CampoTexto, valor: string) => {
     mudarSettings(s => ({ ...s, [campo]: valor }))
   }, [mudarSettings])
@@ -108,7 +145,8 @@ export default function EditorDoSitePage() {
     vazia:
       (s.id === 'faq' && !(secoes.faq ?? []).some(f => f.pergunta.trim())) ||
       (s.id === 'anfitriao' && !(settings?.host_nome || settings?.host_bio)) ||
-      (s.id === 'fotos' && !fotosDisponiveis),
+      (s.id === 'fotos' && !fotosDisponiveis) ||
+      (s.id === 'opinioes' && !(secoes.opinioes ?? []).some(o => o.texto.trim())),
   }))
   const moverSecao = (de: number, para: number) => onSecoes(s => ({ ...s, inicio: mover(secoesDoInicio(s), de, para) }))
   const alternarSecao = (id: SecaoInicio) => {
@@ -231,8 +269,9 @@ export default function EditorDoSitePage() {
         return
       }
       // O servidor limpa o mapa (endereços das páginas, limites): ler o que ficou.
-      const gravado = await fetchSettings()
-      if (gravado) setSettings(gravado)
+      const novo = await fetchSettings()
+      if (novo) { atual.current = novo; setSettings(novo); setGravado(novo) }
+      setHistorico([])
       setPorGuardar(false)
       setPaginasNovas([])
       setVersao(v => v + 1)
@@ -242,10 +281,17 @@ export default function EditorDoSitePage() {
     }
   }
 
-  // Ctrl/⌘+S guarda.
+  // Ctrl/⌘+S guarda; Ctrl/⌘+Z desfaz (fora de um campo de texto, onde vale o do browser).
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); void guardar() }
+      if (!(e.metaKey || e.ctrlKey)) return
+      const k = e.key.toLowerCase()
+      if (k === 's') { e.preventDefault(); void guardar() }
+      if (k === 'z' && !e.shiftKey) {
+        const alvo = e.target as HTMLElement | null
+        const aEscrever = alvo?.closest('input, textarea, select, [contenteditable="true"]')
+        if (!aEscrever) { e.preventDefault(); desfazer() }
+      }
     }
     window.addEventListener('keydown', tecla)
     return () => window.removeEventListener('keydown', tecla)
@@ -268,6 +314,7 @@ export default function EditorDoSitePage() {
       // O título das páginas Galeria, Localização e Blog é o nome no menu.
       for (const e of entradasDoMenu(secoes, lang)) if (!e.propria) campos[`menu.${e.id}`] = e.label
       paragrafos.sobre_texto = secoes.sobre_texto ?? ''
+      paragrafos.zona_texto = secoes.zona_texto ?? ''
       for (const p of secoes.paginas_proprias ?? []) {
         campos[`pagina.${p.slug}.titulo`] = p.titulo
         paragrafos[`pagina.${p.slug}.texto`] = p.texto
@@ -337,9 +384,19 @@ export default function EditorDoSitePage() {
             <span className="hidden lg:inline">escolhe no mapa ou clica no site</span>
           </p>
         </div>
-        <span className={`hidden text-xs sm:inline ${porGuardar ? 'text-amber-600' : 'text-muted-foreground'}`} aria-live="polite">
+        <span className={`hidden text-xs xl:inline ${porGuardar ? 'text-amber-600' : 'text-muted-foreground'}`} aria-live="polite">
           {porGuardar ? 'Alterações por guardar' : 'Tudo guardado'}
         </span>
+        <button type="button" onClick={desfazer} disabled={historico.length === 0} title="Desfazer (Ctrl+Z)"
+          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30">
+          <Undo2 className="h-4 w-4" /><span className="sr-only">Desfazer</span>
+        </button>
+        {porGuardar && (
+          <button type="button" onClick={descartar}
+            className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground sm:block">
+            Descartar
+          </button>
+        )}
         <button type="button" onClick={guardar} disabled={!porGuardar || aGuardar}
           className="flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-40">
           {aGuardar ? <Loader2 className="h-4 w-4 animate-spin" /> : !porGuardar ? <Check className="h-4 w-4" /> : null}

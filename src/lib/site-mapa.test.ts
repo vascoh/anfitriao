@@ -12,6 +12,8 @@ describe('mapa do site — valores por omissão', () => {
       { id: 'alojamentos', visivel: true },
       { id: 'fotos', visivel: false },
       { id: 'porque', visivel: true },
+      { id: 'opinioes', visivel: false },
+      { id: 'zona', visivel: false },
       { id: 'faq', visivel: true },
       { id: 'anfitriao', visivel: true },
     ])
@@ -36,7 +38,7 @@ describe('mapa do site — valores por omissão', () => {
 describe('mapa do site — leitura', () => {
   it('ordem gravada primeiro, secções novas no fim', () => {
     const s = secoesDoInicio({ inicio: [{ id: 'faq', visivel: true }, { id: 'alojamentos', visivel: true }] })
-    expect(s.map(x => x.id)).toEqual(['faq', 'alojamentos', 'fotos', 'porque', 'anfitriao'])
+    expect(s.map(x => x.id)).toEqual(['faq', 'alojamentos', 'fotos', 'porque', 'opinioes', 'zona', 'anfitriao'])
   })
 
   it('o menu respeita a ordem, os nomes e as páginas escondidas', () => {
@@ -139,5 +141,26 @@ describe('mapa do site — fotografia carregada para o topo', () => {
   it('normalizarSecoes aceita um critério em vez de uma lista', () => {
     expect(normalizarSecoes({ hero_imagem: url }, u => u === url).hero_imagem).toBe(url)
     expect(normalizarSecoes({ hero_imagem: url }, () => false).hero_imagem).toBeUndefined()
+  })
+})
+
+describe('mapa do site — opiniões e zona', () => {
+  it('opiniões: sem texto não ficam, origem desconhecida cai, limite de quantidade', () => {
+    const s = normalizarSecoes({
+      opinioes: [
+        { nome: 'Marta', texto: 'Casa impecável.', origem: 'airbnb' },
+        { nome: 'Rui', texto: '   ' },
+        { nome: '', texto: 'Voltamos!', origem: 'tripadvisor' },
+        ...Array.from({ length: 20 }, () => ({ nome: 'x', texto: 'y' })),
+      ],
+    })
+    expect(s.opinioes?.[0]).toEqual({ nome: 'Marta', texto: 'Casa impecável.', origem: 'airbnb' })
+    expect(s.opinioes?.[1]).toEqual({ nome: '', texto: 'Voltamos!' })
+    expect(s.opinioes).toHaveLength(LIMITES.opinioes - 1) // 12 lidas, uma sem texto
+  })
+
+  it('texto da zona com limite', () => {
+    expect(normalizarSecoes({ zona_texto: 'z'.repeat(LIMITES.zonaTexto + 5) }).zona_texto).toHaveLength(LIMITES.zonaTexto)
+    expect(normalizarSecoes({ zona_texto: '  ' }).zona_texto).toBeUndefined()
   })
 })

@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { MapPin, ExternalLink } from 'lucide-react'
 import type { Metadata } from 'next'
 import { acessoAoSite } from '@/lib/site-acesso'
-import { paginaFixaVisivel, nomePaginaFixa } from '@/lib/site-mapa'
+import { paginaFixaVisivel, nomePaginaFixa, paragrafos } from '@/lib/site-mapa'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { baseUrlDoSite } from '@/lib/site-request'
@@ -41,6 +41,12 @@ export default async function LocalizacaoPage({ params }: { params: Promise<{ sl
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
         <h1 data-campo="menu.localizacao" className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'localizacao', lang)}</h1>
+
+        {paragrafos(settings.secoes?.zona_texto).length > 0 && (
+          <div data-campo-paragrafos="zona_texto" className="flex flex-col gap-3 text-sm text-foreground/80 leading-relaxed">
+            {paragrafos(settings.secoes?.zona_texto).map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}
+          </div>
+        )}
 
         {props.length === 0 ? (
           <p className="text-muted-foreground text-sm py-12 text-center">{t(lang, 'location_empty')}</p>

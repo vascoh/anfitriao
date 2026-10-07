@@ -13,7 +13,7 @@ import { siteTheme } from '@/lib/site-theme'
 import { SiteNav, SiteFooter, WA_SVG } from './_components/site-chrome'
 import { resolveLang, t, htmlLang, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
 import { eDonoDoSite } from '@/lib/site-acesso'
-import { secoesDoInicio, itensPorque, paginaFixaVisivel, nomePaginaFixa, type SecaoInicio } from '@/lib/site-mapa'
+import { secoesDoInicio, itensPorque, paginaFixaVisivel, nomePaginaFixa, paragrafos, type SecaoInicio, type OrigemOpiniao } from '@/lib/site-mapa'
 import type { ReactNode } from 'react'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
@@ -72,6 +72,10 @@ const AMENITY_LABEL: Record<string, string> = {
   piscina: 'Piscina', cozinha: 'Cozinha', maquina_lavar: 'Lavandaria',
   secador: 'Secador', tv: 'TV', varanda: 'Varanda', jardim: 'Jardim',
 }
+const NOME_ORIGEM: Record<Exclude<OrigemOpiniao, 'direto'>, string> = {
+  airbnb: 'Airbnb', booking: 'Booking.com', google: 'Google',
+}
+
 // ─── PropertyCard ─────────────────────────────────────────────────────────────
 
 function PropertyCard({ p, minNights, desde, minimal, lang }: { p: Property; minNights: number; desde?: number; minimal?: boolean; lang: SiteLang }) {
@@ -252,6 +256,10 @@ export default async function ReservasPage(
   }
 
   const porque = itensPorque(settings.secoes, lang)
+  const opinioes = settings.secoes?.opinioes ?? []
+  const zonaTexto = settings.secoes?.zona_texto ?? ''
+  const cidades = [...new Set(props.filter(p => p.ativo && p.cidade).map(p => p.cidade))]
+  const localizacaoVisivel = paginaFixaVisivel(settings.secoes, 'localizacao')
 
   /* Cada secção da inicial, pronta a desenhar. `null` = não há nada para
    * mostrar (FAQ sem perguntas, anfitrião sem nome nem frase, nenhuma foto):
@@ -302,6 +310,48 @@ export default async function ReservasPage(
             <p data-campo={`porque.${i}.texto`} className="text-xs text-muted-foreground leading-relaxed">{item.texto}</p>
           </div>
         ))}
+      </section>
+    ),
+
+    opinioes: opinioes.length === 0 ? null : (
+      <section className="flex flex-col gap-5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t(lang, 'reviews_title')}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {opinioes.map((o, i) => (
+            <figure key={i} className={`flex flex-col gap-3 border border-border bg-card p-5 ${isMinimal ? 'rounded-lg' : 'rounded-2xl'}`}>
+              <blockquote className="text-sm leading-relaxed text-foreground/85">
+                <span aria-hidden className="mr-0.5 text-primary text-lg leading-none">“</span>{o.texto}
+              </blockquote>
+              <figcaption className="mt-auto text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{o.nome || t(lang, 'review_guest')}</span>
+                {o.origem && (
+                  <> · {o.origem === 'direto' ? t(lang, 'review_direct') : `${t(lang, 'review_via')} ${NOME_ORIGEM[o.origem]}`}</>
+                )}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+    ),
+
+    zona: !(zonaTexto || cidades.length > 0) ? null : (
+      <section className="flex flex-col gap-4">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t(lang, 'area_title')}</p>
+        {cidades.length > 0 && (
+          <p className="flex items-center gap-1.5 text-sm font-semibold">
+            <MapPin className="h-4 w-4 text-primary shrink-0" /> {cidades.join(' · ')}
+          </p>
+        )}
+        {zonaTexto && (
+          <div data-campo-paragrafos="zona_texto" className="flex flex-col gap-3 text-sm text-muted-foreground leading-relaxed">
+            {paragrafos(zonaTexto).map((p, i) => <p key={i} className="whitespace-pre-line">{p}</p>)}
+          </div>
+        )}
+        {localizacaoVisivel && (
+          <Link href={`${basePath}/localizacao`} className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-primary">
+            {t(lang, 'see_location')} <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
       </section>
     ),
 
