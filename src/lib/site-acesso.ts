@@ -1,13 +1,21 @@
 import 'server-only'
 
 import { auth } from '@clerk/nextjs/server'
+import { unstable_rethrow } from 'next/navigation'
 import type { WebsiteSettings } from './types'
 
 /** O utilizador com sessão é o dono deste site. */
 export async function eDonoDoSite(settings: Pick<WebsiteSettings, 'owner_id'>): Promise<boolean> {
   if (!settings.owner_id) return false
-  const { userId } = await auth()
-  return Boolean(userId) && userId === settings.owner_id
+  /* Um hóspede sem sessão não passa pelo Clerk no proxy (ver src/proxy.ts),
+   * e aí `auth()` lança em vez de responder. Sem Clerk, não é o dono. */
+  try {
+    const { userId } = await auth()
+    return Boolean(userId) && userId === settings.owner_id
+  } catch (erro) {
+    unstable_rethrow(erro) // sinais internos do Next (dinâmico, redirect) seguem caminho
+    return false
+  }
 }
 
 /**

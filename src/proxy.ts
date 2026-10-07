@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 
 const ROTAS_SITE = [
@@ -120,17 +120,16 @@ const isAccountRoute = createRouteMatcher([
  * O endereço antigo continua a responder, encaminhado para o novo. */
 const SITEMAP_ANTIGO = /^\/r\/([^/]+)\/sitemap\.xml$/
 
-export default clerkMiddleware(async (auth, req) => {
-  const sitemapAntigo = req.nextUrl.pathname.match(SITEMAP_ANTIGO)
-  if (sitemapAntigo) {
-    const destino = req.nextUrl.clone()
-    destino.pathname = `/r/${sitemapAntigo[1]}/sitemap`
-    return NextResponse.rewrite(destino)
-  }
+/** Páginas que só hóspedes visitam: o site do anfitrião, a reserva e o check-in. */
+const PAGINAS_DE_HOSPEDE = /^\/(?:r|book|checkin)(?:\/|$)/
 
-  const dominioProprio = await encaminharDominioProprio(req)
-  if (dominioProprio) return dominioProprio
+/** O pedido traz uma sessão Clerk (ou o sinal de que o browser já teve uma). */
+export function temSessaoClerk(req: NextRequest): boolean {
+  const uat = req.cookies.get('__client_uat')?.value
+  return Boolean(req.cookies.get('__session')?.value) || (uat !== undefined && uat !== '' && uat !== '0')
+}
 
+const comClerk = clerkMiddleware(async (auth, req) => {
   // 1. Rotas públicas passam sempre
   if (isPublicRoute(req)) return
 
@@ -176,6 +175,39 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 })
+
+/**
+ * Um hóspede sem sessão não passa pelo Clerk.
+ *
+ * Com o Clerk na instância de desenvolvimento, o middleware fazia a cada
+ * visitante novo um «handshake» (`dev-browser-missing`): redirecionava para
+ * clerk.accounts.dev e de volta antes de servir a página — dois saltos de rede
+ * no site do anfitrião, para alguém que nunca vai iniciar sessão. Medido em
+ * /r/casadevasco a 2026-10-07. Numa instância de produção o salto desaparece,
+ * mas continua a não haver razão para o site público depender do Clerk.
+ *
+ * Quem tem sessão (o anfitrião a ver o próprio site no editor) passa pelo
+ * Clerk como antes, e é por isso que `auth()` ainda o reconhece como dono.
+ * Sem Clerk, `eDonoDoSite` responde «não» — que é a resposta certa.
+ */
+export default async function proxy(req: NextRequest, ev: NextFetchEvent) {
+  const sitemapAntigo = req.nextUrl.pathname.match(SITEMAP_ANTIGO)
+  if (sitemapAntigo) {
+    const destino = req.nextUrl.clone()
+    destino.pathname = `/r/${sitemapAntigo[1]}/sitemap`
+    return NextResponse.rewrite(destino)
+  }
+
+  // Domínio próprio: só hóspedes (a sessão da plataforma não chega lá).
+  const dominioProprio = await encaminharDominioProprio(req)
+  if (dominioProprio) return dominioProprio
+
+  if (PAGINAS_DE_HOSPEDE.test(req.nextUrl.pathname) && !temSessaoClerk(req)) {
+    return NextResponse.next()
+  }
+
+  return comClerk(req, ev)
+}
 
 export const config = {
   matcher: [
