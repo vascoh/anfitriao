@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { ClerkProvider } from '@clerk/nextjs'
 import { PwaRegister } from '@/components/pwa-register'
 import './globals.css'
 import { APP_URL } from '@/lib/config'
@@ -86,19 +85,24 @@ const themeScript = `
   })();
 `
 
+/* Sem ClerkProvider aqui, de propósito. Na raiz, carregava o Clerk (~360 KB
+ * de JavaScript, cookies de terceiros e erros de CSP na consola) em todas as
+ * páginas — incluindo o site de cada anfitrião, o /book e o check-in, que só
+ * hóspedes visitam e onde ninguém inicia sessão. Medido com o Lighthouse em
+ * /r/casadevasco a 2026-10-07. O provider vive nos layouts que precisam dele:
+ * (app), (admin), (auth) e em-construcao. Do lado do servidor, `auth()`
+ * continua a funcionar em todo o lado — quem o alimenta é o middleware. */
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
       <html
         lang="pt"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
         <head>
-          <link rel="preconnect" href="https://clerk.anfitrioes.pt" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="dns-prefetch" href="https://nnbqfrszukkzoqwssjvg.supabase.co" />
           <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -108,6 +112,5 @@ export default function RootLayout({
           <PwaRegister />
         </body>
       </html>
-    </ClerkProvider>
   )
 }

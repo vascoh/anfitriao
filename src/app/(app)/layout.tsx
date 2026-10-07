@@ -1,4 +1,5 @@
 import { Toaster } from 'sonner'
+import { ClerkProvider } from '@clerk/nextjs'
 import { SideNav } from '@/components/side-nav'
 import { BottomNav } from '@/components/bottom-nav'
 import { GlobalSearch } from '@/components/global-search'
@@ -39,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <>
+    <ClerkProvider>
       <div className="h-dvh flex flex-col bg-background">
         {/* Banner de trial — aparece no topo quando trial expira em breve */}
         {trialDaysLeft !== null && <TrialBanner daysLeft={trialDaysLeft} />}
@@ -63,6 +64,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <GlobalSearch />
       </div>
       <Toaster richColors position="bottom-center" />
-    </>
+    </ClerkProvider>
   )
 }

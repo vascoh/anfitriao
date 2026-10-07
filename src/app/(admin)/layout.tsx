@@ -1,4 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
+import { ClerkProvider } from '@clerk/nextjs'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
@@ -16,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
+    <ClerkProvider>
     <div className="min-h-dvh bg-background text-foreground">
       {/* Barra de topo do admin */}
       <header className="h-12 flex items-center gap-3 px-6 border-b border-border bg-card shrink-0">
@@ -50,5 +52,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {children}
     </div>
+    </ClerkProvider>
   )
 }
