@@ -187,3 +187,37 @@ describe('isolamento entre contas', () => {
     }
   })
 })
+
+describe('POST /api/website-settings — mapa do site', () => {
+  it('limpa o mapa antes de o gravar', async () => {
+    definicoes = { owner_id: 'user_1', nome: 'Casa' }
+    await POST(pedido({
+      secoes: {
+        inicio: [{ id: 'faq', visivel: false }, { id: 'inventada', visivel: true }, { id: 'alojamentos', visivel: false }],
+        paginas_proprias: [{ titulo: 'Sobre', texto: 'x' }],
+        chave_estranha: 'x'.repeat(10_000),
+      },
+    }))
+    const secoes = escritas.at(-1)?.row.secoes as Record<string, unknown>
+    expect(secoes.chave_estranha).toBeUndefined()
+    // Os alojamentos não se escondem, e secções desconhecidas caem.
+    expect(secoes.inicio).toEqual([{ id: 'faq', visivel: false }, { id: 'alojamentos', visivel: true }])
+    // Uma página própria não pode tapar a página Sobre do site.
+    expect((secoes.paginas_proprias as Array<{ slug: string }>)[0].slug).toBe('sobre-1')
+  })
+
+  it('a imagem do topo tem de ser uma fotografia dos alojamentos do anfitrião', async () => {
+    definicoes = { owner_id: 'user_1', nome: 'Casa' }
+    await POST(pedido({ secoes: { hero_imagem: 'https://outro-site.example/imagem.jpg' } }))
+    expect((escritas.at(-1)?.row.secoes as Record<string, unknown>).hero_imagem).toBeUndefined()
+
+    await POST(pedido({ secoes: { hero_imagem: 'https://exemplo/foto.jpg' } }))
+    expect((escritas.at(-1)?.row.secoes as Record<string, unknown>).hero_imagem).toBe('https://exemplo/foto.jpg')
+  })
+
+  it('um envio sem mapa não mexe no mapa gravado', async () => {
+    definicoes = { owner_id: 'user_1', nome: 'Casa', secoes: { faq: [{ pergunta: 'a', resposta: 'b' }] } }
+    await POST(pedido({ nome: 'Casa Nova' }))
+    expect('secoes' in (escritas.at(-1)?.row ?? {})).toBe(false)
+  })
+})

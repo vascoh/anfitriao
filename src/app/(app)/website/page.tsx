@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, Plus, Trash2, Rss, Network } from 'lucide-react'
+import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, Rss, Network, LayoutTemplate } from 'lucide-react'
 import { fmtMoney, fmtDate, nights } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { WebsiteSettings, Property } from '@/lib/types'
@@ -142,6 +142,21 @@ export default function WebsitePage() {
               : <ToggleLeft className="h-8 w-8" />}
           </button>
         </div>
+
+        {/* Editor visual — o mapa do site, com o site ao lado */}
+        <Link href="/website/editor"
+          className="group rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-4 hover:border-primary/60 transition-colors">
+          <span className="h-10 w-10 shrink-0 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
+            <LayoutTemplate className="h-5 w-5" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-semibold text-sm">Editar o site</span>
+            <span className="block text-xs text-muted-foreground mt-0.5">
+              Vê o mapa das páginas, muda a ordem das secções e escreve diretamente sobre o site.
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 text-primary group-hover:translate-x-0.5 transition-transform" />
+        </Link>
 
         {/* O que falta — só aparece enquanto houver alguma coisa por fazer */}
         {prontidao.feitos < prontidao.total && (
@@ -376,42 +391,16 @@ export default function WebsitePage() {
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs text-muted-foreground font-medium">Perguntas frequentes (site público)</label>
-                <button type="button"
-                  onClick={() => update('secoes', { ...settings.secoes, faq: [...(settings.secoes?.faq ?? []), { pergunta: '', resposta: '' }] })}
-                  className="text-xs text-primary font-semibold flex items-center gap-1">
-                  <Plus className="h-3.5 w-3.5" /> Adicionar
-                </button>
-              </div>
-              {(settings.secoes?.faq ?? []).map((item, i) => (
-                <div key={i} className="flex flex-col gap-1.5 rounded-lg border border-input bg-card p-3">
-                  <div className="flex items-center gap-2">
-                    <input type="text" value={item.pergunta} placeholder="Pergunta"
-                      onChange={e => {
-                        const faq = [...(settings.secoes?.faq ?? [])]
-                        faq[i] = { ...faq[i], pergunta: e.target.value }
-                        update('secoes', { ...(settings.secoes ?? {}), faq })
-                      }}
-                      className="flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                    <button type="button" onClick={() => {
-                      const faq = (settings.secoes?.faq ?? []).filter((_, j) => j !== i)
-                      update('secoes', { ...(settings.secoes ?? {}), faq })
-                    }} className="p-2 text-muted-foreground hover:text-destructive shrink-0">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <textarea value={item.resposta} placeholder="Resposta" rows={2}
-                    onChange={e => {
-                      const faq = [...(settings.secoes?.faq ?? [])]
-                      faq[i] = { ...faq[i], resposta: e.target.value }
-                      update('secoes', { ...(settings.secoes ?? {}), faq })
-                    }}
-                    className="rounded-md border border-input bg-background px-2.5 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
-              ))}
-            </div>
+            {/* O FAQ passou para o editor do site, junto das outras secções da
+              * inicial — editar a mesma coisa em dois sítios acaba em dois
+              * valores diferentes. */}
+            <Link href="/website/editor" className="flex items-center gap-3 rounded-lg border border-input bg-card px-3 py-2.5 hover:border-primary/40 transition-colors">
+              <span className="flex-1">
+                <span className="block text-sm font-medium">Páginas, secções e textos</span>
+                <span className="block text-[11px] text-muted-foreground">Perguntas frequentes, página Sobre, páginas próprias e a ordem do menu estão no editor do site.</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

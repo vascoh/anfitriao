@@ -47,7 +47,7 @@ async function encaminharDominioProprio(req: NextRequest) {
     return NextResponse.redirect(new URL(`${limpo}${req.nextUrl.search}`, req.url), 308)
   }
 
-  const rotaDoSite = ROTAS_SITE.includes(path) || path.startsWith('/blog/')
+  const rotaDoSite = ROTAS_SITE.includes(path) || path.startsWith('/blog/') || path.startsWith('/p/')
   if (!rotaDoSite) return null
 
   const destino = req.nextUrl.clone()

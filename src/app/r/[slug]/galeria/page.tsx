@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { acessoAoSite } from '@/lib/site-acesso'
+import { paginaFixaVisivel, nomePaginaFixa } from '@/lib/site-mapa'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { baseUrlDoSite } from '@/lib/site-request'
@@ -24,7 +26,9 @@ export async function generateMetadata(
 export default async function GaleriaPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  if (!settings || !settings.enabled) notFound()
+  if (!settings) notFound()
+  const paginaVisivel = paginaFixaVisivel(settings.secoes, 'galeria')
+  if (!(await acessoAoSite(settings, paginaVisivel)).pode) notFound()
 
   const theme = siteTheme(settings)
   const lang = resolveLang(settings.idioma)
@@ -38,10 +42,10 @@ export default async function GaleriaPage({ params }: { params: Promise<{ slug: 
 
   return (
     <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
-      <SiteNav slug={slug} settings={settings} active="/galeria" />
+      <SiteNav slug={slug} settings={settings} active="/galeria" paginaOculta={!paginaVisivel} />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
-        <h1 className="text-2xl font-bold tracking-tight">{t(lang, 'nav_galeria')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'galeria', lang)}</h1>
 
         {photos.length === 0 ? (
           <p className="text-muted-foreground text-sm py-12 text-center">{t(lang, 'gallery_empty')}</p>

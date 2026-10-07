@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
+import { acessoAoSite } from '@/lib/site-acesso'
+import { paginaFixaVisivel } from '@/lib/site-mapa'
 import { adminGetWebsiteSettingsBySlug, adminGetPublishedPostBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { resolveLang, t, htmlLang } from '@/lib/i18n'
@@ -32,7 +34,9 @@ export async function generateMetadata(
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string; postSlug: string }> }) {
   const { slug, postSlug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  if (!settings || !settings.enabled) notFound()
+  if (!settings) notFound()
+  const paginaVisivel = paginaFixaVisivel(settings.secoes, 'blog')
+  if (!(await acessoAoSite(settings, paginaVisivel)).pode) notFound()
 
   const post = settings.owner_id ? await adminGetPublishedPostBySlug(settings.owner_id, postSlug) : null
   if (!post) notFound()
@@ -44,7 +48,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
-      <SiteNav slug={slug} settings={settings} active="/blog" />
+      <SiteNav slug={slug} settings={settings} active="/blog" paginaOculta={!paginaVisivel} />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
         <Link href={`${basePath}/blog`} className="text-xs font-semibold text-primary hover:underline">

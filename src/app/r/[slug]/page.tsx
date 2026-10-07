@@ -8,10 +8,13 @@ import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admi
 import type { Property } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { APP_URL } from '@/lib/config'
-import { baseUrlDoSite } from '@/lib/site-request'
+import { baseUrlDoSite, basePathDoSite } from '@/lib/site-request'
 import { siteTheme } from '@/lib/site-theme'
 import { SiteNav, SiteFooter, WA_SVG } from './_components/site-chrome'
 import { resolveLang, t, htmlLang, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
+import { eDonoDoSite } from '@/lib/site-acesso'
+import { secoesDoInicio, itensPorque, paginaFixaVisivel, nomePaginaFixa, type SecaoInicio } from '@/lib/site-mapa'
+import type { ReactNode } from 'react'
 
 // ─── Metadata (SEO) ───────────────────────────────────────────────────────────
 
@@ -168,14 +171,20 @@ function PropertyCard({ p, minNights, desde, minimal, lang }: { p: Property; min
 // ─── Page (Server Component) ──────────────────────────────────────────────────
 
 export default async function ReservasPage(
-  { params }: { params: Promise<{ slug: string }> }
+  { params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }
 ) {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
 
   if (!settings) notFound()
 
-  if (!settings.enabled) {
+  /* `?editar=1` é o modo do editor do mapa do site: desenha também as secções
+   * escondidas (com `hidden`), para o editor as poder mostrar e reordenar ao
+   * vivo antes de guardar. Só vale para o dono — para os outros é o site normal. */
+  const dono = await eDonoDoSite(settings)
+  const modoEditor = (await searchParams).editar === '1' && dono
+
+  if (!settings.enabled && !dono) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-4 p-8 text-center bg-background">
         <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
@@ -211,6 +220,13 @@ export default async function ReservasPage(
   const theme = siteTheme(settings)
   const faq = settings.secoes?.faq ?? []
   const lang = resolveLang(settings.idioma)
+  const heroImagem = settings.secoes?.hero_imagem ?? null
+  const fotos = allProps
+    .filter(p => p.ativo)
+    .flatMap(p => [p.imagem_url, ...(p.fotos ?? [])].filter((u): u is string => Boolean(u)).map(url => ({ url, nome: p.nome })))
+    .slice(0, 6)
+  const galeriaVisivel = paginaFixaVisivel(settings.secoes, 'galeria')
+  const basePath = await basePathDoSite(slug)
 
   // Schema.org — um LodgingBusiness por alojamento ativo (ver docs/SAAS_ARCHITECTURE.md §6.3);
   // dados já existem em properties/website_settings, não pedidos extra ao anfitrião.
@@ -235,6 +251,102 @@ export default async function ReservasPage(
     })),
   }
 
+  const porque = itensPorque(settings.secoes, lang)
+
+  /* Cada secção da inicial, pronta a desenhar. `null` = não há nada para
+   * mostrar (FAQ sem perguntas, anfitrião sem nome nem frase, nenhuma foto):
+   * o site salta-a, o editor mostra um espaço vazio para a preencher. */
+  const blocos: Record<SecaoInicio, ReactNode> = {
+    alojamentos: props.length === 0 ? (
+      <div className="flex flex-col items-center justify-center gap-3 text-center py-20">
+        <p className="text-muted-foreground">{t(lang, 'listing_empty')}</p>
+      </div>
+    ) : (
+      <section className="flex flex-col gap-5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+          {listingAvailable(lang, props.length)}
+        </p>
+        {props.map(p => (
+          <PropertyCard key={p.id} p={p} minNights={settings.min_noites} desde={minRoomPrice.get(p.id)} minimal={isMinimal} lang={lang} />
+        ))}
+      </section>
+    ),
+
+    fotos: fotos.length === 0 ? null : (
+      <section className="flex flex-col gap-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            {nomePaginaFixa(settings.secoes, 'galeria', lang)}
+          </p>
+          {galeriaVisivel && (
+            <Link href={`${basePath}/galeria`} className="text-xs font-semibold text-primary inline-flex items-center gap-1">
+              {lang === 'en' ? 'See all' : 'Ver todas'} <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {fotos.map((f, i) => (
+            <div key={`${f.url}-${i}`} className={`relative overflow-hidden bg-muted ${isMinimal ? 'rounded-md' : 'rounded-xl'} ${i === 0 ? 'col-span-2 row-span-2 aspect-square sm:aspect-auto' : 'aspect-square'} ${i === 5 ? 'hidden sm:block' : ''}`}>
+              <Image src={f.url} alt={f.nome} fill sizes="(max-width: 640px) 50vw, 33vw" className="object-cover" />
+            </div>
+          ))}
+        </div>
+      </section>
+    ),
+
+    porque: (
+      <section className="border-t border-b border-border py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:divide-x sm:divide-border">
+        {porque.map((item, i) => (
+          <div key={i} className={`flex flex-col gap-1 ${i === 0 ? 'sm:pr-6' : i === 1 ? 'sm:px-6' : 'sm:pl-6'}`}>
+            <p data-campo={`porque.${i}.titulo`} className="text-sm font-semibold">{item.titulo}</p>
+            <p data-campo={`porque.${i}.texto`} className="text-xs text-muted-foreground leading-relaxed">{item.texto}</p>
+          </div>
+        ))}
+      </section>
+    ),
+
+    faq: faq.length === 0 ? null : (
+      <section className="flex flex-col gap-5">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t(lang, 'faq_title')}</p>
+        <div className="flex flex-col divide-y divide-border border-t border-b border-border">
+          {faq.map((item, i) => (
+            <details key={i} className="group py-4">
+              <summary className="flex items-center justify-between gap-3 cursor-pointer list-none font-semibold text-sm">
+                {item.pergunta}
+                <span className="text-muted-foreground group-open:rotate-45 transition-transform text-lg leading-none">+</span>
+              </summary>
+              <p className="text-sm text-muted-foreground leading-relaxed mt-2">{item.resposta}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+    ),
+
+    anfitriao: !(settings.host_nome || settings.host_bio) ? null : (
+      <section className="flex flex-col items-center text-center gap-5">
+        <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+          <span className="text-3xl font-bold text-primary">
+            {(settings.host_nome || settings.nome).slice(0, 1).toUpperCase()}
+          </span>
+        </div>
+        <div>
+          <p data-campo="host_nome" className="font-bold text-lg">{settings.host_nome || settings.nome}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t(lang, 'host_role')}</p>
+        </div>
+        {settings.host_bio && (
+          <p data-campo="host_bio" className="text-sm text-muted-foreground leading-relaxed max-w-md">{settings.host_bio}</p>
+        )}
+        {waLink && (
+          <a href={waLink} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#075E54] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
+            {WA_SVG}
+            {t(lang, 'talk_to_host')}
+          </a>
+        )}
+      </section>
+    ),
+  }
+
   return (
     <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
       {props.some(p => p.ativo) && (
@@ -244,100 +356,50 @@ export default async function ReservasPage(
 
       <SiteNav slug={slug} settings={settings} active="" />
 
-      {/* Hero */}
-      <section className={`max-w-3xl mx-auto w-full px-4 flex flex-col gap-4 ${isMinimal ? 'pt-10 pb-6 items-start text-left' : 'pt-16 pb-10 items-center text-center'}`}>
-        {!isMinimal && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            {t(lang, 'hero_badge')}
-          </div>
+      {/* Hero — com fotografia de fundo se o anfitrião escolheu uma no editor */}
+      <section data-secao="hero" className={heroImagem ? 'relative isolate overflow-hidden' : ''}>
+        {heroImagem && (
+          <>
+            <Image src={heroImagem} alt="" fill priority sizes="100vw" className="object-cover -z-20" />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-black/45 to-black/65" />
+          </>
         )}
-        <h1 className={`font-bold tracking-tight leading-tight max-w-xl ${isMinimal ? 'text-3xl lg:text-4xl' : 'text-4xl lg:text-5xl'}`}>
-          {settings.nome}
-        </h1>
-        {settings.descricao && (
-          <p className={`text-muted-foreground leading-relaxed max-w-lg ${isMinimal ? 'text-sm' : 'text-base lg:text-lg'}`}>
-            {settings.descricao}
-          </p>
-        )}
+        <div className={`max-w-3xl mx-auto w-full px-4 flex flex-col gap-4 ${isMinimal ? 'items-start text-left' : 'items-center text-center'} ${
+          heroImagem ? 'pt-28 pb-24 text-white' : isMinimal ? 'pt-10 pb-6' : 'pt-16 pb-10'
+        }`}>
+          {!isMinimal && (
+            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold ${heroImagem ? 'bg-white/15 text-white backdrop-blur-sm' : 'bg-primary/10 text-primary'}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${heroImagem ? 'bg-white' : 'bg-primary'}`} />
+              {t(lang, 'hero_badge')}
+            </div>
+          )}
+          <h1 data-campo="nome" className={`font-bold tracking-tight leading-tight max-w-xl ${isMinimal ? 'text-3xl lg:text-4xl' : 'text-4xl lg:text-5xl'}`}>
+            {settings.nome}
+          </h1>
+          {(settings.descricao || modoEditor) && (
+            <p data-campo="descricao" className={`leading-relaxed max-w-lg ${heroImagem ? 'text-white/85' : 'text-muted-foreground'} ${isMinimal ? 'text-sm' : 'text-base lg:text-lg'}`}>
+              {settings.descricao}
+            </p>
+          )}
+        </div>
       </section>
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 pb-20 flex flex-col gap-16">
-
-        {/* Property listings */}
-        {props.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 text-center py-20">
-            <p className="text-muted-foreground">{t(lang, 'listing_empty')}</p>
-          </div>
-        ) : (
-          <section className="flex flex-col gap-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              {listingAvailable(lang, props.length)}
-            </p>
-            {props.map(p => (
-              <PropertyCard key={p.id} p={p} minNights={settings.min_noites} desde={minRoomPrice.get(p.id)} minimal={isMinimal} lang={lang} />
-            ))}
-          </section>
-        )}
-
-        {/* Why book direct */}
-        <section className="border-t border-b border-border py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:divide-x sm:divide-border">
-          <div className="flex flex-col gap-1 sm:pr-6">
-            <p className="text-sm font-semibold">{t(lang, 'why_title_1')}</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">{t(lang, 'why_body_1')}</p>
-          </div>
-          <div className="flex flex-col gap-1 sm:px-6">
-            <p className="text-sm font-semibold">{t(lang, 'why_title_2')}</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">{t(lang, 'why_body_2')}</p>
-          </div>
-          <div className="flex flex-col gap-1 sm:pl-6">
-            <p className="text-sm font-semibold">{t(lang, 'why_title_3')}</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">{t(lang, 'why_body_3')}</p>
-          </div>
-        </section>
-
-        {/* FAQ */}
-        {faq.length > 0 && (
-          <section className="flex flex-col gap-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t(lang, 'faq_title')}</p>
-            <div className="flex flex-col divide-y divide-border border-t border-b border-border">
-              {faq.map((item, i) => (
-                <details key={i} className="group py-4">
-                  <summary className="flex items-center justify-between gap-3 cursor-pointer list-none font-semibold text-sm">
-                    {item.pergunta}
-                    <span className="text-muted-foreground group-open:rotate-45 transition-transform text-lg leading-none">+</span>
-                  </summary>
-                  <p className="text-sm text-muted-foreground leading-relaxed mt-2">{item.resposta}</p>
-                </details>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Host section */}
-        {(settings.host_nome || settings.host_bio) && (
-          <section className="flex flex-col items-center text-center gap-5">
-            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-3xl font-bold text-primary">
-                {(settings.host_nome ?? settings.nome).slice(0, 1).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <p className="font-bold text-lg">{settings.host_nome ?? settings.nome}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t(lang, 'host_role')}</p>
-            </div>
-            {settings.host_bio && (
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-md">{settings.host_bio}</p>
-            )}
-            {waLink && (
-              <a href={waLink} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#075E54] text-white text-sm font-semibold hover:opacity-90 transition-opacity">
-                {WA_SVG}
-                {t(lang, 'talk_to_host')}
-              </a>
-            )}
-          </section>
-        )}
+      <main data-secoes-inicio className={`flex-1 max-w-3xl mx-auto w-full px-4 pb-20 flex flex-col gap-16 ${heroImagem ? 'pt-12' : ''}`}>
+        {secoesDoInicio(settings.secoes)
+          .filter(s => s.visivel || modoEditor)
+          .map(({ id, visivel }) => {
+            const conteudo = blocos[id]
+            if (!conteudo && !modoEditor) return null
+            return (
+              <div key={id} data-secao={id} hidden={!visivel || undefined}>
+                {conteudo ?? (
+                  <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                    Secção vazia — preenche-a no editor para aparecer aos hóspedes.
+                  </p>
+                )}
+              </div>
+            )
+          })}
       </main>
 
       <SiteFooter slug={slug} settings={settings} />

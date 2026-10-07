@@ -6,6 +6,7 @@ import type { WebsiteSettings } from '@/lib/types'
 import { normalizarSlug, validarSlug } from '@/lib/slug'
 import { prontidaoDoSite, motivoParaNaoPublicar } from '@/lib/prontidao-site'
 import { adminGetProperties } from '@/lib/db-admin'
+import { normalizarSecoes } from '@/lib/site-mapa'
 
 /* Lista de permitidos.
  *
@@ -80,6 +81,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  /* O mapa do site é jsonb livre: passa sempre pela limpeza (limites,
+   * chaves conhecidas, slugs das páginas próprias). A imagem do topo tem de
+   * ser uma das fotografias dos alojamentos deste anfitrião. */
+  let fotosDoAnfitriao: Awaited<ReturnType<typeof adminGetProperties>> | null = null
+  if ('secoes' in body) {
+    const pedeImagem = Boolean((body.secoes as Record<string, unknown> | null)?.hero_imagem)
+    if (pedeImagem) fotosDoAnfitriao = await adminGetProperties(userId)
+    const fotos = new Set(
+      (fotosDoAnfitriao ?? []).flatMap(p => [p.imagem_url, ...(p.fotos ?? [])]).filter((u): u is string => Boolean(u)),
+    )
+    body.secoes = normalizarSecoes(body.secoes, fotos)
+  }
+
   const row = {
     ...apenasCamposConhecidos(body),
     ...(mexeNoSlug ? { slug } : {}),
@@ -108,7 +122,7 @@ export async function POST(req: NextRequest) {
      * quando ele já está gravado. */
     const prontidao = prontidaoDoSite(
       { ...(existing ?? {}), ...row } as Parameters<typeof prontidaoDoSite>[0],
-      await adminGetProperties(userId),
+      fotosDoAnfitriao ?? await adminGetProperties(userId),
     )
     if (!prontidao.podePublicar) {
       return NextResponse.json(

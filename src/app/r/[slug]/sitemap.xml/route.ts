@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties, adminGetPublishedPosts } from '@/lib/db-admin'
 import { APP_URL } from '@/lib/config'
 import { baseUrlDoSite } from '@/lib/site-request'
+import { entradasDoMenu, normalizarSecoes, paginaFixaVisivel } from '@/lib/site-mapa'
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -21,7 +22,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   }
 
   const base = await baseUrlDoSite(slug)
-  const staticPaths = ['', '/sobre', '/galeria', '/localizacao', '/blog', '/privacidade', '/cookies', '/termos']
+  // Só o que está visível no mapa do site: uma página escondida dá 404 a quem não é o dono.
+  const secoes = normalizarSecoes(settings.secoes)
+  const staticPaths = [
+    '',
+    ...entradasDoMenu(secoes, 'pt').filter(e => e.visivel).map(e => e.href),
+    '/privacidade', '/cookies', '/termos',
+  ]
 
   const [properties, posts] = await Promise.all([
     adminGetProperties(settings.owner_id ?? undefined),
@@ -31,7 +38,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
   const urls = [
     ...staticPaths.map(p => `${base}${p}`),
     ...properties.filter(p => p.ativo).map(p => `${APP_URL}/book/${p.id}`),
-    ...posts.map(p => `${base}/blog/${p.slug}`),
+    ...(paginaFixaVisivel(secoes, 'blog') ? posts.map(p => `${base}/blog/${p.slug}`) : []),
   ]
 
   const body = `<?xml version="1.0" encoding="UTF-8"?>

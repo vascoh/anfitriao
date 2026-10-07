@@ -6,6 +6,46 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-07] Editor do site: o mapa do site, ao lado do site verdadeiro
+
+O site do anfitrião editava-se num formulário comprido com o site num iframe ao
+lado, sem ligação entre os dois. O Amenitiz tem um construtor de páginas; o
+objetivo era ir além disso — **mapear o site final de forma natural**.
+
+- ✅ **`/website/editor`** — três colunas (separadores no telemóvel): **mapa**
+  (cabeçalho, inicial com as suas secções, páginas do menu, páginas de reserva
+  de cada alojamento, rodapé e legais), **o site verdadeiro** e o **painel** do
+  que está escolhido. Ligados nos dois sentidos: escolher no mapa leva o site
+  lá; clicar no site (modo Editar) escolhe no mapa e põe o cursor no campo;
+  escrever muda o texto no site enquanto se escreve (DOM da página real, não
+  uma imitação). Ctrl/⌘+S guarda; aviso ao sair com alterações.
+- ✅ **Secções da inicial** ordenáveis (arrastar ou setas) e escondíveis;
+  alojamentos movem-se mas não se escondem. Secção nova **Fotografias** (nasce
+  escondida) e **foto de fundo no topo**, escolhida entre as fotos dos
+  alojamentos (o servidor recusa outra).
+- ✅ **Menu**: ordem, nome e visibilidade de Sobre/Galeria/Localização/Blog;
+  **páginas próprias** (até 6, texto simples, `/r/[slug]/p/[pagina]`, endereço
+  fixo depois de criado, também em domínio próprio); texto longo na página
+  Sobre; os três «porquê reservar direto» reescrevíveis (o «cancelamento
+  flexível» de fábrica podia ser falso).
+- ✅ **O dono vê o site desligado e as páginas escondidas** (com aviso no topo)
+  — antes era preciso publicar para ver o que se fazia. Hóspedes: 404.
+- ✅ Menu no telemóvel: antes desaparecia abaixo de `md`, agora é uma linha
+  deslizante.
+- ✅ O que vive noutro sítio não se edita duas vezes: fotos/preços → alojamento,
+  artigos → blog, contactos → `/website`. O FAQ saiu de `/website` para o editor.
+- Sem migração: tudo em `website_settings.secoes` (jsonb), sempre limpo por
+  `normalizarSecoes` (`lib/site-mapa.ts`) na escrita e na leitura pública.
+  Sitemap só com as páginas visíveis.
+
+**Não verificado num browser**: o ambiente local não tem a chave de serviço do
+Supabase, por isso o iframe (contornos, clique para escolher, texto ao vivo)
+está coberto só por revisão. Testes do lado do servidor cobrem a ordem, as
+secções escondidas, o acesso do dono e as páginas próprias.
+
+Validação: 1298 testes (+31), typecheck, lint e `next build` a zero. Não
+publicado em produção.
+
 ### [2026-09-27] Hóspedes reais com o Amenitiz no meio: a reserva dentro do bloqueio
 
 Para o Vasco começar a usar o Anfitrião com os seus hóspedes reais, **em

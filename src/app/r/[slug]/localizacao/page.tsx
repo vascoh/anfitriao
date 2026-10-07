@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { MapPin, ExternalLink } from 'lucide-react'
 import type { Metadata } from 'next'
+import { acessoAoSite } from '@/lib/site-acesso'
+import { paginaFixaVisivel, nomePaginaFixa } from '@/lib/site-mapa'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { baseUrlDoSite } from '@/lib/site-request'
@@ -24,7 +26,9 @@ export async function generateMetadata(
 export default async function LocalizacaoPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  if (!settings || !settings.enabled) notFound()
+  if (!settings) notFound()
+  const paginaVisivel = paginaFixaVisivel(settings.secoes, 'localizacao')
+  if (!(await acessoAoSite(settings, paginaVisivel)).pode) notFound()
 
   const theme = siteTheme(settings)
   const lang = resolveLang(settings.idioma)
@@ -33,10 +37,10 @@ export default async function LocalizacaoPage({ params }: { params: Promise<{ sl
 
   return (
     <div lang={htmlLang(lang)} className={`min-h-dvh bg-background flex flex-col ${theme.className}`} style={theme.style}>
-      <SiteNav slug={slug} settings={settings} active="/localizacao" />
+      <SiteNav slug={slug} settings={settings} active="/localizacao" paginaOculta={!paginaVisivel} />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
-        <h1 className="text-2xl font-bold tracking-tight">{t(lang, 'nav_localizacao')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'localizacao', lang)}</h1>
 
         {props.length === 0 ? (
           <p className="text-muted-foreground text-sm py-12 text-center">{t(lang, 'location_empty')}</p>

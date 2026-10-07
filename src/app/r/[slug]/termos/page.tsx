@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { acessoAoSite } from '@/lib/site-acesso'
 import { adminGetWebsiteSettingsBySlug } from '@/lib/db-admin'
 import { siteTheme } from '@/lib/site-theme'
 import { baseUrlDoSite } from '@/lib/site-request'
@@ -25,7 +26,7 @@ export async function generateMetadata(
 export default async function TermosPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const settings = await adminGetWebsiteSettingsBySlug(slug)
-  if (!settings || !settings.enabled) notFound()
+  if (!settings || !(await acessoAoSite(settings)).pode) notFound()
 
   const theme = siteTheme(settings)
   const lang = resolveLang(settings.idioma)

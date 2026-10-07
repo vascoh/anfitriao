@@ -1,3 +1,4 @@
+import type { SiteSecoes } from './site-mapa'
 export type PropertyType = 'apartamento' | 'moradia' | 'quarto' | 'outro'
 export type BookingStatus = 'pendente' | 'confirmada' | 'checkin' | 'checkout' | 'cancelada' | 'no_show'
 export type BookingSource = 'airbnb' | 'booking' | 'direto' | 'expedia' | 'vrbo' | 'outro'
@@ -137,8 +138,8 @@ export interface WebsiteSettings {
   template_id?: string | null
   /** Família tipográfica do site público: null/undefined = default, 'serif', 'arredondada' */
   fonte?: string | null
-  /** Conteúdo opcional por secção do site público (hoje: só FAQ) */
-  secoes?: { faq?: Array<{ pergunta: string; resposta: string }> } | null
+  /** Mapa do site público: páginas, menu, secções da inicial e os seus textos (ver lib/site-mapa.ts) */
+  secoes?: SiteSecoes | null
 }
 
 export interface WebsiteTemplate {

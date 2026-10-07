@@ -9,6 +9,7 @@ import { carregarTudo } from './supabase-tudo'
 import { revelarCampos } from './campos-sensiveis'
 import { verificarRnal } from './rnal'
 import type { Booking, Guest, Property, WebsiteSettings, Post } from './types'
+import { normalizarSecoes } from './site-mapa'
 
 const DEFAULT_WEBSITE: WebsiteSettings = {
   enabled: false,
@@ -129,7 +130,8 @@ export async function adminGetWebsiteSettingsBySlug(slug: string): Promise<Websi
     .eq('slug', slug)
     .maybeSingle()
   if (error || !data) return null
-  return data as WebsiteSettings
+  // O site público nunca lê o jsonb tal como está gravado (ver lib/site-mapa.ts).
+  return { ...data, secoes: normalizarSecoes(data.secoes) } as WebsiteSettings
 }
 
 /**

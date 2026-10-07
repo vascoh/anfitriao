@@ -3,6 +3,7 @@ import type { WebsiteSettings } from '@/lib/types'
 import { resolveLang, t } from '@/lib/i18n'
 import { adminGetRegistosAl } from '@/lib/db-admin'
 import { basePathDoSite } from '@/lib/site-request'
+import { entradasDoMenu } from '@/lib/site-mapa'
 
 export const WA_SVG = (
   <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
@@ -10,23 +11,46 @@ export const WA_SVG = (
   </svg>
 )
 
-export async function SiteNav({ slug, settings, active }: { slug: string; settings: WebsiteSettings; active?: string }) {
+/**
+ * Aviso que só o anfitrião vê, quando está a ver o que os hóspedes ainda não
+ * veem. As páginas só se desenham nestes casos para o dono (ver
+ * lib/site-acesso.ts), por isso não é preciso perguntar outra vez quem é.
+ */
+function AvisoPrevisualizacao({ siteDesligado, paginaOculta }: { siteDesligado: boolean; paginaOculta: boolean }) {
+  if (!siteDesligado && !paginaOculta) return null
+  const texto = siteDesligado
+    ? 'Pré-visualização: o site está desligado e só tu o vês.'
+    : 'Pré-visualização: esta página está escondida e só tu a vês.'
+  return (
+    <div data-previsualizacao className="bg-amber-100 text-amber-900 text-[11px] font-medium text-center px-4 py-1.5">
+      {texto}
+    </div>
+  )
+}
+
+export async function SiteNav({ slug, settings, active, paginaOculta = false }: {
+  slug: string
+  settings: WebsiteSettings
+  active?: string
+  /** A página está escondida no mapa do site — só o dono chega aqui. */
+  paginaOculta?: boolean
+}) {
   const brandName = settings.logo_texto || settings.nome
   const waLink = settings.telefone ? `https://wa.me/${settings.telefone.replace(/\D/g, '')}` : null
   const lang = resolveLang(settings.idioma)
   const basePath = await basePathDoSite(slug)
+  // O menu segue o mapa do site: ordem, nomes e páginas escondidas.
   const subPages = [
     { href: '', label: t(lang, 'nav_inicio') },
-    { href: '/sobre', label: t(lang, 'nav_sobre') },
-    { href: '/galeria', label: t(lang, 'nav_galeria') },
-    { href: '/localizacao', label: t(lang, 'nav_localizacao') },
-    { href: '/blog', label: t(lang, 'nav_blog') },
+    ...entradasDoMenu(settings.secoes, lang).filter(e => e.visivel).map(e => ({ href: e.href, label: e.label })),
   ]
 
   return (
-    <nav className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
+    <nav data-secao="menu" className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
+      <AvisoPrevisualizacao siteDesligado={!settings.enabled} paginaOculta={paginaOculta} />
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link href={basePath || '/'} className="font-bold text-sm tracking-tight shrink-0">{brandName}</Link>
+        <Link href={basePath || '/'} data-campo="logo_texto" className="font-bold text-sm tracking-tight shrink-0">{brandName}</Link>
+        {/* No telemóvel o menu passa para uma linha própria, em vez de desaparecer. */}
         <div className="hidden md:flex items-center gap-4 text-xs font-medium text-muted-foreground">
           {subPages.map(p => (
             <Link key={p.href} href={`${basePath}${p.href}` || '/'}
@@ -51,6 +75,18 @@ export async function SiteNav({ slug, settings, active }: { slug: string; settin
           )}
         </div>
       </div>
+      {subPages.length > 1 && (
+        <div className="md:hidden border-t border-border">
+          <div className="max-w-3xl mx-auto px-4 py-2 flex items-center gap-4 overflow-x-auto text-xs font-medium text-muted-foreground [scrollbar-width:none]">
+            {subPages.map(p => (
+              <Link key={p.href} href={`${basePath}${p.href}` || '/'}
+                className={`shrink-0 hover:text-foreground transition-colors ${active === p.href ? 'text-foreground font-semibold' : ''}`}>
+                {p.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   )
 }
@@ -73,7 +109,7 @@ export async function SiteFooter({ slug, settings }: { slug: string; settings: W
   const registos = settings.owner_id ? await adminGetRegistosAl(settings.owner_id) : []
   const basePath = await basePathDoSite(slug)
   return (
-    <footer className="border-t border-border">
+    <footer data-secao="rodape" className="border-t border-border">
       <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-4 text-xs text-muted-foreground">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <span className="font-semibold text-foreground text-sm">{brandName}</span>
