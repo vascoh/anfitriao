@@ -135,6 +135,10 @@ export function PrevisualizacaoEditavel({
 
   useEffect(() => { aplicar() }, [aplicar])
 
+  // Para os temporizadores: chamam sempre a versão atual, com os valores de agora.
+  const aplicarAtual = useRef(aplicar)
+  useEffect(() => { aplicarAtual.current = aplicar }, [aplicar])
+
   /* Marca no site a secção escolhida no mapa, e leva-a à vista. Rola só a
    * janela do iframe: `scrollIntoView` rolaria também o editor à volta. */
   const marcarSelecao = useCallback((secao: string | null, rolar: boolean) => {
@@ -222,8 +226,12 @@ export function PrevisualizacaoEditavel({
     aplicar()
     marcarSelecao(estado.current.secaoSelecionada, false)
     /* Se a página ainda estiver a hidratar, o React pode repor o HTML do
-     * servidor por cima do que se aplicou. Voltar a aplicar pouco depois. */
-    janela.setTimeout(aplicar, 600)
+     * servidor por cima do que se aplicou. Voltar a aplicar pouco depois —
+     * com os valores desse momento, não os do carregamento: o `aplicar` deste
+     * fecho já estaria velho, e desfazia o que se mudou entretanto (foi o
+     * que o E2E apanhou: mudar a ordem do menu logo a seguir a abrir uma
+     * página voltava atrás sozinho). */
+    janela.setTimeout(() => aplicarAtual.current(), 600)
   }, [aplicar, documento, onNavegar, marcarSelecao])
 
   const telemovel = dispositivo === 'telemovel'
