@@ -221,3 +221,15 @@ describe('POST /api/website-settings — mapa do site', () => {
     expect('secoes' in (escritas.at(-1)?.row ?? {})).toBe(false)
   })
 })
+
+describe('POST /api/website-settings — fotografia carregada', () => {
+  it('aceita no topo uma fotografia carregada pelo próprio anfitrião, recusa a de outro', async () => {
+    definicoes = { owner_id: 'user_1', nome: 'Casa' }
+    const minha = 'https://abc.public.blob.vercel-storage.com/propriedades/user_1/0f8e7d6c-1234-4abc-9def-0123456789ab.webp'
+    await POST(pedido({ secoes: { hero_imagem: minha } }))
+    expect((escritas.at(-1)?.row.secoes as Record<string, unknown>).hero_imagem).toBe(minha)
+
+    await POST(pedido({ secoes: { hero_imagem: minha.replace('user_1', 'user_2') } }))
+    expect((escritas.at(-1)?.row.secoes as Record<string, unknown>).hero_imagem).toBeUndefined()
+  })
+})

@@ -62,6 +62,8 @@ export default function EditorDoSitePage() {
   const [aGuardar, setAGuardar] = useState(false)
   const [versao, setVersao] = useState(0)
   const [separador, setSeparador] = useState<'mapa' | 'editar' | 'ver'>('mapa')
+  /** Páginas próprias criadas e ainda não guardadas: o endereço segue o título até à primeira gravação. */
+  const [paginasNovas, setPaginasNovas] = useState<string[]>([])
 
   useEffect(() => {
     if (!user?.id) return
@@ -139,7 +141,8 @@ export default function EditorDoSitePage() {
       paginas_proprias: [...(s.paginas_proprias ?? []), { slug, titulo, texto: '', visivel: false }],
       menu: [...entradasDoMenu(s, lang).map(e => e.id), `p:${slug}`],
     }))
-    escolher({ tipo: 'pagina', id: `p:${slug}` })
+    setPaginasNovas(n => [...n, slug])
+    escolher({ tipo: 'pagina', id: `p:${slug}` }, [slug])
     setCampoEmFoco(`pagina.${slug}.titulo`)
     toast('Página criada escondida — mostra-a quando tiver texto.')
   }
@@ -152,15 +155,38 @@ export default function EditorDoSitePage() {
       paginas_proprias: (s.paginas_proprias ?? []).filter(p => p.slug !== slug),
       menu: (s.menu ?? []).filter(m => m !== `p:${slug}`),
     }))
+    setPaginasNovas(n => n.filter(x => x !== slug))
     escolher({ tipo: 'pagina', id: 'inicio' })
+  }
+  /* O título de uma página nova dá-lhe o endereço — «Regras da casa» fica em
+   * /p/regras-da-casa e não em /p/pagina-nova. Depois de guardada, o endereço
+   * fica fixo, para os links já partilhados não partirem. */
+  const tituloDaPagina = (slug: string, titulo: string) => {
+    if (!paginasNovas.includes(slug)) {
+      onSecoes(s => ({ ...s, paginas_proprias: (s.paginas_proprias ?? []).map(p => p.slug === slug ? { ...p, titulo } : p) }))
+      return
+    }
+    const outras = (secoes.paginas_proprias ?? []).filter(p => p.slug !== slug)
+    const novo = slugLivre({ ...secoes, paginas_proprias: outras }, titulo || 'pagina')
+    onSecoes(s => ({
+      ...s,
+      paginas_proprias: (s.paginas_proprias ?? []).map(p => p.slug === slug ? { ...p, titulo, slug: novo } : p),
+      menu: (s.menu ?? []).map(m => m === `p:${slug}` ? `p:${novo}` : m),
+    }))
+    if (novo !== slug) {
+      setPaginasNovas(n => n.map(x => x === slug ? novo : x))
+      setSelecao(atual => (atual.tipo === 'pagina' && atual.id === `p:${slug}` ? { tipo: 'pagina', id: `p:${novo}` } : atual))
+    }
   }
 
   // ── Seleção ↔ pré-visualização ──
-  function escolher(no: NoDoMapa) {
+  function escolher(no: NoDoMapa, novas: string[] = paginasNovas) {
     setSelecao(no)
     setCampoEmFoco(null)
+    // Uma página ainda não guardada não existe no servidor: o site fica onde está.
+    const porGravar = no.tipo === 'pagina' && no.id.startsWith('p:') && novas.includes(no.id.slice(2))
     const destino = caminhoDoNo(no)
-    if (destino !== null) setCaminho(destino)
+    if (destino !== null && !porGravar) setCaminho(destino)
     setSeparador(atual => (atual === 'mapa' ? 'editar' : atual))
   }
 
@@ -208,6 +234,7 @@ export default function EditorDoSitePage() {
       const gravado = await fetchSettings()
       if (gravado) setSettings(gravado)
       setPorGuardar(false)
+      setPaginasNovas([])
       setVersao(v => v + 1)
       toast.success(settings.enabled ? 'Guardado — já está no site.' : 'Guardado. O site continua desligado.')
     } finally {
@@ -244,7 +271,11 @@ export default function EditorDoSitePage() {
         paragrafos[`pagina.${p.slug}.texto`] = p.texto
       }
     }
-    return { campos, paragrafos, secoesInicio: secoesDoInicio(secoes) }
+    return {
+      campos, paragrafos,
+      secoesInicio: secoesDoInicio(secoes),
+      menu: entradasDoMenu(secoes, lang).map(({ id, label, visivel }) => ({ id, label, visivel })),
+    }
   }, [settings, secoes, lang])
 
   const nomesDasSecoes = useMemo(() => ({
@@ -373,6 +404,8 @@ export default function EditorDoSitePage() {
             onAlternarSecao={alternarSecao}
             onAlternarPagina={alternarPagina}
             onApagarPagina={apagarPagina}
+            onTituloPagina={tituloDaPagina}
+            paginasNovas={paginasNovas}
           />
         </aside>
       </div>

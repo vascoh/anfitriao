@@ -117,13 +117,24 @@ function isSecaoInicio(v: unknown): v is SecaoInicio {
 }
 
 /**
+ * Fotografia carregada pelo próprio anfitrião (`/api/upload` grava em
+ * `propriedades/<userId>/<uuid>.<ext>` no Vercel Blob). O caminho leva o dono:
+ * um anfitrião não consegue pôr no topo do site uma imagem carregada por outro.
+ */
+export function eFotoCarregadaPor(url: string, ownerId: string): boolean {
+  const m = url.match(/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/propriedades\/([^/]+)\/[a-f0-9-]+\.(?:jpeg|png|gif|webp)$/i)
+  return Boolean(m) && m![1] === ownerId
+}
+
+/**
  * Limpa o `secoes` que veio do browser ou da base.
  *
- * `fotosPermitidas`, quando dado, é o conjunto de fotografias dos alojamentos
- * do anfitrião: a imagem do topo tem de ser uma delas. Sem isto, o campo
- * aceitava qualquer endereço e o site passava a mostrar o que lá se pusesse.
+ * `fotoPermitida`, quando dado, diz se uma imagem pode ir para o topo: uma
+ * das fotografias dos alojamentos do anfitrião ou uma que ele carregou. Sem
+ * isto, o campo aceitava qualquer endereço e o site passava a mostrar o que
+ * lá se pusesse.
  */
-export function normalizarSecoes(raw: unknown, fotosPermitidas?: ReadonlySet<string>): SiteSecoes {
+export function normalizarSecoes(raw: unknown, fotoPermitida?: ReadonlySet<string> | ((url: string) => boolean)): SiteSecoes {
   const r = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>
   const out: SiteSecoes = {}
 
@@ -183,7 +194,8 @@ export function normalizarSecoes(raw: unknown, fotosPermitidas?: ReadonlySet<str
 
   if (typeof r.hero_imagem === 'string') {
     const url = texto(r.hero_imagem, LIMITES.url)
-    const valida = /^https:\/\//.test(url) && (!fotosPermitidas || fotosPermitidas.has(url))
+    const permitida = !fotoPermitida || (typeof fotoPermitida === 'function' ? fotoPermitida(url) : fotoPermitida.has(url))
+    const valida = /^https:\/\//.test(url) && permitida
     if (valida) out.hero_imagem = url
   }
 

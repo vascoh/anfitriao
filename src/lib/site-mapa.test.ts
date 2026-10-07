@@ -125,3 +125,19 @@ describe('mapa do site — normalização', () => {
     expect(slugDePagina('Ção')).toBe('cao')
   })
 })
+
+describe('mapa do site — fotografia carregada para o topo', () => {
+  const url = 'https://abc123.public.blob.vercel-storage.com/propriedades/user_1/0f8e7d6c-1234-4abc-9def-0123456789ab.jpeg'
+  it('só vale a do próprio anfitrião, no sítio onde o upload grava', async () => {
+    const { eFotoCarregadaPor } = await import('./site-mapa')
+    expect(eFotoCarregadaPor(url, 'user_1')).toBe(true)
+    expect(eFotoCarregadaPor(url, 'user_2')).toBe(false)
+    expect(eFotoCarregadaPor(url.replace('propriedades', 'outra'), 'user_1')).toBe(false)
+    expect(eFotoCarregadaPor('https://evil.example/propriedades/user_1/a.jpeg', 'user_1')).toBe(false)
+  })
+
+  it('normalizarSecoes aceita um critério em vez de uma lista', () => {
+    expect(normalizarSecoes({ hero_imagem: url }, u => u === url).hero_imagem).toBe(url)
+    expect(normalizarSecoes({ hero_imagem: url }, () => false).hero_imagem).toBeUndefined()
+  })
+})

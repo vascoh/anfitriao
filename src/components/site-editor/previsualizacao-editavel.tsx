@@ -30,6 +30,8 @@ export interface AlteracoesAoVivo {
   paragrafos: Record<string, string>
   /** Secções da inicial pela ordem nova, com a visibilidade nova. */
   secoesInicio: Array<{ id: string; visivel: boolean }>
+  /** Entradas do menu pela ordem nova (sem o Início, que fica sempre à cabeça). */
+  menu: Array<{ id: string; label: string; visivel: boolean }>
 }
 
 const ESTILO_EDITOR = `
@@ -105,6 +107,19 @@ export function PrevisualizacaoEditavel({
         novo.textContent = p
         return novo
       }))
+    }
+
+    // Menu: há dois (computador e telemóvel); os dois seguem a mesma ordem.
+    for (const lista of doc.querySelectorAll<HTMLElement>('[data-menu-links]')) {
+      const inicio = lista.querySelector<HTMLElement>(':scope > [data-menu-id="inicio"]')
+      if (inicio) lista.appendChild(inicio)
+      for (const { id, label, visivel } of alteracoes.menu) {
+        const el = lista.querySelector<HTMLElement>(`:scope > [data-menu-id="${CSS.escape(id)}"]`)
+        if (!el) continue // página nova ainda por guardar
+        if (el.textContent !== label) el.textContent = label
+        el.hidden = !visivel
+        lista.appendChild(el)
+      }
     }
 
     const contentor = doc.querySelector<HTMLElement>('[data-secoes-inicio]')
@@ -260,7 +275,7 @@ export function PrevisualizacaoEditavel({
 
       {porGuardar && (
         <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-1.5 text-[11px] text-amber-700 dark:text-amber-400">
-          Textos e ordem já se veem aqui. Menu, fotografias e perguntas aparecem quando guardares.
+          Textos, ordem e menu já se veem aqui. Fotografias, perguntas e páginas novas aparecem quando guardares.
         </p>
       )}
 

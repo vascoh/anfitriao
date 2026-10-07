@@ -4,6 +4,7 @@ import { resolveLang, t } from '@/lib/i18n'
 import { adminGetRegistosAl } from '@/lib/db-admin'
 import { basePathDoSite } from '@/lib/site-request'
 import { entradasDoMenu } from '@/lib/site-mapa'
+import { eDonoDoSite } from '@/lib/site-acesso'
 
 export const WA_SVG = (
   <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
@@ -40,9 +41,13 @@ export async function SiteNav({ slug, settings, active, paginaOculta = false }: 
   const lang = resolveLang(settings.idioma)
   const basePath = await basePathDoSite(slug)
   // O menu segue o mapa do site: ordem, nomes e páginas escondidas.
+  /* O dono recebe também as páginas escondidas, com `hidden`: o editor mostra,
+   * esconde, reordena e renomeia o menu na pré-visualização antes de guardar. */
+  const dono = await eDonoDoSite(settings)
   const subPages = [
-    { href: '', label: t(lang, 'nav_inicio') },
-    ...entradasDoMenu(settings.secoes, lang).filter(e => e.visivel).map(e => ({ href: e.href, label: e.label })),
+    { id: 'inicio', href: '', label: t(lang, 'nav_inicio'), visivel: true },
+    ...entradasDoMenu(settings.secoes, lang).filter(e => e.visivel || dono)
+      .map(e => ({ id: e.id, href: e.href, label: e.label, visivel: e.visivel })),
   ]
 
   return (
@@ -51,9 +56,9 @@ export async function SiteNav({ slug, settings, active, paginaOculta = false }: 
       <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Link href={basePath || '/'} data-campo="logo_texto" className="font-bold text-sm tracking-tight shrink-0">{brandName}</Link>
         {/* No telemóvel o menu passa para uma linha própria, em vez de desaparecer. */}
-        <div className="hidden md:flex items-center gap-4 text-xs font-medium text-muted-foreground">
+        <div data-menu-links className="hidden md:flex items-center gap-4 text-xs font-medium text-muted-foreground">
           {subPages.map(p => (
-            <Link key={p.href} href={`${basePath}${p.href}` || '/'}
+            <Link key={p.href} href={`${basePath}${p.href}` || '/'} data-menu-id={p.id} hidden={!p.visivel || undefined}
               className={`hover:text-foreground transition-colors ${active === p.href ? 'text-foreground font-semibold' : ''}`}>
               {p.label}
             </Link>
@@ -75,11 +80,11 @@ export async function SiteNav({ slug, settings, active, paginaOculta = false }: 
           )}
         </div>
       </div>
-      {subPages.length > 1 && (
+      {subPages.some(p => p.visivel && p.id !== 'inicio') && (
         <div className="md:hidden border-t border-border">
-          <div className="max-w-3xl mx-auto px-4 py-2 flex items-center gap-4 overflow-x-auto text-xs font-medium text-muted-foreground [scrollbar-width:none]">
+          <div data-menu-links className="max-w-3xl mx-auto px-4 py-2 flex items-center gap-4 overflow-x-auto text-xs font-medium text-muted-foreground [scrollbar-width:none]">
             {subPages.map(p => (
-              <Link key={p.href} href={`${basePath}${p.href}` || '/'}
+              <Link key={p.href} href={`${basePath}${p.href}` || '/'} data-menu-id={p.id} hidden={!p.visivel || undefined}
                 className={`shrink-0 hover:text-foreground transition-colors ${active === p.href ? 'text-foreground font-semibold' : ''}`}>
                 {p.label}
               </Link>
@@ -112,7 +117,7 @@ export async function SiteFooter({ slug, settings }: { slug: string; settings: W
     <footer data-secao="rodape" className="border-t border-border">
       <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-4 text-xs text-muted-foreground">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span className="font-semibold text-foreground text-sm">{brandName}</span>
+          <span data-campo="logo_texto" className="font-semibold text-foreground text-sm">{brandName}</span>
           <div className="flex items-center gap-4 flex-wrap">
             {settings.email && (
               <a href={`mailto:${settings.email}`} className="hover:text-foreground transition-colors">{settings.email}</a>

@@ -6,7 +6,7 @@ import type { WebsiteSettings } from '@/lib/types'
 import { normalizarSlug, validarSlug } from '@/lib/slug'
 import { prontidaoDoSite, motivoParaNaoPublicar } from '@/lib/prontidao-site'
 import { adminGetProperties } from '@/lib/db-admin'
-import { normalizarSecoes } from '@/lib/site-mapa'
+import { normalizarSecoes, eFotoCarregadaPor } from '@/lib/site-mapa'
 
 /* Lista de permitidos.
  *
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     const fotos = new Set(
       (fotosDoAnfitriao ?? []).flatMap(p => [p.imagem_url, ...(p.fotos ?? [])]).filter((u): u is string => Boolean(u)),
     )
-    body.secoes = normalizarSecoes(body.secoes, fotos)
+    body.secoes = normalizarSecoes(body.secoes, url => fotos.has(url) || eFotoCarregadaPor(url, userId))
   }
 
   const row = {
