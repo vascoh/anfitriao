@@ -38,13 +38,32 @@ objetivo era ir além disso — **mapear o site final de forma natural**.
   `normalizarSecoes` (`lib/site-mapa.ts`) na escrita e na leitura pública.
   Sitemap só com as páginas visíveis.
 
-**Não verificado num browser**: o ambiente local não tem a chave de serviço do
-Supabase, por isso o iframe (contornos, clique para escolher, texto ao vivo)
-está coberto só por revisão. Testes do lado do servidor cobrem a ordem, as
-secções escondidas, o acesso do dono e as páginas próprias.
+**E2E em produção** (Playwright, utilizador Clerk descartável, alojamento e
+site `TESTE-E2E`, tudo apagado no fim; `casadevasco` intocado): 21 verificações
+no computador — contorno ao passar, clique no título/razão foca o campo, texto
+e ordem ao vivo, esconder secção, guardar (título, foto no topo, FAQ,
+fotografias), página nova com endereço do título, menu ao vivo (nome, ordem,
+escondida), título da página segue o menu, navegar no site muda o mapa — mais
+o telemóvel (separadores Mapa/Editar/Ver) e o hóspede anónimo (manutenção com
+o site desligado; com ele publicado, blog escondido dá 404 e não vem no HTML).
 
-Validação: 1298 testes (+31), typecheck, lint e `next build` a zero. Não
-publicado em produção.
+O E2E apanhou e corrigiu-se, no mesmo dia:
+- página nova ficava para sempre em `/p/pagina-nova` → o endereço segue o
+  título até à primeira gravação;
+- a reaplicação 600 ms depois de carregar usava valores velhos e desfazia uma
+  mudança feita nesse intervalo (reordenar o menu);
+- o menu e o título das páginas fixas só mudavam ao guardar → agora ao vivo;
+- foto do topo só das dos alojamentos → também se carrega no editor (servidor
+  aceita só as do próprio anfitrião, pelo caminho do upload).
+
+**Bug antigo encontrado de caminho**: `/r/<slug>/sitemap.xml` dava sempre a
+página 404 na Vercel (também no site real), embora respondesse em local — e
+era o endereço que o robots.txt dava ao Google. Passou para `/r/<slug>/sitemap`;
+o `.xml` é encaminhado no proxy. Verificado em produção: 200 nos dois.
+
+Validação: 1301 testes, typecheck, lint e `next build` a zero. Em produção
+(commits `30cc0ee`…`e2ebabb`), deploy feito de uma cópia limpa do commit — as
+alterações por guardar que já estavam na pasta não foram publicadas.
 
 ### [2026-09-27] Hóspedes reais com o Amenitiz no meio: a reserva dentro do bloqueio
 
