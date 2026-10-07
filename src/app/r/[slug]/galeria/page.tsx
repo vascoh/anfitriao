@@ -45,7 +45,7 @@ export default async function GaleriaPage({ params }: { params: Promise<{ slug: 
       <SiteNav slug={slug} settings={settings} active="/galeria" paginaOculta={!paginaVisivel} />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
-        <h1 className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'galeria', lang)}</h1>
+        <h1 data-campo="menu.galeria" className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'galeria', lang)}</h1>
 
         {photos.length === 0 ? (
           <p className="text-muted-foreground text-sm py-12 text-center">{t(lang, 'gallery_empty')}</p>

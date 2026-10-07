@@ -40,7 +40,7 @@ export default async function BlogListPage({ params }: { params: Promise<{ slug:
       <SiteNav slug={slug} settings={settings} active="/blog" paginaOculta={!paginaVisivel} />
 
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-12 flex flex-col gap-6">
-        <h1 className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'blog', lang)}</h1>
+        <h1 data-campo="menu.blog" className="text-2xl font-bold tracking-tight">{nomePaginaFixa(settings.secoes, 'blog', lang)}</h1>
 
         {posts.length === 0 ? (
           <p className="text-muted-foreground text-sm py-12 text-center">{t(lang, 'blog_empty')}</p>

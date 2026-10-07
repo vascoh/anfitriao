@@ -265,6 +265,8 @@ export default function EditorDoSitePage() {
         campos[`porque.${i}.titulo`] = item.titulo
         campos[`porque.${i}.texto`] = item.texto
       })
+      // O título das páginas Galeria, Localização e Blog é o nome no menu.
+      for (const e of entradasDoMenu(secoes, lang)) if (!e.propria) campos[`menu.${e.id}`] = e.label
       paragrafos.sobre_texto = secoes.sobre_texto ?? ''
       for (const p of secoes.paginas_proprias ?? []) {
         campos[`pagina.${p.slug}.titulo`] = p.titulo
