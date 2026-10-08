@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { ShieldCheck, ShieldAlert, Clock, Circle, ExternalLink, Printer, BarChart3, Coins, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { fetchProperties } from '@/lib/fetcher'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { abreviaturaDe } from '@/lib/siba-mapping'
 import { today, fmtDate } from '@/lib/utils'
 import {
@@ -120,6 +121,7 @@ export default function ConformidadePage() {
   const { user } = useUser()
   const ownerId = user?.id
   const [propriedades, setPropriedades] = useState<Property[]>([])
+  const [erro, setErro] = useState(false)
   const [loading, setLoading] = useState(true)
   const [aberto, setAberto] = useState<string | null>(null)
   const [rascunho, setRascunho] = useState<Rascunho | null>(null)
@@ -129,10 +131,11 @@ export default function ConformidadePage() {
 
   useEffect(() => {
     if (!ownerId) return
-    fetchProperties().then(p => {
-      setPropriedades(p.filter(x => x.ativo !== false))
-      setLoading(false)
-    })
+    fetchProperties({ exigirSucesso: true })
+      .then(p => { setPropriedades(p.filter(x => x.ativo !== false)); setErro(false) })
+      // Sem alojamentos não há pendentes — e «tudo em dia» é a leitura errada de uma falha.
+      .catch(() => setErro(true))
+      .finally(() => setLoading(false))
   }, [ownerId])
 
   const porPropriedade = useMemo(
@@ -171,6 +174,10 @@ export default function ConformidadePage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (erro) {
+    return <ErroAoCarregar oQue="a conformidade" aviso="Não assumas que está tudo em dia." />
   }
 
   if (loading) {

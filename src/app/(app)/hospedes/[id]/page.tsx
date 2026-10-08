@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, Phone, FileText, Edit2, ArrowRight, MessageCircle, Dow
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { PRAZOS, descreverPrazo, NOME_ANONIMO } from '@/lib/retencao'
 import { fetchGuests, fetchBookings, fetchProperties } from '@/lib/fetcher'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
 import type { GuestTag } from '@/lib/types'
@@ -17,6 +18,7 @@ export default function HospedeDetailPage() {
   const { user } = useUser()
   const ownerId = user?.id
   const [guest, setGuest] = useState<Guest | null>(null)
+  const [falha, setFalha] = useState<'erro' | 'inexistente' | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [props, setProps] = useState<Property[]>([])
   const [editing, setEditing] = useState(false)
@@ -41,9 +43,16 @@ export default function HospedeDetailPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchGuests(), fetchBookings(), fetchProperties()]).then(([guestsAll, bookingsAll, propsAll]) => {
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchGuests(exigirSucesso),
+      fetchBookings(undefined, exigirSucesso),
+      fetchProperties(exigirSucesso),
+    ]).then(([guestsAll, bookingsAll, propsAll]) => {
       const g = guestsAll.find(x => x.id === id) ?? null
       setGuest(g)
+      // Antes, um hóspede apagado (ou uma falha) deixava o esqueleto para sempre.
+      setFalha(g ? null : 'inexistente')
       if (g) {
         setNome(g.nome)
         setEmail(g.email ?? '')
@@ -61,7 +70,7 @@ export default function HospedeDetailPage() {
       }
       setBookings(bookingsAll.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
       setProps(propsAll)
-    })
+    }).catch(() => setFalha('erro'))
   }, [id, ownerId])
 
   async function save() {
@@ -155,12 +164,15 @@ export default function HospedeDetailPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href="/hospedes" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href="/hospedes" aria-label="Voltar aos hóspedes" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="h-4 w-36 bg-muted rounded animate-pulse" />
+          {falha === 'inexistente'
+            ? <span className="text-sm text-muted-foreground">Hóspede não encontrado</span>
+            : falha === null && <div className="h-4 w-36 bg-muted rounded animate-pulse" />}
         </div>
       </header>
+      {falha === 'erro' && <ErroAoCarregar oQue="o hóspede" />}
     </div>
   )
 

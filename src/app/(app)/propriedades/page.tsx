@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { fmtMoney, today as localToday } from '@/lib/utils'
 import { guardar } from '@/lib/guardar'
 import { fetchProperties, fetchBookings, fetchGuests } from '@/lib/fetcher'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { occupancyForMonth } from '@/lib/reservations'
 import type { Property, Booking, Guest } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
@@ -359,18 +360,31 @@ export default function PropriedadesPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [guests, setGuests] = useState<Guest[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [erro, setErro] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchProperties(), fetchBookings(), fetchGuests()])
-      .then(([p, b, g]) => { setAllProps(p); setBookings(b); setGuests(g) })
+    // Sem alojamentos, a página convida a criar o primeiro — num 500 isso
+    // levava a duplicar casas que já existem.
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchProperties(exigirSucesso),
+      fetchBookings(undefined, exigirSucesso),
+      fetchGuests(exigirSucesso),
+    ])
+      .then(([p, b, g]) => { setAllProps(p); setBookings(b); setGuests(g); setErro(false) })
+      .catch(() => setErro(true))
       .finally(() => setLoaded(true))
   }, [ownerId])
 
   /* Depois de agrupar, a lista tem de se redesenhar: os quartos saltam de
    * «independentes» para dentro da casa. */
   async function recarregar() {
-    setAllProps(await fetchProperties())
+    try {
+      setAllProps(await fetchProperties({ exigirSucesso: true }))
+    } catch {
+      toast.error('Não foi possível atualizar a lista. Recarrega a página.')
+    }
   }
 
   // Separate parents from rooms
@@ -421,6 +435,8 @@ export default function PropriedadesPage() {
               </div>
             ))}
           </div>
+        ) : erro ? (
+          <ErroAoCarregar oQue="os alojamentos" aviso="Não cries de novo um alojamento que já existe." />
         ) : allProps.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
             <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
