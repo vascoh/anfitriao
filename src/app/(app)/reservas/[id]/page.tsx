@@ -13,6 +13,7 @@ import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar, eliminar } from '@/lib/guardar'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import {
   transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio,
   ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING,
@@ -117,6 +118,7 @@ export default function ReservaDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [booking, setBooking] = useState<Booking | null>(null)
+  const [erro, setErro] = useState(false)
   const [guest, setGuest] = useState<Guest | null>(null)
   /** Estado dos boletins — o boletim é por pessoa, não por reserva. */
   const [boletins, setBoletins] = useState<{ esperados: number; registados: number; prontos: number; porRegistar: number } | null>(null)
@@ -148,7 +150,21 @@ export default function ReservaDetailPage() {
       .then(d => { setBoletins(d.estado); setBoletinsErro(false) })
       .catch(() => { setBoletins(null); setBoletinsErro(true) })
 
-    const [bookings, guests, props] = await Promise.all([fetchBookings(), fetchGuests(), fetchProperties()])
+    /* Uma falha não é «reserva não encontrada»: quem a lê conclui que a
+     * reserva foi apagada. */
+    const exigirSucesso = { exigirSucesso: true }
+    let bookings: Booking[], guests: Guest[], props: Property[]
+    try {
+      ;[bookings, guests, props] = await Promise.all([
+        fetchBookings(undefined, exigirSucesso),
+        fetchGuests(exigirSucesso),
+        fetchProperties(exigirSucesso),
+      ])
+    } catch {
+      setErro(true)
+      return
+    }
+    setErro(false)
     const b = bookings.find(x => x.id === id) ?? null
     setBooking(b)
     if (b) {
@@ -297,6 +313,15 @@ export default function ReservaDetailPage() {
     if (!await eliminar(`/api/bookings?id=${booking.id}`)) { setConfirmDelete(false); return }
     router.push('/reservas')
   }
+
+  if (erro && !booking) return (
+    <div className="flex flex-col min-h-full">
+      <header className="px-4 py-4 border-b border-border flex items-center gap-3">
+        <Link href="/reservas" aria-label="Voltar às reservas"><ArrowLeft className="h-5 w-5" /></Link>
+      </header>
+      <ErroAoCarregar oQue="a reserva" aoTentar={() => { setErro(false); load() }} />
+    </div>
+  )
 
   if (!booking) return (
     <div className="flex flex-col min-h-full">

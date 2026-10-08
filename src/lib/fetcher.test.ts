@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchBookings, fetchGuests, fetchProperties } from './fetcher'
+import { fetchBookings, fetchExpenses, fetchGuests, fetchPlatformRates, fetchProperties } from './fetcher'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -24,5 +24,13 @@ describe('fetchers autenticados', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(alojamentos)))
 
     await expect(fetchProperties({ exigirSucesso: true })).resolves.toEqual(alojamentos)
+  })
+
+  it('despesas e comissões também recusam o vazio falso em modo estrito', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })))
+
+    await expect(fetchExpenses({ exigirSucesso: true })).rejects.toThrow('Pedido falhou (401)')
+    await expect(fetchPlatformRates({ exigirSucesso: true })).rejects.toThrow('Pedido falhou (401)')
+    await expect(fetchPlatformRates()).resolves.toEqual([])
   })
 })

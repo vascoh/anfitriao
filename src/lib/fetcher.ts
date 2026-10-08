@@ -59,14 +59,14 @@ export async function fetchBookings(
   return lerJson(res, [], opcoes)
 }
 
-export async function fetchExpenses(): Promise<Expense[]> {
+export async function fetchExpenses(opcoes?: FetchOptions): Promise<Expense[]> {
   const res = await fetch('/api/expenses')
-  return res.ok ? res.json() : []
+  return lerJson(res, [], opcoes)
 }
 
-export async function fetchAutomations(): Promise<Automation[]> {
+export async function fetchAutomations(opcoes?: FetchOptions): Promise<Automation[]> {
   const res = await fetch('/api/automations')
-  return res.ok ? res.json() : []
+  return lerJson(res, [], opcoes)
 }
 
 export async function fetchPosts(opcoes?: FetchOptions): Promise<Post[]> {
@@ -74,10 +74,9 @@ export async function fetchPosts(opcoes?: FetchOptions): Promise<Post[]> {
   return lerJson(res, [], opcoes)
 }
 
-export async function fetchPlatformRates(): Promise<PlatformRate[]> {
+export async function fetchPlatformRates(opcoes?: FetchOptions): Promise<PlatformRate[]> {
   const res = await fetch('/api/platform-rates')
-  if (!res.ok) return []
-  const data = await res.json()
+  const data = await lerJson<unknown>(res, [], opcoes)
   return Array.isArray(data) ? data : []
 }
 

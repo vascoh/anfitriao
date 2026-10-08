@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, Download, Scale, AlertTriangle } from 'lucide-react'
 import { fetchBookings, fetchExpenses, fetchPlatformRates, fetchProperties } from '@/lib/fetcher'
 import { fmtMoney } from '@/lib/utils'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import {
   MODALIDADE_LABEL, coeficiente, mapaFiscal, parametrosDoAno, podeOptarPelaF,
   type Agregado, type ModalidadeAl,
@@ -44,6 +45,7 @@ export default function MapaFiscalPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [rates, setRates] = useState<PlatformRate[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(false)
   // O esqueleto de carregamento não mostra estes valores, por isso ler o
   // localStorage no primeiro render não causa diferenças de hidratação.
   const [agregado, setAgregado] = useState(lerAgregado)
@@ -53,8 +55,16 @@ export default function MapaFiscalPage() {
 
   useEffect(() => {
     if (!user?.id) return
-    Promise.all([fetchBookings(), fetchExpenses(), fetchProperties(), fetchPlatformRates()])
-      .then(([b, e, p, r]) => { setBookings(b); setExpenses(e); setProperties(p); setRates(r) })
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchBookings(undefined, exigirSucesso),
+      fetchExpenses(exigirSucesso),
+      fetchProperties(exigirSucesso),
+      fetchPlatformRates(exigirSucesso),
+    ])
+      .then(([b, e, p, r]) => { setBookings(b); setExpenses(e); setProperties(p); setRates(r); setErro(false) })
+      // Um mapa fiscal com rendimentos a zero leva-se ao contabilista como verdadeiro.
+      .catch(() => setErro(true))
       .finally(() => setLoading(false))
   }, [user?.id])
 
@@ -101,13 +111,22 @@ export default function MapaFiscalPage() {
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight truncate">Mapa fiscal {ano}</h1>
       </div>
-      <button onClick={descarregarPacote} disabled={loading}
+      <button onClick={descarregarPacote} disabled={loading || erro}
         className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground border border-input rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
         title="CSV com resumo por alojamento, reservas e despesas do ano">
         <Download className="h-3.5 w-3.5" /> Pacote contabilista
       </button>
     </header>
   )
+
+  if (erro) {
+    return (
+      <div className="flex flex-col min-h-full">
+        {header}
+        <ErroAoCarregar oQue="o mapa fiscal" aviso="Não uses estes valores até carregarem." />
+      </div>
+    )
+  }
 
   if (loading) {
     return (

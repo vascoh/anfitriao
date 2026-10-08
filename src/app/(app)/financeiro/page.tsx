@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Plus, Trash2, Wallet, Download, Scale } from 'lucide-react'
 import { fetchExpenses, fetchBookings, fetchProperties, fetchPlatformRates } from '@/lib/fetcher'
 import { eliminar } from '@/lib/guardar'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { fmtMoney, fmtDate, today } from '@/lib/utils'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { ordenarComQuartos, geraObrigacoesDeHospede } from '@/lib/reservations'
@@ -63,6 +64,7 @@ export default function FinanceiroPage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [platformRates, setPlatformRates] = useState<PlatformRate[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [categoria, setCategoria] = useState<ExpenseCategoria>('outro')
@@ -73,7 +75,13 @@ export default function FinanceiroPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchExpenses(), fetchBookings(), fetchProperties(), fetchPlatformRates()]).then(([e, b, p, pr]) => {
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchExpenses(exigirSucesso),
+      fetchBookings(undefined, exigirSucesso),
+      fetchProperties(exigirSucesso),
+      fetchPlatformRates(exigirSucesso),
+    ]).then(([e, b, p, pr]) => {
       setExpenses(e)
       setBookings(b)
       // Casas e quartos: uma limpeza é de um quarto, a eletricidade é da casa.
@@ -81,8 +89,12 @@ export default function FinanceiroPage() {
       // vivem numa casa com quartos, e não havia forma de imputar a despesa.
       setProperties(ordenarComQuartos(p))
       setPlatformRates(pr)
-      setLoading(false)
+      setErro(false)
     })
+      /* Receita e despesas a zero não se distinguem de um ano parado — e sem
+       * `catch` uma falha de rede deixava o ecrã no esqueleto para sempre. */
+      .catch(() => setErro(true))
+      .finally(() => setLoading(false))
   }, [ownerId])
 
   const year = new Date().getFullYear()
@@ -177,6 +189,17 @@ export default function FinanceiroPage() {
   }
 
   const propName = (id?: string | null) => properties.find(p => p.id === id)?.nome
+
+  if (erro) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
+          <h1 className="text-2xl font-semibold tracking-tight">Financeiro</h1>
+        </header>
+        <ErroAoCarregar oQue="as contas" aviso="A receita e as despesas não são zero — são desconhecidas." />
+      </div>
+    )
+  }
 
   if (loading) {
     return (

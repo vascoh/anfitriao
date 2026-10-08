@@ -13,6 +13,7 @@ import { SOURCE_LABEL, SOURCE_BG, sibaComplete } from '@/lib/labels'
 import { estaEmAtraso } from '@/lib/estado-siba'
 import { estadoDoFeed } from '@/lib/canais'
 import { OnboardingCard } from '@/components/onboarding-card'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
@@ -113,11 +114,23 @@ export default function HojePage() {
   const [props, setProps] = useState<Property[]>([])
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [erro, setErro] = useState(false)
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchBookings(), fetchGuests(), fetchProperties(), fetchSettings()])
-      .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); if (s) setSettings(s) })
+    /* Sem o modo estrito, um 401/500 dava zero alojamentos — e o ecrã inicial
+     * respondia com «cria o teu primeiro alojamento» a quem já tem quatro,
+     * e com «dia calmo» a quem tem chegadas. As definições ficam tolerantes:
+     * só alimentam a lista de configuração. */
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchBookings(undefined, exigirSucesso),
+      fetchGuests(exigirSucesso),
+      fetchProperties(exigirSucesso),
+      fetchSettings(),
+    ])
+      .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); if (s) setSettings(s); setErro(false) })
+      .catch(() => setErro(true))
       .finally(() => setLoaded(true))
   }, [ownerId])
 
@@ -280,7 +293,7 @@ export default function HojePage() {
 
   const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0 || boletinsEmAtraso.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
-  const semPropriedades = loaded && props.length === 0
+  const semPropriedades = loaded && !erro && props.length === 0
 
   // Setup checklist — shown when properties exist but config is incomplete
   const setupSteps = useMemo(() => {
@@ -297,6 +310,18 @@ export default function HojePage() {
     const allDone = steps.every(s => s.done)
     return allDone ? null : steps
   }, [loaded, settings, props])
+
+
+  if (erro) {
+    return (
+      <div className="flex flex-col min-h-full">
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 lg:px-8 py-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Hoje</h1>
+        </header>
+        <ErroAoCarregar oQue="o dia de hoje" aviso="Não assumas que não há chegadas nem saídas." />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-full pb-6">

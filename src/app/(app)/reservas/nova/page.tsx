@@ -10,6 +10,7 @@ import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
 import { detectConflict, calculatePriceWithRules, unidadesReservaveis } from '@/lib/reservations'
 import { quartosDaCasa, capacidadeTotal, disponibilidadeDosQuartos, sugerirQuartos } from '@/lib/grupos'
 import type { Property, Guest, Booking, PriceRule, Tarifa, PlatformRate, BookingSource } from '@/lib/types'
+import { toast } from 'sonner'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { guardar } from '@/lib/guardar'
 
@@ -468,7 +469,16 @@ function NovaReservaInner() {
               onClick={async () => {
                 if (!checkIn || !checkOut || checkIn >= checkOut) return
                 if (propId) {
-                  const atuais = await fetchBookings()
+                  /* O servidor volta a verificar ao gravar; isto é para o
+                   * aviso chegar antes de se preencher o resto. Uma falha
+                   * não pode passar por «sem conflitos». */
+                  let atuais: Booking[]
+                  try {
+                    atuais = await fetchBookings(undefined, { exigirSucesso: true })
+                  } catch {
+                    toast.error('Não foi possível confirmar a disponibilidade. Tenta outra vez.')
+                    return
+                  }
                   setBookings(atuais)
                   // Dentro de um bloqueio, sobrepor-se a ele é o normal — às
                   // outras reservas continua a não poder.
