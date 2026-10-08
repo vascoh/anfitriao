@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { adminGetBookingById, adminGetGuestById, adminGetPropertyById } from '@/lib/db-admin'
 import { emailService } from '@/lib/email'
+import { createAdminClient } from '@/lib/supabase'
+import { enderecoDeResposta, registarEmailAutomatico } from '@/lib/mensagens-server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { nights } from '@/lib/utils'
 
@@ -49,6 +51,18 @@ export async function POST(req: NextRequest) {
     numHospedes: booking.num_hospedes,
     total: booking.preco_total,
     instrucoes: prop?.instrucoes_checkin,
+    replyTo: enderecoDeResposta(bookingId),
+  })
+
+  await registarEmailAutomatico(createAdminClient(), {
+    ownerId: booking.owner_id,
+    reservaId: bookingId,
+    hospedeId: booking.hospede_id,
+    para: guest.email,
+    assunto: result.subject,
+    corpo: 'Confirmação da reserva enviada, com o link do check-in online.',
+    origem: 'confirmacao',
+    envio: result,
   })
 
   if (result.error === 'no_api_key') {

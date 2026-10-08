@@ -27,10 +27,18 @@ const chamadas: { pedido: unknown[]; confirmada: unknown[]; anfitriao: unknown[]
 
 vi.mock('@/lib/email', () => ({
   emailService: {
-    sendReservationRequest: async (p: unknown) => { chamadas.pedido.push(p) },
-    sendReservationConfirmation: async (p: unknown) => { chamadas.confirmada.push(p) },
+    sendReservationRequest: async (p: unknown) => { chamadas.pedido.push(p); return { ok: true, subject: 'Pedido' } },
+    sendReservationConfirmation: async (p: unknown) => { chamadas.confirmada.push(p); return { ok: true, subject: 'Confirmada' } },
     sendOwnerNotification: async (p: unknown) => { chamadas.anfitriao.push(p) },
   },
+}))
+
+vi.mock('@/lib/supabase', () => ({ createAdminClient: () => ({}) }))
+
+const registos: Array<Record<string, unknown>> = []
+vi.mock('@/lib/mensagens-server', () => ({
+  enderecoDeResposta: (id: string) => `r+${id}.assinatura@respostas.exemplo.pt`,
+  registarEmailAutomatico: async (_s: unknown, p: Record<string, unknown>) => { registos.push(p) },
 }))
 
 const { sendBookingNotification } = await import('./notify-booking')
@@ -53,6 +61,7 @@ beforeEach(() => {
   chamadas.pedido.length = 0
   chamadas.confirmada.length = 0
   chamadas.anfitriao.length = 0
+  registos.length = 0
 })
 
 describe('sendBookingNotification', () => {
@@ -71,5 +80,18 @@ describe('sendBookingNotification', () => {
   it('o anfitrião é notificado nos dois casos', async () => {
     await sendBookingNotification({ ...BASE, jaConfirmada: true })
     expect(chamadas.anfitriao).toHaveLength(1)
+  })
+
+  it('o email ao hóspede sai com o endereço de resposta da conversa e fica registado nela', async () => {
+    await sendBookingNotification({ ...BASE, guestId: 'g1', jaConfirmada: true })
+    expect((chamadas.confirmada[0] as { replyTo: string }).replyTo).toBe('r+b1.assinatura@respostas.exemplo.pt')
+    expect(registos).toEqual([expect.objectContaining({
+      reservaId: 'b1', hospedeId: 'g1', origem: 'confirmacao', assunto: 'Confirmada',
+    })])
+  })
+
+  it('o pedido pendente fica registado como pedido', async () => {
+    await sendBookingNotification(BASE)
+    expect(registos[0]).toMatchObject({ origem: 'pedido', reservaId: 'b1' })
   })
 })

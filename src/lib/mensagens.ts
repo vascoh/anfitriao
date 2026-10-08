@@ -9,6 +9,8 @@
 export type CanalMensagem = 'email' | 'whatsapp' | 'sms' | 'airbnb' | 'booking' | 'outro'
 export type DirecaoMensagem = 'entrada' | 'saida'
 export type EstadoMensagem = 'recebida' | 'registada' | 'enviada' | 'falhou'
+/** Email que a aplicação enviou sozinha; `null` = escrita pelo anfitrião. */
+export type OrigemMensagem = 'pedido' | 'confirmacao' | 'lembrete_pagamento' | 'automacao'
 
 export interface Mensagem {
   id: string
@@ -24,9 +26,17 @@ export interface Mensagem {
   nome_contacto: string | null
   id_externo: string | null
   sugerida_por_ia: boolean
+  origem?: OrigemMensagem | null
   lida_em: string | null
   erro: string | null
   criado_em: string
+}
+
+export const ORIGEM_LABEL: Record<OrigemMensagem, string> = {
+  pedido: 'Pedido recebido (automático)',
+  confirmacao: 'Confirmação (automática)',
+  lembrete_pagamento: 'Lembrete de pagamento (automático)',
+  automacao: 'Automação',
 }
 
 export const CANAIS: CanalMensagem[] = ['email', 'whatsapp', 'sms', 'airbnb', 'booking', 'outro']

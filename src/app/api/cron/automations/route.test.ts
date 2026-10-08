@@ -27,13 +27,17 @@ vi.mock('@/lib/supabase', () => ({
   createAdminClient: () => ({
     from: (t: string) => ({
       select: () => construtor(t),
-      insert: async (dados: unknown) => {
+      insert: (dados: unknown) => {
         inseridos.push({ tabela: t, dados })
         // O log de automações é a garantia de não repetir: refletir na "base".
         for (const l of Array.isArray(dados) ? dados : [dados]) {
           (tabelas[t] ??= []).push(l as Record<string, unknown>)
         }
-        return { error: null }
+        const r = { error: null }
+        // `gravarMensagem` encadeia `.select().single()`; o log usa só o await.
+        return Object.assign(Promise.resolve(r), {
+          select: () => ({ single: async () => ({ data: dados, error: null }) }),
+        })
       },
     }),
   }),
@@ -44,7 +48,7 @@ vi.mock('@/lib/cron-auth', () => ({ checkCronAuth: () => null }))
 const emails: Array<Record<string, unknown>> = []
 vi.mock('@/lib/email', () => ({
   emailService: {
-    sendAutomationMessage: async (p: Record<string, unknown>) => { emails.push(p); return { ok: true } },
+    sendAutomationMessage: async (p: Record<string, unknown>) => { emails.push(p); return { ok: true, id: 'resend_1' } },
   },
 }))
 
@@ -77,6 +81,7 @@ beforeEach(() => {
   tabelas.guests = [{ id: 'g1', nome: 'Maria Silva', email: 'maria@exemplo.pt' }]
   tabelas.properties = [{ id: 'p1', nome: 'Casa de Vasco' }]
   tabelas.automation_log = []
+  tabelas.mensagens = []
 })
 
 describe('GET /api/cron/automations', () => {
@@ -145,5 +150,24 @@ describe('GET /api/cron/automations', () => {
     tabelas.automations = []
     const res = await GET(pedido())
     expect((await res.json()).enviados).toBe(0)
+  })
+
+  it('o email fica na conversa da reserva, marcado como automação', async () => {
+    /* Sem isto o anfitrião abria a conversa sem ver o que o hóspede já
+     * tinha recebido, e a resposta do hóspede não tinha onde se encaixar. */
+    await GET(pedido())
+    expect(tabelas.mensagens).toHaveLength(1)
+    expect(tabelas.mensagens[0]).toMatchObject({
+      owner_id: 'user_1', reserva_id: 'b1', hospede_id: 'g1',
+      canal: 'email', direcao: 'saida', estado: 'enviada', origem: 'automacao',
+      assunto: 'Chegada amanhã, Maria Silva', contacto: 'maria@exemplo.pt', id_externo: 'resend_1',
+    })
+    expect(String(tabelas.mensagens[0].corpo)).toContain('Casa de Vasco')
+  })
+
+  it('um envio falhado não fica na conversa', async () => {
+    tabelas.guests = [{ id: 'g1', nome: 'Maria', email: null }]
+    await GET(pedido())
+    expect(tabelas.mensagens).toHaveLength(0)
   })
 })

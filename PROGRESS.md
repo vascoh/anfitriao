@@ -6,6 +6,28 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-08] Emails automáticos na conversa da reserva
+
+A caixa de entrada prometia «uma conversa por reserva», mas os emails que a
+aplicação manda sozinha não entravam nela — e são os que o hóspede mais
+responde:
+
+- ✅ **Pedido recebido, confirmação (com link de check-in), lembrete de
+  pagamento e automações** ficam na conversa da reserva (`mensagens.origem`,
+  migração 052, aplicada), marcados como automáticos na conversa e na lista.
+  Só o que saiu: um envio falhado não aparece. O registo nunca lança — o
+  email já foi, e perdê-lo não pode fazer repetir o envio
+  (`registarEmailAutomatico`, `lib/mensagens-server.ts`).
+- ✅ **Saem com o endereço de resposta da conversa** (`enderecoDeResposta`)
+  quando a receção de email estiver montada: a resposta do hóspede à
+  confirmação ou ao «check-in amanhã» volta à caixa de entrada em vez de ir
+  para o email do alojamento. Sem `INBOUND_EMAIL_DOMAIN`, nada muda.
+- A sugestão da IA vê o que já foi enviado (não propõe reenviar instruções);
+  a confirmação, o pedido e o lembrete ficam como resumo em português e vão
+  marcados como tal, para não enganarem a deteção da língua do hóspede.
+- Testes: cron de automações (registo, falha não regista) e
+  `notify-booking` (Reply-To e origem).
+
 ### [2026-10-08] Caixa de entrada unificada com sugestões de resposta por IA
 
 Fases 1 e 2 da aposta do TODO (2026-10-01). `/mensagens` (em Reservas):

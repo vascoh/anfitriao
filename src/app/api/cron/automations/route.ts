@@ -4,6 +4,7 @@ import { carregarTudo } from '@/lib/supabase-tudo'
 import { today, addDays, fmtDate } from '@/lib/utils'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
+import { enderecoDeResposta, registarEmailAutomatico } from '@/lib/mensagens-server'
 import { TRIGGER_DATE, estadosParaGatilho, renderAutomationMessage, envioPorGrupo } from '@/lib/automations'
 import type { Automation, AutomationTrigger, Booking } from '@/lib/types'
 
@@ -102,13 +103,27 @@ export async function GET(req: NextRequest) {
         }
 
         try {
+          const subject = renderAutomationMessage(auto.assunto, vars)
+          const mensagem = renderAutomationMessage(auto.mensagem, vars)
           const result = await emailService.sendAutomationMessage({
             ownerId: auto.owner_id ?? null,
             guestEmail: guest.email,
-            subject: renderAutomationMessage(auto.assunto, vars),
-            mensagem: renderAutomationMessage(auto.mensagem, vars),
+            subject,
+            mensagem,
+            replyTo: enderecoDeResposta(booking.id),
           })
           if (!result.ok) throw new Error(result.error ?? 'falha no envio')
+
+          await registarEmailAutomatico(supabase, {
+            ownerId: auto.owner_id,
+            reservaId: booking.id,
+            hospedeId: booking.hospede_id,
+            para: guest.email,
+            assunto: subject,
+            corpo: mensagem,
+            origem: 'automacao',
+            envio: result,
+          })
 
           /* Idempotência: o UNIQUE (automation_id, booking_id) bloqueia o
            * duplicado. As reservas irmãs do grupo também ficam registadas —

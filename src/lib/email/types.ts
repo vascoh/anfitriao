@@ -34,6 +34,8 @@ export interface SendResult {
   /** id do provider, se disponível */
   id?: string
   error?: string
+  /** Assunto com que o email saiu (emails ao hóspede), para o registar na conversa */
+  subject?: string
 }
 
 /** Interface de provider — trocar Resend por SES/SendGrid/Mailgun = nova implementação disto. */

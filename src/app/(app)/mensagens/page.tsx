@@ -146,7 +146,7 @@ function Mensagens() {
                         </p>
                         <p className={`mt-0.5 text-xs truncate flex items-center gap-1 ${c.porLer ? 'text-foreground' : 'text-muted-foreground'}`}>
                           <Icone className="h-3 w-3 shrink-0" aria-label={CANAL_LABEL[c.canal]} />
-                          {c.ultima.direcao === 'saida' && <span className="shrink-0">Tu:</span>}
+                          {c.ultima.direcao === 'saida' && <span className="shrink-0">{c.ultima.origem ? 'Automático:' : 'Tu:'}</span>}
                           {c.ultima.sugerida_por_ia && <Sparkles className="h-3 w-3 shrink-0" aria-label="Sugerida pela IA" />}
                           <span className="truncate">{c.ultima.corpo}</span>
                         </p>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
-import { today, addDays, fmtMoney, nights } from '@/lib/utils'
+import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { emailService } from '@/lib/email'
 import { agruparReservas } from '@/lib/grupos'
+import { enderecoDeResposta, registarEmailAutomatico } from '@/lib/mensagens-server'
 import type { Booking } from '@/lib/types'
 const supabase = createAdminClient()
 
@@ -97,8 +98,20 @@ export async function GET(req: NextRequest) {
       total: grupo.precoTotal,
       pago: grupo.precoPago,
       saldo,
+      replyTo: enderecoDeResposta(primeira.id),
     })
     if (!result.ok) continue // não falha o cron por um email
+
+    await registarEmailAutomatico(supabase, {
+      ownerId: primeira.owner_id,
+      reservaId: primeira.id,
+      hospedeId: primeira.hospede_id,
+      para: guest.email,
+      assunto: result.subject,
+      corpo: `Lembrete de pagamento: ${fmtMoney(saldo)} em falta de ${fmtMoney(grupo.precoTotal)} (${nomeAlojamento}, ${fmtDate(grupo.checkIn)} – ${fmtDate(grupo.checkOut)}).`,
+      origem: 'lembrete_pagamento',
+      envio: result,
+    })
 
     /* O registo vai a todas as reservas do grupo: se ficasse só numa, a
      * execução de amanhã olhava para outra e mandava o email outra vez.

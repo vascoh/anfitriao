@@ -157,6 +157,7 @@ export async function fulfillCheckoutSession(connectAccountId: string, sessionId
     await sendBookingNotification({
       bookingId,
       ownerId: owner_id || null,
+      guestId,
       guestName: nome,
       guestEmail: email,
       guestPhone: m.telefone || null,

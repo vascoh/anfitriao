@@ -92,7 +92,13 @@ export function construirPedidoSugestao(c: ContextoSugestao): string {
   linhas.push('<conversa>')
   if (!recentes.length) linhas.push('(ainda sem mensagens)')
   for (const m of recentes) {
-    const quem = m.direcao === 'entrada' ? 'Hóspede' : 'Anfitrião'
+    // A confirmação, o pedido e o lembrete de pagamento ficam guardados como
+    // resumo em português, não com o texto que o hóspede leu: não servem
+    // para adivinhar a língua dele. As automações guardam o texto enviado.
+    const quem = m.direcao === 'entrada' ? 'Hóspede'
+      : m.origem === 'automacao' ? 'Anfitrião (automação)'
+      : m.origem ? 'Email automático (resumo, não é o texto enviado)'
+      : 'Anfitrião'
     linhas.push(`[${m.criado_em.slice(0, 16).replace('T', ' ')} · ${quem} · ${CANAL_LABEL[m.canal]}]`)
     linhas.push(semDelimitadores(corta(m.corpo, MAX_CHARS_MENSAGEM)))
     linhas.push('')

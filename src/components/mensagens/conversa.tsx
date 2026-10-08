@@ -9,7 +9,7 @@ import {
 import { fmtDate, today } from '@/lib/utils'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar } from '@/lib/guardar'
-import { CANAIS, CANAL_LABEL, linkWhatsApp, type CanalMensagem, type Mensagem } from '@/lib/mensagens'
+import { CANAIS, CANAL_LABEL, ORIGEM_LABEL, linkWhatsApp, type CanalMensagem, type Mensagem } from '@/lib/mensagens'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { quando, selecaoParaQuery, type ConversaAberta, type Selecao } from './tipos'
 
@@ -41,13 +41,14 @@ function Bolha({ m }: { m: Mensagem }) {
           ? m.estado === 'falhou' ? 'bg-destructive/10 border border-destructive/30' : 'bg-primary text-primary-foreground'
           : 'bg-muted'
       }`}>
-        {m.assunto && m.canal === 'email' && !minha && <p className="text-xs font-semibold mb-1 opacity-80">{m.assunto}</p>}
+        {m.assunto && m.canal === 'email' && (!minha || m.origem) && <p className="text-xs font-semibold mb-1 opacity-80">{m.assunto}</p>}
         <p className="whitespace-pre-wrap break-words leading-relaxed">{m.corpo}</p>
         <p className={`mt-1.5 text-[11px] flex flex-wrap items-center gap-x-1.5 ${minha && m.estado !== 'falhou' ? 'text-primary-foreground/75' : 'text-muted-foreground'}`}>
           <span>{CANAL_LABEL[m.canal]}</span>
           <span aria-hidden>·</span>
           <time dateTime={m.criado_em}>{quando(m.criado_em)}</time>
           {estado && <><span aria-hidden>·</span><span className={m.estado === 'falhou' ? 'text-destructive font-medium' : ''}>{estado}</span></>}
+          {m.origem && <><span aria-hidden>·</span><span>{ORIGEM_LABEL[m.origem]}</span></>}
           {m.sugerida_por_ia && <><span aria-hidden>·</span><span className="inline-flex items-center gap-0.5"><Sparkles className="h-3 w-3" aria-hidden />IA</span></>}
         </p>
       </div>

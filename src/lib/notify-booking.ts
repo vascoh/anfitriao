@@ -3,11 +3,15 @@ import { adminGetWebsiteSettings } from '@/lib/db-admin'
 import { emailService } from '@/lib/email'
 import { sendPushToOwner } from '@/lib/push'
 import { getNotificationPreferences } from '@/lib/notification-preferences'
+import { createAdminClient } from '@/lib/supabase'
+import { enderecoDeResposta, registarEmailAutomatico } from '@/lib/mensagens-server'
 import { fmtDate, fmtMoney, nights } from '@/lib/utils'
 
 export interface BookingNotification {
   bookingId: string
   ownerId: string | null
+  /** Hóspede da reserva, para o email ao hóspede ficar na conversa dele */
+  guestId?: string | null
   guestName: string
   guestEmail: string
   guestPhone: string | null
@@ -60,10 +64,23 @@ export async function sendBookingNotification(p: BookingNotification): Promise<v
   }
 
   if (p.guestEmail) {
+    const replyTo = enderecoDeResposta(p.bookingId)
     sends.push(
-      p.jaConfirmada
-        ? emailService.sendReservationConfirmation({ ...p, numNights })
-        : emailService.sendReservationRequest({ ...p, numNights }),
+      (p.jaConfirmada
+        ? emailService.sendReservationConfirmation({ ...p, numNights, replyTo })
+        : emailService.sendReservationRequest({ ...p, numNights, replyTo })
+      ).then(envio => registarEmailAutomatico(createAdminClient(), {
+        ownerId: p.ownerId,
+        reservaId: p.bookingId,
+        hospedeId: p.guestId,
+        para: p.guestEmail,
+        assunto: envio.subject,
+        corpo: p.jaConfirmada
+          ? 'Confirmação da reserva enviada, com o link do check-in online.'
+          : 'Pedido de reserva recebido — o hóspede foi avisado de que aguarda confirmação.',
+        origem: p.jaConfirmada ? 'confirmacao' : 'pedido',
+        envio,
+      })),
     )
   }
 

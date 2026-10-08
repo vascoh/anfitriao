@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
     await sendBookingNotification({
       bookingId: linhas[0].id,
       ownerId: owner_id,
+      guestId,
       guestName: nome,
       guestEmail: email,
       guestPhone: telefone ?? null,

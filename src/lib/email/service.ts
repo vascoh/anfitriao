@@ -31,15 +31,24 @@ import { assuntos, linguaDoEmail } from './templates/lingua'
  * seguem o padrão dos emails de plataforma.
  */
 class EmailService {
-  /** Email de alojamento → hóspede (identidade + Reply-To do anfitrião). */
-  private async sendAsProperty(identity: EmailIdentity, to: string, subject: string, html: string): Promise<SendResult> {
-    return getEmailProvider().send({
+  /**
+   * Email de alojamento → hóspede (identidade + Reply-To do anfitrião).
+   *
+   * `replyTo` é o endereço de resposta da conversa (`enderecoDeResposta`),
+   * quando a receção de email está montada: a resposta do hóspede volta à
+   * caixa de entrada em vez de ir para o email do alojamento.
+   */
+  private async sendAsProperty(
+    identity: EmailIdentity, to: string, subject: string, html: string, replyTo?: string | null,
+  ): Promise<SendResult> {
+    const res = await getEmailProvider().send({
       from: propertyFrom(identity.displayName),
       to,
-      replyTo: identity.replyTo ?? undefined,
+      replyTo: replyTo ?? identity.replyTo ?? undefined,
       subject,
       html,
     })
+    return { ...res, subject }
   }
 
   /** Email de plataforma → anfitrião. */
@@ -55,6 +64,7 @@ class EmailService {
     guestName: string
     guestEmail: string
     notas: string | null
+    replyTo?: string | null
   }): Promise<SendResult> {
     const identity = await emailIdentityForOwner(p.ownerId)
     return this.sendAsProperty(
@@ -62,6 +72,7 @@ class EmailService {
       p.guestEmail,
       assuntos.pedido(linguaDoEmail(identity), p.propertyName),
       reservationRequestEmail({ ...p, identity }),
+      p.replyTo,
     )
   }
 
@@ -72,6 +83,7 @@ class EmailService {
     guestName: string
     guestEmail: string
     instrucoes?: string | null
+    replyTo?: string | null
   }): Promise<SendResult> {
     const identity = await emailIdentityForOwner(p.ownerId)
     return this.sendAsProperty(
@@ -79,6 +91,7 @@ class EmailService {
       p.guestEmail,
       assuntos.confirmada(linguaDoEmail(identity), p.propertyName),
       reservationConfirmedEmail({ ...p, identity, checkinLink: `${APP_URL}/checkin/${p.bookingId}` }),
+      p.replyTo,
     )
   }
 
@@ -136,6 +149,7 @@ class EmailService {
     total: number
     pago: number
     saldo: number
+    replyTo?: string | null
   }): Promise<SendResult> {
     const identity = await emailIdentityForOwner(p.ownerId)
     return this.sendAsProperty(
@@ -143,6 +157,7 @@ class EmailService {
       p.guestEmail,
       assuntos.pagamento(linguaDoEmail(identity), p.propertyName, p.checkIn),
       paymentReminderEmail({ ...p, identity }),
+      p.replyTo,
     )
   }
 
@@ -154,6 +169,7 @@ class EmailService {
     guestEmail: string
     subject: string
     mensagem: string
+    replyTo?: string | null
   }): Promise<SendResult> {
     const identity = await emailIdentityForOwner(p.ownerId)
     return this.sendAsProperty(
@@ -161,6 +177,7 @@ class EmailService {
       p.guestEmail,
       p.subject,
       automationMessageEmail({ identity, subject: p.subject, mensagem: p.mensagem }),
+      p.replyTo,
     )
   }
 

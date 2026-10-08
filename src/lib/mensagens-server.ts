@@ -2,7 +2,7 @@ import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { decifrar, encriptar, estaConfigurada } from '@/lib/crypto'
-import { normalizarTelefone, type Mensagem } from '@/lib/mensagens'
+import { LIMITE_ASSUNTO, LIMITE_CORPO, enderecoEmail, normalizarTelefone, type Mensagem, type OrigemMensagem } from '@/lib/mensagens'
 
 /**
  * Caixa de entrada — o que só o servidor pode fazer: assinar endereços de
@@ -245,4 +245,50 @@ export async function gravarMensagem(supabase: SupabaseClient, m: NovaMensagem):
     return { ok: false, erro: error.message }
   }
   return { ok: true, mensagem: data as Mensagem }
+}
+
+/**
+ * Regista na conversa da reserva um email que a aplicação mandou sozinha
+ * (pedido recebido, confirmação, lembrete de pagamento, automação).
+ *
+ * Sem isto o anfitrião abria a conversa sem ver o que o hóspede já tinha
+ * recebido — e a sugestão da IA também não, propondo reenviar instruções que
+ * já tinham saído. Só se grava o que saiu: um envio falhado é um problema do
+ * cron, não uma mensagem. Nunca lança — o email já foi; perder o registo não
+ * pode fazer o chamador repetir o envio.
+ */
+export async function registarEmailAutomatico(
+  supabase: SupabaseClient,
+  p: {
+    ownerId: string | null | undefined
+    reservaId: string
+    hospedeId: string | null | undefined
+    para: string
+    assunto: string | null | undefined
+    corpo: string
+    origem: OrigemMensagem
+    envio: { ok: boolean; id?: string }
+  },
+): Promise<void> {
+  if (!p.ownerId || !p.envio.ok) return
+  const corpo = p.corpo.trim().slice(0, LIMITE_CORPO)
+  if (!corpo) return
+  try {
+    const r = await gravarMensagem(supabase, {
+      owner_id: p.ownerId,
+      reserva_id: p.reservaId,
+      hospede_id: p.hospedeId ?? null,
+      canal: 'email',
+      direcao: 'saida',
+      estado: 'enviada',
+      assunto: p.assunto?.slice(0, LIMITE_ASSUNTO) ?? null,
+      corpo,
+      contacto: enderecoEmail(p.para),
+      id_externo: p.envio.id ?? null,
+      origem: p.origem,
+    })
+    if (!r.ok) console.error('[mensagens] registo de email automático falhou', p.reservaId, r.erro)
+  } catch (err) {
+    console.error('[mensagens] registo de email automático falhou', p.reservaId, err)
+  }
 }
