@@ -6,6 +6,47 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-08] Caixa de entrada unificada com sugestões de resposta por IA
+
+Fases 1 e 2 da aposta do TODO (2026-10-01). `/mensagens` (em Reservas):
+
+- ✅ **Uma conversa por reserva**, com email, WhatsApp e o que chega pelo
+  Airbnb, Booking.com, SMS ou telefone na mesma linha do tempo. O que não passa
+  pela aplicação regista-se com «Registar» (colar a mensagem). Conversas sem
+  reserva (número desconhecido) ficam pelo contacto e associam-se depois.
+- ✅ **Email**: sai pelo Resend em nome do alojamento (`sendGuestMessage`).
+  Com `INBOUND_EMAIL_DOMAIN` + `RESEND_WEBHOOK_SECRET`, o Reply-To é
+  `r+<reserva>.<HMAC>@domínio` e a resposta volta à conversa pelo webhook
+  `/api/mensagens/entrada/email` (assinatura Svix; corta a citação do email
+  anterior). Sem isso, responde-se ao email do alojamento, como antes.
+- ✅ **WhatsApp**: sem ligação, «Enviar» abre `wa.me` com o texto (no mesmo
+  clique, para o browser não bloquear) e guarda a mensagem. Com número
+  WhatsApp Business (`/mensagens/whatsapp`: phone number ID, token e app
+  secret, validados na Meta e cifrados), envia pela Cloud API dentro da janela
+  de 24 h e recebe por `/api/mensagens/entrada/whatsapp` (HMAC da app de cada
+  anfitrião; associa ao hóspede pelo telefone normalizado).
+- ✅ **Sugerir resposta** (`/api/mensagens/sugerir`, claude-opus-4-8, saída
+  estruturada): rascunho na língua do hóspede, com reserva, alojamento, regras
+  e as últimas 20 mensagens. Nunca envia; marca o que não sabe como
+  `[confirmar: …]` e o envio fica bloqueado até isso sair. Não leva documento,
+  NIF, data de nascimento nem contactos do hóspede; o texto do hóspede vai
+  delimitado e escapado (testes em `sugestao-resposta.test.ts`).
+- ✅ Aviso «N mensagens por ler» no Hoje (e no contador da navegação), atalho
+  na página da reserva, notificação push quando chega uma mensagem.
+- Migração 051 (`mensagens`, `whatsapp_ligacoes`, RLS sem policies — só
+  service_role). Envio com teto de 30/min por conta; webhooks com teto por IP.
+- **E2E em produção** (utilizador Clerk descartável, dados `TESTE-E2E`
+  apagados): registo, envio de email (`delivered@resend.dev` → `enviada` com
+  id do Resend), WhatsApp por link (`api.whatsapp.com/send?phone=336…`),
+  lista, telemóvel a 390 px sem scroll lateral. Webhooks: 400/401 sem
+  assinatura.
+- 🔴 **A sugestão falhou em produção: «Your credit balance is too low»** na
+  conta Anthropic. O mesmo bloqueia o Concierge IA e a leitura de documentos
+  no check-in online. Pendente humano: carregar crédito.
+- Pendente humano para as respostas por email: domínio de receção no Resend
+  (MX), webhook `email.received`, `INBOUND_EMAIL_DOMAIN` e
+  `RESEND_WEBHOOK_SECRET` na Vercel.
+
 ### [2026-10-08] Falha ao carregar ≠ lista vazia — resto da app
 
 Continuação da auditoria de 2026-10-01 (que tratou Reservas, Calendário,

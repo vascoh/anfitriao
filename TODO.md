@@ -16,7 +16,11 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
   botão no menu desktop. «Mais» inclui agora «Pesquisar e criar», com acesso a
   reservas, hóspedes, alojamentos e ações; o diálogo ganhou identificação e
   controlos acessíveis.
-- [ ] **Aposta recomendada: caixa de entrada unificada com IA, incluindo
+- [x] **Caixa de entrada unificada com IA, incluindo WhatsApp** — fases (1) e
+  (2) em produção a 2026-10-08 (`/mensagens`). Falta: receção de email
+  (DNS + webhook no Resend, ver `.env.example`), crédito na conta Anthropic, e
+  a fase (3) — mensagens Airbnb/Booking por API. Texto original da aposta:
+  **Aposta recomendada: caixa de entrada unificada com IA, incluindo
   WhatsApp.** Amenitiz já junta caixa de entrada, OTA e WhatsApp; TalkGuest
   inclui o Communications Hub desde o plano de entrada; Hostkit envia
   comunicações por WhatsApp/SMS. O Anfitrião tem as duas metades separadas:
