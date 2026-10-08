@@ -6,6 +6,30 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-08] Falha ao carregar ≠ lista vazia — resto da app
+
+Continuação da auditoria de 2026-10-01 (que tratou Reservas, Calendário,
+Hóspedes, Relatórios, Canais, INE, TMT e Blog). O fetcher convertia qualquer
+`401`/`500` em `[]`, e os ecrãs abaixo liam esse vazio como resposta:
+
+- ✅ **Hoje** — num erro mostrava «cria o teu primeiro alojamento» a quem já
+  tem casas, e «dia calmo» a quem tem chegadas. Agora `ErroAoCarregar`.
+- ✅ **Financeiro** e **Mapa fiscal** — receita a zero; sem `catch`, uma falha
+  de rede deixava o esqueleto para sempre. O botão «Pacote contabilista» fica
+  desativado enquanto os dados não chegaram (descarregava zeros).
+- ✅ **Detalhe da reserva** — falha já não aparece como «Reserva não
+  encontrada». **Ficha do hóspede** — hóspede inexistente ou falha deixavam o
+  esqueleto eterno; agora dizem qual dos dois.
+- ✅ **Alojamentos** (convidava a duplicar casas), **Conformidade** («tudo em
+  dia»), **Preços** (regras vazias; indicador a rodar para sempre).
+- ✅ **/reservas/nova** — a pré-verificação de disponibilidade seguia em frente
+  sem dados. O servidor continua a ser a garantia (verifica ao gravar).
+- `fetchExpenses`, `fetchAutomations`, `fetchPlatformRates` aceitam
+  `{ exigirSucesso }`. Ficam tolerantes de propósito: contador de alertas,
+  pesquisa global, formulários de edição/criação e `/website` (o vazio aí não
+  leva a uma decisão errada imediata).
+- Deploy `--prod` com alias confirmado em anfitrioes.pt.
+
 ### [2026-10-07] Editor do site: o mapa do site, ao lado do site verdadeiro
 
 O site do anfitrião editava-se num formulário comprido com o site num iframe ao
