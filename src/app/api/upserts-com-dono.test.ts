@@ -29,6 +29,9 @@ const EXCECOES: Record<string, string> = {
     + 'primeira subscrição manda e as seguintes não tocam na linha, portanto '
     + 'não há nada para sobrepor. A tabela tem RLS sem políticas: nem anon nem '
     + 'authenticated a leem.',
+  'mensagens/whatsapp/route.ts':
+    'a chave de conflito é o owner_id da sessão, nunca um id do cliente; o '
+    + 'phone_number_id é único, e tentar o de outra conta dá 409 em vez de sobrepor',
 }
 
 function ficheirosDeRota(dir: string): string[] {

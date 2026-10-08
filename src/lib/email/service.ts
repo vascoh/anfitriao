@@ -164,6 +164,31 @@ class EmailService {
     )
   }
 
+  /**
+   * Hóspede: mensagem escrita na caixa de entrada.
+   *
+   * `replyTo` é o endereço de resposta da conversa (`lib/mensagens-server.ts`)
+   * quando a receção de email está configurada — é isso que traz a resposta
+   * do hóspede de volta à caixa. Sem ele, responde-se ao email do alojamento,
+   * como nos outros emails.
+   */
+  async sendGuestMessage(p: {
+    ownerId: string | null
+    guestEmail: string
+    subject: string
+    mensagem: string
+    replyTo?: string | null
+  }): Promise<SendResult> {
+    const identity = await emailIdentityForOwner(p.ownerId)
+    return getEmailProvider().send({
+      from: propertyFrom(identity.displayName),
+      to: p.guestEmail,
+      replyTo: p.replyTo ?? identity.replyTo ?? undefined,
+      subject: p.subject,
+      html: automationMessageEmail({ identity, subject: p.subject, mensagem: p.mensagem }),
+    })
+  }
+
   // ── Plataforma ──────────────────────────────────────────────────────────────
 
   /** Anfitrião: trial a expirar (3 dias / 1 dia). */

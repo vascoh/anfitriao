@@ -17,7 +17,13 @@ export function useAlertsCount() {
     }
 
     let cancelled = false
-    fetchBookings().then(bookings => {
+    // Mensagens de hóspedes por ler contam como alerta: são das poucas coisas
+    // que pedem resposta no próprio dia.
+    const porLer = fetch('/api/mensagens?resumo=1')
+      .then(r => (r.ok ? r.json() : { porLer: 0 }))
+      .then((d: { porLer?: number }) => d.porLer ?? 0)
+      .catch(() => 0)
+    Promise.all([fetchBookings(), porLer]).then(([bookings, mensagens]) => {
       if (cancelled) return
       const t = today()
       const pendentes = bookings.filter(b => b.estado === 'pendente').length
@@ -26,7 +32,7 @@ export function useAlertsCount() {
         b.preco_pago < b.preco_total && b.check_in <= t
       ).length
       const esquecidosCheckin = bookings.filter(b => b.estado === 'confirmada' && b.check_in < t).length
-      const total = pendentes + pagamentosEmFalta + esquecidosCheckin
+      const total = pendentes + pagamentosEmFalta + esquecidosCheckin + mensagens
       cached = { count: total, at: Date.now() }
       setCount(total)
     }).catch(() => {})

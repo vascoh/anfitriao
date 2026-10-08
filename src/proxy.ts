@@ -99,6 +99,9 @@ const isPublicRoute = createRouteMatcher([
   // Extração de documento usada pelo check-in público do hóspede (rate-limited)
   '/api/documentos/extrair',
   '/api/stripe/webhook', // webhook verificado pela assinatura Stripe
+  // Caixa de entrada: respostas por email (assinatura Svix do Resend) e
+  // WhatsApp (assinatura da app Meta de cada anfitrião). Rate-limited.
+  '/api/mensagens/entrada/(.*)',
   // Cron jobs (protegidos por CRON_SECRET, não por Clerk)
   '/api/ical-sync(.*)',
   '/api/cron/(.*)',

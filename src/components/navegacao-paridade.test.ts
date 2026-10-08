@@ -94,6 +94,7 @@ describe('todas as páginas têm porta', () => {
     'conformidade/ine': 'atalho no cabeçalho de /conformidade',
     'conformidade/taxa-turistica': 'atalho no cabeçalho de /conformidade',
     'financeiro/fiscal': 'atalho no cabeçalho de /financeiro',
+    'mensagens/whatsapp': 'atalho no cabeçalho de /mensagens (ligar WhatsApp e email)',
   }
 
   /** Uma rota é contextual quando tem um parâmetro ou é uma ação sobre uma lista. */

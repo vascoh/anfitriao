@@ -1,7 +1,7 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
   Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
-  UserRound, CreditCard, Receipt, Rss, Activity, Filter, Network, LayoutTemplate,
+  UserRound, CreditCard, MessagesSquare, Receipt, Rss, Activity, Filter, Network, LayoutTemplate,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -49,6 +49,7 @@ export const NAV: NavSection[] = [
     label: 'Reservas',
     Icon: CalendarCheck2,
     children: [
+      { href: '/mensagens', label: 'Mensagens', Icon: MessagesSquare, descricao: 'Email e WhatsApp com sugestões de resposta por IA' },
       { href: '/hospedes', label: 'Hóspedes', Icon: Users, descricao: 'Contactos, notas e histórico' },
       { href: '/documentos', label: 'Documentos SIBA', Icon: FileText, descricao: 'Boletins de alojamento' },
     ],

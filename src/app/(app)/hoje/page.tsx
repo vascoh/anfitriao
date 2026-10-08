@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { ArrowRight, AlertTriangle, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
+import { ArrowRight, AlertTriangle, MessagesSquare, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
 import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
 import { transitionBooking, canTransition, unidadesReservaveis, geraObrigacoesDeHospede } from '@/lib/reservations'
@@ -115,6 +115,7 @@ export default function HojePage() {
   const [settings, setSettings] = useState<WebsiteSettings | null>(null)
   const [loaded, setLoaded] = useState(false)
   const [erro, setErro] = useState(false)
+  const [mensagensPorLer, setMensagensPorLer] = useState(0)
 
   useEffect(() => {
     if (!ownerId) return
@@ -132,6 +133,10 @@ export default function HojePage() {
       .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); if (s) setSettings(s); setErro(false) })
       .catch(() => setErro(true))
       .finally(() => setLoaded(true))
+    fetch('/api/mensagens?resumo=1')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (typeof d?.porLer === 'number') setMensagensPorLer(d.porLer) })
+      .catch(() => {})
   }, [ownerId])
 
   const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
@@ -291,7 +296,8 @@ export default function HojePage() {
     [bookings, t]
   )
 
-  const temAlertas = pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0 || boletinsEmAtraso.length > 0
+  const totalAlertas = (mensagensPorLer > 0 ? 1 : 0) + pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length + feedsComProblema.length
+  const temAlertas = mensagensPorLer > 0 || pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0 || boletinsEmAtraso.length > 0
   const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
   const semPropriedades = loaded && !erro && props.length === 0
 
@@ -403,9 +409,22 @@ export default function HojePage() {
                 </p>
               </div>
               <span className="text-[11px] font-semibold text-amber-700 tabular-nums">
-                {pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length + feedsComProblema.length} item{pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length + feedsComProblema.length !== 1 ? 's' : ''}
+                {totalAlertas} item{totalAlertas !== 1 ? 's' : ''}
               </span>
             </div>
+            {mensagensPorLer > 0 && (
+              <Link href="/mensagens"
+                className="flex items-start gap-3 bg-amber-50 border-b border-amber-100 px-4 lg:px-8 py-3 active:bg-amber-100 transition-colors">
+                <MessagesSquare className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-900">
+                    {mensagensPorLer} mensage{mensagensPorLer === 1 ? 'm' : 'ns'} de hóspedes por ler
+                  </p>
+                  <p className="text-xs text-amber-700">A IA sugere a resposta na língua de cada um</p>
+                </div>
+                <ArrowRight className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+              </Link>
+            )}
             {feedsComProblema.map(f => (
               <Link key={`feed-${f.propId}-${f.feedNome}`} href={`/propriedades/${f.propId}/editar`}
                 className="flex items-start gap-3 bg-red-50 border-b border-red-100 px-4 lg:px-8 py-3 active:bg-red-100 transition-colors">

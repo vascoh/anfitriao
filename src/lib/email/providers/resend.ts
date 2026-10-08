@@ -49,3 +49,58 @@ export class NoopProvider implements EmailProvider {
     return { ok: false, error: 'no_api_key' }
   }
 }
+
+// ─── Receção (caixa de entrada) ────────────────────────────────────────────
+
+export interface EmailRecebido {
+  id: string
+  from: string
+  to: string[]
+  subject: string
+  text: string | null
+  html: string | null
+  messageId: string | null
+}
+
+/**
+ * Valida a assinatura (Svix) de um webhook do Resend e devolve o evento de
+ * email recebido — ou null se a assinatura não bate ou o evento é outro.
+ */
+export function verificarEmailRecebido(
+  corpo: string,
+  cabecalhos: { id: string | null; timestamp: string | null; signature: string | null },
+): { email_id: string; from: string; to: string[]; subject: string } | null {
+  const segredo = process.env.RESEND_WEBHOOK_SECRET
+  if (!segredo || !cabecalhos.id || !cabecalhos.timestamp || !cabecalhos.signature) return null
+  try {
+    // A verificação é local (Svix); a chave só existe para o construtor não recusar.
+    const evento = new Resend(process.env.RESEND_API_KEY ?? 're_verificacao_local').webhooks.verify({
+      payload: corpo,
+      headers: { id: cabecalhos.id, timestamp: cabecalhos.timestamp, signature: cabecalhos.signature },
+      webhookSecret: segredo,
+    })
+    return evento.type === 'email.received' ? evento.data : null
+  } catch {
+    return null
+  }
+}
+
+/** O webhook só traz metadados; o corpo lê-se à parte. */
+export async function lerEmailRecebido(id: string): Promise<EmailRecebido | null> {
+  const chave = process.env.RESEND_API_KEY
+  if (!chave) return null
+  const { data, error } = await new Resend(chave).emails.receiving.get(id)
+  if (error || !data) {
+    console.error('[email][rececao] não foi possível ler o email', id, error?.message)
+    return null
+  }
+  return {
+    id: data.id,
+    from: data.from,
+    to: data.to,
+    subject: data.subject,
+    text: data.text,
+    html: data.html,
+    messageId: data.message_id ?? null,
+  }
+}

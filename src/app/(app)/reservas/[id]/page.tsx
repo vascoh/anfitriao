@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, Users, MapPin, Phone, Mail, Edit2,
   CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink,
-  MessageCircle, CreditCard, Check, Link2, ShieldCheck
+  MessageCircle, MessagesSquare, CreditCard, Check, Link2, ShieldCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
@@ -380,7 +380,13 @@ export default function ReservaDetailPage() {
             </div>
             <p className="text-xs text-muted-foreground">{prop?.nome}</p>
           </div>
-          <Link href={`/reservas/${id}/editar`} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          {!bloqueio && (
+            <Link href={`/mensagens?reserva=${id}`} aria-label="Mensagens com o hóspede" title="Mensagens com o hóspede"
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              <MessagesSquare className="h-4 w-4" />
+            </Link>
+          )}
+          <Link href={`/reservas/${id}/editar`} aria-label="Editar reserva" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Edit2 className="h-4 w-4" />
           </Link>
         </div>
