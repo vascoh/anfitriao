@@ -8,6 +8,7 @@ import {
   TrendingUp, TrendingDown, BarChart3, Settings2, RefreshCw,
 } from 'lucide-react'
 import { fetchProperties } from '@/lib/fetcher'
+import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { getPriceForDay } from '@/lib/reservations'
 import { fmtMoney, uuid, today as localToday } from '@/lib/utils'
 import { validarRegraPreco } from '@/lib/validacao-precos'
@@ -69,26 +70,39 @@ export default function PrecosPage() {
   const [tarifas, setTarifas] = useState<Tarifa[]>([])
   const [platforms, setPlatforms] = useState<PlatformRate[]>([])
   const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState(false)
 
   const showToast = useCallback((msg: string, ok = true) => {
     if (ok) toast.success(msg)
     else toast.error(msg)
   }, [])
 
+  /* Regras e tarifas vazias levam a recriá-las por cima das que existem; e uma
+   * falha de rede deixava o indicador a rodar para sempre. */
   async function reload() {
     setLoading(true)
-    const [p, rRes, tRes, plRes] = await Promise.all([
-      fetchProperties(),
-      fetch('/api/price-rules').then(r => r.json()),
-      fetch('/api/tarifas').then(r => r.json()),
-      fetch('/api/platform-rates').then(r => r.json()),
-    ])
-    const [r, t, pl] = [rRes, tRes, plRes].map(x => Array.isArray(x) ? x : [])
-    setProps(p)
-    setRules(r)
-    setTarifas(t)
-    setPlatforms(pl)
-    setLoading(false)
+    const lista = (url: string) => fetch(url).then(r => {
+      if (!r.ok) throw new Error(`Pedido falhou (${r.status})`)
+      return r.json()
+    })
+    try {
+      const [p, rRes, tRes, plRes] = await Promise.all([
+        fetchProperties({ exigirSucesso: true }),
+        lista('/api/price-rules'),
+        lista('/api/tarifas'),
+        lista('/api/platform-rates'),
+      ])
+      const [r, t, pl] = [rRes, tRes, plRes].map(x => Array.isArray(x) ? x : [])
+      setProps(p)
+      setRules(r)
+      setTarifas(t)
+      setPlatforms(pl)
+      setErro(false)
+    } catch {
+      setErro(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -134,6 +148,9 @@ export default function PrecosPage() {
         </div>
       </header>
 
+      {erro ? (
+        <ErroAoCarregar oQue="os preços" aviso="Não recries regras nem tarifas que já existem." aoTentar={reload} />
+      ) : (
       <div className="flex-1 flex flex-col">
         {tab === 'visao'       && <TabVisao props={props} rules={rules} platforms={platforms} onReload={reload} showToast={showToast} />}
         {tab === 'calendario'  && <TabCalendario props={props} rules={rules} />}
@@ -142,6 +159,7 @@ export default function PrecosPage() {
         {tab === 'plataformas' && <TabPlataformas props={props} platforms={platforms} onReload={reload} showToast={showToast} />}
         {tab === 'massa'       && <TabMassa props={props} onReload={reload} showToast={showToast} />}
       </div>
+      )}
 
     </div>
   )
