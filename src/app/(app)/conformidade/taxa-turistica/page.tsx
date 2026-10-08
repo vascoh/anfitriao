@@ -46,7 +46,11 @@ export default function TaxaTuristicaPage() {
      * mês anterior continuava no ecrã por baixo do cabeçalho do mês novo. Numa
      * página de onde sai um valor para a câmara, um número que não chegou não
      * pode passar por um número que é zero. */
-    Promise.all([fetchBookings({ de, ate }), fetchProperties()])
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchBookings({ de, ate }, exigirSucesso),
+      fetchProperties(exigirSucesso),
+    ])
       .then(([b, p]) => { setBookings(b); setProps(p); setErro(false) })
       .catch(() => setErro(true))
       .finally(() => setLoading(false))

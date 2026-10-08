@@ -154,7 +154,12 @@ export default function ReservasPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    Promise.all([fetchBookings(), fetchGuests(), fetchProperties()])
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchBookings(undefined, exigirSucesso),
+      fetchGuests(exigirSucesso),
+      fetchProperties(exigirSucesso),
+    ])
       .then(([b, g, p]) => { setBookings(b); setGuests(g); setProps(p) })
       /* Sem isto, uma falha de rede dava uma lista vazia igual à de quem não
        * tem reservas nenhumas — e é sobre esta lista que se decide aceitar

@@ -146,7 +146,8 @@ export function SideNav() {
       {/* Search trigger */}
       <div className="px-2 py-2 border-b border-border">
         <button
-          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, bubbles: true }))}
+          onClick={() => window.dispatchEvent(new Event('anfitriao:open-search'))}
+          aria-label="Pesquisar reservas, hóspedes, alojamentos e ações"
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-muted-foreground hover:text-foreground text-xs transition-colors"
         >
           <Search className="h-3.5 w-3.5 shrink-0" />

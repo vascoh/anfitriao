@@ -4,6 +4,30 @@ _Ficheiro vivo. Atualizar no fim de cada fase, junto com `CHANGELOG_PHASE_XX.md`
 
 > ⚠️ **2026-08-02** — `docs/DOSSIE-ESTRATEGICO-2026-08.md` substitui a tese central do `PLANO-ESTRATEGICO-2026.md`. Três correções que alteram prioridades: (1) a conformidade PT **não** é um fosso vazio — EazyAL e Hostkit já a entregam; (2) o **SIBA tem web service público** e as credenciais são do anfitrião, obtidas no portal em 1–3 dias úteis — a "pendência AIMA" abaixo é falsa; (3) a landing v2 promete caixa de entrada unificada e contrato eletrónico, que não existem. As três estão **resolvidas em código** (ver Fase 0/1 do dossiê, abaixo).
 
+## ▶️ Auditoria de produto e UX — 2026-10-01
+
+- [x] **Falhas HTTP já não parecem dados vazios nos ecrãs críticos.** Os
+  estados de erro de Reservas, Calendário, Hóspedes, Relatórios, Canais, INE,
+  TMT e Blog só apanhavam falhas de rede: um `401`/`500` era convertido pelo
+  fetcher em `[]` e aparecia como «sem reservas» ou zero a declarar. Esses
+  ecrãs pedem agora resposta estrita e mostram a mensagem de erro que já
+  tinham. Testes em `lib/fetcher.test.ts`.
+- [x] **Pesquisa e ações rápidas acessíveis no telemóvel.** O `⌘K` só tinha
+  botão no menu desktop. «Mais» inclui agora «Pesquisar e criar», com acesso a
+  reservas, hóspedes, alojamentos e ações; o diálogo ganhou identificação e
+  controlos acessíveis.
+- [ ] **Aposta recomendada: caixa de entrada unificada com IA, incluindo
+  WhatsApp.** Amenitiz já junta caixa de entrada, OTA e WhatsApp; TalkGuest
+  inclui o Communications Hub desde o plano de entrada; Hostkit envia
+  comunicações por WhatsApp/SMS. O Anfitrião tem as duas metades separadas:
+  automações por email e um Concierge IA de copiar/colar. A vantagem capaz de
+  provocar migração não é copiar outra inbox: é receber a conversa, propor a
+  resposta no idioma do hóspede com contexto da reserva e enviá-la no mesmo
+  ecrã. Fasear: (1) email + WhatsApp e histórico por reserva; (2) sugestões IA
+  com aprovação; (3) mensagens Airbnb/Booking quando houver ligações API.
+  Dependência: uma inbox OTA completa exige as mesmas parcerias do channel
+  manager; não prometer antes disso.
+
 > 🔴 **2026-08-17 — a tese de preço caiu também.** O **TalkGuest** (português, 1000+ clientes) cobra **por conta, desde €13,50/mês**, com SIBA por web service, faturação certificada, **channel manager por API**, owner portal, app móvel e pricing dinâmico. "Preço por conta que ninguém pode copiar" era falso, tal como "a conformidade é um fosso vazio" tinha sido em julho.
 >
 > **O que muda nas prioridades abaixo:**

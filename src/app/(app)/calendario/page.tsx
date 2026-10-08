@@ -608,7 +608,12 @@ export default function CalendarioPage() {
   useEffect(() => {
     if (!ownerId) return
     let vivo = true
-    Promise.all([fetchBookings(), fetchProperties(), fetchGuests()])
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchBookings(undefined, exigirSucesso),
+      fetchProperties(exigirSucesso),
+      fetchGuests(exigirSucesso),
+    ])
       .then(([b, p, g]) => {
         if (!vivo) return
         setBookings(b)

@@ -38,7 +38,12 @@ export default function IneePage() {
     /* Ver a nota do `catch` em /conformidade/taxa-turistica: sem ele o
      * `setLoading(false)` nunca corria e a página ficava presa no esqueleto,
      * ou — ao mudar de mês — deixava a tabela do mês anterior no ecrã. */
-    Promise.all([fetchBookings({ de, ate }), fetchGuests(), fetchProperties()])
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchBookings({ de, ate }, exigirSucesso),
+      fetchGuests(exigirSucesso),
+      fetchProperties(exigirSucesso),
+    ])
       .then(([b, g, p]) => { setBookings(b); setGuests(g); setProps(p); setErro(false) })
       .catch(() => setErro(true))
       .finally(() => setLoading(false))

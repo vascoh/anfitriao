@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { MoreHorizontal, X, Moon, Sun } from 'lucide-react'
+import { MoreHorizontal, X, Moon, Sun, Search } from 'lucide-react'
 import { useState } from 'react'
 import { useClerk, useUser } from '@clerk/nextjs'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
@@ -54,6 +54,22 @@ export function BottomNav() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
+
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  window.dispatchEvent(new Event('anfitriao:open-search'))
+                }}
+                className="flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left transition-colors hover:bg-muted/60"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                  <Search className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Pesquisar e criar</p>
+                  <p className="text-xs text-muted-foreground">Reservas, hóspedes, alojamentos e ações</p>
+                </div>
+              </button>
 
               {NAV.map(seccao => {
                 const naBarra = NA_BARRA.includes(seccao.href)

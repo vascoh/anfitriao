@@ -192,10 +192,11 @@ export default function RelatoriosPage() {
    * apareciam vazios num relatório que não dizia que lhe faltavam dados. */
   useEffect(() => {
     if (!ownerId) return
+    const exigirSucesso = { exigirSucesso: true }
     Promise.all([
-      fetchBookings({ de: `${year - 1}-01-01`, ate: `${year}-12-31` }),
-      fetchProperties(),
-      fetchGuests(),
+      fetchBookings({ de: `${year - 1}-01-01`, ate: `${year}-12-31` }, exigirSucesso),
+      fetchProperties(exigirSucesso),
+      fetchGuests(exigirSucesso),
     ])
       .then(([b, p, g]) => { setBookings(b); setProperties(p); setGuests(g) })
       /* Um relatório que não carregou mostra zeros, e zeros aqui leem-se como

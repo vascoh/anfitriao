@@ -36,7 +36,7 @@ export default function EditarReservaPage() {
   const [notas, setNotas] = useState('')
 
   useEffect(() => {
-    fetchBookings().then(bs => {
+    fetchBookings(undefined, { exigirSucesso: true }).then(bs => {
       const b = bs.find(x => x.id === id) ?? null
       if (!b) { setFalha('inexistente'); return }
       setBooking(b)

@@ -748,7 +748,7 @@ export default function CanaisPage() {
 
   const carregar = useCallback(async () => {
     try {
-      const lista = await fetchProperties()
+      const lista = await fetchProperties({ exigirSucesso: true })
       setProps(lista)
       setErro(null)
     } catch {
@@ -765,7 +765,7 @@ export default function CanaisPage() {
   useEffect(() => {
     if (!ownerId) return
     let vivo = true
-    fetchProperties()
+    fetchProperties({ exigirSucesso: true })
       .then(lista => { if (vivo) { setProps(lista); setErro(null) } })
       .catch(() => { if (vivo) setErro('Não foi possível carregar os alojamentos.') })
       .finally(() => { if (vivo) setACarregar(false) })

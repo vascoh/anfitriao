@@ -27,7 +27,11 @@ export default function HospedesPage() {
     if (!ownerId) return
     // Já não se carregam as propriedades: eram só para o CSV que esta página
     // construía à mão, e que passou a ser feito no servidor.
-    Promise.all([fetchGuests(), fetchBookings()])
+    const exigirSucesso = { exigirSucesso: true }
+    Promise.all([
+      fetchGuests(exigirSucesso),
+      fetchBookings(undefined, exigirSucesso),
+    ])
       .then(([g, b]) => { setGuests(g); setBookings(b) })
       .catch(() => setErro(true))
       .finally(() => setLoaded(true))

@@ -18,7 +18,7 @@ export default function BlogPage() {
 
   useEffect(() => {
     if (!ownerId) return
-    fetchPosts()
+    fetchPosts({ exigirSucesso: true })
       .then(setPosts)
       .catch(() => setErro(true))
       .finally(() => setLoading(false))

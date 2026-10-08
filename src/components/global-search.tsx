@@ -146,8 +146,13 @@ export function GlobalSearch() {
         e.preventDefault(); setOpen(true)
       }
     }
+    function openSearch() { setOpen(true) }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('anfitriao:open-search', openSearch)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('anfitriao:open-search', openSearch)
+    }
   }, [])
 
   useEffect(() => {
@@ -169,7 +174,13 @@ export function GlobalSearch() {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center pt-[10vh] px-4" onClick={close}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center pt-[10vh] px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pesquisa e ações rápidas"
+      onClick={close}
+    >
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         aria-hidden
@@ -187,10 +198,11 @@ export function GlobalSearch() {
             onChange={e => setQ(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Pesquisar ou executar uma ação..."
+            aria-label="Pesquisar reservas, hóspedes, alojamentos ou ações"
             className="flex-1 text-sm bg-transparent placeholder:text-muted-foreground/60 focus:outline-none"
           />
           {q && (
-            <button onClick={() => setQ('')} className="p-0.5 rounded text-muted-foreground hover:text-foreground">
+            <button onClick={() => setQ('')} aria-label="Limpar pesquisa" className="p-0.5 rounded text-muted-foreground hover:text-foreground">
               <X className="h-3.5 w-3.5" />
             </button>
           )}

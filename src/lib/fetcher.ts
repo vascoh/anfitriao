@@ -6,15 +6,36 @@
 
 import type { Guest, Booking, Property, WebsiteSettings, Expense, Automation, Post, PlatformRate } from './types'
 
-export async function fetchSettings(): Promise<WebsiteSettings | null> {
-  const res = await fetch('/api/website-settings')
-  if (!res.ok) return null
-  return res.json()
+export interface FetchOptions {
+  /**
+   * Não transformar uma resposta HTTP com erro numa coleção vazia.
+   *
+   * Usa-se nas páginas onde vazio e falha têm consequências diferentes
+   * (calendário, reservas, relatórios e conformidade). Mantém-se opcional
+   * para não mudar de uma vez todos os ecrãs antigos que ainda não têm um
+   * estado de erro próprio.
+   */
+  exigirSucesso?: boolean
 }
 
-export async function fetchGuests(): Promise<Guest[]> {
+async function lerJson<T>(res: Response, fallback: T, opcoes?: FetchOptions): Promise<T> {
+  if (!res.ok) {
+    if (opcoes?.exigirSucesso) {
+      throw new Error(`Pedido falhou (${res.status})`)
+    }
+    return fallback
+  }
+  return res.json() as Promise<T>
+}
+
+export async function fetchSettings(opcoes?: FetchOptions): Promise<WebsiteSettings | null> {
+  const res = await fetch('/api/website-settings')
+  return lerJson(res, null, opcoes)
+}
+
+export async function fetchGuests(opcoes?: FetchOptions): Promise<Guest[]> {
   const res = await fetch('/api/guests')
-  return res.ok ? res.json() : []
+  return lerJson(res, [], opcoes)
 }
 
 /**
@@ -25,14 +46,17 @@ export async function fetchGuests(): Promise<Guest[]> {
  * linhas com o histórico completo de cada uma a atravessar a ligação do
  * telemóvel de quem só quer ver as chegadas de hoje.
  */
-export async function fetchBookings(intervalo?: { de?: string; ate?: string }): Promise<Booking[]> {
+export async function fetchBookings(
+  intervalo?: { de?: string; ate?: string },
+  opcoes?: FetchOptions,
+): Promise<Booking[]> {
   const params = new URLSearchParams()
   if (intervalo?.de) params.set('de', intervalo.de)
   if (intervalo?.ate) params.set('ate', intervalo.ate)
   const qs = params.toString()
 
   const res = await fetch(`/api/bookings${qs ? `?${qs}` : ''}`)
-  return res.ok ? res.json() : []
+  return lerJson(res, [], opcoes)
 }
 
 export async function fetchExpenses(): Promise<Expense[]> {
@@ -45,9 +69,9 @@ export async function fetchAutomations(): Promise<Automation[]> {
   return res.ok ? res.json() : []
 }
 
-export async function fetchPosts(): Promise<Post[]> {
+export async function fetchPosts(opcoes?: FetchOptions): Promise<Post[]> {
   const res = await fetch('/api/posts')
-  return res.ok ? res.json() : []
+  return lerJson(res, [], opcoes)
 }
 
 export async function fetchPlatformRates(): Promise<PlatformRate[]> {
@@ -57,11 +81,10 @@ export async function fetchPlatformRates(): Promise<PlatformRate[]> {
   return Array.isArray(data) ? data : []
 }
 
-export async function fetchProperties(_ownerId?: string): Promise<Property[]> {
+export async function fetchProperties(opcoes?: FetchOptions): Promise<Property[]> {
   // Properties have an anon read policy (active only), but we want ALL properties
   // including inactive ones for the admin pages — use API route.
   const res = await fetch('/api/properties')
-  if (!res.ok) return []
-  const data = await res.json()
+  const data = await lerJson<unknown>(res, [], opcoes)
   return Array.isArray(data) ? data : []
 }
