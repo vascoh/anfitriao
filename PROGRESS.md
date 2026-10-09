@@ -25,6 +25,11 @@ Com a IA desligada, o anfitrião escrevia as mesmas respostas à mão. Botão
   anon/authenticated), aplicada. API `/api/mensagens/respostas` (privada,
   teto de 60/min, máximo de 100 por conta). Testes em
   `respostas-guardadas.test.ts`.
+- **E2E em produção** (utilizador Clerk descartável, dados `TESTE-E2E`
+  apagados): exemplo «Instruções de chegada» preenchido com primeiro nome,
+  alojamento, datas, instruções e link do check-in; guardar um exemplo;
+  `{nomee}` recusado com 400; sem «Sugerir resposta»; 390 px sem scroll
+  lateral. Produção = `3c0dbe5`.
 
 ### [2026-10-09] IA desligada até haver crédito
 
