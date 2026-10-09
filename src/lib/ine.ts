@@ -1,6 +1,7 @@
 import { nights } from './utils'
 import { geraObrigacoesDeHospede } from './reservations'
 import type { Booking, Guest, Property } from './types'
+import { nomePaisPt } from './paises'
 
 /**
  * Mapa mensal para o IPHH — Inquérito à Permanência de Hóspedes na Hotelaria
@@ -46,8 +47,9 @@ export const PAIS_DESCONHECIDO = 'Não especificado'
  * como recurso. Ver a nota no topo do ficheiro.
  */
 export function paisDoHospede(hospede: Guest | undefined | null): string {
-  return hospede?.pais_residencia?.trim()
-    || hospede?.nacionalidade?.trim()
+  // `nomePaisPt`: «Germany» e «Alemanha» são a mesma linha do mapa.
+  return nomePaisPt(hospede?.pais_residencia)
+    || nomePaisPt(hospede?.nacionalidade)
     || PAIS_DESCONHECIDO
 }
 

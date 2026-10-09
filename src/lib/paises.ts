@@ -108,6 +108,18 @@ function indicePorNome(): Map<string, string> {
 }
 
 /**
+ * Forma canónica de um país para gravar: o nome em português quando se
+ * reconhece («Germany», «DEU», «alemanha» → «Alemanha»), o texto tal como
+ * está quando não. Sem isto, o mesmo país aparecia em linhas diferentes no
+ * mapa do INE.
+ */
+export function nomePaisPt(v: string | null | undefined): string {
+  const s = String(v ?? '').trim()
+  const codigo = codigoDePais(s)
+  return codigo ? nomePais(codigo, 'pt') : s
+}
+
+/**
  * Código de 3 letras a partir do que estiver escrito: um código, ou o nome em
  * português ou inglês (com ou sem acentos). `undefined` quando não sabe —
  * nunca adivinha, porque um código errado o SIBA recusa sem dizer porquê.

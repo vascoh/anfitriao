@@ -13,6 +13,7 @@ import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
 import type { GuestTag } from '@/lib/types'
 import { CampoPais } from '@/components/campo-pais'
+import { nomePaisPt } from '@/lib/paises'
 
 /** O check-in grava «M»/«F»; esta ficha gravava «Masculino»/«Feminino». Lê-se os dois, grava-se o primeiro. */
 function sexoCurto(v: string | null | undefined): string {
@@ -94,7 +95,7 @@ export default function HospedeDetailPage() {
       nome: nome.trim(),
       email: email.trim() || undefined,
       telefone: telefone.trim() || undefined,
-      nacionalidade: nacionalidade.trim() || undefined,
+      nacionalidade: nomePaisPt(nacionalidade) || undefined,
       notas: notas.trim() || undefined,
       tipo_documento: tipoDocumento.trim() || undefined,
       numero_documento: numeroDocumento.trim() || undefined,
@@ -102,8 +103,8 @@ export default function HospedeDetailPage() {
       data_nascimento: dataNascimento.trim() || undefined,
       data_validade_doc: dataValidadeDoc.trim() || undefined,
       sexo: sexo.trim() || undefined,
-      pais_emissao: paisEmissao.trim() || undefined,
-      pais_residencia: paisResidencia.trim() || undefined,
+      pais_emissao: nomePaisPt(paisEmissao) || undefined,
+      pais_residencia: nomePaisPt(paisResidencia) || undefined,
       local_residencia: localResidencia.trim() || undefined,
       tags,
     }
@@ -203,7 +204,7 @@ export default function HospedeDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="text-lg font-semibold flex-1 truncate">{guest.nome}</h1>
-          <button onClick={() => setEditing(v => !v)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <button onClick={() => setEditing(v => !v)} aria-label={editing ? "Fechar edição" : "Editar hóspede"} aria-expanded={editing} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
             <Edit2 className="h-4 w-4" />
           </button>
         </div>

@@ -20,6 +20,14 @@ _Iniciado: 2026-06-06_
   agora lê os dois e grava «M»/«F».
 - ✅ Check-in em inglês: os erros do servidor (vêm em português) traduzem-se
   pelo estado HTTP.
+- ✅ `nomePaisPt`: ao gravar (ficha e check-in), um país reconhecido passa ao
+  nome em português — «Germany» de antes deixa de ficar «Germany» por não se
+  ter mexido no seletor. O mapa do INE usa o mesmo, para «Germany» e
+  «Alemanha» não serem duas linhas.
+- ✅ O botão de editar da ficha (só ícone) ganhou nome acessível.
+- **E2E em produção** (utilizador Clerk descartável, dados apagados): hóspede
+  antigo com «Germany»/«Masculino» abre com «Alemanha» e «M» marcados;
+  residência e localidade gravadas; 390 px sem scroll lateral.
 
 ### [2026-10-09] Check-in online: inglês, países por seletor, campos acessíveis
 

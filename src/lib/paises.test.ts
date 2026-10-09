@@ -44,3 +44,20 @@ describe('paises', () => {
     expect(codigoPais('Alemanha')).toBe('DEU')
   })
 })
+
+describe('nomePaisPt', () => {
+  it('grava sempre o nome em português quando reconhece o país', async () => {
+    const { nomePaisPt } = await import('./paises')
+    expect(nomePaisPt('Germany')).toBe('Alemanha')
+    expect(nomePaisPt('DEU')).toBe('Alemanha')
+    expect(nomePaisPt(' alemanha ')).toBe('Alemanha')
+    expect(nomePaisPt('Atlântida')).toBe('Atlântida')
+    expect(nomePaisPt(null)).toBe('')
+  })
+
+  it('o INE junta «Germany» e «Alemanha» na mesma linha', async () => {
+    const { paisDoHospede } = await import('./ine')
+    expect(paisDoHospede({ nacionalidade: 'Germany' } as never)).toBe('Alemanha')
+    expect(paisDoHospede({ pais_residencia: 'UK', nacionalidade: 'Alemanha' } as never)).toBe('Reino Unido')
+  })
+})

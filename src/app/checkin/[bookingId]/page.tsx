@@ -6,6 +6,7 @@ import { Camera, FileText, Check, AlertCircle, RotateCcw, ChevronRight, Loader2,
 import { nights } from '@/lib/utils'
 import { IA_ATIVA } from '@/lib/ia'
 import { CampoPais } from '@/components/campo-pais'
+import { nomePaisPt } from '@/lib/paises'
 import { TEXTOS, linguaDoBrowser, type Lingua } from './textos'
 
 type Step = 'loading' | 'info' | 'camera' | 'review' | 'submitting' | 'done' | 'error' | 'already'
@@ -252,6 +253,10 @@ export default function CheckinPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          // Valores antigos («Germany») gravam-se na forma que o resto da app lê.
+          nacionalidade: nomePaisPt(form.nacionalidade),
+          pais_emissao: nomePaisPt(form.pais_emissao),
+          pais_residencia: nomePaisPt(form.pais_residencia),
           // Só os que têm nome — uma linha em branco é alguém que desistiu de
           // preencher, não uma pessoa.
           acompanhantes: acompanhantes.filter(a => a.nome.trim()),
