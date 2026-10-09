@@ -6,6 +6,21 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-09] Ficha do hóspede: país de residência e países por seletor
+
+- 🔴 **Não havia onde completar o país de residência fora do check-in** — e o
+  boletim exige-o. Um hóspede que não o preenchesse (ou um acompanhante)
+  deixava a reserva sem boletim possível. `/hospedes/[id]` ganha «País de
+  residência» e «Localidade de residência» (e mostra-os na ficha).
+- ✅ Nacionalidade, país de emissão e residência por seletor
+  (`components/campo-pais.tsx`, o mesmo do check-in) em `/hospedes/[id]` e
+  `/hospedes/novo`. O exemplo antigo dizia «Ex: Alemã» — um adjetivo que o
+  SIBA nunca reconheceu.
+- ✅ Sexo: o check-in gravava «M»/«F» e esta ficha «Masculino»/«Feminino»;
+  agora lê os dois e grava «M»/«F».
+- ✅ Check-in em inglês: os erros do servidor (vêm em português) traduzem-se
+  pelo estado HTTP.
+
 ### [2026-10-09] Check-in online: inglês, países por seletor, campos acessíveis
 
 Auditoria do check-in depois de a leitura do documento ficar desligada — o

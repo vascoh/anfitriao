@@ -12,6 +12,15 @@ import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import type { Guest, Booking, Property } from '@/lib/types'
 import { TAG_LABEL, TAG_CLASS, STATUS_LABEL, STATUS_CLASS } from '@/lib/labels'
 import type { GuestTag } from '@/lib/types'
+import { CampoPais } from '@/components/campo-pais'
+
+/** O check-in grava «M»/«F»; esta ficha gravava «Masculino»/«Feminino». Lê-se os dois, grava-se o primeiro. */
+function sexoCurto(v: string | null | undefined): string {
+  if (!v) return ''
+  const c = v.trim().charAt(0).toUpperCase()
+  return c === 'M' || c === 'F' ? c : v
+}
+const SEXO_LABEL: Record<string, string> = { M: 'Masculino', F: 'Feminino' }
 
 export default function HospedeDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -36,6 +45,8 @@ export default function HospedeDetailPage() {
   const [dataValidadeDoc, setDataValidadeDoc] = useState('')
   const [sexo, setSexo] = useState('')
   const [paisEmissao, setPaisEmissao] = useState('')
+  const [paisResidencia, setPaisResidencia] = useState('')
+  const [localResidencia, setLocalResidencia] = useState('')
   const [tags, setTags] = useState<GuestTag[]>([])
   const [saveError, setSaveError] = useState('')
   const [aApagar, setAApagar] = useState(false)
@@ -64,8 +75,10 @@ export default function HospedeDetailPage() {
         setNif(g.nif ?? '')
         setDataNascimento(g.data_nascimento ?? '')
         setDataValidadeDoc(g.data_validade_doc ?? '')
-        setSexo(g.sexo ?? '')
+        setSexo(sexoCurto(g.sexo))
         setPaisEmissao(g.pais_emissao ?? '')
+        setPaisResidencia(g.pais_residencia ?? '')
+        setLocalResidencia(g.local_residencia ?? '')
         setTags(g.tags)
       }
       setBookings(bookingsAll.filter(b => b.hospede_id === id).sort((a, b) => b.check_in.localeCompare(a.check_in)))
@@ -90,6 +103,8 @@ export default function HospedeDetailPage() {
       data_validade_doc: dataValidadeDoc.trim() || undefined,
       sexo: sexo.trim() || undefined,
       pais_emissao: paisEmissao.trim() || undefined,
+      pais_residencia: paisResidencia.trim() || undefined,
+      local_residencia: localResidencia.trim() || undefined,
       tags,
     }
     try {
@@ -129,6 +144,8 @@ export default function HospedeDetailPage() {
         data_validade_doc: undefined,
         sexo: undefined,
         pais_emissao: undefined,
+        pais_residencia: undefined,
+        local_residencia: undefined,
         anonimizado_em: new Date().toISOString(),
       }
       setGuest(apagado)
@@ -151,8 +168,10 @@ export default function HospedeDetailPage() {
     setNif(g.nif ?? '')
     setDataNascimento(g.data_nascimento ?? '')
     setDataValidadeDoc(g.data_validade_doc ?? '')
-    setSexo(g.sexo ?? '')
+    setSexo(sexoCurto(g.sexo))
     setPaisEmissao(g.pais_emissao ?? '')
+    setPaisResidencia(g.pais_residencia ?? '')
+    setLocalResidencia(g.local_residencia ?? '')
     setTags(g.tags)
     setSaveError('')
   }
@@ -231,7 +250,6 @@ export default function HospedeDetailPage() {
               { label: 'Nome', value: nome, set: setNome, type: 'text', placeholder: 'Nome completo' },
               { label: 'Email', value: email, set: setEmail, type: 'email', placeholder: 'email@exemplo.com' },
               { label: 'Telefone', value: telefone, set: setTelefone, type: 'tel', placeholder: '+351 912 345 678' },
-              { label: 'Nacionalidade', value: nacionalidade, set: setNacionalidade, type: 'text', placeholder: 'Ex: Alemã' },
             ].map(f => (
               <div key={f.label} className="flex flex-col gap-1">
                 <label className="text-xs text-muted-foreground">{f.label}</label>
@@ -301,18 +319,32 @@ export default function HospedeDetailPage() {
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground">Sexo</label>
               <div className="flex gap-4 pt-1">
-                {['Masculino', 'Feminino'].map(opt => (
+                {(['M', 'F'] as const).map(opt => (
                   <label key={opt} className="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="sexo-edit" value={opt} checked={sexo === opt} onChange={() => setSexo(opt)}
                       className="accent-primary" />
-                    <span className="text-sm">{opt}</span>
+                    <span className="text-sm">{SEXO_LABEL[opt]}</span>
                   </label>
                 ))}
               </div>
             </div>
+            {/* Países por seletor: «Alemã» ou «Germany» escritos à mão não davam
+                código no boletim. O de residência é obrigatório no boletim e
+                não havia onde o completar fora do check-in. */}
+            {([
+              { id: 'nacionalidade', label: 'Nacionalidade', valor: nacionalidade, set: setNacionalidade },
+              { id: 'pais_emissao', label: 'País de emissão do documento', valor: paisEmissao, set: setPaisEmissao },
+              { id: 'pais_residencia', label: 'País de residência', valor: paisResidencia, set: setPaisResidencia },
+            ]).map(f => (
+              <div key={f.id} className="flex flex-col gap-1">
+                <label htmlFor={`hospede-${f.id}`} className="text-xs text-muted-foreground">{f.label}</label>
+                <CampoPais id={`hospede-${f.id}`} valor={f.valor} aoMudar={f.set}
+                  className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+            ))}
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">País de emissão</label>
-              <input type="text" value={paisEmissao} onChange={e => setPaisEmissao(e.target.value)} placeholder="Ex: Portugal"
+              <label htmlFor="hospede-local_residencia" className="text-xs text-muted-foreground">Localidade de residência</label>
+              <input id="hospede-local_residencia" type="text" value={localResidencia} onChange={e => setLocalResidencia(e.target.value)}
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
             {saveError && (
@@ -376,8 +408,10 @@ export default function HospedeDetailPage() {
               { label: 'NIF', value: guest.nif },
               { label: 'Validade', value: guest.data_validade_doc },
               { label: 'Data de nascimento', value: guest.data_nascimento },
-              { label: 'Sexo', value: guest.sexo },
+              { label: 'Sexo', value: SEXO_LABEL[sexoCurto(guest.sexo)] ?? guest.sexo },
               { label: 'País de emissão', value: guest.pais_emissao },
+              { label: 'País de residência', value: guest.pais_residencia },
+              { label: 'Localidade', value: guest.local_residencia },
             ].filter(f => f.value).map(f => (
               <div key={f.label} className="flex items-center justify-between px-4 py-2.5 border-b border-border last:border-0">
                 <span className="text-xs text-muted-foreground w-36 shrink-0">{f.label}</span>

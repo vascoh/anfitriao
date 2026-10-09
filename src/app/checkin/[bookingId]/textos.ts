@@ -77,6 +77,8 @@ const pt = {
   aGuardar: 'A guardar os teus dados...',
   erroGuardar: 'Erro ao guardar. Tenta novamente.',
   semLigacao: 'Sem ligação. Verifica a internet e tenta novamente.',
+  /** `null`: usa-se a mensagem do servidor, que já vem em português. */
+  erroDoServidor: (_estado: number): string | null => null,
 }
 
 export type Textos = typeof pt
@@ -142,6 +144,13 @@ const en: Textos = {
   aGuardar: 'Saving your details...',
   erroGuardar: 'Could not save. Please try again.',
   semLigacao: 'No connection. Check your internet and try again.',
+  // O servidor responde em português; em inglês traduz-se pelo estado HTTP.
+  erroDoServidor: estado =>
+    estado === 429 ? 'Too many attempts. Please try again later.'
+    : estado === 400 ? 'Please check the details and try again.'
+    : estado === 404 ? 'Booking not found. Please check the link your host sent you.'
+    : estado === 410 ? 'This booking is no longer open for online check-in (it was cancelled or the stay has ended). Please contact your host.'
+    : 'Could not save. Please try again.',
 }
 
 export const TEXTOS: Record<Lingua, Textos> = { pt, en }

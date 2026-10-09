@@ -1,24 +1,23 @@
 'use client'
 
 import { useMemo } from 'react'
-import { codigoDePais, listaPaises, nomePais } from '@/lib/paises'
-import type { Lingua } from './textos'
+import { codigoDePais, listaPaises, nomePais, type LinguaPaises } from '@/lib/paises'
 
 /**
- * Seletor de país. Mostra os nomes na língua do hóspede e grava o nome em
- * português — é a forma que o resto da aplicação já lê (relatório do INE,
+ * Seletor de país (check-in e fichas do hóspede). Mostra os nomes na língua
+ * pedida e grava o nome em português — é a forma que o resto da aplicação já lê (relatório do INE,
  * CSV do SIBA, país da fatura no InvoiceXpress) e que `codigoPais` traduz para
  * o código do boletim.
  *
  * Um valor antigo que não corresponde a país nenhum continua visível como
  * opção, para não se perder em silêncio ao abrir a página.
  */
-export function CampoPais({ id, valor, aoMudar, lingua, rotuloVazio, className, autoComplete }: {
+export function CampoPais({ id, valor, aoMudar, lingua = 'pt', rotuloVazio = 'Selecionar...', className, autoComplete }: {
   id: string
   valor: string
   aoMudar: (v: string) => void
-  lingua: Lingua
-  rotuloVazio: string
+  lingua?: LinguaPaises
+  rotuloVazio?: string
   className: string
   autoComplete?: string
 }) {

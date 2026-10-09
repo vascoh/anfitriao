@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { Camera, FileText, Check, AlertCircle, RotateCcw, ChevronRight, Loader2, Home } from 'lucide-react'
 import { nights } from '@/lib/utils'
 import { IA_ATIVA } from '@/lib/ia'
-import { CampoPais } from './campo-pais'
+import { CampoPais } from '@/components/campo-pais'
 import { TEXTOS, linguaDoBrowser, type Lingua } from './textos'
 
 type Step = 'loading' | 'info' | 'camera' | 'review' | 'submitting' | 'done' | 'error' | 'already'
@@ -261,7 +261,7 @@ export default function CheckinPage() {
         setStep('done')
       } else {
         const d = await res.json().catch(() => ({})) as { error?: string }
-        setSubmitError(d.error ?? t.erroGuardar)
+        setSubmitError(t.erroDoServidor(res.status) ?? d.error ?? t.erroGuardar)
         setStep('review')
       }
     } catch {

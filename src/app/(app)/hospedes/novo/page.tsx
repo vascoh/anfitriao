@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { uuid } from '@/lib/utils'
 import type { Guest } from '@/lib/types'
+import { CampoPais } from '@/components/campo-pais'
 
 export default function NovoHospedePage() {
   const router = useRouter()
@@ -58,7 +59,6 @@ export default function NovoHospedePage() {
           { label: 'Nome completo *', value: nome, set: setNome, type: 'text', placeholder: 'Ex: Emma Schmidt' },
           { label: 'Email', value: email, set: setEmail, type: 'email', placeholder: 'email@exemplo.com' },
           { label: 'Telefone', value: telefone, set: setTelefone, type: 'tel', placeholder: '+49 151 2345 6789' },
-          { label: 'Nacionalidade', value: nacionalidade, set: setNacionalidade, type: 'text', placeholder: 'Ex: Alemã' },
         ].map(f => (
           <div key={f.label} className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">{f.label}</label>
@@ -66,6 +66,11 @@ export default function NovoHospedePage() {
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </div>
         ))}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="novo-nacionalidade" className="text-xs text-muted-foreground font-medium">Nacionalidade</label>
+          <CampoPais id="novo-nacionalidade" valor={nacionalidade} aoMudar={setNacionalidade}
+            className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+        </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">Notas</label>
           <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Preferências, observações..."
