@@ -1,4 +1,5 @@
 import type { CanalMensagem, Conversa, Mensagem } from '@/lib/mensagens'
+import type { ValoresVariaveis } from '@/lib/respostas-guardadas'
 
 /** Linha da lista de conversas, como `/api/mensagens` a devolve. */
 export interface ConversaLista extends Conversa {
@@ -13,6 +14,7 @@ export interface ConversaAberta {
   mensagens: Mensagem[]
   reserva: { id: string; check_in: string; check_out: string; estado: string } | null
   propriedade: string | null
+  variaveis: ValoresVariaveis
   hospede: { id: string; nome: string } | null
   contactos: { email: string | null; telefone: string | null }
   capacidades: {

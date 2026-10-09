@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Sparkles, Send, Mail, MessageCircle, ClipboardPaste, AlertTriangle, ExternalLink, Loader2, X,
+  ArrowLeft, Sparkles, Send, Mail, MessageCircle, ClipboardPaste, AlertTriangle, ExternalLink, Loader2, X, BookText,
 } from 'lucide-react'
 import { fmtDate, today } from '@/lib/utils'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
@@ -13,6 +13,7 @@ import { CANAIS, CANAL_LABEL, ORIGEM_LABEL, linkWhatsApp, type CanalMensagem, ty
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { quando, selecaoParaQuery, type ConversaAberta, type Selecao } from './tipos'
 import { IA_ATIVA } from '@/lib/ia'
+import { RespostasGuardadas } from './respostas-guardadas'
 
 const MARCA_CONFIRMAR = /\[confirmar[^\]]*\]/i
 
@@ -203,6 +204,7 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
   const [aSugerir, setASugerir] = useState(false)
   const [aEnviar, setAEnviar] = useState(false)
   const [registar, setRegistar] = useState(false)
+  const [respostas, setRespostas] = useState(false)
   const [aAssociar, setAAssociar] = useState(false)
   const [linkFalha, setLinkFalha] = useState<string | null>(null)
   const fundo = useRef<HTMLDivElement>(null)
@@ -375,7 +377,9 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
         {dados.mensagens.length === 0 && (
           <div className="m-auto text-center max-w-xs text-sm text-muted-foreground flex flex-col gap-2 py-10">
             <p className="font-medium text-foreground">Ainda sem mensagens</p>
-            <p>Escreve a primeira, pede uma sugestão à IA, ou regista o que o hóspede te mandou noutro sítio.</p>
+            <p>{IA_ATIVA
+              ? 'Escreve a primeira, pede uma sugestão à IA, ou regista o que o hóspede te mandou noutro sítio.'
+              : 'Escreve a primeira, usa uma resposta guardada, ou regista o que o hóspede te mandou noutro sítio.'}</p>
           </div>
         )}
         {dados.mensagens.map(m => <Bolha key={m.id} m={m} />)}
@@ -388,6 +392,16 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
             className="flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted">
             <ExternalLink className="h-4 w-4" /> Abrir no WhatsApp em vez disso
           </a>
+        )}
+
+        {respostas && (
+          <RespostasGuardadas
+            valores={dados.variaveis ?? {}}
+            textoAtual={texto}
+            aoUsar={t => { setTexto(t); setDeIa(false); setConfirmar([]); setRespostas(false) }}
+            aoInserirVariavel={v => setTexto(prev => (prev && !/\s$/.test(prev) ? `${prev} ${v}` : `${prev}${v}`))}
+            aoFechar={() => setRespostas(false)}
+          />
         )}
 
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -406,6 +420,10 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
           <button onClick={() => setRegistar(true)}
             className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-muted">
             <ClipboardPaste className="h-3.5 w-3.5" aria-hidden /> Registar
+          </button>
+          <button onClick={() => setRespostas(v => !v)} aria-expanded={respostas}
+            className={`flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-muted ${respostas ? 'bg-muted' : ''}`}>
+            <BookText className="h-3.5 w-3.5" aria-hidden /> Respostas
           </button>
           <div className="flex-1" />
           {IA_ATIVA && <button onClick={() => (mostrarInstrucao ? sugerir() : setMostrarInstrucao(true))} disabled={aSugerir}

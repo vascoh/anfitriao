@@ -6,6 +6,26 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-09] Respostas guardadas na caixa de entrada
+
+Com a IA desligada, o anfitrião escrevia as mesmas respostas à mão. Botão
+«Respostas» no compositor de `/mensagens`:
+
+- ✅ Modelos com variáveis da conversa — `{nome}`, `{primeiro_nome}`,
+  `{propriedade}`, `{checkin}`, `{checkout}`, `{noites}`, `{morada}`,
+  `{instrucoes_checkin}`, `{regras_casa}`, `{link_checkin}` — calculadas no
+  servidor (`variaveis` em `GET /api/mensagens?reserva=`).
+- ✅ **Variável sem valor vira `[confirmar: …]`**, e o envio já ficava
+  bloqueado com essa marca: nunca sai «o check-in é a » ao hóspede.
+- ✅ Escolher preenche a caixa de texto, nunca envia. Guardar o texto escrito
+  com um nome; apagar com confirmação; três exemplos (chegada, check-in em
+  falta, check-out) enquanto não houver nenhuma guardada. Variáveis mal
+  escritas são recusadas ao gravar (ficavam literais na mensagem).
+- Migração 053 (`respostas_guardadas`, RLS sem policies, sem privilégios para
+  anon/authenticated), aplicada. API `/api/mensagens/respostas` (privada,
+  teto de 60/min, máximo de 100 por conta). Testes em
+  `respostas-guardadas.test.ts`.
+
 ### [2026-10-09] IA desligada até haver crédito
 
 Decisão do utilizador: não carregar crédito na API da Anthropic. Sem ele, a

@@ -3,6 +3,9 @@ import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { emailService } from '@/lib/email'
 import { verificarLimite } from '@/lib/rate-limit-persistente'
+import { APP_URL } from '@/lib/config'
+import { fmtDate, nights } from '@/lib/utils'
+import type { ValoresVariaveis } from '@/lib/respostas-guardadas'
 import {
   agruparConversas, dentroDaJanelaWhatsApp, eCanal, enderecoEmail, linkWhatsApp, normalizarContacto, normalizarTelefone,
   CANAIS_DE_ENVIO, LIMITE_ASSUNTO, LIMITE_CORPO, type CanalMensagem, type Mensagem,
@@ -95,14 +98,33 @@ export async function GET(req: NextRequest) {
     const telefone = h?.telefone ?? (canal === 'whatsapp' ? contacto : null)
     const email = h?.email ?? (canal === 'email' ? contacto : null)
     let propriedade: string | null = null
+    let prop: { nome: string; endereco: string | null; cidade: string | null; instrucoes_checkin: string | null; regras_casa: string | null } | null = null
     if (reserva?.propriedade_id) {
-      const { data: prop } = await supabase.from('properties').select('nome').eq('id', reserva.propriedade_id).maybeSingle()
+      const { data } = await supabase.from('properties')
+        .select('nome, endereco, cidade, instrucoes_checkin, regras_casa')
+        .eq('id', reserva.propriedade_id).maybeSingle()
+      prop = data
       propriedade = prop?.nome ?? null
+    }
+    // Valores para as respostas guardadas (`lib/respostas-guardadas.ts`); o que
+    // faltar vira `[confirmar: …]` no browser.
+    const variaveis: ValoresVariaveis = {
+      nome: h?.nome ?? null,
+      primeiro_nome: h?.nome?.trim().split(/\s+/)[0] ?? null,
+      propriedade,
+      checkin: reserva ? fmtDate(reserva.check_in) : null,
+      checkout: reserva ? fmtDate(reserva.check_out) : null,
+      noites: reserva ? String(nights(reserva.check_in, reserva.check_out)) : null,
+      morada: [prop?.endereco, prop?.cidade].filter(Boolean).join(', ') || null,
+      instrucoes_checkin: prop?.instrucoes_checkin ?? null,
+      regras_casa: prop?.regras_casa ?? null,
+      link_checkin: reserva ? `${APP_URL}/checkin/${reserva.id}` : null,
     }
     return NextResponse.json({
       mensagens,
       reserva,
       propriedade,
+      variaveis,
       hospede: h ? { id: h.id, nome: h.nome } : null,
       contactos: { email, telefone: normalizarTelefone(telefone) },
       capacidades: {
