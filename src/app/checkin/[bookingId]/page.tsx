@@ -141,7 +141,7 @@ export default function CheckinPage() {
          * delas é a de quem fez a reserva. */
         const ocupadoPeloPrincipal = d.principal_neste_quarto === false ? 0 : 1
         const emFalta = Math.max(0, (d.num_hospedes ?? 1) - ocupadoPeloPrincipal - jaRegistados.length)
-        setAcompanhantes([...jaRegistados, ...Array.from({ length: emFalta }, acompanhanteVazio)])
+        setAcompanhantes([...jaRegistados, ...Array.from({ length: emFalta }, () => ({ ...acompanhanteVazio(), pais_residencia: d.guest?.pais_residencia ?? '' }))])
 
         if (d.guest) {
           setForm(prev => ({
@@ -478,7 +478,17 @@ export default function CheckinPage() {
                     {CAMPOS_PAIS.has(key) ? (
                       <CampoPais id={`campo-${key}`} valor={form[key]} lingua={lingua} rotuloVazio={t.selecionar}
                         autoComplete={AUTOCOMPLETE[key]} className={inputClass}
-                        aoMudar={v => setForm(prev => ({ ...prev, [key]: v }))} />
+                        aoMudar={v => {
+                          // Quem viaja junto vive quase sempre no mesmo país: preenche-se
+                          // nos acompanhantes que ainda não o têm (ou que tinham o valor
+                          // anterior), à vista — o boletim de cada um exige-o.
+                          if (key === 'pais_residencia') {
+                            const anterior = form.pais_residencia
+                            setAcompanhantes(prev => prev.map(x =>
+                              !x.pais_residencia || x.pais_residencia === anterior ? { ...x, pais_residencia: v } : x))
+                          }
+                          setForm(prev => ({ ...prev, [key]: v }))
+                        }} />
                     ) : isTipoDoc ? (
                       <select id={`campo-${key}`} value={form[key]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} className={inputClass}
                         aria-required={REQUIRED.includes(key) || undefined}>
@@ -606,7 +616,7 @@ export default function CheckinPage() {
 
                 <button
                   type="button"
-                  onClick={() => setAcompanhantes(prev => [...prev, acompanhanteVazio()])}
+                  onClick={() => setAcompanhantes(prev => [...prev, { ...acompanhanteVazio(), pais_residencia: form.pais_residencia }])}
                   className="text-xs text-primary font-semibold py-2"
                 >
                   {t.acrescentar}

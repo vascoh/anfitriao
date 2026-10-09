@@ -27,6 +27,13 @@ hóspede passa a escrever tudo:
 - ✅ Rótulos ligados aos campos (`htmlFor`), `autocomplete` (nome, email,
   telefone, data de nascimento, país), `aria-required`, grupo de rádio no sexo.
 - ✅ O botão «Confirmar» desativado passa a dizer **o que falta**.
+- ✅ **País de residência dos acompanhantes herda o de quem reservou**, à
+  vista e editável (antes só a leitura do documento o fazia; à mão, cada
+  acompanhante ficava sem ele e o boletim não saía).
+- **E2E em produção** (reserva `TESTE-E2E`, apagada): browser em inglês →
+  página em inglês, sem «Photograph your ID»; o aviso do que falta
+  atualiza-se; «Germany»/«Austria» gravados como «Alemanha»/«Áustria»;
+  trocar para português mantém a escolha; 390 px sem scroll lateral.
 - Testes: `paises.test.ts` (inglês, aliases, não adivinha, `codigoPais`).
 
 ### [2026-10-09] Respostas guardadas na caixa de entrada
