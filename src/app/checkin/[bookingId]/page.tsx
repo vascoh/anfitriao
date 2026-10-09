@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation'
 import { Camera, FileText, Check, AlertCircle, RotateCcw, ChevronRight, Loader2, Home } from 'lucide-react'
 import { nights } from '@/lib/utils'
 import { IA_ATIVA } from '@/lib/ia'
+import { CampoPais } from './campo-pais'
+import { TEXTOS, linguaDoBrowser, type Lingua } from './textos'
 
 type Step = 'loading' | 'info' | 'camera' | 'review' | 'submitting' | 'done' | 'error' | 'already'
 
@@ -35,16 +37,6 @@ interface Acompanhante {
   pais_residencia: string
 }
 
-const ROTULO_ACOMPANHANTE: Record<keyof Omit<Acompanhante, 'id'>, string> = {
-  nome: 'Nome completo',
-  data_nascimento: 'Data de nascimento',
-  nacionalidade: 'Nacionalidade',
-  tipo_documento: 'Tipo de documento',
-  numero_documento: 'Nº do documento',
-  pais_emissao: 'País de emissão',
-  pais_residencia: 'País de residência',
-}
-
 function acompanhanteVazio(): Acompanhante {
   return {
     nome: '', data_nascimento: '', nacionalidade: '', tipo_documento: '',
@@ -68,31 +60,32 @@ interface GuestForm {
   nif: string
 }
 
-const FIELD_LABELS: Record<string, string> = {
-  nome: 'Nome completo',
-  data_nascimento: 'Data de nascimento',
-  nacionalidade: 'Nacionalidade',
-  numero_documento: 'Nº documento',
-  tipo_documento: 'Tipo de documento',
-  data_validade_doc: 'Validade',
-  sexo: 'Sexo',
-  pais_emissao: 'País de emissão',
-  pais_residencia: 'País de residência',
-  local_residencia: 'Localidade onde vives',
-  email: 'Email',
-  telefone: 'Telefone',
+/** Ordem dos campos do titular. Os rótulos estão em `textos.ts`. */
+const CAMPOS: Array<keyof GuestForm> = [
+  'nome', 'data_nascimento', 'nacionalidade', 'numero_documento', 'tipo_documento', 'data_validade_doc',
+  'sexo', 'pais_emissao', 'pais_residencia', 'local_residencia', 'email', 'telefone',
   // Opcional e separado do documento: o Cartão de Cidadão não é o NIF, e a
   // fatura sem NIF sai a "Consumidor final", como a lei prevê.
-  nif: 'NIF (só se quiseres a fatura em teu nome)',
+  'nif',
+]
+
+const CAMPOS_PAIS = new Set<string>(['nacionalidade', 'pais_emissao', 'pais_residencia'])
+
+/** Para o browser e os gestores de palavras-passe preencherem o que sabem. */
+const AUTOCOMPLETE: Partial<Record<keyof GuestForm, string>> = {
+  nome: 'name', email: 'email', telefone: 'tel', data_nascimento: 'bday',
+  pais_residencia: 'country-name', local_residencia: 'address-level2',
 }
+
+const TIPOS_DOCUMENTO = ['Passaporte', 'Cartão de Cidadão', 'BI', 'Título de Residência', 'Outro']
 
 // O boletim de alojamento exige o país de residência. Pedi-lo aqui, ao
 // hóspede, é a diferença entre entregar o boletim e o anfitrião ter de andar
 // atrás dele depois. A localidade é facultativa no boletim, logo aqui também.
 const REQUIRED = ['nome', 'nacionalidade', 'numero_documento', 'data_nascimento', 'tipo_documento', 'pais_residencia']
 
-function fmtDate(iso: string) {
-  return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso + 'T12:00:00'))
+function fmtDate(iso: string, lingua: Lingua = 'pt') {
+  return new Intl.DateTimeFormat(lingua === 'pt' ? 'pt-PT' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso + 'T12:00:00'))
 }
 
 
@@ -116,11 +109,17 @@ export default function CheckinPage() {
   const [extractError, setExtractError] = useState('')
   const [submitError, setSubmitError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [lingua, setLingua] = useState<Lingua>('pt')
+  const t = TEXTOS[lingua]
+  useEffect(() => { document.documentElement.lang = lingua }, [lingua])
 
   useEffect(() => {
     fetch(`/api/checkin/${bookingId}`)
       .then(r => r.json())
       .then((d: CheckinData & { error?: string }) => {
+        // Aqui e não no estado inicial: no servidor não há `navigator`, e a
+        // página fica no indicador de carregamento até este ponto.
+        setLingua(linguaDoBrowser())
         if (d.error) { setStep('error'); return }
         setData(d)
         if (d.ja_submetido) { setStep('already'); return }
@@ -164,7 +163,7 @@ export default function CheckinPage() {
         }
         setStep('info')
       })
-      .catch(() => setStep('error'))
+      .catch(() => { setLingua(linguaDoBrowser()); setStep('error') })
   }, [bookingId])
 
   /**
@@ -187,7 +186,7 @@ export default function CheckinPage() {
       if (!res.ok) {
         setErroAcompanhante(prev => ({
           ...prev,
-          [indice]: extracted.error ?? 'Não foi possível ler. Preenche à mão.',
+          [indice]: t.naoLeuCurto,
         }))
         return
       }
@@ -207,7 +206,7 @@ export default function CheckinPage() {
     } catch {
       setErroAcompanhante(prev => ({
         ...prev,
-        [indice]: 'Não foi possível ler. Preenche à mão.',
+        [indice]: t.naoLeuCurto,
       }))
     } finally {
       setALerAcompanhante(null)
@@ -238,7 +237,7 @@ export default function CheckinPage() {
         setStep('review')
       })
       .catch(() => {
-        setExtractError('Não foi possível ler o documento. Preenche os dados manualmente.')
+        setExtractError(t.naoLeu)
         setStep('review')
       })
       .finally(() => setExtracting(false))
@@ -262,16 +261,17 @@ export default function CheckinPage() {
         setStep('done')
       } else {
         const d = await res.json().catch(() => ({})) as { error?: string }
-        setSubmitError(d.error ?? 'Erro ao guardar. Tenta novamente.')
+        setSubmitError(d.error ?? t.erroGuardar)
         setStep('review')
       }
     } catch {
-      setSubmitError('Sem ligação. Verifica a internet e tenta novamente.')
+      setSubmitError(t.semLigacao)
       setStep('review')
     }
   }
 
   const n = data ? nights(data.check_in, data.check_out) : 0
+  const emFalta = (REQUIRED as Array<keyof GuestForm>).filter(k => !form[k].trim())
 
   if (step === 'loading') {
     return (
@@ -288,8 +288,8 @@ export default function CheckinPage() {
           <AlertCircle className="h-7 w-7 text-destructive" />
         </div>
         <div>
-          <p className="font-semibold">Reserva não encontrada</p>
-          <p className="text-sm text-muted-foreground mt-1">Verifica o link enviado pelo teu anfitrião.</p>
+          <p className="font-semibold">{t.erroTitulo}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t.erroTexto}</p>
         </div>
       </div>
     )
@@ -302,8 +302,8 @@ export default function CheckinPage() {
           <Check className="h-7 w-7 text-primary" />
         </div>
         <div>
-          <p className="font-semibold text-lg">Check-in já submetido</p>
-          <p className="text-sm text-muted-foreground mt-1">Os teus dados foram registados. Boa estadia em {data?.property?.nome}!</p>
+          <p className="font-semibold text-lg">{t.jaTitulo}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t.jaTexto(data?.property?.nome ?? '')}</p>
         </div>
       </div>
     )
@@ -316,8 +316,8 @@ export default function CheckinPage() {
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
         <div className="flex flex-col gap-1.5">
-          <p className="text-xl font-bold">Obrigado, {form.nome.split(' ')[0]}!</p>
-          <p className="text-sm text-muted-foreground">Os teus dados foram enviados para {data?.host_nome}.</p>
+          <p className="text-xl font-bold">{t.obrigado(form.nome.split(' ')[0])}</p>
+          <p className="text-sm text-muted-foreground">{t.enviados(data?.host_nome ?? '')}</p>
         </div>
         {data && (
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card px-5 py-4 text-left flex flex-col gap-1">
@@ -325,11 +325,11 @@ export default function CheckinPage() {
               <Home className="h-4 w-4 text-primary shrink-0" />
               <span className="font-semibold text-sm">{data.property?.nome}</span>
             </div>
-            <p className="text-xs text-muted-foreground">{fmtDate(data.check_in)} → {fmtDate(data.check_out)}</p>
-            <p className="text-xs text-muted-foreground">{n} noite{n !== 1 ? 's' : ''} · {data.num_hospedes} hóspede{data.num_hospedes !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-muted-foreground">{fmtDate(data.check_in, lingua)} → {fmtDate(data.check_out, lingua)}</p>
+            <p className="text-xs text-muted-foreground">{t.resumo(n, data.num_hospedes)}</p>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">O teu anfitrião irá confirmar os detalhes em breve.</p>
+        <p className="text-xs text-muted-foreground">{t.confirmaEmBreve}</p>
       </div>
     )
   }
@@ -338,16 +338,23 @@ export default function CheckinPage() {
     <div className="min-h-dvh bg-background flex flex-col max-w-lg mx-auto">
       {/* Header */}
       <div className="bg-primary px-5 pt-12 pb-6 text-primary-foreground">
-        <p className="text-xs font-semibold uppercase tracking-widest opacity-70 mb-2">Check-in Online</p>
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <p className="text-xs font-semibold uppercase tracking-widest opacity-70">{t.cabecalho}</p>
+          <button type="button" onClick={() => setLingua(lingua === 'pt' ? 'en' : 'pt')}
+            lang={lingua === 'pt' ? 'en' : 'pt'}
+            className="-mt-1 rounded-full border border-primary-foreground/40 px-2.5 py-1 text-xs font-semibold hover:bg-primary-foreground/10">
+            {t.outraLingua}
+          </button>
+        </div>
         <h1 className="text-2xl font-bold leading-tight">{data?.property?.nome}</h1>
         <p className="text-sm opacity-80 mt-0.5">{data?.property?.cidade}</p>
         {data && (
           <div className="mt-4 flex items-center gap-2 text-sm opacity-90">
-            <span>{fmtDate(data.check_in)}</span>
+            <span>{fmtDate(data.check_in, lingua)}</span>
             <span className="opacity-50">→</span>
-            <span>{fmtDate(data.check_out)}</span>
+            <span>{fmtDate(data.check_out, lingua)}</span>
             <span className="opacity-50">·</span>
-            <span>{n}n</span>
+            <span>{t.noitesCurto(n)}</span>
           </div>
         )}
       </div>
@@ -358,14 +365,12 @@ export default function CheckinPage() {
         {step === 'info' && (
           <>
             <div className="flex flex-col gap-2">
-              <p className="font-semibold text-base">Olá! Faz o check-in online</p>
+              <p className="font-semibold text-base">{t.ola}</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {IA_ATIVA
-                  ? 'Fotografa o teu documento de identificação e os dados serão preenchidos automaticamente. Demora menos de 1 minuto.'
-                  : 'Preenche os dados do teu documento de identificação. Demora poucos minutos.'}
+                {IA_ATIVA ? t.introIA : t.introManual}
               </p>
               <p className="text-xs text-muted-foreground">
-                Anfitrião: <span className="font-medium text-foreground">{data?.host_nome}</span>
+                {t.anfitriao}: <span className="font-medium text-foreground">{data?.host_nome}</span>
               </p>
             </div>
 
@@ -387,8 +392,8 @@ export default function CheckinPage() {
                   <Camera className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Fotografar documento</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Passaporte, CC ou BI</p>
+                  <p className="font-semibold text-sm">{t.fotografar}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t.fotografarAjuda}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto shrink-0" />
               </button>
@@ -398,14 +403,14 @@ export default function CheckinPage() {
                 onClick={() => setStep('review')}
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 text-center"
               >
-                Preencher manualmente
+                {t.preencherManual}
               </button></> : (
                 <button
                   type="button"
                   onClick={() => setStep('review')}
                   className="rounded-2xl bg-primary text-primary-foreground px-5 py-4 text-sm font-semibold active:opacity-80 transition-opacity"
                 >
-                  Preencher os meus dados
+                  {t.preencherDados}
                 </button>
               )}
             </div>
@@ -416,7 +421,7 @@ export default function CheckinPage() {
         {step === 'camera' && (
           <div className="flex flex-col items-center gap-4 py-12 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">A ler documento...</p>
+            <p className="text-sm text-muted-foreground">{t.aLer}</p>
           </div>
         )}
 
@@ -426,7 +431,7 @@ export default function CheckinPage() {
             {extracting && (
               <div className="flex items-center gap-3 py-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4 animate-pulse text-primary shrink-0" />
-                A extrair dados do documento...
+                {t.aExtrair}
               </div>
             )}
 
@@ -440,7 +445,7 @@ export default function CheckinPage() {
                   className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                  Trocar documento
+                  {t.trocarDoc}
                 </button>
               </div>
             )}
@@ -458,30 +463,31 @@ export default function CheckinPage() {
             )}
 
             <div className="flex flex-col gap-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Os teus dados</p>
-              {(Object.keys(FIELD_LABELS) as Array<keyof GuestForm>).map(key => {
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{t.osTeusDados}</p>
+              {CAMPOS.map(key => {
                 const isDate = key === 'data_nascimento' || key === 'data_validade_doc'
                 const isSexo = key === 'sexo'
                 const isTipoDoc = key === 'tipo_documento'
                 const inputClass = "rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring w-full"
                 return (
-                  <div key={key} className="flex flex-col gap-1">
-                    <label className="text-xs text-muted-foreground font-medium">
-                      {FIELD_LABELS[key]}
-                      {REQUIRED.includes(key) && <span className="text-primary ml-0.5">*</span>}
+                  <div key={key} className="flex flex-col gap-1" role={isSexo ? 'radiogroup' : undefined} aria-labelledby={isSexo ? `rotulo-${key}` : undefined}>
+                    <label htmlFor={isSexo ? undefined : `campo-${key}`} id={`rotulo-${key}`} className="text-xs text-muted-foreground font-medium">
+                      {t.campos[key]}
+                      {REQUIRED.includes(key) && <span className="text-primary ml-0.5" aria-hidden>*</span>}
                     </label>
-                    {isTipoDoc ? (
-                      <select value={form[key]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} className={inputClass}>
-                        <option value="">Selecionar...</option>
-                        <option value="Passaporte">Passaporte</option>
-                        <option value="Cartão de Cidadão">Cartão de Cidadão</option>
-                        <option value="BI">BI</option>
-                        <option value="Título de Residência">Título de Residência</option>
-                        <option value="Outro">Outro</option>
+                    {CAMPOS_PAIS.has(key) ? (
+                      <CampoPais id={`campo-${key}`} valor={form[key]} lingua={lingua} rotuloVazio={t.selecionar}
+                        autoComplete={AUTOCOMPLETE[key]} className={inputClass}
+                        aoMudar={v => setForm(prev => ({ ...prev, [key]: v }))} />
+                    ) : isTipoDoc ? (
+                      <select id={`campo-${key}`} value={form[key]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} className={inputClass}
+                        aria-required={REQUIRED.includes(key) || undefined}>
+                        <option value="">{t.selecionar}</option>
+                        {TIPOS_DOCUMENTO.map(v => <option key={v} value={v}>{t.tiposDocumento[v]}</option>)}
                       </select>
                     ) : isSexo ? (
                       <div className="flex gap-3">
-                        {[{ val: 'M', label: 'Masculino' }, { val: 'F', label: 'Feminino' }].map(opt => (
+                        {[{ val: 'M', label: t.sexos.M }, { val: 'F', label: t.sexos.F }].map(opt => (
                           <label key={opt.val} className={`flex-1 flex items-center justify-center gap-2 rounded-lg border py-2.5 text-sm cursor-pointer transition-colors ${
                             form[key] === opt.val ? 'border-primary bg-primary/10 text-primary font-semibold' : 'border-input bg-card text-muted-foreground hover:border-primary/40'
                           }`}>
@@ -492,11 +498,14 @@ export default function CheckinPage() {
                       </div>
                     ) : (
                       <input
+                        id={`campo-${key}`}
                         type={isDate ? 'date' : key === 'email' ? 'email' : key === 'telefone' ? 'tel' : 'text'}
+                        inputMode={key === 'nif' ? 'numeric' : undefined}
+                        autoComplete={AUTOCOMPLETE[key] ?? 'off'}
+                        aria-required={REQUIRED.includes(key) || undefined}
                         value={form[key]}
                         onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
                         className={inputClass}
-                        placeholder={isDate ? '' : FIELD_LABELS[key]}
                       />
                     )}
                   </div>
@@ -508,26 +517,24 @@ export default function CheckinPage() {
               <div className="flex flex-col gap-3">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                    Quem vem contigo
+                    {t.quemVem}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    A lei pede um boletim de alojamento por pessoa. Preenche os dados de
-                    cada acompanhante — se não souberes algum agora, o anfitrião pode
-                    completar depois.
+                    {t.quemVemTexto}
                   </p>
                 </div>
 
                 {acompanhantes.map((a, i) => (
                   <div key={i} className="rounded-xl border border-input bg-card p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold">Acompanhante {i + 1}</p>
+                      <p className="text-xs font-semibold">{t.acompanhante(i + 1)}</p>
                       {acompanhantes.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setAcompanhantes(prev => prev.filter((_, j) => j !== i))}
                           className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                         >
-                          Remover
+                          {t.remover}
                         </button>
                       )}
                     </div>
@@ -547,12 +554,12 @@ export default function CheckinPage() {
                       {aLerAcompanhante === i ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-                          <span className="text-xs text-muted-foreground">A ler documento...</span>
+                          <span className="text-xs text-muted-foreground">{t.aLer}</span>
                         </>
                       ) : (
                         <>
                           <Camera className="h-4 w-4 text-primary shrink-0" />
-                          <span className="text-xs font-semibold">Fotografar documento</span>
+                          <span className="text-xs font-semibold">{t.fotografar}</span>
                         </>
                       )}
                     </label>}
@@ -565,24 +572,27 @@ export default function CheckinPage() {
 
                     {(['nome', 'data_nascimento', 'nacionalidade', 'tipo_documento', 'numero_documento', 'pais_residencia'] as const).map(campo => (
                       <div key={campo} className="flex flex-col gap-1">
-                        <label className="text-[11px] text-muted-foreground font-medium">
-                          {ROTULO_ACOMPANHANTE[campo]}
+                        <label htmlFor={`acomp-${i}-${campo}`} className="text-[11px] text-muted-foreground font-medium">
+                          {t.campos[campo]}
                         </label>
-                        {campo === 'tipo_documento' ? (
+                        {campo === 'nacionalidade' || campo === 'pais_residencia' ? (
+                          <CampoPais id={`acomp-${i}-${campo}`} valor={a[campo]} lingua={lingua} rotuloVazio={t.selecionar}
+                            className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-full"
+                            aoMudar={v => setAcompanhantes(prev => prev.map((x, j) => j === i ? { ...x, [campo]: v } : x))} />
+                        ) : campo === 'tipo_documento' ? (
                           <select
+                            id={`acomp-${i}-${campo}`}
                             value={a[campo]}
                             onChange={e => setAcompanhantes(prev => prev.map((x, j) => j === i ? { ...x, [campo]: e.target.value } : x))}
                             className="rounded-lg border border-input bg-background px-3 py-2 text-sm w-full"
                           >
-                            <option value="">Selecionar...</option>
-                            <option value="Passaporte">Passaporte</option>
-                            <option value="Cartão de Cidadão">Cartão de Cidadão</option>
-                            <option value="BI">BI</option>
-                            <option value="Título de Residência">Título de Residência</option>
-                            <option value="Outro">Outro</option>
+                            <option value="">{t.selecionar}</option>
+                            {TIPOS_DOCUMENTO.map(v => <option key={v} value={v}>{t.tiposDocumento[v]}</option>)}
                           </select>
                         ) : (
                           <input
+                            id={`acomp-${i}-${campo}`}
+                            autoComplete="off"
                             type={campo === 'data_nascimento' ? 'date' : 'text'}
                             value={a[campo]}
                             onChange={e => setAcompanhantes(prev => prev.map((x, j) => j === i ? { ...x, [campo]: e.target.value } : x))}
@@ -599,22 +609,27 @@ export default function CheckinPage() {
                   onClick={() => setAcompanhantes(prev => [...prev, acompanhanteVazio()])}
                   className="text-xs text-primary font-semibold py-2"
                 >
-                  + Acrescentar pessoa
+                  {t.acrescentar}
                 </button>
               </div>
             )}
 
+            {/* Um botão desativado sem explicação deixava o hóspede a percorrer o
+                formulário à procura do que faltava — ou a desistir. */}
+            {emFalta.length > 0 && (
+              <p className="text-xs text-muted-foreground text-center" aria-live="polite">{t.falta(emFalta.map(k => t.campos[k]))}</p>
+            )}
             <button
               type="button"
               onClick={submit}
-              disabled={!REQUIRED.every(k => form[k as keyof GuestForm].trim())}
-              className="w-full rounded-xl bg-primary text-primary-foreground py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2"
+              disabled={emFalta.length > 0}
+              className="w-full rounded-xl bg-primary text-primary-foreground py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity"
             >
-              Confirmar check-in
+              {t.confirmar}
             </button>
 
             <p className="text-xs text-muted-foreground text-center">
-              Os teus dados são usados exclusivamente para cumprimento do registo obrigatório de hóspedes (boletim de alojamento, SIBA/AIMA).
+              {t.privacidade}
             </p>
           </>
         )}
@@ -622,7 +637,7 @@ export default function CheckinPage() {
         {step === 'submitting' && (
           <div className="flex flex-col items-center gap-4 py-16 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">A guardar os teus dados...</p>
+            <p className="text-sm text-muted-foreground">{t.aGuardar}</p>
           </div>
         )}
       </div>

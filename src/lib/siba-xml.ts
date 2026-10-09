@@ -28,6 +28,8 @@
  * `rafaelrpinto/node-siba`, que corre contra este mesmo serviço.
  */
 
+import { codigoDePais } from './paises'
+
 /** Unidade hoteleira — o alojamento registado no SIBA. */
 export interface UnidadeHoteleira {
   /** NIPC/NIF, 9 dígitos. Vai também no parâmetro SOAP `UnidadeHoteleira`. */
@@ -202,7 +204,11 @@ export function codigoPais(v: string | null | undefined): string | undefined {
   const s = String(v ?? '').trim()
   if (!s) return undefined
   if (/^[A-Za-z]{3}$/.test(s)) return s.toUpperCase()
-  return PAISES[s.toLowerCase()]
+  // A tabela à mão primeiro (variantes portuguesas antigas); depois qualquer
+  // nome de país em português ou inglês — antes disso, «Germany» ou «United
+  // Kingdom» escritos por um hóspede estrangeiro davam boletim sem
+  // nacionalidade.
+  return PAISES[s.toLowerCase()] ?? codigoDePais(s)
 }
 
 /**

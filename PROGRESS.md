@@ -6,6 +6,29 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-09] Check-in online: inglês, países por seletor, campos acessíveis
+
+Auditoria do check-in depois de a leitura do documento ficar desligada — o
+hóspede passa a escrever tudo:
+
+- 🔴 **Nacionalidade em texto livre não chegava ao SIBA.** A tabela de
+  `codigoPais` só tinha ~43 nomes **em português**: um alemão que escrevesse
+  «Germany» ficava sem nacionalidade e o boletim não saía (o anfitrião só
+  sabia ao tentar entregar). Agora: `lib/paises.ts` (ISO 3166-1 completa,
+  nomes pelo `Intl.DisplayNames` em PT e EN, aliases como «UK», «EUA»,
+  «Holanda») e `codigoPais` usa-o como recurso — o que já está na base
+  também passa a ser lido.
+- ✅ **Países por seletor** (nacionalidade, país de emissão, residência; titular
+  e acompanhantes). Mostra os nomes na língua do hóspede e **grava o nome em
+  português**, que é o que o INE, o CSV do SIBA e o InvoiceXpress já leem.
+  Um valor antigo que não é país continua visível como opção.
+- ✅ **Página em PT/EN** (`textos.ts`): língua do browser, botão para trocar,
+  `lang` do documento acompanha. Os valores gravados não mudam com a língua.
+- ✅ Rótulos ligados aos campos (`htmlFor`), `autocomplete` (nome, email,
+  telefone, data de nascimento, país), `aria-required`, grupo de rádio no sexo.
+- ✅ O botão «Confirmar» desativado passa a dizer **o que falta**.
+- Testes: `paises.test.ts` (inglês, aliases, não adivinha, `codigoPais`).
+
 ### [2026-10-09] Respostas guardadas na caixa de entrada
 
 Com a IA desligada, o anfitrião escrevia as mesmas respostas à mão. Botão
