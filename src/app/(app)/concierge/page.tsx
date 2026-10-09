@@ -1,10 +1,12 @@
 'use client'
+import Link from 'next/link'
 
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Copy, Check, AlertCircle, ChevronDown } from 'lucide-react'
 import { fetchProperties } from '@/lib/fetcher'
 import type { Property } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
+import { IA_ATIVA } from '@/lib/ia'
 
 const LANGS = [
   { code: 'auto', label: 'Auto' },
@@ -56,6 +58,21 @@ const TEMPLATES = [
 ]
 
 export default function ConciergePage() {
+  if (!IA_ATIVA) {
+    return (
+      <div className="px-4 lg:px-8 py-10 max-w-xl">
+        <h1 className="text-xl font-semibold">Concierge IA</h1>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+          As funcionalidades de IA estão desligadas. Para responder a hóspedes, usa a{' '}
+          <Link href="/mensagens" className="text-primary underline underline-offset-2">caixa de entrada</Link>.
+        </p>
+      </div>
+    )
+  }
+  return <ConciergeAtivo />
+}
+
+function ConciergeAtivo() {
   const { user } = useUser()
   const ownerId = user?.id
   const [message, setMessage] = useState('')

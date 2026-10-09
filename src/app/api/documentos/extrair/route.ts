@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { IA_ATIVA, MENSAGEM_IA_DESLIGADA } from '@/lib/ia'
 import Anthropic from '@anthropic-ai/sdk'
 import { auth } from '@clerk/nextjs/server'
 import { getClientIp } from '@/lib/rate-limit'
@@ -40,6 +41,7 @@ async function podeUsarOcr(req: NextRequest, bookingId: string | null): Promise<
 }
 
 export async function POST(req: NextRequest) {
+  if (!IA_ATIVA) return NextResponse.json({ error: MENSAGEM_IA_DESLIGADA }, { status: 503 })
   const ip = getClientIp(req)
   /* 20/hora por IP.
    *

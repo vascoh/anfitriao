@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { IA_ATIVA, MENSAGEM_IA_DESLIGADA } from '@/lib/ia'
 import Anthropic from '@anthropic-ai/sdk'
 import { auth } from '@clerk/nextjs/server'
 import { verificarLimite } from '@/lib/rate-limit-persistente'
@@ -21,6 +22,7 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
+  if (!IA_ATIVA) return NextResponse.json({ error: MENSAGEM_IA_DESLIGADA }, { status: 503 })
   const { userId } = await auth()
   if (!userId) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })

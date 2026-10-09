@@ -42,7 +42,7 @@ const FEATURES: Feature[] = [
   {
     icon: FileText,
     titulo: 'Check-in online',
-    descricao: 'O hóspede preenche os dados e fotografa o documento antes de chegar. Chega com o boletim já feito.',
+    descricao: 'O hóspede preenche os dados do documento antes de chegar. Chega com o boletim já feito.',
   },
   {
     icon: TrendingUp,

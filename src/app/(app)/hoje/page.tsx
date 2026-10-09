@@ -14,6 +14,7 @@ import { estaEmAtraso } from '@/lib/estado-siba'
 import { estadoDoFeed } from '@/lib/canais'
 import { OnboardingCard } from '@/components/onboarding-card'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
+import { IA_ATIVA } from '@/lib/ia'
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
@@ -678,7 +679,7 @@ export default function HojePage() {
 
         {/* Quick actions (skip when onboarding) */}
         {!semPropriedades && (
-          <div className="px-4 lg:px-8 pt-6 pb-2 grid grid-cols-2 gap-2.5">
+          <div className={`px-4 lg:px-8 pt-6 pb-2 grid gap-2.5 ${IA_ATIVA ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <Link href="/reservas/nova"
               className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 active:bg-muted/40 transition-colors hover:border-border/80">
               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -686,13 +687,13 @@ export default function HojePage() {
               </div>
               <span className="text-sm font-medium">Nova reserva</span>
             </Link>
-            <Link href="/concierge"
+            {IA_ATIVA && <Link href="/concierge"
               className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3.5 active:bg-muted/40 transition-colors hover:border-border/80">
               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Sparkles className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm font-medium">Concierge IA</span>
-            </Link>
+            </Link>}
           </div>
         )}
       </div>

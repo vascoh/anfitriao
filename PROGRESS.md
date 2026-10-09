@@ -6,6 +6,25 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-09] IA desligada até haver crédito
+
+Decisão do utilizador: não carregar crédito na API da Anthropic. Sem ele, a
+sugestão de resposta, o Concierge e a leitura de documentos falhavam à frente
+do anfitrião ou do hóspede.
+
+- ✅ `lib/ia.ts` — `NEXT_PUBLIC_IA_ATIVA`, **desligada por omissão**. Para
+  religar: `NEXT_PUBLIC_IA_ATIVA=true` na Vercel e novo deploy (fica fixada
+  no build).
+- ✅ Rotas `/api/mensagens/sugerir`, `/api/concierge` e
+  `/api/documentos/extrair` respondem 503 antes de tocar na API.
+- ✅ UI: sem «Sugerir resposta» em `/mensagens`; Concierge fora do menu e do
+  Hoje (a página explica e manda para a caixa de entrada); check-in online
+  passa a «Preencher os meus dados» sem fotografar documento (titular e
+  acompanhantes); `/documentos` sem leitor.
+- ✅ Landing deixa de vender o que está desligado: «Concierge com IA» sai dos
+  planos, «fotografa o documento» sai das funcionalidades, e a descrição da
+  página deixa de falar em IA.
+
 ### [2026-10-08] Emails automáticos na conversa da reserva
 
 A caixa de entrada prometia «uma conversa por reserva», mas os emails que a

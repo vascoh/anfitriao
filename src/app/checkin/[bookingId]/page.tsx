@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Camera, FileText, Check, AlertCircle, RotateCcw, ChevronRight, Loader2, Home } from 'lucide-react'
 import { nights } from '@/lib/utils'
+import { IA_ATIVA } from '@/lib/ia'
 
 type Step = 'loading' | 'info' | 'camera' | 'review' | 'submitting' | 'done' | 'error' | 'already'
 
@@ -359,7 +360,9 @@ export default function CheckinPage() {
             <div className="flex flex-col gap-2">
               <p className="font-semibold text-base">Olá! Faz o check-in online</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Fotografa o teu documento de identificação e os dados serão preenchidos automaticamente. Demora menos de 1 minuto.
+                {IA_ATIVA
+                  ? 'Fotografa o teu documento de identificação e os dados serão preenchidos automaticamente. Demora menos de 1 minuto.'
+                  : 'Preenche os dados do teu documento de identificação. Demora poucos minutos.'}
               </p>
               <p className="text-xs text-muted-foreground">
                 Anfitrião: <span className="font-medium text-foreground">{data?.host_nome}</span>
@@ -375,7 +378,7 @@ export default function CheckinPage() {
                 className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
               />
-              <button
+              {IA_ATIVA ? <><button
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 px-5 py-5 active:bg-primary/10 transition-colors text-left"
@@ -396,7 +399,15 @@ export default function CheckinPage() {
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors py-2 text-center"
               >
                 Preencher manualmente
-              </button>
+              </button></> : (
+                <button
+                  type="button"
+                  onClick={() => setStep('review')}
+                  className="rounded-2xl bg-primary text-primary-foreground px-5 py-4 text-sm font-semibold active:opacity-80 transition-opacity"
+                >
+                  Preencher os meus dados
+                </button>
+              )}
             </div>
           </>
         )}
@@ -521,7 +532,7 @@ export default function CheckinPage() {
                       )}
                     </div>
 
-                    <label className="flex items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2.5 cursor-pointer active:bg-primary/10 transition-colors">
+                    {IA_ATIVA && <label className="flex items-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 px-3 py-2.5 cursor-pointer active:bg-primary/10 transition-colors">
                       <input
                         type="file"
                         accept="image/*"
@@ -544,7 +555,7 @@ export default function CheckinPage() {
                           <span className="text-xs font-semibold">Fotografar documento</span>
                         </>
                       )}
-                    </label>
+                    </label>}
 
                     {erroAcompanhante[i] && (
                       <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">

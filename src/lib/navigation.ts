@@ -4,6 +4,7 @@ import {
   UserRound, CreditCard, MessagesSquare, Receipt, Rss, Activity, Filter, Network, LayoutTemplate,
   type LucideIcon,
 } from 'lucide-react'
+import { IA_ATIVA } from '@/lib/ia'
 
 /**
  * Fonte única da navegação da aplicação (side-nav, bottom-nav e ⌘K).
@@ -85,9 +86,9 @@ export const NAV: NavSection[] = [
     href: '/automacoes',
     label: 'Automação',
     Icon: Zap,
-    children: [
-      { href: '/concierge', label: 'Concierge IA', Icon: Sparkles, descricao: 'Respostas a hóspedes em 6 idiomas' },
-    ],
+    children: IA_ATIVA
+      ? [{ href: '/concierge', label: 'Concierge IA', Icon: Sparkles, descricao: 'Respostas a hóspedes em 6 idiomas' }]
+      : undefined,
   },
 ]
 

@@ -14,6 +14,7 @@ import {
   TRIAL_DIAS,
   PLAN_LIMITS,
 } from '@/lib/planos'
+import { IA_ATIVA } from '@/lib/ia'
 
 type Plano = {
   nome: string
@@ -35,7 +36,7 @@ const PLANOS: Plano[] = [
       limiteDeUnidadesCapitalizado('trial'),
       'Calendário unificado',
       'Check-in online SIBA',
-      'Concierge com IA',
+      ...(IA_ATIVA ? ['Concierge com IA'] : []),
       'Sem cartão de crédito',
     ],
     cta: 'Começar',
@@ -50,7 +51,7 @@ const PLANOS: Plano[] = [
     features: [
       limiteDeUnidadesCapitalizado('starter'),
       'Reservas ilimitadas',
-      'Concierge com IA ilimitado',
+      ...(IA_ATIVA ? ['Concierge com IA ilimitado'] : []),
       'Check-in online SIBA',
       'Apoio por email',
     ],

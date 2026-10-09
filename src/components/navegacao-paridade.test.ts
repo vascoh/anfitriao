@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { NAV, CONTA_NAV, ADMIN_NAV, todosOsDestinos } from '@/lib/navigation'
+import { IA_ATIVA } from '@/lib/ia'
 
 /**
  * **O telemóvel chega aos mesmos sítios que o computador.**
@@ -95,6 +96,8 @@ describe('todas as páginas têm porta', () => {
     'conformidade/taxa-turistica': 'atalho no cabeçalho de /conformidade',
     'financeiro/fiscal': 'atalho no cabeçalho de /financeiro',
     'mensagens/whatsapp': 'atalho no cabeçalho de /mensagens (ligar WhatsApp e email)',
+    // Só sai do menu com a IA desligada (`lib/ia.ts`); com ela ligada está em «Automação».
+    ...(IA_ATIVA ? {} : { concierge: 'IA desligada — a página explica e manda para /mensagens' }),
   }
 
   /** Uma rota é contextual quando tem um parâmetro ou é uma ação sobre uma lista. */

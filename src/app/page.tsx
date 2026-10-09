@@ -45,7 +45,7 @@ const plataformaJsonLd = {
   '@type': 'SoftwareApplication',
   name: 'Anfitrião',
   url: APP_URL,
-  description: 'Gestão de Alojamento Local para anfitriões portugueses. Sincroniza Airbnb e Booking.com, check-in online SIBA, relatórios e IA Concierge.',
+  description: 'Gestão de Alojamento Local para anfitriões portugueses. Sincroniza Airbnb e Booking.com, check-in online SIBA, faturação e relatórios.',
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   inLanguage: 'pt-PT',

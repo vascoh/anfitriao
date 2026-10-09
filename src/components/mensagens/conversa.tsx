@@ -12,6 +12,7 @@ import { guardar } from '@/lib/guardar'
 import { CANAIS, CANAL_LABEL, ORIGEM_LABEL, linkWhatsApp, type CanalMensagem, type Mensagem } from '@/lib/mensagens'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { quando, selecaoParaQuery, type ConversaAberta, type Selecao } from './tipos'
+import { IA_ATIVA } from '@/lib/ia'
 
 const MARCA_CONFIRMAR = /\[confirmar[^\]]*\]/i
 
@@ -407,14 +408,14 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
             <ClipboardPaste className="h-3.5 w-3.5" aria-hidden /> Registar
           </button>
           <div className="flex-1" />
-          <button onClick={() => (mostrarInstrucao ? sugerir() : setMostrarInstrucao(true))} disabled={aSugerir}
+          {IA_ATIVA && <button onClick={() => (mostrarInstrucao ? sugerir() : setMostrarInstrucao(true))} disabled={aSugerir}
             className="flex items-center gap-1 rounded-lg bg-primary/10 text-primary px-2.5 py-1.5 text-xs font-semibold hover:bg-primary/15 disabled:opacity-60">
             {aSugerir ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Sparkles className="h-3.5 w-3.5" aria-hidden />}
             {aSugerir ? 'A escrever…' : 'Sugerir resposta'}
-          </button>
+          </button>}
         </div>
 
-        {mostrarInstrucao && (
+        {IA_ATIVA && mostrarInstrucao && (
           <div className="flex gap-1.5">
             <input value={instrucao} onChange={e => setInstrucao(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); sugerir() } }}

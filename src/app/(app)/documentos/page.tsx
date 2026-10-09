@@ -6,6 +6,7 @@ import { fetchGuests } from '@/lib/fetcher'
 import { today } from '@/lib/utils'
 import type { Guest } from '@/lib/types'
 import { useUser } from '@clerk/nextjs'
+import { IA_ATIVA } from '@/lib/ia'
 
 type ExtractedData = Record<string, string>
 
@@ -290,7 +291,12 @@ export default function DocumentosPage() {
           onChange={handleFileChange}
         />
 
-        {!preview ? (
+        {!IA_ATIVA ? (
+          <p className="rounded-2xl border border-border bg-muted/40 px-5 py-4 text-sm text-muted-foreground leading-relaxed">
+            A leitura automática de documentos está desligada. Os dados do hóspede preenchem-se no check-in online
+            ou na ficha do hóspede.
+          </p>
+        ) : !preview ? (
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
