@@ -7,6 +7,7 @@ import { useUser } from '@clerk/nextjs'
 import { Inbox, Mail, MessageCircle, MessageSquarePlus, Settings2, Sparkles } from 'lucide-react'
 import { fmtDate } from '@/lib/utils'
 import { CANAL_LABEL, eCanal } from '@/lib/mensagens'
+import { IA_ATIVA } from '@/lib/ia'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { ConversaView, EscolherReserva } from '@/components/mensagens/conversa'
 import { quando, selecaoDaConversa, selecaoParaQuery, type ConversaLista, type Selecao } from '@/components/mensagens/tipos'
@@ -113,7 +114,9 @@ function Mensagens() {
                   <p className="font-medium text-foreground">Ainda sem conversas</p>
                   <p className="max-w-xs leading-relaxed">
                     Escreve a um hóspede por email ou WhatsApp, ou cola aqui o que te mandou pelo Airbnb ou
-                    pela Booking.com — a IA sugere a resposta na língua dele.
+                    pela Booking.com{IA_ATIVA
+                      ? ' — a IA sugere a resposta na língua dele.'
+                      : ' — fica tudo reunido no histórico da reserva.'}
                   </p>
                   <button onClick={() => setNova(true)} className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted">
                     Começar uma conversa

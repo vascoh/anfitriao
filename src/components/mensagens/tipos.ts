@@ -1,5 +1,6 @@
 import type { CanalMensagem, Conversa, Mensagem } from '@/lib/mensagens'
 import type { ValoresVariaveis } from '@/lib/respostas-guardadas'
+import { addDays } from '@/lib/utils'
 
 /** Linha da lista de conversas, como `/api/mensagens` a devolve. */
 export interface ConversaLista extends Conversa {
@@ -45,11 +46,19 @@ export function selecaoDaConversa(c: Pick<Conversa, 'reserva_id' | 'canal' | 'co
 /** «14:05» se for hoje, «ontem», «3 out.» antes disso. */
 export function quando(iso: string, agora = new Date()): string {
   const d = new Date(iso)
-  const dia = (x: Date) => x.toLocaleDateString('pt-PT', { timeZone: 'Europe/Lisbon' })
-  if (dia(d) === dia(agora)) {
+  const dia = (x: Date) => {
+    const partes = new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Lisbon',
+    }).formatToParts(x)
+    const valor = (tipo: Intl.DateTimeFormatPartTypes) => partes.find(p => p.type === tipo)?.value ?? ''
+    return `${valor('year')}-${valor('month')}-${valor('day')}`
+  }
+  const hoje = dia(agora)
+  if (dia(d) === hoje) {
     return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon' })
   }
-  const ontem = new Date(agora.getTime() - 86400000)
-  if (dia(d) === dia(ontem)) return 'ontem'
+  // Um dia civil não tem sempre 24 horas: na mudança para a hora de inverno,
+  // subtrair 86 400 000 ms ainda pode cair no mesmo dia em Lisboa.
+  if (dia(d) === addDays(hoje, -1)) return 'ontem'
   return d.toLocaleDateString('pt-PT', { day: 'numeric', month: 'short', timeZone: 'Europe/Lisbon' })
 }

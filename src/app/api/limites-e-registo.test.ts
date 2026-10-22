@@ -187,6 +187,19 @@ describe('listas que têm de vir completas', () => {
   })
 })
 
+describe('conversas longas mantêm as mensagens mais recentes', () => {
+  it('limita a thread depois de ordenar da mais nova para a mais antiga', () => {
+    const rota = rotas().find(r => r.nome === 'mensagens')!
+    const thread = rota.codigo.slice(
+      rota.codigo.indexOf('function threadQuery'),
+      rota.codigo.indexOf('export async function POST'),
+    )
+
+    expect(thread).toMatch(/order\('criado_em', \{ ascending: false \}\)\.limit\(500\)/)
+    expect(thread).toMatch(/const mensagens = .*\.reverse\(\)/)
+  })
+})
+
 /**
  * Nona pergunta da série: **o que só funciona porque assumimos um servidor
  * único?**

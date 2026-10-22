@@ -6,6 +6,23 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-21] Auditoria da caixa de mensagens: histórico recente, datas e isolamento
+
+- 🔴 **Conversas com mais de 500 mensagens escondiam as mais recentes.** A
+  query ordenava da mais antiga para a mais nova antes de aplicar o limite;
+  agora lê as 500 mais recentes e devolve-as por ordem cronológica. Uma guarda
+  estrutural impede regressões nesta combinação de ordenação e limite.
+- ✅ O rótulo «ontem» deixou de subtrair 24 horas ao relógio. Na mudança para a
+  hora de inverno, um dia civil em Lisboa tem 25 horas e a mensagem podia ser
+  mostrada como uma data comum; agora a comparação usa datas civis e
+  `addDays()`, com teste no domingo da mudança de hora.
+- ✅ As duas leituras de alojamentos feitas pela rota de mensagens filtram
+  explicitamente por `owner_id`, além da validação já existente da reserva.
+- ✅ O estado vazio da caixa já não promete sugestões por IA quando
+  `NEXT_PUBLIC_IA_ATIVA` está desligada.
+- Verificação: lint e TypeScript sem erros; build Next.js de produção concluído;
+  **104 ficheiros / 1.360 testes passaram** (1 ficheiro e 1 teste ignorados).
+
 ### [2026-10-09] Ficha do hóspede: país de residência e países por seletor
 
 - 🔴 **Não havia onde completar o país de residência fora do check-in** — e o

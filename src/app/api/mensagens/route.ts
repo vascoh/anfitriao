@@ -55,7 +55,10 @@ async function hospede(id: string | null, ownerId: string) {
 }
 
 function threadQuery(ownerId: string) {
-  return supabase.from('mensagens').select('*').eq('owner_id', ownerId).order('criado_em', { ascending: true }).limit(500)
+  // A base aplica o limite depois da ordenação. Pedir por ordem crescente
+  // devolvia as 500 mensagens mais antigas e fazia desaparecer as novas em
+  // conversas longas. Lemos as mais recentes e invertemos antes de responder.
+  return supabase.from('mensagens').select('*').eq('owner_id', ownerId).order('criado_em', { ascending: false }).limit(500)
 }
 
 export async function GET(req: NextRequest) {
@@ -92,7 +95,7 @@ export async function GET(req: NextRequest) {
     }
     const { data, error } = await q
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    const mensagens = (data ?? []) as Mensagem[]
+    const mensagens = [...((data ?? []) as Mensagem[])].reverse()
     const h = await hospede(reserva?.hospede_id ?? null, userId)
     const ligacao = await ligacaoWhatsAppDoDono(supabase, userId)
     const telefone = h?.telefone ?? (canal === 'whatsapp' ? contacto : null)
@@ -102,7 +105,7 @@ export async function GET(req: NextRequest) {
     if (reserva?.propriedade_id) {
       const { data } = await supabase.from('properties')
         .select('nome, endereco, cidade, instrucoes_checkin, regras_casa')
-        .eq('id', reserva.propriedade_id).maybeSingle()
+        .eq('id', reserva.propriedade_id).eq('owner_id', userId).maybeSingle()
       prop = data
       propriedade = prop?.nome ?? null
     }
@@ -249,7 +252,8 @@ export async function POST(req: NextRequest) {
     if (!para) return NextResponse.json({ error: 'O hóspede não tem email válido.' }, { status: 400 })
     let nomeAlojamento = ''
     if (reserva?.propriedade_id) {
-      const { data: prop } = await supabase.from('properties').select('nome').eq('id', reserva.propriedade_id).maybeSingle()
+      const { data: prop } = await supabase.from('properties').select('nome')
+        .eq('id', reserva.propriedade_id).eq('owner_id', userId).maybeSingle()
       nomeAlojamento = prop?.nome ?? ''
     }
     const assuntoFinal = assunto ?? (nomeAlojamento ? `A sua estadia em ${nomeAlojamento}` : 'A sua estadia')
