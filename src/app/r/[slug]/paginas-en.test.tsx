@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 
 vi.mock('server-only', () => ({}))
@@ -29,6 +29,15 @@ async function render(modulo: string): Promise<string> {
   const { default: Pagina } = await import(modulo)
   return renderToStaticMarkup(await Pagina({ params }))
 }
+
+// A primeira importação de cada página compila a árvore toda e, com a suite em
+// paralelo, passa dos 5 s do teste — carrega-se aqui, com prazo próprio.
+beforeAll(async () => {
+  await Promise.all(
+    ['./sobre/page', './localizacao/page', './privacidade/page', './cookies/page', './termos/page']
+      .map((m) => import(m)),
+  )
+}, 60_000)
 
 beforeEach(() => { idioma = 'en' })
 
