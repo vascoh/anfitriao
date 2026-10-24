@@ -1,118 +1,23 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import Link from 'next/link'
-import {
-  ArrowLeft, Users, MapPin, Phone, Mail, Edit2,
-  CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink,
-  MessageCircle, MessagesSquare, CreditCard, Check, Link2, ShieldCheck
-} from 'lucide-react'
+import { ArrowLeft, Phone, Mail, Edit2, CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink, MessageCircle, MessagesSquare, CreditCard, Check, Link2, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar, eliminar } from '@/lib/guardar'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
-import {
-  transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio,
-  ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING,
-} from '@/lib/reservations'
+import { transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio, ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING } from '@/lib/reservations'
 import { aindaDentro } from '@/lib/reserva-no-bloqueio'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
-import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
-
-function ReminderButton({ bookingId }: { bookingId: string }) {
-  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
-  async function send() {
-    setState('sending')
-    try {
-      const res = await fetch('/api/notify-payment-reminder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId }),
-      })
-      setState(res.ok ? 'sent' : 'error')
-      if (res.ok) setTimeout(() => setState('idle'), 3000)
-    } catch {
-      setState('error')
-    }
-  }
-  return (
-    <button
-      onClick={send}
-      disabled={state === 'sending' || state === 'sent'}
-      className={`shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${
-        state === 'sent' ? 'bg-emerald-100 text-emerald-700' :
-        state === 'error' ? 'bg-red-100 text-red-700' :
-        'bg-amber-100 text-amber-700 hover:bg-amber-200'
-      }`}
-    >
-      <Mail className="h-3 w-3" />
-      {state === 'sending' ? '...' : state === 'sent' ? 'Enviado' : state === 'error' ? 'Erro' : 'Lembrete'}
-    </button>
-  )
-}
-
-function Stepper({ estado }: { estado: string }) {
-  const steps = [
-    { key: 'pendente', label: 'Pendente' },
-    { key: 'confirmada', label: 'Confirmada' },
-    { key: 'checkin', label: 'Em casa' },
-    { key: 'checkout', label: 'Concluída' },
-  ]
-  const currentIdx = steps.findIndex(s => s.key === estado)
-
-  return (
-    <div className="flex items-center gap-0 overflow-x-auto no-scrollbar py-1">
-      {steps.map((step, i) => {
-        const done = i < currentIdx
-        const active = i === currentIdx
-        return (
-          <div key={step.key} className="flex items-center shrink-0">
-            <div className="flex flex-col items-center gap-1">
-              <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                done ? 'border-primary bg-primary' : active ? 'border-primary bg-primary/10' : 'border-border bg-card'
-              }`}>
-                {done ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />
-                ) : active ? (
-                  <div className="h-2 w-2 rounded-full bg-primary" />
-                ) : (
-                  <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
-                )}
-              </div>
-              <span className={`text-[10px] whitespace-nowrap ${active ? 'font-semibold text-primary' : done ? 'text-primary/70' : 'text-muted-foreground'}`}>
-                {step.label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div className={`h-0.5 w-8 mx-1 mb-4 transition-colors ${i < currentIdx ? 'bg-primary' : 'bg-border'}`} />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function Section({ title, children }: { title?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2">
-      {title && <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-4">{title}</h2>}
-      <div className="rounded-xl border border-border bg-card mx-4 overflow-hidden">{children}</div>
-    </div>
-  )
-}
-
-function Row({ label, value, className }: { label: string; value: React.ReactNode; className?: string }) {
-  return (
-    <div className={`flex items-center justify-between px-4 py-3 border-b border-border last:border-0 ${className ?? ''}`}>
-      <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
-      <span className="text-sm font-medium text-right">{value}</span>
-    </div>
-  )
-}
+import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
+import { ReminderButton, Stepper, Section, Row } from './_components/blocos'
+import { CasaInteira } from './_components/casa-inteira'
+import { DetalhesReserva, CartaoPropriedade } from './_components/resumo'
+import { Historico } from './_components/historico'
 
 export default function ReservaDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -394,58 +299,7 @@ export default function ReservaDetailPage() {
 
       <div className="flex flex-col gap-5 py-4">
         {/* Casa inteira — esta reserva é um quarto de uma reserva maior */}
-        {grupo && (() => {
-          const vivas = grupo.reservas.filter(r => r.estado !== 'cancelada' && r.estado !== 'no_show')
-          const base = vivas.length > 0 ? vivas : grupo.reservas
-          const totalGrupo = base.reduce((s, r) => s + (r.preco_total ?? 0), 0)
-          const pagoGrupo = base.reduce((s, r) => s + (r.preco_pago ?? 0), 0)
-          const casa = grupo.props.find(p => p.id === grupo.props.find(x => x.id === booking.propriedade_id)?.parent_id)
-
-          return (
-            <div className="mx-4 rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-semibold">
-                  {casa ? `${casa.nome} — casa inteira` : 'Reserva de casa inteira'}
-                </p>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {base.length} quarto{base.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Esta é <strong>uma</strong> das reservas do grupo. Os valores em baixo são
-                deste quarto; o hóspede reservou {fmtMoney(totalGrupo)} no total
-                {pagoGrupo > 0 && `, dos quais já pagou ${fmtMoney(pagoGrupo)}`}.
-              </p>
-
-              <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-card">
-                {grupo.reservas.map(r => {
-                  const quarto = grupo.props.find(p => p.id === r.propriedade_id)
-                  const cancelada = r.estado === 'cancelada' || r.estado === 'no_show'
-                  return (
-                    <Link
-                      key={r.id}
-                      href={`/reservas/${r.id}`}
-                      className={`flex items-center gap-2 px-3 py-2 text-xs transition-colors ${
-                        r.id === booking.id ? 'bg-muted/60 font-medium' : 'hover:bg-muted/40'
-                      }`}
-                    >
-                      <span className={`flex-1 truncate ${cancelada ? 'line-through text-muted-foreground' : ''}`}>
-                        {quarto?.nome ?? 'Quarto'}
-                      </span>
-                      <span className="text-muted-foreground">{STATUS_LABEL[r.estado]}</span>
-                      <span className="tabular-nums">{fmtMoney(r.preco_total)}</span>
-                    </Link>
-                  )
-                })}
-              </div>
-
-              <p className="text-[11px] text-muted-foreground">
-                Cancelar aqui cancela só este quarto. A fatura, essa, é uma só para o grupo.
-              </p>
-            </div>
-          )
-        })()}
+        {grupo && <CasaInteira booking={booking} grupo={grupo} />}
 
         {/* Stepper */}
         {booking.estado !== 'cancelada' && booking.estado !== 'no_show' && (
@@ -697,17 +551,7 @@ export default function ReservaDetailPage() {
         </Section>
 
         {/* Booking details */}
-        <Section title="Reserva">
-          <Row label="Check-in" value={fmtDate(booking.check_in, { weekday: 'short', day: 'numeric', month: 'short' })} />
-          <Row label="Check-out" value={fmtDate(booking.check_out, { weekday: 'short', day: 'numeric', month: 'short' })} />
-          <Row label="Duração" value={`${n} noite${n !== 1 ? 's' : ''}`} />
-          <Row label="Hóspedes" value={<span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{booking.num_hospedes}</span>} />
-          <Row label="Origem" value={
-            <span className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full ${SOURCE_BG[booking.origem]}`}>
-              {SOURCE_LABEL[booking.origem]}
-            </span>
-          } />
-        </Section>
+        <DetalhesReserva booking={booking} noites={n} />
 
         {/* Payment */}
         <Section title="Pagamento">
@@ -766,18 +610,7 @@ export default function ReservaDetailPage() {
         </Section>
 
         {/* Property */}
-        <Section title="Propriedade">
-          <Link href={`/propriedades/${prop?.id}`} className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors">
-            <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: prop?.cor + '20' }}>
-              <MapPin className="h-4.5 w-4.5" style={{ color: prop?.cor }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{prop?.nome}</p>
-              <p className="text-xs text-muted-foreground">{prop?.cidade} · {prop?.capacidade} pax</p>
-            </div>
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          </Link>
-        </Section>
+        <CartaoPropriedade prop={prop} />
 
         {/* Notes */}
         {(notaAnfitriao || textoPlataforma || showNote) && (
@@ -824,27 +657,7 @@ export default function ReservaDetailPage() {
         )}
 
         {/* Timeline */}
-        <div className="flex flex-col gap-3 px-4">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Histórico</h2>
-          <div className="flex flex-col gap-0 relative">
-            <div className="absolute left-3 top-3 bottom-3 w-px bg-border" />
-            {[...booking.historico].reverse().map((ev, i) => (
-              <div key={ev.id} className="flex items-start gap-3 pb-4 last:pb-0 relative">
-                <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 z-10 ${
-                  i === 0 ? 'border-primary bg-primary' : 'border-border bg-card'
-                }`}>
-                  <div className={`h-1.5 w-1.5 rounded-full ${i === 0 ? 'bg-primary-foreground' : 'bg-muted-foreground/40'}`} />
-                </div>
-                <div className="flex-1 min-w-0 pt-0.5">
-                  <p className="text-sm font-medium">{ev.descricao}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(ev.data))}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Historico historico={booking.historico} />
 
         {/* Danger zone */}
         {booking.estado !== 'checkout' && (
