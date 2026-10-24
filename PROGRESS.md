@@ -29,6 +29,10 @@ _Iniciado: 2026-06-06_
   (casa inteira, reserva, propriedade, histórico), com testes de render.
 - Verificação: lint e TypeScript a zero; build de produção concluído;
   **1.363 testes passaram** (1 ignorado), também em UTC+14 e UTC−7.
+- E2E em produção com sessão (Clerk descartável, dados `TESTE-E2E`, desktop e
+  390 px): os 6 separadores de Preços, regra criada pela UI e refletida no
+  calendário, detalhe de reserva de casa inteira, nota e pagamento a persistir
+  — 0 erros de consola e 0 pedidos falhados. Dados e utilizador apagados.
 
 ### [2026-10-21] Auditoria da caixa de mensagens: histórico recente, datas e isolamento
 
