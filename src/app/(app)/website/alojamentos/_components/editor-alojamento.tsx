@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { ArrowLeft, ArrowRight, Check, ExternalLink, ImagePlus, Loader2, Star, Trash2, X } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import type { Property } from '@/lib/types'
-import { COMODIDADES } from '@/lib/comodidades'
+import { COMODIDADES, nomeComodidade } from '@/lib/comodidades'
 import { LIMITES_ALOJAMENTO } from '@/lib/fotos-alojamento'
 import { fotosDe } from '@/lib/site-alojamentos'
 import { reduzirImagem } from '@/lib/reduzir-imagem'
@@ -291,9 +291,9 @@ export function EditorAlojamento({ prop, casa, slug, aoGuardar }: {
             )
           })}
           {extras.map(c => (
-            <button key={c} type="button" onClick={() => alternarComodidade(c)} aria-label={`Retirar ${c}`}
+            <button key={c} type="button" onClick={() => alternarComodidade(c)} aria-label={`Retirar ${nomeComodidade(c, 'pt')}`}
               className="inline-flex items-center gap-1.5 rounded-full border border-primary bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
-              {c}<X className="h-3.5 w-3.5" />
+              {nomeComodidade(c, 'pt')}<X className="h-3.5 w-3.5" />
             </button>
           ))}
         </div>

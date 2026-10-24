@@ -26,8 +26,10 @@ export function eComodidade(id: unknown): id is ComodidadeId {
   return typeof id === 'string' && IDS.has(id)
 }
 
-/** Nome da comodidade; uma chave antiga ou escrita à mão aparece tal como está. */
+/** Nome da comodidade; uma escrita à mão (`roupa_cama`) aparece legível («Roupa cama»). */
 export function nomeComodidade(id: string, lang: SiteLang): string {
   const c = COMODIDADES.find(x => x.id === id)
-  return c ? c[lang] : id
+  if (c) return c[lang]
+  const texto = id.replace(/_/g, ' ').trim()
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
