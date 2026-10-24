@@ -6,6 +6,30 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-24] Dependências seguras, CI a sério e ecrãs de Preços e Reserva divididos
+
+- 🔴 **Next 16.3.5 tinha execução remota de código no `next/og`**, e `/api/og`
+  é pública. Dependências atualizadas dentro dos intervalos do `package.json`
+  (Next 16.4.3, Sentry 10.76, Clerk 7.9, shadcn 4.22…): `npm audit` passa de
+  21 vulnerabilidades (3 críticas) a **0**. O `zod` fixado pelo
+  `@vercel/cli-config` é forçado a ^4.6.6 por `overrides`. O `npm update` do
+  npm 10.9 rebenta neste projeto (`edgesOut` no resolvedor de peers) — usar
+  `npx npm@11 update`.
+- 🔴 **A CI nunca tinha passado** (40 de 40 vermelhas): o build parava em
+  `supabaseUrl is required` por falta de env. Ganha valores fictícios, Node 24
+  (o da produção) e os testes, também em `TZ=Pacific/Kiritimati`.
+- ✅ Teste «Sobre» de `paginas-en.test.tsx` rebentava os 5 s com a suite em
+  paralelo (importação a frio da página); os módulos carregam num `beforeAll`.
+- ✅ Faturas, contas de faturação, SAF-T e `notify-confirmation` passam a
+  `verificarLimite` — chamam o InvoiceXpress ou enviam email. `bookings/grupo`
+  e `siba-marcar` ficam em memória (só escrevem na base, limite de cortesia).
+- ✅ Migração 054: índice em `mensagens.hospede_id` (aplicada em produção).
+- ✅ `precos/page.tsx` (1520 linhas) dividido por separador em `_components/`;
+  `reservas/[id]/page.tsx` (868 → 681) perde os blocos só de apresentação
+  (casa inteira, reserva, propriedade, histórico), com testes de render.
+- Verificação: lint e TypeScript a zero; build de produção concluído;
+  **1.363 testes passaram** (1 ignorado), também em UTC+14 e UTC−7.
+
 ### [2026-10-21] Auditoria da caixa de mensagens: histórico recente, datas e isolamento
 
 - 🔴 **Conversas com mais de 500 mensagens escondiam as mais recentes.** A
