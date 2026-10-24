@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { BedDouble, Users } from 'lucide-react'
+import { BedDouble, Home, Users } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import type { SiteLang } from '@/lib/i18n'
 import { tr } from '@/lib/i18n-reserva'
@@ -23,14 +23,17 @@ export interface DadosCartao {
 export function CartaoAlojamento({ a, href, lang, grande }: { a: DadosCartao; href: string; lang: SiteLang; grande?: boolean }) {
   return (
     <Link href={href} className="group flex flex-col gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background">
-      <div className={`relative overflow-hidden rounded-2xl bg-muted ${grande ? 'aspect-[16/10]' : 'aspect-[4/3]'}`}>
+      {/* Sem fotografia, o cartão grande encolhe: um bloco vazio do tamanho de uma foto de capa pesa mais do que diz. */}
+      <div className={`relative overflow-hidden rounded-2xl bg-muted ${grande ? (a.foto ? 'aspect-[16/10]' : 'aspect-[16/5]') : 'aspect-[4/3]'}`}>
         {a.foto ? (
           <Image src={a.foto} alt={a.nome} fill
             sizes={grande ? '(max-width: 768px) 100vw, 960px' : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px'}
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none" />
         ) : (
           <div aria-hidden className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: `${a.cor}1a` }}>
-            <span className="site-titulo text-6xl font-semibold opacity-60" style={{ color: a.cor }}>{a.nome.trim().slice(0, 1).toUpperCase()}</span>
+            {a.desde
+              ? <Home className="h-10 w-10 opacity-70" strokeWidth={1.5} style={{ color: a.cor }} />
+              : <BedDouble className="h-10 w-10 opacity-70" strokeWidth={1.5} style={{ color: a.cor }} />}
           </div>
         )}
         {a.numFotos > 1 && (
