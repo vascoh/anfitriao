@@ -9,12 +9,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Valores fictícios: o build só precisa que os clientes Supabase, Clerk,
+    # Stripe e Resend se consigam criar ao carregar os módulos. Sem eles, a CI
+    # falhava sempre no passo de build.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ci.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci
+      SUPABASE_SERVICE_ROLE_KEY: ci
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
+      CLERK_SECRET_KEY: sk_test_ci
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      STRIPE_SECRET_KEY: sk_test_ci
+      RESEND_API_KEY: re_ci
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24' # igual à produção na Vercel
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
@@ -22,5 +34,13 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Test
+        run: npm test
+      # A suite tem de passar em qualquer fuso; Kiritimati (UTC+14) apanha os
+      # bugs de data que Lisboa esconde.
+      - name: Test (UTC+14)
+        run: npm test
+        env:
+          TZ: Pacific/Kiritimati
       - name: Build
         run: npm run build
