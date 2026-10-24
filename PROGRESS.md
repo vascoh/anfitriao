@@ -6,6 +6,39 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-24] Site novo: fotos por quarto, calendário com preços e construtor
+
+- ✅ **Página própria por alojamento no site** (`/r/[slug]/alojamento/[id]`):
+  galeria (mosaico, deslizar no telemóvel, visualizador com teclado),
+  descrição, comodidades, regras e **calendário com o preço de cada noite**;
+  o pedido de reserva faz-se ali, dentro do site, pelas mesmas APIs
+  (`/api/book`, `/api/book/checkout`). Numa casa com quartos, a página da casa
+  lista os quartos e mantém a reserva da casa inteira. Funciona em domínio
+  próprio (`/alojamento/` no proxy) e entra no sitemap.
+- ✅ **Inicial redesenhada**: o topo usa a foto escolhida no editor ou a capa do
+  primeiro alojamento/quarto; cartões com fotografia e, numa casa, os quartos à
+  vista. Paleta própria do site público em modo claro (`.site-publico` em
+  `globals.css`, aplicada pelo `siteTheme`), para a cor do anfitrião ser o
+  único acento. Cabeçalho e rodapé a `max-w-6xl`.
+- ✅ **Construtor — «Fotos e quartos»** (`/website/alojamentos`): carregar
+  várias fotos (reduzidas no browser a 2400 px), escolher capa, reordenar
+  (arrastar ou setas), descrição, comodidades e regras, com gravação automática
+  em fila. API `PATCH /api/site/alojamentos/[id]` só mexe nesses campos e só
+  aceita fotos carregadas pela própria conta. `/website` mostra os três passos
+  (fotos e quartos → textos e secções → domínio). Limite de upload 40→300/h.
+- ⚠️ **Decisão pendente — preço de estadias que atravessam regras.** O total
+  (`calculatePriceWithRules`) usa a regra do dia de entrada para a estadia toda;
+  o calendário mostra o preço de cada noite. Entrada a quinta com regra de fim
+  de semana: o calendário diz 60 + 75, cobra-se 2 × 60. O cartão mostra sempre
+  o detalhe do que se cobra. Mudar para soma noite a noite altera o que se
+  cobra e o que o servidor valida — não feito sem decisão.
+- E2E na pré-visualização (Clerk descartável, dados `TESTE-E2E`): 18/18 —
+  upload de 4 fotos, capa, descrição, cartões, galeria, preço de fim de semana,
+  noites ocupadas, total e pedido gravado (pendente, 120 €). Fotos do teste
+  apagadas do Blob e utilizador Clerk apagado; **as linhas na base ficaram
+  desativadas** porque o MCP do Supabase recusou `DELETE` — falta correr a
+  limpeza (ver resumo da sessão).
+
 ### [2026-10-24] Dependências seguras, CI a sério e ecrãs de Preços e Reserva divididos
 
 - 🔴 **Next 16.3.5 tinha execução remota de código no `next/og`**, e `/api/og`

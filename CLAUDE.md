@@ -14,6 +14,7 @@ PMS para Alojamento Local português. Produção: https://anfitrioes.pt (multi-t
   - ⚠️ `npx vercel promote <url>` só serve para promover um deploy **acabado de criar**. Promover um URL
     antigo faz a produção recuar para esse código — aconteceu a 2026-08-20, com a produção a voltar
     dois dias atrás sem nada a assinalá-lo. Verificar a data com `vercel inspect <url>` antes de promover.
+- E2E com dados: o `.env.local` não tem `SUPABASE_SERVICE_ROLE_KEY` (a app local cai na anon key e não lê nada) e tem `MAINTENANCE_MODE="true"`. Testar numa pré-visualização: `npx vercel deploy --build-env STRIPE_SECRET_KEY=sk_test_x --env STRIPE_SECRET_KEY=sk_test_x` (sem chave Stripe o build de preview falha) e abrir com o link de `get_access_to_vercel_url`. A pré-visualização não tem Resend: não envia emails.
 - ⚠️ WSL2: `npm run dev` (webpack) pendura sob carga e deixa zombies no porto 3000 — para E2E usar `npm run build && npm start` e matar `next-server` no fim.
 
 ## Convenções críticas
