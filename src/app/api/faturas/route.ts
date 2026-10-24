@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { emitirFaturaDaReserva, emitirNotaCredito } from '@/lib/faturacao/emitir'
 
 const supabase = createAdminClient()
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const rl = checkRateLimit(`faturas:${userId}`, 20, 60_000)
+  const rl = await verificarLimite(`faturas:${userId}`, 20, 60_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
   }
@@ -66,7 +66,7 @@ export async function DELETE(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const rl = checkRateLimit(`notas-credito:${userId}`, 10, 60_000)
+  const rl = await verificarLimite(`notas-credito:${userId}`, 10, 60_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
   }

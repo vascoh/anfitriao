@@ -4,7 +4,7 @@ import { adminGetBookingById, adminGetGuestById, adminGetPropertyById } from '@/
 import { emailService } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase'
 import { enderecoDeResposta, registarEmailAutomatico } from '@/lib/mensagens-server'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { nights } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   /* Manda um email a um hóspede: sem teto, um clique repetido vira spam
    * enviado do nosso domínio, o que gasta reputação de envio que é partilhada
    * por todos os anfitriões. As outras rotas que enviam já têm limitador. */
-  const rl = checkRateLimit(`notify-confirmation:${userId}`, 20, 60_000)
+  const rl = await verificarLimite(`notify-confirmation:${userId}`, 20, 60_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
   }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { logAudit } from '@/lib/audit'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { ligarContaExistente, normalizarSubdominio, paraPublica } from '@/lib/faturacao'
 
 /**
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   // Cada tentativa é uma chamada ao fornecedor com uma chave que pode estar
   // errada; não queremos servir de oráculo para adivinhar chaves.
-  const rl = checkRateLimit(`faturacao-ligar:${userId}`, 10, 3_600_000)
+  const rl = await verificarLimite(`faturacao-ligar:${userId}`, 10, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiadas tentativas. Tenta daqui a pouco.' }, { status: 429 })
   }

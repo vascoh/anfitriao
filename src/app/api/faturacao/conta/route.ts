@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
 import { logAudit } from '@/lib/audit'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import {
   obterConta, criarContaParaAnfitriao, contaComCredenciais, paraPublica,
   getInvoicingAdapter, podeProvisionarFaturacao,
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
   // Criar contas noutro serviço é caro e irreversível. Limite apertado.
-  const rl = checkRateLimit(`faturacao-conta:${userId}`, 5, 3_600_000)
+  const rl = await verificarLimite(`faturacao-conta:${userId}`, 5, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiadas tentativas. Tenta daqui a pouco.' }, { status: 429 })
   }
@@ -105,7 +105,7 @@ export async function PUT(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const rl = checkRateLimit(`faturacao-at:${userId}`, 10, 3_600_000)
+  const rl = await verificarLimite(`faturacao-at:${userId}`, 10, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiadas tentativas. Tenta daqui a pouco.' }, { status: 429 })
   }

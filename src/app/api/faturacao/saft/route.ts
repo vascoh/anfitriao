@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { logAudit } from '@/lib/audit'
 import { getInvoicingAdapter, contaComCredenciais } from '@/lib/faturacao'
 
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
-  const rl = checkRateLimit(`saft:${userId}`, 30, 60_000)
+  const rl = await verificarLimite(`saft:${userId}`, 30, 60_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados pedidos. Aguarda um momento.' }, { status: 429 })
   }
