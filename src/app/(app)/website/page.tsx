@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, Rss, Network, LayoutTemplate } from 'lucide-react'
+import { Globe, ExternalLink, Copy, Check, ToggleLeft, ToggleRight, ArrowRight, Rss, Network, LayoutTemplate, Images } from 'lucide-react'
 import { fmtMoney, fmtDate, nights } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { WebsiteSettings, Property } from '@/lib/types'
@@ -12,6 +12,7 @@ import { agruparReservas } from '@/lib/grupos'
 import { normalizarSlug, validarSlug } from '@/lib/slug'
 import { prontidaoDoSite, motivoParaNaoPublicar } from '@/lib/prontidao-site'
 import { useUser } from '@clerk/nextjs'
+import { faltaNoAlojamento } from '@/lib/site-alojamentos'
 
 function useOrigin() {
   const [origin] = useState(() => (typeof window !== 'undefined' ? window.location.origin : ''))
@@ -46,6 +47,8 @@ export default function WebsitePage() {
   /* O que falta para o site valer a pena ser visto. Regra em
    * lib/prontidao-site.ts, para a interface e a API não discordarem. */
   const prontidao = prontidaoDoSite(settings, props)
+  const alojamentosAtivos = props.filter(p => p.ativo)
+  const alojamentosProntos = alojamentosAtivos.filter(p => faltaNoAlojamento(p).length === 0).length
 
   function update<K extends keyof WebsiteSettings>(key: K, val: WebsiteSettings[K]) {
     setSettings(prev => prev ? { ...prev, [key]: val } : prev)
@@ -143,20 +146,41 @@ export default function WebsitePage() {
           </button>
         </div>
 
-        {/* Editor visual — o mapa do site, com o site ao lado */}
-        <Link href="/website/editor"
-          className="group rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-4 hover:border-primary/60 transition-colors">
-          <span className="h-10 w-10 shrink-0 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
-            <LayoutTemplate className="h-5 w-5" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block font-semibold text-sm">Editar o site</span>
-            <span className="block text-xs text-muted-foreground mt-0.5">
-              Vê o mapa das páginas, muda a ordem das secções e escreve diretamente sobre o site.
-            </span>
-          </span>
-          <ArrowRight className="h-4 w-4 text-primary group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+        {/* Construir o site — os três passos, pela ordem em que fazem diferença */}
+        <section className="rounded-xl border border-border bg-card p-4 flex flex-col gap-1">
+          <p className="text-sm font-semibold px-1 pb-2">Construir o site</p>
+          {[
+            {
+              href: '/website/alojamentos', Icon: Images, titulo: 'Fotos e quartos',
+              texto: alojamentosAtivos.length === 0
+                ? 'Fotografias, descrição e comodidades de cada alojamento.'
+                : `${alojamentosProntos} de ${alojamentosAtivos.length} alojamentos com fotografias e descrição.`,
+              destaque: alojamentosProntos < alojamentosAtivos.length,
+            },
+            {
+              href: '/website/editor', Icon: LayoutTemplate, titulo: 'Textos e secções',
+              texto: 'Título, apresentação, perguntas frequentes e a ordem das secções, escritos sobre o site.',
+              destaque: false,
+            },
+            {
+              href: '/website/dominio', Icon: Network, titulo: 'Domínio próprio',
+              texto: 'O site num endereço teu, como casadomar.pt.',
+              destaque: false,
+            },
+          ].map(({ href, Icon, titulo, texto, destaque }) => (
+            <Link key={href} href={href}
+              className="group flex items-center gap-4 rounded-lg p-2.5 hover:bg-muted/60 transition-colors">
+              <span className={`h-10 w-10 shrink-0 rounded-lg flex items-center justify-center ${destaque ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                <Icon className="h-5 w-5" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-semibold text-sm">{titulo}</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">{texto}</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          ))}
+        </section>
 
         {/* O que falta — só aparece enquanto houver alguma coisa por fazer */}
         {prontidao.feitos < prontidao.total && (

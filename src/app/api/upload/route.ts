@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
   }
 
-  // 8 MB por ficheiro, guardados para sempre e pagos por nós.
-  const rl = await verificarLimite(`upload:${userId}`, 40, 3_600_000)
+  // 8 MB por ficheiro, guardados para sempre e pagos por nós. 300/hora deixa
+  // carregar as fotografias de uma casa com vários quartos de uma vez
+  // (40 travava ao quinto quarto); o construtor reduz cada uma antes de enviar.
+  const rl = await verificarLimite(`upload:${userId}`, 300, 3_600_000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Demasiados carregamentos. Tenta mais tarde.' }, { status: 429 })
   }
