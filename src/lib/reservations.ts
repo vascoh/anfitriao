@@ -357,7 +357,7 @@ export function calculatePriceWithRules(
 
 // Get price for a specific day (used by calendar view)
 export function getPriceForDay(
-  property: Property,
+  property: Pick<Property, 'id' | 'preco_base'>,
   date: string,
   rules: PriceRule[],
 ): { preco: number; regra?: string } {

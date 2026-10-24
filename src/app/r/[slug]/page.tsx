@@ -2,16 +2,16 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import { BedDouble, Users, Bath, MapPin, ArrowRight, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Home } from 'lucide-react'
+import { MapPin, ArrowRight } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties } from '@/lib/db-admin'
-import type { Property } from '@/lib/types'
-import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { APP_URL } from '@/lib/config'
 import { baseUrlDoSite, basePathDoSite } from '@/lib/site-request'
 import { siteTheme } from '@/lib/site-theme'
 import { SiteNav, SiteFooter, WA_SVG } from './_components/site-chrome'
-import { resolveLang, t, htmlLang, listingAvailable, minNights as minNightsLabel, type SiteLang } from '@/lib/i18n'
+import { resolveLang, t, htmlLang, listingAvailable } from '@/lib/i18n'
+import { dadosDoCartao, fotosDe, quartosDe } from '@/lib/site-alojamentos'
+import { CartaoAlojamento } from './_components/cartao-alojamento'
 import { eDonoDoSite } from '@/lib/site-acesso'
 import { secoesDoInicio, itensPorque, paginaFixaVisivel, nomePaginaFixa, paragrafos, type SecaoInicio, type OrigemOpiniao } from '@/lib/site-mapa'
 import type { ReactNode } from 'react'
@@ -55,121 +55,8 @@ export async function generateMetadata(
   }
 }
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-const AMENITY_ICON: Record<string, React.ReactNode> = {
-  wifi:            <Wifi className="h-3 w-3" />,
-  ar_condicionado: <Wind className="h-3 w-3" />,
-  estacionamento:  <Car className="h-3 w-3" />,
-  piscina:         <Waves className="h-3 w-3" />,
-  cozinha:         <UtensilsCrossed className="h-3 w-3" />,
-  maquina_lavar:   <WashingMachine className="h-3 w-3" />,
-  tv:              <Tv className="h-3 w-3" />,
-  jardim:          <Trees className="h-3 w-3" />,
-}
-const AMENITY_LABEL: Record<string, string> = {
-  wifi: 'Wi-Fi', ar_condicionado: 'AC', estacionamento: 'Estacionamento',
-  piscina: 'Piscina', cozinha: 'Cozinha', maquina_lavar: 'Lavandaria',
-  secador: 'Secador', tv: 'TV', varanda: 'Varanda', jardim: 'Jardim',
-}
 const NOME_ORIGEM: Record<Exclude<OrigemOpiniao, 'direto'>, string> = {
   airbnb: 'Airbnb', booking: 'Booking.com', google: 'Google',
-}
-
-// ─── PropertyCard ─────────────────────────────────────────────────────────────
-
-function PropertyCard({ p, minNights, desde, minimal, lang }: { p: Property; minNights: number; desde?: number; minimal?: boolean; lang: SiteLang }) {
-  // Link to the booking detail page (still served under /book/[id])
-  const href = `/book/${p.id}`
-  // Casa com quartos: mostrar "desde" o preço do quarto mais barato
-  const preco = desde ?? p.preco_base
-  const prefixo = desde !== undefined ? 'desde ' : ''
-  const rounding = minimal ? 'rounded-lg' : 'rounded-2xl'
-
-  return (
-    <Link href={href}
-      className={`group block ${rounding} overflow-hidden border border-border ${minimal ? 'hover:border-primary/30' : 'hover:shadow-xl hover:border-primary/15'} transition-all duration-300`}>
-
-      {p.imagem_url ? (
-        <div className="relative h-60 lg:h-72 overflow-hidden bg-muted">
-          <Image
-            src={p.imagem_url}
-            alt={p.nome}
-            fill
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="text-white font-bold text-xl leading-tight">{p.nome}</p>
-                <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">
-                  <MapPin className="h-3 w-3 shrink-0" />
-                  <span>{PROPERTY_TYPE_LABEL[p.tipo]} · {p.cidade}</span>
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-3xl font-bold text-white leading-none">{prefixo}{fmtMoney(preco)}</p>
-                <p className="text-white/60 text-xs mt-0.5">
-                  {t(lang, 'per_night')}{p.taxa_limpeza && p.taxa_limpeza > 0 ? ` · ${fmtMoney(p.taxa_limpeza)} ${t(lang, 'cleaning_fee')}` : ''}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-5 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ backgroundColor: p.cor + '12' }}>
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: p.cor + '20' }}>
-              <Home className="h-5 w-5" style={{ color: p.cor }} />
-            </div>
-            <div className="min-w-0">
-              <p className="font-bold text-lg">{p.nome}</p>
-              <p className="text-xs text-muted-foreground">{PROPERTY_TYPE_LABEL[p.tipo]} · {p.cidade}</p>
-            </div>
-          </div>
-          <div className="sm:ml-auto sm:text-right shrink-0">
-            <p className="text-2xl font-bold" style={{ color: p.cor }}>{prefixo}{fmtMoney(preco)}</p>
-            <p className="text-xs text-muted-foreground">/ {t(lang, 'per_night')}</p>
-          </div>
-        </div>
-      )}
-
-      <div className="px-5 py-3.5 flex items-center justify-between gap-3 bg-card">
-        <div className="flex items-center gap-4 text-xs text-muted-foreground min-w-0">
-          {p.quartos > 0 && (
-            <span className="flex items-center gap-1 shrink-0">
-              <BedDouble className="h-3.5 w-3.5" />{p.quartos}q
-            </span>
-          )}
-          <span className="flex items-center gap-1 shrink-0">
-            <Bath className="h-3.5 w-3.5" />{p.casasBanho}wc
-          </span>
-          <span className="flex items-center gap-1 shrink-0">
-            <Users className="h-3.5 w-3.5" />{t(lang, 'up_to')} {p.capacidade}
-          </span>
-          <div className="hidden sm:flex items-center gap-3 overflow-hidden">
-            {p.comodidades.slice(0, 4).map(a => (
-              <span key={a} className="flex items-center gap-0.5 shrink-0">
-                {AMENITY_ICON[a] ?? null}
-                <span className="hidden md:inline">{AMENITY_LABEL[a] ?? a}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-        <span className="flex items-center gap-1 text-sm font-semibold text-primary group-hover:gap-2 transition-all duration-200 shrink-0">
-          {t(lang, 'reservar')} <ArrowRight className="h-4 w-4" />
-        </span>
-      </div>
-
-      {minNights > 1 && (
-        <div className="px-5 py-2 border-t border-border bg-muted/30">
-          <p className="text-[11px] text-muted-foreground">{minNightsLabel(lang, minNights)}</p>
-        </div>
-      )}
-    </Link>
-  )
 }
 
 // ─── Page (Server Component) ──────────────────────────────────────────────────
@@ -209,7 +96,7 @@ export default async function ReservasPage(
     : []
   // Quartos (parent_id) não aparecem como alojamentos independentes — reservam-se
   // dentro da página da casa-mãe (evita contagem inflacionada e dupla reserva)
-  const props = allProps.filter(p => !p.parent_id)
+  const props = allProps.filter(p => !p.parent_id && p.ativo)
   const minRoomPrice = new Map<string, number>()
   for (const room of allProps) {
     if (!room.parent_id || !room.ativo) continue
@@ -224,24 +111,27 @@ export default async function ReservasPage(
   const theme = siteTheme(settings)
   const faq = settings.secoes?.faq ?? []
   const lang = resolveLang(settings.idioma)
-  const heroImagem = settings.secoes?.hero_imagem ?? null
+  /* Sem fotografia escolhida no editor, o topo usa a capa do primeiro
+   * alojamento: um site com fotografias não abre num bloco de texto. */
+  const heroImagem = settings.secoes?.hero_imagem ?? props.map(p => dadosDoCartao(p, allProps).foto).find(Boolean) ?? null
   const fotos = allProps
     .filter(p => p.ativo)
-    .flatMap(p => [p.imagem_url, ...(p.fotos ?? [])].filter((u): u is string => Boolean(u)).map(url => ({ url, nome: p.nome })))
+    .flatMap(p => fotosDe(p).map(url => ({ url, nome: p.nome })))
     .slice(0, 6)
   const galeriaVisivel = paginaFixaVisivel(settings.secoes, 'galeria')
   const basePath = await basePathDoSite(slug)
+  const siteUrl = await baseUrlDoSite(slug)
 
   // Schema.org — um LodgingBusiness por alojamento ativo (ver docs/SAAS_ARCHITECTURE.md §6.3);
   // dados já existem em properties/website_settings, não pedidos extra ao anfitrião.
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@graph': props.filter(p => p.ativo).map(p => ({
+    '@graph': props.map(p => ({
       '@type': 'LodgingBusiness',
       name: p.nome,
       description: p.descricao || settings.descricao || undefined,
-      url: `${APP_URL}/book/${p.id}`,
-      image: p.imagem_url || undefined,
+      url: `${siteUrl}/alojamento/${p.id}`,
+      image: fotosDe(p)[0] || undefined,
       telephone: settings.telefone || undefined,
       email: settings.email || undefined,
       priceRange: fmtMoney(minRoomPrice.get(p.id) ?? p.preco_base),
@@ -270,13 +160,25 @@ export default async function ReservasPage(
         <p className="text-muted-foreground">{t(lang, 'listing_empty')}</p>
       </div>
     ) : (
-      <section className="flex flex-col gap-5">
+      <section className="flex flex-col gap-6">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
           {listingAvailable(lang, props.length)}
         </p>
-        {props.map(p => (
-          <PropertyCard key={p.id} p={p} minNights={settings.min_noites} desde={minRoomPrice.get(p.id)} minimal={isMinimal} lang={lang} />
-        ))}
+        {props.map(p => {
+          const quartos = quartosDe(p.id, allProps)
+          return (
+            <div key={p.id} className="flex flex-col gap-10">
+              <CartaoAlojamento a={dadosDoCartao(p, allProps)} href={`${basePath}/alojamento/${p.id}`} lang={lang} grande />
+              {quartos.length > 0 && (
+                <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+                  {quartos.map(q => (
+                    <CartaoAlojamento key={q.id} a={dadosDoCartao(q, allProps)} href={`${basePath}/alojamento/${q.id}`} lang={lang} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </section>
     ),
 
@@ -406,35 +308,46 @@ export default async function ReservasPage(
 
       <SiteNav slug={slug} settings={settings} active="" />
 
-      {/* Hero — com fotografia de fundo se o anfitrião escolheu uma no editor */}
-      <section data-secao="hero" className={heroImagem ? 'relative isolate overflow-hidden' : ''}>
-        {heroImagem && (
-          <>
-            <Image src={heroImagem} alt="" fill priority sizes="100vw" className="object-cover -z-20" />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/35 via-black/45 to-black/65" />
-          </>
-        )}
-        <div className={`max-w-3xl mx-auto w-full px-4 flex flex-col gap-4 ${isMinimal ? 'items-start text-left' : 'items-center text-center'} ${
-          heroImagem ? 'pt-28 pb-24 text-white' : isMinimal ? 'pt-10 pb-6' : 'pt-16 pb-10'
-        }`}>
-          {!isMinimal && (
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold ${heroImagem ? 'bg-white/15 text-white backdrop-blur-sm' : 'bg-primary/10 text-primary'}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${heroImagem ? 'bg-white' : 'bg-primary'}`} />
-              {t(lang, 'hero_badge')}
-            </div>
-          )}
-          <h1 data-campo="nome" className={`font-bold tracking-tight leading-tight max-w-xl ${isMinimal ? 'text-3xl lg:text-4xl' : 'text-4xl lg:text-5xl'}`}>
-            {settings.nome}
-          </h1>
-          {(settings.descricao || modoEditor) && (
-            <p data-campo="descricao" className={`leading-relaxed max-w-lg ${heroImagem ? 'text-white/85' : 'text-muted-foreground'} ${isMinimal ? 'text-sm' : 'text-base lg:text-lg'}`}>
-              {settings.descricao}
-            </p>
-          )}
-        </div>
-      </section>
+      {/* Hero — a fotografia escolhida no editor ou, sem ela, a capa do
+          primeiro alojamento. Com fotografia, o nome da casa assenta sobre ela;
+          sem nenhuma, o topo é só tipografia. */}
+      {heroImagem ? (
+        <section data-secao="hero" className="relative isolate flex min-h-[72svh] items-end overflow-hidden text-white">
+          <Image src={heroImagem} alt="" fill priority sizes="100vw" className="object-cover -z-20" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 pb-12 pt-32 sm:pb-16">
+            {!isMinimal && (
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/75">{t(lang, 'hero_badge')}</p>
+            )}
+            <h1 data-campo="nome" className="site-titulo max-w-3xl text-5xl font-semibold leading-[1.02] sm:text-7xl">
+              {settings.nome}
+            </h1>
+            {(settings.descricao || modoEditor) && (
+              <p data-campo="descricao" className="max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">
+                {settings.descricao}
+              </p>
+            )}
+          </div>
+        </section>
+      ) : (
+        <section data-secao="hero">
+          <div className={`mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 ${isMinimal ? 'items-start pt-10 pb-6 text-left' : 'items-center pt-16 pb-12 text-center sm:pt-24'}`}>
+            {!isMinimal && (
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">{t(lang, 'hero_badge')}</p>
+            )}
+            <h1 data-campo="nome" className={`site-titulo max-w-3xl font-semibold leading-[1.05] ${isMinimal ? 'text-3xl lg:text-4xl' : 'text-5xl sm:text-6xl'}`}>
+              {settings.nome}
+            </h1>
+            {(settings.descricao || modoEditor) && (
+              <p data-campo="descricao" className={`max-w-xl leading-relaxed text-muted-foreground ${isMinimal ? 'text-sm' : 'text-base sm:text-lg'}`}>
+                {settings.descricao}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
-      <main data-secoes-inicio className={`flex-1 max-w-3xl mx-auto w-full px-4 pb-20 flex flex-col gap-16 ${heroImagem ? 'pt-12' : ''}`}>
+      <main data-secoes-inicio className={`flex-1 max-w-6xl mx-auto w-full px-4 pb-20 flex flex-col gap-20 ${heroImagem ? 'pt-14' : ''}`}>
         {secoesDoInicio(settings.secoes)
           .filter(s => s.visivel || modoEditor)
           .map(({ id, visivel }) => {

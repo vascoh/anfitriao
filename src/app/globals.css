@@ -209,3 +209,30 @@
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   font-weight: 700;
 }
+
+/* ── Site público do anfitrião (/r/[slug] e /book) ──────────────────────
+   Paleta própria em modo claro: cal, pedra e granito, frios e neutros, para
+   a cor escolhida pelo anfitrião (--primary) ser o único acento. O creme
+   da app ficava a competir com qualquer cor quente. Em modo escuro mantém
+   os tokens da app. */
+:root:not(.dark) .site-publico {
+  --background: oklch(98.9% 0.002 110);
+  --card: oklch(100% 0 0);
+  --card-foreground: oklch(21% 0.006 165);
+  --foreground: oklch(21% 0.006 165);
+  --muted: oklch(95.6% 0.004 110);
+  --muted-foreground: oklch(47% 0.009 165);
+  --secondary: oklch(95.6% 0.004 110);
+  --accent: oklch(95.6% 0.004 110);
+  --border: oklch(90.5% 0.005 110);
+  --input: oklch(88% 0.005 110);
+}
+
+.site-publico .site-titulo {
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.site-publico .site-num {
+  font-variant-numeric: tabular-nums;
+}

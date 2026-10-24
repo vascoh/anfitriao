@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { adminGetWebsiteSettingsBySlug, adminGetProperties, adminGetPublishedPosts } from '@/lib/db-admin'
-import { APP_URL } from '@/lib/config'
 import { baseUrlDoSite } from '@/lib/site-request'
 import { entradasDoMenu, normalizarSecoes, paginaFixaVisivel } from '@/lib/site-mapa'
 
@@ -37,7 +36,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
   const urls = [
     ...staticPaths.map(p => `${base}${p}`),
-    ...properties.filter(p => p.ativo).map(p => `${APP_URL}/book/${p.id}`),
+    ...properties.filter(p => p.ativo).map(p => `${base}/alojamento/${p.id}`),
     ...(paginaFixaVisivel(secoes, 'blog') ? posts.map(p => `${base}/blog/${p.slug}`) : []),
   ]
 

@@ -53,7 +53,7 @@ export async function SiteNav({ slug, settings, active, paginaOculta = false }: 
   return (
     <nav data-secao="menu" className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border">
       <AvisoPrevisualizacao siteDesligado={!settings.enabled} paginaOculta={paginaOculta} />
-      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <Link href={basePath || '/'} data-campo="logo_texto" className="font-bold text-sm tracking-tight shrink-0">{brandName}</Link>
         {/* No telemóvel o menu passa para uma linha própria, em vez de desaparecer. */}
         <div data-menu-links className="hidden md:flex items-center gap-4 text-xs font-medium text-muted-foreground">
@@ -115,7 +115,7 @@ export async function SiteFooter({ slug, settings }: { slug: string; settings: W
   const basePath = await basePathDoSite(slug)
   return (
     <footer data-secao="rodape" className="border-t border-border">
-      <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-4 text-xs text-muted-foreground">
+      <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col gap-4 text-xs text-muted-foreground">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <span data-campo="logo_texto" className="font-semibold text-foreground text-sm">{brandName}</span>
           <div className="flex items-center gap-4 flex-wrap">

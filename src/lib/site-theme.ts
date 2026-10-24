@@ -10,5 +10,5 @@ export function siteTheme(settings: Pick<WebsiteSettings, 'cor_primaria' | 'font
     ...(settings.cor_primaria && HEX_RE.test(settings.cor_primaria) ? { '--primary': settings.cor_primaria } : {}),
     ...(font ? { fontFamily: 'var(--font-tenant)' } : {}),
   } as CSSProperties
-  return { style, className: font?.variable ?? '' }
+  return { style, className: ['site-publico', font?.variable].filter(Boolean).join(' ') }
 }
