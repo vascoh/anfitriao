@@ -23,6 +23,13 @@ _Iniciado: 2026-06-06_
 - Testes: `src/proxy-dominio.test.ts` (proxy com domínio simulado) e
   `lib/dominio-rotas.test.ts`. Sem domínio real ligado, não houve E2E num
   domínio próprio.
+- ⏳ **Pendente — E2E com domínio real** (decisão do Vasco a 2026-10-28: não
+  testar agora). Domínios de DNS automático (sslip.io) não servem: a Vercel
+  recusa-os com `domain_not_owned`. Opções: comprar `anfitrioes-teste.xyz` na
+  Vercel ($1,99 o 1.º ano, renova a $13) ou um CNAME `teste.<domínio>` →
+  `cname.vercel-dns.com` na Amen (não testa raiz nem www). A confirmar:
+  criação do `www` com redirect, diagnóstico na página, estado 404 real de
+  `/hoje` no domínio, reserva até à confirmação.
 
 ### [2026-10-28] Domínio próprio: registos verificados um a um e mapa de endereços
 
