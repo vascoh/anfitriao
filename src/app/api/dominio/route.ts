@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { createAdminClient } from '@/lib/supabase'
-import { adminGetWebsiteSettings } from '@/lib/db-admin'
-import { dominioDaPlataforma, estadoDominio, normalizarDominio, problemaDominio, type DominioProprio } from '@/lib/dominios'
+import { adminGetProperties, adminGetWebsiteSettings } from '@/lib/db-admin'
+import { diagnosticarDns } from '@/lib/dns-diagnostico'
+import { dominioDaPlataforma, dominioRaiz, estadoDominio, normalizarDominio, problemaDominio, type DominioProprio, type EnderecoDoSite } from '@/lib/dominios'
+import { entradasDoMenu, normalizarSecoes } from '@/lib/site-mapa'
 import {
   adicionarDominioVercel,
   estadoNaVercel,
+  garantirWwwVercel,
   integracaoVercelConfigurada,
   removerDominioVercel,
   verificarDominioVercel,
@@ -15,8 +18,35 @@ const supabase = createAdminClient()
 
 type Linha = DominioProprio & { owner_id: string; id: string }
 
-function resposta(linha: Linha | null) {
-  return NextResponse.json({ dominio: linha, integracaoConfigurada: integracaoVercelConfigurada() })
+/**
+ * O que abre em cada endereço do domínio — o mesmo conjunto que o sitemap e o
+ * proxy servem, para o anfitrião ver o mapeamento antes de o anunciar.
+ */
+async function mapaDoSite(ownerId: string): Promise<{ slug: string | null; enderecos: EnderecoDoSite[] }> {
+  const [settings, properties] = await Promise.all([
+    adminGetWebsiteSettings(ownerId),
+    adminGetProperties(ownerId).catch(() => []),
+  ])
+  const secoes = normalizarSecoes(settings.secoes)
+  return {
+    slug: settings.slug ?? null,
+    enderecos: [
+      { caminho: '/', titulo: 'Página inicial', grupo: 'pagina', visivel: true },
+      ...entradasDoMenu(secoes, 'pt').map(e => ({ caminho: e.href, titulo: e.label, grupo: 'pagina' as const, visivel: e.visivel })),
+      ...properties.filter(p => p.ativo).map(p => ({ caminho: `/alojamento/${p.id}`, titulo: p.nome, grupo: 'alojamento' as const, visivel: true })),
+      { caminho: '/termos', titulo: 'Termos', grupo: 'legal', visivel: true },
+      { caminho: '/privacidade', titulo: 'Privacidade', grupo: 'legal', visivel: true },
+      { caminho: '/sitemap.xml', titulo: 'Sitemap (para o Google)', grupo: 'legal', visivel: true },
+    ],
+  }
+}
+
+async function resposta(linha: Linha | null, ownerId: string) {
+  const [diagnostico, mapa] = await Promise.all([
+    linha && linha.dns?.length ? diagnosticarDns(linha.dominio, linha.dns) : Promise.resolve(null),
+    mapaDoSite(ownerId).catch(() => ({ slug: null, enderecos: [] })),
+  ])
+  return NextResponse.json({ dominio: linha, integracaoConfigurada: integracaoVercelConfigurada(), diagnostico, mapa })
 }
 
 async function doUtilizador(ownerId: string): Promise<Linha | null> {
@@ -32,6 +62,7 @@ async function doUtilizador(ownerId: string): Promise<Linha | null> {
 async function atualizarEstado(linha: Linha): Promise<Linha> {
   if (!integracaoVercelConfigurada()) return linha
   try {
+    await garantirWwwVercel(linha.dominio).catch(erro => console.warn('[dominio] www', erro))
     await verificarDominioVercel(linha.dominio)
     const atual = await estadoNaVercel(linha.dominio)
     const alteracoes = {
@@ -61,7 +92,7 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
   try {
     const linha = await doUtilizador(userId)
-    return resposta(linha ? await atualizarEstado(linha) : null)
+    return await resposta(linha ? await atualizarEstado(linha) : null, userId)
   } catch (erro) {
     console.error('[GET /api/dominio]', erro)
     return NextResponse.json({ error: 'Não foi possível carregar o domínio.' }, { status: 500 })
@@ -77,7 +108,7 @@ export async function POST(req: NextRequest) {
     const existente = await doUtilizador(userId)
     if (body.acao === 'verificar') {
       if (!existente) return NextResponse.json({ error: 'Ainda não existe um domínio para verificar.' }, { status: 404 })
-      return resposta(await atualizarEstado(existente))
+      return await resposta(await atualizarEstado(existente), userId)
     }
 
     if (existente) {
@@ -87,7 +118,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'A gestão automática de domínios ainda não está configurada na plataforma.' }, { status: 503 })
     }
 
-    const dominio = normalizarDominio(body.dominio)
+    let dominio = normalizarDominio(body.dominio)
+    // `www.casadomar.pt` liga-se como `casadomar.pt`: o www passa a redirecionar.
+    if (dominio?.startsWith('www.') && dominioRaiz(dominio.slice(4)) === dominio.slice(4)) dominio = dominio.slice(4)
     const problema = problemaDominio(dominio)
     if (problema) return NextResponse.json({ error: problema }, { status: 400 })
     if (dominioDaPlataforma(dominio!)) {
@@ -100,6 +133,7 @@ export async function POST(req: NextRequest) {
     }
 
     const adicionado = await adicionarDominioVercel(dominio!)
+    await garantirWwwVercel(dominio!).catch(erro => console.warn('[dominio] www', erro))
     let atual = { verificado: adicionado.verified === true, configurado: false, dns: [] as DominioProprio['dns'] }
     try { atual = await estadoNaVercel(dominio!) } catch { /* o DNS pode ainda não existir */ }
 
@@ -121,7 +155,7 @@ export async function POST(req: NextRequest) {
       }
       throw new Error(error.message)
     }
-    return resposta(data as Linha)
+    return await resposta(data as Linha, userId)
   } catch (erro) {
     console.error('[POST /api/dominio]', erro)
     const mensagem = erro instanceof Error ? erro.message : 'Não foi possível ligar o domínio.'

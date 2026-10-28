@@ -6,6 +6,35 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-28] Domínio próprio: registos verificados um a um e mapa de endereços
+
+- 🔴 **Domínios `.com.pt` recebiam os registos errados.** A raiz era detetada
+  por `split('.').length === 2`, logo `casadomar.com.pt` pedia um CNAME
+  «casadomar» em vez de um A em `@` — o domínio nunca ficaria ativo.
+  `dominioRaiz()` em `lib/dominios.ts` conhece os sufixos duplos (com.pt,
+  org.pt, co.uk…).
+- 🔴 **O `www` nunca era ligado**: quem escrevesse `www.casadomar.pt` não
+  chegava ao site. Agora a raiz liga sempre o `www` na Vercel com redirect 308
+  (`garantirWwwVercel`, idempotente, também nas verificações); colar
+  `www.x.pt` liga `x.pt`. Remover apaga os dois.
+- ✅ **Diagnóstico DNS por registo** (`lib/dns-diagnostico.ts`, server-only):
+  consulta 1.1.1.1/8.8.8.8 e marca cada registo Certo / Por criar / Valor
+  diferente (com o que responde hoje); lista registos a apagar (A antigos,
+  AAAA, A no lugar do CNAME); identifica o fornecedor pelos nameservers (Amen,
+  PTisp, Cloudflare, GoDaddy, OVH…) com dica onde costuma correr mal (nuvem
+  laranja da Cloudflare). Aceita o IP/CNAME antigos e os novos da Vercel.
+  Verificado com DNS real: anfitrioes.pt (Amen, tudo certo) e robertaccakes.pt
+  (ainda na Netlify, assinala o A e o www).
+- ✅ **`/website/dominio` refeita**: progresso em 4 passos, registos em cartões
+  com nome/valor copiáveis, verificação automática a cada 30 s enquanto o
+  separador está visível (máx. 20), pré-visualização do que vai ser ligado
+  antes de carregar no botão, aviso para não mexer em nameservers/MX, e **mapa
+  de endereços** (o que abre em cada caminho do domínio — páginas, alojamentos,
+  legais — com páginas escondidas assinaladas).
+- `custom_domains` em produção estava vazia: nenhum cliente afetado pela
+  mudança. A parte da API da Vercel (criar o `www`) não foi testada E2E — só
+  com o primeiro domínio real.
+
 ### [2026-10-24] Site novo: fotos por quarto, calendário com preços e construtor
 
 - ✅ **Página própria por alojamento no site** (`/r/[slug]/alojamento/[id]`):

@@ -1,6 +1,6 @@
 import 'server-only'
 
-import type { RegistoDns } from './dominios'
+import { CNAME_VERCEL, IP_VERCEL, dominioRaiz, eRaiz, type RegistoDns } from './dominios'
 
 type VerificacaoVercel = { type?: string; domain?: string; value?: string; reason?: string }
 type DominioVercel = { name?: string; verified?: boolean; verification?: VerificacaoVercel[]; error?: { code?: string; message?: string } }
@@ -57,8 +57,29 @@ export async function adicionarDominioVercel(dominio: string): Promise<DominioVe
   })
 }
 
+/**
+ * Quem escreve `www.casadomar.pt` tem de chegar ao mesmo site. A Vercel
+ * redireciona na borda, por isso o proxy nunca vê o `www` — só a raiz fica em
+ * `custom_domains`. Idempotente: se já existir, não faz nada.
+ */
+export async function garantirWwwVercel(dominio: string): Promise<void> {
+  if (!eRaiz(dominio)) return
+  const cfg = configuracao()
+  if (!cfg) return
+  const www = `www.${dominio}`
+  try {
+    await pedido(projectPath(www))
+    return
+  } catch { /* não existe: criar */ }
+  await pedido(`/v10/projects/${encodeURIComponent(cfg.projeto)}/domains`, {
+    method: 'POST',
+    body: JSON.stringify({ name: www, redirect: dominio, redirectStatusCode: 308 }),
+  })
+}
+
 export async function removerDominioVercel(dominio: string): Promise<void> {
   await pedido(projectPath(dominio), { method: 'DELETE' })
+  if (eRaiz(dominio)) await pedido(projectPath(`www.${dominio}`), { method: 'DELETE' }).catch(() => undefined)
 }
 
 export async function verificarDominioVercel(dominio: string): Promise<DominioVercel> {
@@ -76,6 +97,10 @@ function primeiroValor(valor: ConfiguracaoVercel['recommendedCNAME']): string | 
   return valor?.value
 }
 
+/**
+ * Estado na Vercel e a lista *completa* de registos de que o domínio precisa
+ * (não só os que faltam): a página verifica cada um no DNS público.
+ */
 export async function estadoNaVercel(dominio: string): Promise<{
   verificado: boolean
   configurado: boolean
@@ -87,22 +112,18 @@ export async function estadoNaVercel(dominio: string): Promise<{
   ])
 
   const dns: RegistoDns[] = []
+  const raiz = dominioRaiz(dominio)
+  const cname = primeiroValor(config.recommendedCNAME) ?? CNAME_VERCEL
+  if (eRaiz(dominio)) {
+    dns.push({ tipo: 'A', nome: '@', valor: primeiroValor(config.recommendedIPv4) ?? IP_VERCEL, motivo: 'Abre o site em ' + dominio })
+    dns.push({ tipo: 'CNAME', nome: 'www', valor: cname, motivo: `Leva www.${dominio} para o mesmo site` })
+  } else {
+    dns.push({ tipo: 'CNAME', nome: dominio.slice(0, -raiz.length - 1), valor: cname, motivo: 'Abre o site em ' + dominio })
+  }
   for (const verificacao of dominioInfo.verification ?? []) {
     if (verificacao.type === 'TXT' && verificacao.domain && verificacao.value) {
-      dns.push({ tipo: 'TXT', nome: verificacao.domain, valor: verificacao.value, motivo: verificacao.reason })
+      dns.push({ tipo: 'TXT', nome: verificacao.domain, valor: verificacao.value, motivo: 'Prova que o domínio é teu' })
     }
-  }
-
-  const apex = dominio.split('.').length === 2
-  if (config.misconfigured) {
-    const recomendado = apex
-      ? primeiroValor(config.recommendedIPv4)
-      : primeiroValor(config.recommendedCNAME)
-    dns.push({
-      tipo: apex ? 'A' : 'CNAME',
-      nome: apex ? '@' : dominio.split('.')[0],
-      valor: recomendado ?? (apex ? '76.76.21.21' : 'cname.vercel-dns.com'),
-    })
   }
 
   return {
