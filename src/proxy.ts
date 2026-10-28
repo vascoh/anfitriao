@@ -1,10 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
-
-const ROTAS_SITE = [
-  '/', '/sobre', '/galeria', '/localizacao', '/blog', '/privacidade', '/cookies', '/termos', '/sitemap.xml',
-]
+import { destinoNoDominioProprio, robotsDoDominio } from '@/lib/dominio-rotas'
 
 function hostname(req: NextRequest): string {
   return (req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '')
@@ -47,8 +44,17 @@ async function encaminharDominioProprio(req: NextRequest) {
     return NextResponse.redirect(new URL(`${limpo}${req.nextUrl.search}`, req.url), 308)
   }
 
-  const rotaDoSite = ROTAS_SITE.includes(path) || path.startsWith('/blog/') || path.startsWith('/p/') || path.startsWith('/alojamento/')
-  if (!rotaDoSite) return null
+  const destinoNoDominio = destinoNoDominioProprio(path)
+  if (destinoNoDominio === 'passa') return null
+  if (destinoNoDominio === 'robots') {
+    return new NextResponse(robotsDoDominio(host), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+  }
+  if (destinoNoDominio === 'nao-existe') {
+    // A app (login, painel, APIs privadas) não existe no domínio do anfitrião:
+    // um hóspede não tem nada a fazer lá e o Clerk nem funciona fora da plataforma.
+    if (path.startsWith('/api/')) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
+    return NextResponse.rewrite(new URL('/_nao-existe', req.url))
+  }
 
   const destino = req.nextUrl.clone()
   destino.pathname = path === '/sitemap.xml'

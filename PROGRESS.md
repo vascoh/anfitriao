@@ -6,6 +6,24 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-28] Domínio próprio fechado à app: só o site do anfitrião
+
+- 🔴 **Num domínio próprio abria-se a plataforma inteira**: o proxy só
+  reescrevia as páginas do site e deixava o resto seguir — `casadomar.pt/hoje`,
+  `/sign-in`, `/admin`, `/r/<outro-anfitrião>` e as APIs privadas respondiam no
+  endereço do cliente. Agora `lib/dominio-rotas.ts` é uma **lista do que se
+  pode abrir** (páginas do site, `/book/<id>[/confirmacao]`, `/checkin/<id>`,
+  as APIs públicas do hóspede, og/ícones/manifest); tudo o resto dá 404 (JSON
+  em `/api/`), sem passar pelo Clerk. Uma rota nova da app fica fechada no
+  domínio por omissão.
+- ✅ **`robots.txt` próprio no domínio**, com o sitemap do domínio (o da
+  plataforma listava os sitemaps de todos os anfitriões).
+- ✅ **A página 404 já não manda hóspedes para `/hoje`**: num domínio próprio
+  ou em `/r/<slug>` o botão diz «Ir para o site» e leva ao site.
+- Testes: `src/proxy-dominio.test.ts` (proxy com domínio simulado) e
+  `lib/dominio-rotas.test.ts`. Sem domínio real ligado, não houve E2E num
+  domínio próprio.
+
 ### [2026-10-28] Domínio próprio: registos verificados um a um e mapa de endereços
 
 - 🔴 **Domínios `.com.pt` recebiam os registos errados.** A raiz era detetada
