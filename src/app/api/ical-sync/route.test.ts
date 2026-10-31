@@ -97,7 +97,14 @@ vi.mock('@/lib/rate-limit-persistente', () => ({
   verificarLimite: async () => ({ allowed: true, remaining: 9, resetAt: 0 }),
 }))
 
-const { POST } = await import('./route')
+/** Alojamentos com outra passagem a meio — o trinco recusa-os. */
+const ocupados = new Set<string>()
+vi.mock('@/lib/trinco', () => ({
+  comTrinco: async <T,>(chave: string, _s: number, fn: () => Promise<T>) =>
+    ocupados.has(chave) ? { obtido: false } : { obtido: true, valor: await fn() },
+}))
+
+const { POST, GET } = await import('./route')
 
 const HOJE = today()
 const PROP = 'p-1'
@@ -152,6 +159,7 @@ beforeEach(() => {
   inseridas.length = 0
   atualizadas.length = 0
   feedsGravados.length = 0
+  ocupados.clear()
 })
 
 describe('POST /api/ical-sync', () => {
@@ -269,5 +277,35 @@ describe('POST /api/ical-sync', () => {
     propriedades = [{ id: PROP, owner_id: 'user_2', ical_feeds: [feed()], ativo: true }]
 
     expect((await POST(pedido())).status).toBe(404)
+  })
+
+  it('não sincroniza um alojamento que já está a meio de outra passagem', async () => {
+    feeds['https://amenitiz.io/a.ics'] = calendario({ uid: 'novo', de: addDays(HOJE, 5), ate: addDays(HOJE, 8) })
+    ocupados.add(`ical-sync:${PROP}`)
+
+    const res = await POST(pedido())
+
+    expect(res.status).toBe(409)
+    expect(inseridas).toHaveLength(0)
+  })
+})
+
+describe('GET /api/ical-sync (cron)', () => {
+  it('salta o alojamento ocupado e segue para os outros', async () => {
+    propriedades = [
+      { id: PROP, owner_id: 'user_1', ical_feeds: [feed()], ativo: true },
+      { id: 'p-2', owner_id: 'user_1', ical_feeds: [feed({ id: 'f2', url: 'https://amenitiz.io/b.ics' })], ativo: true },
+    ]
+    feeds['https://amenitiz.io/a.ics'] = calendario({ uid: 'a', de: addDays(HOJE, 5), ate: addDays(HOJE, 8) })
+    feeds['https://amenitiz.io/b.ics'] = calendario({ uid: 'b', de: addDays(HOJE, 5), ate: addDays(HOJE, 8) })
+    ocupados.add(`ical-sync:${PROP}`)
+
+    const json = await (await GET(new NextRequest('http://localhost/api/ical-sync'))).json()
+
+    expect(json.summary).toEqual([
+      { propertyId: PROP, synced: 0, ocupado: true },
+      { propertyId: 'p-2', synced: 1 },
+    ])
+    expect(inseridas.map(l => l.propriedade_id)).toEqual(['p-2'])
   })
 })

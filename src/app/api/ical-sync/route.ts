@@ -12,7 +12,28 @@ import {
 } from '@/lib/ical-reconciliacao'
 import { today } from '@/lib/utils'
 import { carregarTudo } from '@/lib/supabase-tudo'
+import { comTrinco } from '@/lib/trinco'
 const supabase = createAdminClient()
+
+/* A passagem do cron lê os feeds de todos os alojamentos em série; cada feed
+ * tem o seu próprio teto em `fetchIcalText`. */
+export const maxDuration = 120
+
+/** Prazo do trinco por alojamento — folga sobre o que uma passagem demora. */
+const TRINCO_SEGUNDOS = 120
+
+type Sincronizacao = { synced: number; results: ResultadoFeed[]; updatedFeeds: IcalFeed[] }
+
+/**
+ * Uma passagem de cada vez por alojamento. Desde 2026-10-31 a sincronização
+ * corre de 15 em 15 minutos (pg_cron, migração 056), e o botão do anfitrião
+ * pode coincidir com ela: duas passagens ao mesmo tempo inseriam o mesmo
+ * evento duas vezes. `null` = outra passagem está a meio.
+ */
+async function syncProperty(propertyId: string, feeds: IcalFeed[], ownerId: string): Promise<Sincronizacao | null> {
+  const r = await comTrinco(`ical-sync:${propertyId}`, TRINCO_SEGUNDOS, () => sincronizarPropriedade(propertyId, feeds, ownerId))
+  return r.obtido ? r.valor : null
+}
 
 interface ResultadoFeed {
   feed: string
@@ -34,11 +55,11 @@ interface ResultadoFeed {
   error?: string
 }
 
-async function syncProperty(
+async function sincronizarPropriedade(
   propertyId: string,
   feeds: IcalFeed[],
   ownerId: string,
-): Promise<{ synced: number; results: ResultadoFeed[]; updatedFeeds: IcalFeed[] }> {
+): Promise<Sincronizacao> {
   const results: ResultadoFeed[] = []
   const updatedFeeds: IcalFeed[] = []
 
@@ -368,8 +389,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ synced: 0, message: 'No feeds configured' })
     }
 
-    const { synced, results } = await syncProperty(propertyId, feeds, propRow.owner_id as string)
-    return NextResponse.json({ synced, results })
+    const sinc = await syncProperty(propertyId, feeds, propRow.owner_id as string)
+    if (!sinc) {
+      return NextResponse.json(
+        { error: 'Este alojamento já está a sincronizar. Tenta daqui a um minuto.' },
+        { status: 409 },
+      )
+    }
+    return NextResponse.json({ synced: sinc.synced, results: sinc.results })
   } catch (err) {
     console.error('[ical-sync] POST error:', err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
@@ -401,13 +428,16 @@ export async function GET(req: NextRequest) {
     }
 
     let totalSynced = 0
-    const summary: Array<{ propertyId: string; synced: number }> = []
+    const summary: Array<{ propertyId: string; synced: number; ocupado?: true }> = []
 
     for (const prop of propsWithFeeds) {
       const feeds = prop.ical_feeds as IcalFeed[]
-      const { synced } = await syncProperty(prop.id, feeds, (prop as { owner_id: string }).owner_id)
-      totalSynced += synced
-      summary.push({ propertyId: prop.id, synced })
+      const sinc = await syncProperty(prop.id, feeds, (prop as { owner_id: string }).owner_id)
+      /* Outra passagem está a tratar deste alojamento: não é falha, é a
+       * próxima a encontrá-lo livre. */
+      if (!sinc) { summary.push({ propertyId: prop.id, synced: 0, ocupado: true }); continue }
+      totalSynced += sinc.synced
+      summary.push({ propertyId: prop.id, synced: sinc.synced })
     }
 
     return NextResponse.json({

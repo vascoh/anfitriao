@@ -78,6 +78,15 @@ o Amenitiz. São quatro coisas, e só a primeira custa dinheiro.
 
 ### 1 · A sincronização tem de correr mais do que uma vez por dia
 
+> ✅ **Resolvido sem Vercel Pro a 2026-10-31.** O pg_cron do Supabase chama
+> `GET /api/ical-sync` de 15 em 15 minutos (migração 056, segredo no Vault e em
+> `CRON_SECRET_EXTERNO`). O cron das 04:00 do `vercel.json` fica como rede.
+> Passagens sobrepostas não duplicam: trinco por alojamento + índice único em
+> `(propriedade_id, uid_externo)` (migração 055). Ver o job com
+> `select * from cron.job_run_details order by start_time desc limit 5` e as
+> respostas em `net._http_response`. O que **não** muda: o Hobby continua a ser
+> para uso não comercial (ponto de licenciamento do 0.7, não técnico).
+
 O único ponto que não se resolve com código. Hoje `vercel.json` tem
 `/api/ical-sync` às `0 4 * * *` — **uma vez por dia**, que é o limite do plano
 Hobby. Com o Amenitiz no meio isso não custa nada: ele fala com o Airbnb e o
@@ -156,7 +165,7 @@ propósito**: não se constrói extração sobre um formato que não se viu.
 
 ### 4 · A ordem no dia
 
-1. Vercel Pro e o cron de 15 em 15 minutos, **antes** de tudo o resto.
+1. ~~Vercel Pro e o cron de 15 em 15 minutos~~ — cron feito pelo Supabase a 2026-10-31.
 2. Ligar um feed direto de cada plataforma a uma propriedade de teste, com o
    Amenitiz ainda a trabalhar. Ler o `comDescricao` e o `SUMMARY` das reservas.
 3. Corrigir a classificação, se o ponto 2 mostrar que é preciso.
