@@ -143,10 +143,25 @@ export async function verificarOperacao(): Promise<Verificacao[]> {
   } else if (desatualizados.length > 0) {
     v.push({
       chave: 'ical', titulo: 'Calendários externos', nivel: 'aviso',
-      detalhe: `${desatualizados.length} feeds sem sincronizar desde ontem — o cron corre às 04:00.`,
+      detalhe: `${desatualizados.length} feeds sem sincronizar desde ontem.`,
     })
   } else {
     v.push({ chave: 'ical', titulo: 'Calendários externos', nivel: 'ok', detalhe: `${feeds.length} feeds sincronizados.` })
+  }
+
+  /* O agendador de 15 em 15 minutos (pg_cron, migração 056). Se parar, o
+   * cron das 04:00 da Vercel continua e nada acima o denuncia durante um dia
+   * — mas a janela de dupla reserva entre plataformas volta a ser de 24 h. */
+  const leituras = feeds.map(f => (f.last_sync ? Date.parse(f.last_sync) : NaN)).filter(n => !Number.isNaN(n))
+  if (leituras.length > 0) {
+    const minutos = Math.round((Date.now() - Math.max(...leituras)) / 60_000)
+    v.push(minutos <= 60
+      ? { chave: 'ical-cadencia', titulo: 'Sincronização de 15 em 15 min', nivel: 'ok', detalhe: `Última leitura há ${minutos} min.` }
+      : {
+          chave: 'ical-cadencia', titulo: 'Sincronização de 15 em 15 min', nivel: 'aviso',
+          detalhe: `Última leitura há ${minutos < 120 ? `${minutos} min` : `${Math.round(minutos / 60)} h`}: o agendador do Supabase parou (fica só o cron diário das 04:00).`,
+          accao: "Ver `select * from cron.job_run_details order by start_time desc limit 5` e `net._http_response` no Supabase; o segredo do Vault tem de ser igual a CRON_SECRET_EXTERNO.",
+        })
   }
 
   // ── SIBA ────────────────────────────────────────────────────────────────

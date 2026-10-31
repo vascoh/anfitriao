@@ -6,6 +6,26 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-10-31] Sincronização iCal de 15 em 15 minutos sem Vercel Pro
+
+- ✅ **Ponto 1 do corte do Amenitiz resolvido por código.** O pg_cron do
+  Supabase (já usado pelo cryptobot no mesmo projeto) chama
+  `GET https://anfitrioes.pt/api/ical-sync` a cada 15 min (job
+  `anfitriao-ical-sync`, migração 056). Segredo gerado na base, no Vault
+  (`anfitriao_cron_externo`), e na Vercel como `CRON_SECRET_EXTERNO`
+  (Production, sensível). `checkCronAuth` aceita os dois segredos, com
+  comparação em tempo constante. O cron das 04:00 da Vercel fica como rede.
+- ✅ **Passagens simultâneas já não duplicam reservas** (migração 055): trinco
+  com prazo de 120 s por alojamento (`lib/trinco.ts`, RPC
+  `adquirir_trinco`/`libertar_trinco`, só service_role) e índice único
+  `(propriedade_id, uid_externo)` — zero duplicados em produção antes de o
+  criar. O botão «Sincronizar» em `/canais` responde 409 com mensagem se
+  houver outra passagem a meio; o cron salta o alojamento (`ocupado: true`).
+- ⚠️ O segredo externo passou pelo chat ao ser copiado do Vault para a Vercel;
+  só dispara as sincronizações (idempotentes). Rodar: ver cabeçalho da 056.
+- ⚠️ O Hobby continua a ser «uso não comercial» — a decisão de licenciamento
+  do 0.7 mantém-se, só deixou de ser pré-requisito técnico do corte.
+
 ### [2026-10-28] Domínio próprio fechado à app: só o site do anfitrião
 
 - 🔴 **Num domínio próprio abria-se a plataforma inteira**: o proxy só
