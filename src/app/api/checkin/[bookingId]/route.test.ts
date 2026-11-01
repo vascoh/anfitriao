@@ -28,9 +28,37 @@ vi.mock('@/lib/supabase', () => ({
       select: () => construtor(tabela),
       update: (dados: unknown) => {
         escritas.push({ tabela, tipo: 'update', dados })
-        return construtor(tabela)
+        /* Aplica a escrita às linhas que passam nos filtros — a reclamação
+         * condicional da reserva (`is('hospede_id', null)`) depende disso. */
+        const filtros: Array<(l: Record<string, unknown>) => boolean> = []
+        const aplicar = () => {
+          const linhas = (tabelas[tabela] ?? []).filter(l => filtros.every(f => f(l)))
+          for (const l of linhas) Object.assign(l, dados as Record<string, unknown>)
+          return linhas
+        }
+        const obj = {
+          eq: (c: string, v: unknown) => { filtros.push(l => l[c] === v); return obj },
+          is: (c: string, v: null) => { filtros.push(l => (l[c] ?? null) === v); return obj },
+          select: async () => ({ data: aplicar().map(l => ({ id: l.id })), error: null }),
+          then: (r: (v: { data: null; error: null }) => unknown) => { aplicar(); return r({ data: null, error: null }) },
+        }
+        return obj
       },
-      insert: async (dados: unknown) => { escritas.push({ tabela, tipo: 'insert', dados }); return { error: null } },
+      delete: () => {
+        const obj = {
+          eq: async (c: string, v: unknown) => {
+            escritas.push({ tabela, tipo: 'delete', dados: { [c]: v } })
+            tabelas[tabela] = (tabelas[tabela] ?? []).filter(l => l[c] !== v)
+            return { error: null }
+          },
+        }
+        return obj
+      },
+      insert: async (dados: unknown) => {
+        escritas.push({ tabela, tipo: 'insert', dados })
+        tabelas[tabela] = [...(tabelas[tabela] ?? []), ...(Array.isArray(dados) ? dados : [dados]) as Array<Record<string, unknown>>]
+        return { error: null }
+      },
       upsert: async (dados: unknown) => { escritas.push({ tabela, tipo: 'upsert', dados }); return { error: null } },
     }),
   }),
@@ -316,5 +344,46 @@ describe('POST duas vezes — acompanhantes', () => {
 
     const inseridos = escritas.filter(e => e.tabela === 'guests' && e.tipo === 'insert')
     expect(inseridos).toHaveLength(1)
+  })
+})
+
+describe('POST numa reserva sem ficha de hóspede (importada do Airbnb/Booking)', () => {
+  beforeEach(() => {
+    tabelas.bookings[0].hospede_id = null
+    tabelas.reserva_hospedes = []
+  })
+
+  it('cria a ficha de quem reservou, liga-a à reserva e ao boletim', async () => {
+    const res = await POST(pedidoPost(FICHA), { params: params('b1') })
+    expect(res.status).toBe(200)
+
+    const novaFicha = escritas.find(e => e.tabela === 'guests' && e.tipo === 'insert')?.dados as Record<string, unknown>
+    expect(novaFicha).toMatchObject({ nome: 'Maria Silva', owner_id: 'user_1' })
+    expect(tabelas.bookings[0].hospede_id).toBe(novaFicha.id)
+    expect(escritas).toContainEqual(expect.objectContaining({
+      tabela: 'reserva_hospedes', tipo: 'upsert',
+      dados: expect.objectContaining({ guest_id: novaFicha.id, principal: true }),
+    }))
+  })
+
+  it('se outra submissão ligou uma ficha entretanto, fica a dela e não há duas', async () => {
+    /* Simula a corrida: entre a leitura da reserva e a reclamação, outro
+     * pedido ligou a ficha g9. */
+    tabelas.guests.push({ id: 'g9', nome: 'Maria Silva' })
+    const original = tabelas.bookings[0]
+    let lida = false
+    Object.defineProperty(original, 'hospede_id', {
+      configurable: true,
+      get: () => (lida ? 'g9' : ((lida = true), null)),
+      set: () => {},
+    })
+
+    const res = await POST(pedidoPost(FICHA), { params: params('b1') })
+    expect(res.status).toBe(200)
+
+    const criada = escritas.find(e => e.tabela === 'guests' && e.tipo === 'insert')?.dados as Record<string, unknown>
+    expect(escritas).toContainEqual({ tabela: 'guests', tipo: 'delete', dados: { id: criada.id } })
+    expect(tabelas.guests.some(g => g.id === criada.id)).toBe(false)
+    expect(escritas.some(e => e.tabela === 'guests' && e.tipo === 'update')).toBe(true)
   })
 })

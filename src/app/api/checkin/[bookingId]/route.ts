@@ -192,31 +192,85 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
   }
 
+  const falhaAoGravar = () =>
+    NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+
+  /* Reserva sem ficha de hóspede: é o caso de **todas** as que entram pelo
+   * calendário do Airbnb ou do Booking — o iCal não diz quem chega, e o link
+   * de check-in é precisamente como se fica a saber. Até 2026-11-01 esta rota
+   * só gravava a ficha de quem reservou quando ela já existia: aqui, o
+   * hóspede preenchia tudo, via «Obrigado», o histórico dizia «check-in
+   * submetido» — e nada ficava guardado. Sem ficha não há boletim ao SIBA nem
+   * NIF na fatura.
+   *
+   * Cria-se a ficha e reclama-se a reserva com uma escrita condicional
+   * (`hospede_id is null`): dois toques seguidos no botão não deixam duas
+   * fichas da mesma pessoa — a segunda submissão perde, apaga a sua e
+   * atualiza a da primeira. */
+  let principalId = (booking.hospede_id as string | null) ?? null
+  let fichaCriadaAgora = false
+
+  if (!principalId) {
+    const novoId = crypto.randomUUID()
+    const { error: erroFicha } = await supabase.from('guests').insert({
+      id: novoId, ...guestData, owner_id: booking.owner_id, tags: ['novo'], criado_em: new Date().toISOString(),
+    })
+    if (erroFicha) {
+      console.error('[checkin] ficha do principal', bookingId, erroFicha.message)
+      return falhaAoGravar()
+    }
+
+    const { data: reclamada, error: erroReclamar } = await supabase
+      .from('bookings')
+      .update({ hospede_id: novoId })
+      .eq('id', bookingId)
+      .is('hospede_id', null)
+      .select('id')
+
+    if (erroReclamar) {
+      console.error('[checkin] ligar ficha à reserva', bookingId, erroReclamar.message)
+      await supabase.from('guests').delete().eq('id', novoId)
+      return falhaAoGravar()
+    }
+
+    if (reclamada && reclamada.length > 0) {
+      principalId = novoId
+      fichaCriadaAgora = true
+    } else {
+      // Outra submissão ligou uma ficha entretanto: fica a dela.
+      await supabase.from('guests').delete().eq('id', novoId)
+      const { data: atual } = await supabase.from('bookings').select('hospede_id').eq('id', bookingId).single()
+      principalId = (atual?.hospede_id as string | null) ?? null
+      if (!principalId) return falhaAoGravar()
+    }
+  }
+
   // Propagar erros de escrita: sem isto o hóspede via "Obrigado" mesmo quando
   // o RLS/BD rejeitava os updates e nada ficava gravado (perda de dados silenciosa)
-  if (booking.hospede_id) {
-    const { error: gErr } = await supabase.from('guests').update(guestData).eq('id', booking.hospede_id)
+  if (!fichaCriadaAgora) {
+    const { error: gErr } = await supabase.from('guests').update(guestData).eq('id', principalId)
     if (gErr) {
       console.error('[checkin] guest update', gErr.message)
-      return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
+      return falhaAoGravar()
     }
-    /* Rede de segurança para reservas anteriores à 036 — mas **não** em grupo.
-     *
-     * Num grupo, `bookings.hospede_id` é o mesmo em todos os quartos (é o
-     * contacto), e `reserva_hospedes` é quem dorme onde. Ligar aqui punha
-     * quem reservou como ocupante de todos os quartos em que fizesse
-     * check-in: a mesma pessoa declarada N vezes ao SIBA, e as reservas a
-     * darem-se por completas sem os acompanhantes. A ligação do grupo é feita
-     * uma única vez, na criação, ao primeiro quarto. */
-    if (!booking.reserva_grupo_id) {
-      const { error } = await supabase.from('reserva_hospedes').upsert(
-        { booking_id: bookingId, guest_id: booking.hospede_id, principal: true, owner_id: booking.owner_id },
-        { onConflict: 'booking_id,guest_id' },
-      )
-      if (error) {
-        console.error('[checkin] ligação do principal', bookingId, error.message)
-        return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
-      }
+  }
+  /* Rede de segurança para reservas anteriores à 036 — mas **não** em grupo.
+   *
+   * Num grupo, `bookings.hospede_id` é o mesmo em todos os quartos (é o
+   * contacto), e `reserva_hospedes` é quem dorme onde. Ligar aqui punha
+   * quem reservou como ocupante de todos os quartos em que fizesse
+   * check-in: a mesma pessoa declarada N vezes ao SIBA, e as reservas a
+   * darem-se por completas sem os acompanhantes. A ligação do grupo é feita
+   * uma única vez, na criação, ao primeiro quarto. A exceção é a ficha
+   * criada agora: quem a cria é quem dorme neste quarto. */
+  if (!booking.reserva_grupo_id || fichaCriadaAgora) {
+    const { error } = await supabase.from('reserva_hospedes').upsert(
+      { booking_id: bookingId, guest_id: principalId, principal: true, owner_id: booking.owner_id },
+      { onConflict: 'booking_id,guest_id' },
+    )
+    if (error) {
+      console.error('[checkin] ligação do principal', bookingId, error.message)
+      return NextResponse.json({ error: 'Não foi possível guardar os dados. Tenta novamente.' }, { status: 500 })
     }
   }
 
@@ -247,7 +301,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   const idsLigados = (jaLigados ?? [])
     .map(l => l.guest_id as string)
-    .filter(id => id && id !== booking.hospede_id)
+    .filter(id => id && id !== principalId)
 
   const { data: fichasLigadas } = idsLigados.length > 0
     ? await supabase.from('guests').select('id, nome').in('id', idsLigados)
