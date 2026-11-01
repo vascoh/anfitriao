@@ -7,6 +7,7 @@ import { protegerCampos, revelarCampos, revelarLista } from '@/lib/campos-sensiv
 import { chaveDeNome } from '@/lib/nomes'
 import { janelaDeCheckin } from '@/lib/checkin-acesso'
 import { today } from '@/lib/utils'
+import { comTrinco } from '@/lib/trinco'
 const supabase = createAdminClient()
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
@@ -128,6 +129,27 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   }
 
   const body = await req.json().catch(() => null)
+
+  /* Um envio de cada vez por reserva. A identidade de cada pessoa é decidida
+   * a ler o que já está ligado à reserva (por nome, ver abaixo), e dois envios
+   * em paralelo — duplo toque, ou o telemóvel a repetir o pedido numa rede
+   * fraca — liam os dois «ninguém ligado» e criavam os acompanhantes duas
+   * vezes: dois boletins para a mesma pessoa. Medido em produção a
+   * 2026-11-01. O segundo espera pelo primeiro e corre a seguir, já a ver o
+   * que ele gravou. */
+  const r = await comTrinco(`checkin:${bookingId}`, 30, () => gravarCheckin(bookingId, body), { esperarMs: 8_000 })
+  if (!r.obtido) {
+    return NextResponse.json(
+      { error: 'O envio anterior ainda está a ser gravado. Espera uns segundos e tenta outra vez.' },
+      { status: 409 },
+    )
+  }
+  return r.valor
+}
+
+// O corpo é validado campo a campo por optText/optDate, como antes de sair do POST.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function gravarCheckin(bookingId: string, body: any): Promise<NextResponse> {
   const nome = optText(body?.nome, 200)
   if (!nome) {
     return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })

@@ -78,6 +78,14 @@ vi.mock('@/lib/rate-limit-persistente', () => ({
 const notificar = vi.fn(async () => {})
 vi.mock('@/lib/notify-checkin', () => ({ sendCheckinCompleteNotification: () => notificar() }))
 
+/* O trinco em si está testado em lib/trinco.test.ts; aqui conta que o POST
+ * passa por ele e responde 409 quando não o obtém. */
+let trincoOcupado = false
+vi.mock('@/lib/trinco', () => ({
+  comTrinco: async <T,>(_c: string, _s: number, fn: () => Promise<T>) =>
+    trincoOcupado ? { obtido: false } : { obtido: true, valor: await fn() },
+}))
+
 const { GET, POST } = await import('./route')
 
 const HOJE = today()
@@ -103,6 +111,7 @@ const FICHA = {
 
 beforeEach(() => {
   limitado = false
+  trincoOcupado = false
   escritas.length = 0
   notificar.mockClear()
   tabelas.bookings = [{
@@ -385,5 +394,14 @@ describe('POST numa reserva sem ficha de hóspede (importada do Airbnb/Booking)'
     expect(escritas).toContainEqual({ tabela: 'guests', tipo: 'delete', dados: { id: criada.id } })
     expect(tabelas.guests.some(g => g.id === criada.id)).toBe(false)
     expect(escritas.some(e => e.tabela === 'guests' && e.tipo === 'update')).toBe(true)
+  })
+})
+
+describe('POST com outro envio da mesma reserva a meio', () => {
+  it('responde 409 e não escreve nada', async () => {
+    trincoOcupado = true
+    const res = await POST(pedidoPost(FICHA), { params: params('b1') })
+    expect(res.status).toBe(409)
+    expect(escritas).toHaveLength(0)
   })
 })

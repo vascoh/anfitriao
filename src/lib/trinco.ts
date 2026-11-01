@@ -16,24 +16,45 @@ export type ResultadoTrinco<T> =
   | { obtido: true; valor: T }
   | { obtido: false }
 
+export interface OpcoesTrinco {
+  /**
+   * Quanto tempo esperar pelo trinco antes de desistir. Por omissão não se
+   * espera: a sincronização ocupada salta-se, a próxima passagem apanha-a.
+   * Num pedido de um utilizador (o check-in) espera-se, para o segundo envio
+   * correr **depois** do primeiro em vez de ser recusado.
+   */
+  esperarMs?: number
+}
+
+const INTERVALO_MS = 250
+
 export async function comTrinco<T>(
   chave: string,
   segundos: number,
   fn: () => Promise<T>,
+  { esperarMs = 0 }: OpcoesTrinco = {},
 ): Promise<ResultadoTrinco<T>> {
   const supabase = createAdminClient()
   const dono = crypto.randomUUID()
+  const limite = Date.now() + esperarMs
 
-  const { data, error } = await supabase.rpc('adquirir_trinco', {
+  const adquirir = () => supabase.rpc('adquirir_trinco', {
     p_chave: chave,
     p_dono: dono,
     p_segundos: segundos,
   })
 
-  /* Base indisponível para o trinco: corre na mesma. O índice único em
-   * (propriedade_id, uid_externo) recusa a inserção duplicada, e parar a
-   * sincronização por causa do trinco seria trocar um risco pequeno (uma
-   * inserção recusada) por um grande (o calendário parado). */
+  let { data, error } = await adquirir()
+  while (!error && data !== true && Date.now() + INTERVALO_MS <= limite) {
+    await new Promise(r => setTimeout(r, INTERVALO_MS))
+    ;({ data, error } = await adquirir())
+  }
+
+  /* Base indisponível para o trinco: corre na mesma. O trinco evita o
+   * duplicado de uma corrida rara; recusar por causa dele trocava esse risco
+   * por um maior — o calendário parado, ou um check-in que não grava. Na
+   * sincronização, o índice único em (propriedade_id, uid_externo) continua a
+   * recusar a inserção duplicada. */
   if (error) {
     console.error('[trinco] não foi possível obter', chave, error.message)
     return { obtido: true, valor: await fn() }

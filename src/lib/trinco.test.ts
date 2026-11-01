@@ -58,4 +58,18 @@ describe('comTrinco', () => {
     expect(await comTrinco('k', 60, async () => 'ok')).toEqual({ obtido: true, valor: 'ok' })
     expect(chamadas).toEqual(['adquirir_trinco'])
   })
+
+  it('com espera, a segunda passagem corre depois da primeira em vez de desistir', async () => {
+    let soltar!: () => void
+    const ordem: string[] = []
+    const primeira = comTrinco('k', 60, () => new Promise<void>(r => { soltar = () => { ordem.push('1.ª'); r() } }))
+    await vi.waitFor(() => expect(trincos.has('k')).toBe(true))
+
+    const segunda = comTrinco('k', 60, async () => { ordem.push('2.ª') }, { esperarMs: 2000 })
+    setTimeout(() => soltar(), 300)
+
+    expect((await segunda).obtido).toBe(true)
+    await primeira
+    expect(ordem).toEqual(['1.ª', '2.ª'])
+  })
 })
