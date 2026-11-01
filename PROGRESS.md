@@ -6,6 +6,33 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-01] Check-in de reservas importadas grava finalmente quem reservou
+
+- 🔴 **O check-in não gravava o hóspede principal em reservas sem ficha** — que
+  são todas as que entram pelo iCal do Airbnb/Booking (18 hoje; depois do
+  corte, todas as das plataformas). O hóspede preenchia, via «Obrigado», o
+  histórico dizia «check-in submetido por X» e a ficha não existia: sem
+  boletim SIBA, sem NIF na fatura. Agora o POST cria a ficha, reclama a
+  reserva com escrita condicional (`hospede_id is null`) e liga-a como
+  principal em `reserva_hospedes`.
+- 🔴 **Envios em paralelo duplicavam acompanhantes** (medido no E2E em
+  produção: «João» duas vezes = dois boletins para a mesma pessoa, e uma
+  entrada do histórico perdida). O POST passa pelo trinco da 055 por reserva,
+  com espera de 8 s (`comTrinco(..., { esperarMs })`): o segundo envio corre
+  depois do primeiro e reaproveita o que ele gravou.
+- ✅ E2E em produção com alojamento de teste isolado (inativo, dono fictício,
+  sem email ao anfitrião): 3 envios simultâneos → 1 ficha principal (documento
+  cifrado), 1 acompanhante, 3 entradas no histórico, trincos libertados. Dados
+  apagados.
+- ✅ pg_cron de 15 min: 53 passagens na primeira noite, todas 200, zero
+  duplicados, feeds frescos. Os dois 500 em `net._http_response` são do
+  cryptobot (mesmo projeto Supabase).
+- ⚠️ **Conta de teste esquecida** `user_3L9Bk0T4ZBUMT4EOiMOo5eo590z`: 4
+  alojamentos «TESTE-E2E» inativos (`aaaaaaaa-e2e2-…`, `e2e2-casa`, `e2e2-q1`,
+  `e2e2-q2`), reservas e fichas de 2026-10-24. Não afeta os calendários da
+  Casa de Vasco. Duas reservas pendentes dela foram canceladas. Falta apagar a
+  conta toda (incluindo o utilizador no Clerk).
+
 ### [2026-10-31] Sincronização iCal de 15 em 15 minutos sem Vercel Pro
 
 - ✅ **Ponto 1 do corte do Amenitiz resolvido por código.** O pg_cron do
