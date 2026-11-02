@@ -1,6 +1,6 @@
 import {
   Home, CalendarDays, CalendarCheck2, Building2, TrendingUp, Zap,
-  Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles,
+  Users, FileText, Tag, ShieldCheck, Globe, Newspaper, Wallet, Sparkles, BrushCleaning,
   UserRound, CreditCard, MessagesSquare, Receipt, Rss, Activity, Filter, Network, LayoutTemplate, Images,
   type LucideIcon,
 } from 'lucide-react'
@@ -51,6 +51,7 @@ export const NAV: NavSection[] = [
     Icon: CalendarCheck2,
     children: [
       { href: '/mensagens', label: 'Mensagens', Icon: MessagesSquare, descricao: 'Email e WhatsApp com sugestões de resposta por IA' },
+      { href: '/limpezas', label: 'Limpezas', Icon: BrushCleaning, descricao: 'Quartos a arrumar entre hóspedes e link para a equipa' },
       { href: '/hospedes', label: 'Hóspedes', Icon: Users, descricao: 'Contactos, notas e histórico' },
       { href: '/documentos', label: 'Documentos SIBA', Icon: FileText, descricao: 'Boletins de alojamento' },
     ],

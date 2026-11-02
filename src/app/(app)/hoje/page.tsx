@@ -513,6 +513,9 @@ export default function HojePage() {
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
               <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Saídas hoje</h2>
+              <Link href="/limpezas" className="ml-auto text-xs font-medium text-primary flex items-center gap-1">
+                Limpezas <ArrowRight className="h-3 w-3" aria-hidden />
+              </Link>
             </div>
             <div className="divide-y divide-border">
               {saidas.map(b => <ArrivalCard key={b.id} b={b} guests={guests} props={props} onTransition={applyTransition} />)}

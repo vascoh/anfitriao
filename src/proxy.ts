@@ -86,6 +86,8 @@ const isPublicRoute = createRouteMatcher([
   '/sitemap.xml',
   // Check-in online do hóspede
   '/checkin(.*)',
+  // Link da equipa de limpeza (token no endereço, sem login)
+  '/equipa/(.*)',
   // Auth
   '/sign-in(.*)',
   '/sign-up(.*)',
@@ -100,6 +102,8 @@ const isPublicRoute = createRouteMatcher([
   '/api/newsletter',
   '/api/ical/(.*)',
   '/api/checkin/(.*)',
+  // Limpezas da equipa: token aleatório (só o hash na base), rate-limited
+  '/api/equipa/(.*)',
   '/api/book-confirmation/(.*)',
   '/api/pwa-icon(.*)',
   // Extração de documento usada pelo check-in público do hóspede (rate-limited)
