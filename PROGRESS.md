@@ -25,6 +25,9 @@ _Iniciado: 2026-06-06_
   cron não os sincroniza; com o limite de 6 h ficavam a «desatualizado» no
   dia seguinte a desativar). `/canais` deixa de mostrar a caixa vermelha de
   erro para uma falha passageira que o crachá já mostra como ligado.
+- 🚀 Deployado (`dpl_2VGn6X3MMLGobfpukj9QmtCfgFzJ`, alias confirmado) e só
+  depois aplicada a 059. Job `anfitriao-canais-alertas` ativo; chamada manual
+  pelo pg_cron → 200 `{"ok":true,"notificados":0}`. iCal público → 200.
 
 ### [2026-11-05] Preço noite a noite e segredo do cron externo rodado
 
