@@ -119,7 +119,7 @@ export function canaisEmRiscoEmail(p: {
     ${kicker(p.temErro ? 'Ação necessária' : 'A confirmar', theme)}
     ${heading(p.temErro
       ? 'Um canal parou de responder'
-      : 'Um canal está sem leituras há mais de um dia')}
+      : 'Um canal está sem leituras há mais de 6 horas')}
     ${paragraph(`Olá ${escHtml(p.firstName)}, ${p.linhas.length === 1
       ? 'um dos teus calendários não está a ser lido.'
       : `${p.linhas.length} dos teus calendários não estão a ser lidos.`}`)}

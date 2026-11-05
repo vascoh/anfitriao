@@ -232,12 +232,12 @@ export default function HojePage() {
     const agora = new Date()
     return props.flatMap(p =>
       (p.ical_feeds ?? [])
-        .filter(f => f.error || !f.last_sync || estadoDoFeed(f, agora) === 'desatualizado')
+        .filter(f => ['erro', 'por_sincronizar', 'desatualizado'].includes(estadoDoFeed(f, agora)))
         .map(f => ({
           propId: p.id,
           propNome: p.nome,
           feedNome: f.nome,
-          motivo: f.error
+          motivo: f.error && estadoDoFeed(f, agora) === 'erro'
             ? f.error
             : !f.last_sync
               ? 'nunca sincronizou'

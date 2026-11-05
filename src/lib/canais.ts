@@ -15,13 +15,33 @@ export type EstadoCanal =
   | 'erro'
 
 /**
- * O cron corre uma vez por dia, às 04:00 (ver vercel.json). Um feed que passou
- * mais de 36 horas sem uma sincronização com sucesso falhou pelo menos uma
- * passagem — e falhou **em silêncio**, que é o modo de falha caro: o
- * calendário continua a mostrar o que sabia ontem e o anfitrião vende por cima
- * de uma reserva que já existe do outro lado.
+ * A sincronização corre de 15 em 15 minutos pelo pg_cron do Supabase (migração
+ * 056), com o cron diário das 04:00 da Vercel como rede. Um feed que passou
+ * mais de 6 horas sem uma leitura com sucesso falhou mais de vinte passagens —
+ * e falhou **em silêncio**, que é o modo de falha caro: o calendário continua a
+ * mostrar o que sabia e o anfitrião vende por cima de uma reserva que já existe
+ * do outro lado. Eram 36 h enquanto só havia a passagem diária; com o agendador
+ * de 15 min, 36 h deixavam um dia e meio de dupla reserva possível sem aviso.
  */
-export const HORAS_ATE_DESATUALIZADO = 36
+export const HORAS_ATE_DESATUALIZADO = 6
+
+/**
+ * Quanto tempo uma falha passageira da plataforma (429, 5xx, timeout) fica sem
+ * pintar o feed de vermelho, desde a última leitura com sucesso.
+ *
+ * O Amenitiz devolve 429 de vez em quando (4 vezes numa semana em produção,
+ * 2026-11), e a passagem seguinte, 15 min depois, lê normalmente. Mostrar
+ * «Erro» — e mandar push e email às 06:00 se calhar nessa janela — por uma
+ * recusa que se resolve sozinha ensina o anfitrião a ignorar o alerta que
+ * importa. Uma hora são quatro passagens: se continuar a falhar, é a sério.
+ */
+export const HORAS_TOLERANCIA_PASSAGEIRA = 1
+
+/** Falhas do lado da plataforma que costumam passar sozinhas. */
+export function falhaPassageira(erro: string): boolean {
+  const e = erro.toLowerCase()
+  return /upstream devolveu (429|5\d\d)\b/.test(e) || e.includes('timeout') || e.includes('aborted')
+}
 
 export interface DescricaoEstado {
   /** Rótulo curto, para o crachá. */
@@ -48,13 +68,13 @@ export const ESTADO_CANAL: Record<EstadoCanal, DescricaoEstado> = {
   ligado: {
     label: 'Ligado',
     explicacao:
-      'A funcionar. As reservas desta plataforma são trazidas todos os dias de madrugada e bloqueiam as datas no teu calendário.',
+      'A funcionar. As reservas desta plataforma são lidas de 15 em 15 minutos e bloqueiam as datas no teu calendário.',
     tom: 'verde',
   },
   desatualizado: {
     label: 'Desatualizado',
     explicacao:
-      'Já passou mais de um dia desde a última leitura com sucesso. Pode ter sido uma falha passageira da plataforma — sincroniza agora para confirmar.',
+      'Há mais de 6 horas que não há uma leitura com sucesso, e a sincronização tenta de 15 em 15 minutos. Pode ter sido uma falha passageira da plataforma — sincroniza agora para confirmar.',
     tom: 'ambar',
   },
   erro: {
@@ -70,15 +90,21 @@ export const ESTADO_CANAL: Record<EstadoCanal, DescricaoEstado> = {
  * relógio da máquina que o corre.
  */
 export function estadoDoFeed(feed: IcalFeed, agora: Date = new Date()): EstadoCanal {
-  if (feed.error) return 'erro'
+  const ultima = feed.last_sync ? new Date(feed.last_sync).getTime() : NaN
+  const horas = (agora.getTime() - ultima) / 3_600_000
+
+  if (feed.error) {
+    // Uma recusa passageira logo a seguir a uma leitura boa não é um canal partido.
+    const recente = !Number.isNaN(ultima) && horas <= HORAS_TOLERANCIA_PASSAGEIRA
+    if (!(recente && falhaPassageira(feed.error))) return 'erro'
+    return 'ligado'
+  }
   if (!feed.last_sync) return 'por_sincronizar'
 
-  const ultima = new Date(feed.last_sync).getTime()
   // Uma data ilegível é indistinguível de nunca ter sincronizado — e é melhor
   // pedir uma sincronização a mais do que dar um verde que não se confirmou.
   if (Number.isNaN(ultima)) return 'por_sincronizar'
 
-  const horas = (agora.getTime() - ultima) / 3_600_000
   return horas > HORAS_ATE_DESATUALIZADO ? 'desatualizado' : 'ligado'
 }
 
@@ -129,10 +155,10 @@ export function erroAmigavel(bruto: string): string {
     return 'A plataforma recusou o acesso a este calendário. O endereço pode ter sido revogado — gera um novo na plataforma e substitui este.'
   }
   if (e.includes('429')) {
-    return 'A plataforma está a recusar leituras por serem demasiado seguidas. Espera uma hora; a sincronização automática de madrugada volta a tentar sozinha.'
+    return 'A plataforma está a recusar leituras por serem demasiado seguidas. Não há nada a corrigir — a sincronização automática volta a tentar de 15 em 15 minutos. Se continuar assim durante horas, avisa o suporte.'
   }
   if (e.includes('50') && e.includes('upstream')) {
-    return 'A plataforma teve um erro do lado dela. Não há nada a corrigir aqui — a sincronização automática volta a tentar de madrugada.'
+    return 'A plataforma teve um erro do lado dela. Não há nada a corrigir aqui — a sincronização automática volta a tentar de 15 em 15 minutos.'
   }
   if (e.includes('timeout') || e.includes('aborted')) {
     return 'A plataforma demorou demasiado a responder. Costuma ser passageiro — tenta sincronizar outra vez daqui a uns minutos.'

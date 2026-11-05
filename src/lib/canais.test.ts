@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  estadoDoFeed, estadoDoAlojamento, erroAmigavel, HORAS_ATE_DESATUALIZADO, ESTADO_CANAL,
+  estadoDoFeed, estadoDoAlojamento, erroAmigavel, HORAS_ATE_DESATUALIZADO, HORAS_TOLERANCIA_PASSAGEIRA, falhaPassageira, ESTADO_CANAL,
   CANAIS_IMPORTAVEIS,
 } from './canais'
 import type { IcalFeed } from './types'
@@ -25,6 +25,28 @@ describe('estadoDoFeed', () => {
     expect(estadoDoFeed(feed({ last_sync: haHoras(1), error: 'Upstream devolveu 404' }), AGORA)).toBe('erro')
   })
 
+  it('um 429 logo a seguir a uma leitura boa não pinta o feed de vermelho', () => {
+    expect(estadoDoFeed(feed({ last_sync: haHoras(0.25), error: 'Upstream devolveu 429' }), AGORA)).toBe('ligado')
+    expect(estadoDoFeed(feed({ last_sync: haHoras(0.5), error: 'Upstream devolveu 503' }), AGORA)).toBe('ligado')
+    expect(estadoDoFeed(feed({ last_sync: haHoras(0.5), error: 'The operation was aborted due to timeout' }), AGORA)).toBe('ligado')
+  })
+
+  it('um 429 que dura mais de uma hora já é erro', () => {
+    expect(estadoDoFeed(feed({ last_sync: haHoras(HORAS_TOLERANCIA_PASSAGEIRA + 0.1), error: 'Upstream devolveu 429' }), AGORA)).toBe('erro')
+  })
+
+  it('uma falha passageira sem nenhuma leitura boa é erro', () => {
+    expect(estadoDoFeed(feed({ error: 'Upstream devolveu 429' }), AGORA)).toBe('erro')
+  })
+
+  it('falhaPassageira só aceita recusas que passam sozinhas', () => {
+    expect(falhaPassageira('Upstream devolveu 429')).toBe(true)
+    expect(falhaPassageira('Upstream devolveu 502')).toBe(true)
+    expect(falhaPassageira('Upstream devolveu 404')).toBe(false)
+    expect(falhaPassageira('Upstream devolveu 4290')).toBe(false)
+    expect(falhaPassageira('Redirect para domínio não permitido.')).toBe(false)
+  })
+
   it('sincronizado há pouco está ligado', () => {
     expect(estadoDoFeed(feed({ last_sync: haHoras(2) }), AGORA)).toBe('ligado')
   })
@@ -33,9 +55,9 @@ describe('estadoDoFeed', () => {
     expect(estadoDoFeed(feed({ last_sync: haHoras(HORAS_ATE_DESATUALIZADO - 0.1) }), AGORA)).toBe('ligado')
   })
 
-  /* O caso que motivou o estado: o cron corre uma vez por dia, portanto um
-   * feed parado há mais de 36 h falhou uma passagem sem o dizer a ninguém. */
-  it('passado mais de um dia e meio está desatualizado', () => {
+  /* O caso que motivou o estado: a sincronização corre de 15 em 15 min, portanto
+   * um feed parado há mais de 6 h falhou dezenas de passagens sem o dizer. */
+  it('passado o limite está desatualizado', () => {
     expect(estadoDoFeed(feed({ last_sync: haHoras(HORAS_ATE_DESATUALIZADO + 1) }), AGORA)).toBe('desatualizado')
   })
 

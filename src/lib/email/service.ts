@@ -287,7 +287,7 @@ class EmailService {
       p.to,
       p.temErro
         ? '⚠️ Um canal parou de responder — podes estar a perder reservas'
-        : '🔄 Um canal está sem leituras há mais de um dia',
+        : '🔄 Um canal está sem leituras há mais de 6 horas',
       canaisEmRiscoEmail({ ...p, baseUrl: APP_URL }),
     )
   }

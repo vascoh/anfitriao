@@ -6,6 +6,62 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-05] Falhas passageiras dos canais deixam de dar alarme; limites ao ritmo de 15 min
+
+- 🔴 **Um 429 do Amenitiz podia mandar push e email «Um canal parou de
+  responder».** Produção, últimos 7 dias: o único erro em runtime foi
+  `[ical-sync] feed "Amenitiz" failed: Upstream devolveu 429` (4×), sempre
+  resolvido na passagem seguinte. Mas o feed ficava «Erro» em `/canais` e
+  `/hoje`, e se calhasse antes do `canais-alertas` das 06:00 ia para o
+  telemóvel. Agora `falhaPassageira` (429, 5xx, timeout) com última leitura
+  boa há ≤ 1 h (`HORAS_TOLERANCIA_PASSAGEIRA`, quatro passagens) conta como
+  ligado; se persistir, volta a erro. O `ical-sync` regista estas como
+  `warn`, para os erros de produção mostrarem só avarias.
+- 🔴 **«Desatualizado» às 36 h era do tempo do cron diário.** Com o
+  agendador de 15 min, deixava um dia e meio de dupla reserva possível sem
+  aviso. Passa a 6 h (`HORAS_ATE_DESATUALIZADO`), também nos emails e push.
+- `/hoje` deixava de usar a regra partilhada (filtrava `f.error` à mão);
+  passa por `estadoDoFeed`, como `/canais` e os alertas.
+- Copy desatualizada: «trazidas todos os dias de madrugada», «a
+  sincronização de madrugada volta a tentar» e a FAQ pública (e o JSON-LD
+  dela) diziam «uma vez por dia» e «48 horas». Agora 15 min e 6 h.
+- Migração 058 (aplicada): removido `bookings_uid_externo_idx`, criado à mão
+  em produção e idêntico ao índice único da 055 — cada escrita do ical-sync
+  pagava dois.
+- Verificado e sem ação: advisors de segurança (só INFO de RLS sem policies,
+  por desenho; os SECURITY DEFINER são do cryptobot), `npm audit --omit=dev`
+  (10 moderadas/baixas, todas em ferramentas de build — Sentry bundler,
+  ts-morph do shadcn — com correção só por `--force`), código das limpezas
+  revisto (token, janela, âmbito por casa/quarto).
+- ✅ 1430 testes, typecheck 0, lint 0, build OK.
+- ⏳ Continua pendente: apagar a conta de teste `user_3L9Bk0T4ZBUMT4EOiMOo5eo590z`
+  (ver 2026-11-01) — apagamento de dados em produção, fica para o Vasco
+  confirmar.
+
+### [2026-11-02] Limpezas entre hóspedes, com link para a equipa
+
+- 🟢 **Lacuna face ao mercado fechada.** A TalkGuest tem gestão de tarefas
+  domésticas e a Hospitable lançou o «Tasks» em março de 2026. A Smoobu não
+  tem nada nativo e depende de parceiros (Turno, TIDY). O Anfitrião não tinha
+  nada.
+- **O plano não se cria à mão**: cada check-out é uma limpeza
+  (`lib/limpezas.ts`, 17 testes), com quem entra a seguir, quantas pessoas e
+  noites, e aviso de **troca no mesmo dia** (vem primeiro na lista). Ficam de
+  fora as canceladas, os no-shows e os fechos manuais. Os fechos vindos de um
+  feed (Amenitiz) entram como «confirmar». A base só guarda o que alguém
+  marcou (`limpezas`, migração 057, aplicada), por isso uma reserva que muda de
+  datas leva a limpeza consigo.
+- `/limpezas` (em Reservas no menu, e atalho em «Saídas hoje» no `/hoje`):
+  marcar feita/problema/desfazer, e **links da equipa** sem login. O token só
+  existe no momento em que é criado (na base fica só o SHA-256), é enviado por
+  WhatsApp num toque, pode ficar limitado a algumas casas (uma casa inclui os
+  quartos) e é revogável. O anfitrião vê quando a pessoa abriu o link.
+- `/equipa/[token]`, público e rate-limited: a lista com morada (abre no
+  Maps), marcar feita/problema, e calendário `.ics` para subscrever no
+  telemóvel. **Sem nomes, contactos, preços nem origem da reserva** (RGPD:
+  quem limpa não precisa deles). Um problema chega ao anfitrião por push.
+- Fora do domínio próprio de propósito (`dominio-rotas.ts` não o lista).
+
 ### [2026-11-01] Check-in de reservas importadas grava finalmente quem reservou
 
 - 🔴 **O check-in não gravava o hóspede principal em reservas sem ficha** — que

@@ -15,7 +15,7 @@ export const PERGUNTAS = [
   {
     pergunta: 'De quanto em quanto tempo sincroniza?',
     resposta:
-      'A sincronização automática corre uma vez por dia, e podes forçá-la a qualquer momento com um toque. É importante saberes porquê: o iCal — o formato que o Airbnb e o Booking usam para partilhar calendários — não é instantâneo em plataforma nenhuma. Por isso não prometemos eliminar as duplas reservas: reduzimos muito o risco e avisamos-te quando um calendário falha ou fica sem sincronizar há mais de 48 horas.',
+      'A sincronização automática corre de 15 em 15 minutos, e podes forçá-la a qualquer momento com um toque. Mesmo assim, há um limite que convém saberes: o iCal — o formato que o Airbnb e o Booking usam para partilhar calendários — não é instantâneo em plataforma nenhuma, e cada plataforma atualiza o seu lado ao seu ritmo. Por isso não prometemos eliminar as duplas reservas: reduzimos muito o risco e avisamos-te quando um calendário falha ou fica sem sincronizar há mais de 6 horas.',
   },
   {
     pergunta: 'Quanto tempo poupo por mês?',

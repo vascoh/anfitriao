@@ -10,7 +10,7 @@ function feed(over: Partial<IcalFeed> = {}): IcalFeed {
     url: 'https://amenitiz.com/ical/abc',
     nome: 'Amenitiz',
     source: 'outro',
-    last_sync: '2026-09-10T04:00:00Z',
+    last_sync: '2026-09-10T11:45:00Z',
     ...over,
   }
 }
@@ -20,7 +20,7 @@ function alojamento(nome: string, feeds: IcalFeed[], over: Record<string, unknow
 }
 
 describe('canaisEmRisco', () => {
-  it('um feed que sincronizou esta madrugada não é aviso nenhum', () => {
+  it('um feed lido na última passagem não é aviso nenhum', () => {
     expect(canaisEmRisco([alojamento('Quarto', [feed()])], AGORA)).toEqual([])
   })
 
@@ -35,7 +35,7 @@ describe('canaisEmRisco', () => {
     expect(r[0].porque).toContain('endereço')
   })
 
-  it('mais de 36 horas sem leitura com sucesso é um aviso', () => {
+  it('mais de 6 horas sem leitura com sucesso é um aviso', () => {
     const r = canaisEmRisco(
       [alojamento('Quarto', [feed({ last_sync: '2026-09-08T04:00:00Z' })])],
       AGORA,
@@ -62,7 +62,7 @@ describe('canaisEmRisco', () => {
   it('o erro vem antes do desatualizado — quem lê um aviso lê a primeira linha', () => {
     const r = canaisEmRisco([
       alojamento('B', [feed({ id: 'f2', last_sync: '2026-09-08T04:00:00Z' })]),
-      alojamento('A', [feed({ id: 'f3', error: 'timeout' })]),
+      alojamento('A', [feed({ id: 'f3', error: 'Upstream devolveu 404' })]),
     ], AGORA)
 
     expect(r.map(x => x.estado)).toEqual(['erro', 'desatualizado'])
@@ -92,7 +92,7 @@ describe('resumoParaPush', () => {
   it('diz a consequência, não o estado', () => {
     /* «Um calendário com erro» não move ninguém. «Estás a recusar reservas»
      * move — e desde a verificação ao vivo é literalmente o que acontece. */
-    const riscos = canaisEmRisco([alojamento('Quarto', [feed({ error: 'timeout' })])], AGORA)
+    const riscos = canaisEmRisco([alojamento('Quarto', [feed({ error: 'Upstream devolveu 404' })])], AGORA)
     const { title, body } = resumoParaPush(riscos)
 
     expect(title).toContain('parou de responder')
@@ -107,5 +107,14 @@ describe('resumoParaPush', () => {
     ], AGORA)
 
     expect(resumoParaPush(riscos).body).toContain('2 calendários')
+  })
+})
+
+describe('canaisEmRisco — falhas passageiras', () => {
+  /* Produção, 2026-11: o Amenitiz devolveu 429 quatro vezes numa semana e a
+   * passagem seguinte leu sempre bem. Um 429 às 05:50 não pode virar push. */
+  it('um 429 logo a seguir a uma leitura boa não gera aviso', () => {
+    const r = canaisEmRisco([alojamento('Quarto', [feed({ error: 'Upstream devolveu 429' })])], AGORA)
+    expect(r).toEqual([])
   })
 })

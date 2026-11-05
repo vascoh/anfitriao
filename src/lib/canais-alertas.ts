@@ -70,7 +70,7 @@ export function canaisEmRisco(
         estado: estado as CanalEmRisco['estado'],
         porque: feed.error
           ? erroAmigavel(feed.error)
-          : 'Já passou mais de um dia desde a última leitura com sucesso. Pode ter sido uma falha passageira — sincroniza agora para confirmar.',
+          : 'Há mais de 6 horas que não há uma leitura com sucesso, e a sincronização tenta de 15 em 15 minutos. Pode ter sido uma falha passageira — sincroniza agora para confirmar.',
       })
     }
   }

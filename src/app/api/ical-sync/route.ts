@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase'
 import type { IcalFeed } from '@/lib/types'
 import { checkCronAuth } from '@/lib/cron-auth'
 import { fetchIcalText } from '@/lib/ical-fetch'
+import { estadoDoFeed } from '@/lib/canais'
 import { parseIcal } from '@/lib/ical'
 import { verificarLimite } from '@/lib/rate-limit-persistente'
 import {
@@ -188,11 +189,15 @@ async function sincronizarPropriedade(
       results.push({ feed: feed.nome, imported: 0, skipped, comDescricao })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error(`[ical-sync] feed "${feed.nome}" failed:`, msg)
+      /* Um 429/5xx logo a seguir a uma leitura boa passa na próxima passagem
+       * (ver `HORAS_TOLERANCIA_PASSAGEIRA`): fica como aviso para não encher os
+       * erros de produção com o que não é avaria. Se persistir, volta a erro. */
+      const passageira = estadoDoFeed({ ...feed, error: msg }) === 'ligado'
+      ;(passageira ? console.warn : console.error)(`[ical-sync] feed "${feed.nome}" failed:`, msg)
       todosOsFeedsOk = false
       /* `last_sync` **não** se toca numa falha: quer dizer «última leitura com
        * sucesso», e é sobre ela que se decide se um feed está desatualizado
-       * (36 h, ver `lib/canais.ts`). Carimbá-la aqui dava a um feed que falha
+       * (`HORAS_ATE_DESATUALIZADO`, ver `lib/canais.ts`). Carimbá-la aqui dava a um feed que falha
        * todas as noites um «Última sincronização: hoje às 04:00» — a data
        * dizia que estava tudo bem e o calendário estava parado desde o dia em
        * que partiu. */
