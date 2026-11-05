@@ -25,6 +25,10 @@ _Iniciado: 2026-06-06_
   `send`, DMARC `p=none` — subir para `quarantine` é uma alteração na Amen,
   fica como recomendação); SEO base da landing (title, description,
   canonical, og:image, `lang`, sem imagens sem `alt`).
+- Deploy `dpl_Di17sLytT2oJA2VeG1t9j5vwE5Y9` (13:04 UTC), confirmado com
+  `vercel inspect`. Em produção: header CSP sem `'unsafe-eval'`, H1 no HTML
+  sem `opacity:0`; `/` e `/r/casadevasco` abertos em Chromium sem erros de
+  consola nem violações de CSP.
 
 ### [2026-11-05] Reserva paga: corrida que reembolsava uma reserva confirmada
 
