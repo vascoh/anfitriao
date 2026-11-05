@@ -33,7 +33,7 @@ _Iniciado: 2026-06-06_
   (10 moderadas/baixas, todas em ferramentas de build — Sentry bundler,
   ts-morph do shadcn — com correção só por `--force`), código das limpezas
   revisto (token, janela, âmbito por casa/quarto).
-- ✅ 1430 testes, typecheck 0, lint 0, build OK.
+- ✅ 1430 testes, typecheck 0, lint 0, build OK. 🚀 Deployado (`dpl_BePve32vnM3rvgkWQd42wRGdrnFE`, alias confirmado com `vercel inspect`, FAQ nova visível em anfitrioes.pt).
 - ⏳ Continua pendente: apagar a conta de teste `user_3L9Bk0T4ZBUMT4EOiMOo5eo590z`
   (ver 2026-11-01) — apagamento de dados em produção, fica para o Vasco
   confirmar.
