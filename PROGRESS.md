@@ -28,6 +28,8 @@ _Iniciado: 2026-06-06_
   sem `owner_id` nas rotas confirmam a posse antes.
 - `/admin/saude` usava as regras antigas (erro por um 429 passageiro,
   «desatualizado» desde ontem, inativos incluídos); passa por `estadoDoFeed`.
+- 🚀 Deployado (`dpl_3Mz94owVVZhDENGcjoJ3Uu4usnbc`, alias confirmado com
+  `vercel inspect`, site 200).
 
 ### [2026-11-05] Alerta de canais em ~1 h, teto no iCal público, ruído de inativos
 
