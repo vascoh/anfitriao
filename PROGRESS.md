@@ -34,9 +34,13 @@ _Iniciado: 2026-06-06_
   ts-morph do shadcn — com correção só por `--force`), código das limpezas
   revisto (token, janela, âmbito por casa/quarto).
 - ✅ 1430 testes, typecheck 0, lint 0, build OK. 🚀 Deployado (`dpl_BePve32vnM3rvgkWQd42wRGdrnFE`, alias confirmado com `vercel inspect`, FAQ nova visível em anfitrioes.pt).
-- ⏳ Continua pendente: apagar a conta de teste `user_3L9Bk0T4ZBUMT4EOiMOo5eo590z`
-  (ver 2026-11-01) — apagamento de dados em produção, fica para o Vasco
-  confirmar.
+- 🧹 Conta de teste `user_3L9Bk0T4ZBUMT4EOiMOo5eo590z` apagada (autorizado
+  pelo Vasco): 4 alojamentos, 3 reservas, 2 fichas, 2 `reserva_hospedes`, 1
+  regra de preço, 1 `website_settings` e a linha em `accounts`, numa só
+  transação com guarda contra cascatas sobre dados de outro dono. No Clerk já
+  não existia. Apagados também os restos do E2E das limpezas (dono fictício
+  `user_TESTE_E2E_limpezas`: 1 quarto inativo, 3 reservas). A base fica sem
+  nada «TESTE-E2E».
 
 ### [2026-11-02] Limpezas entre hóspedes, com link para a equipa
 
