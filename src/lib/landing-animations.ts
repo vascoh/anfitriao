@@ -25,37 +25,11 @@ export const fadeIn: Variants = {
   visible: { opacity: 1, transition: { duration: 0.5, ease: EASE_OUT } },
 }
 
-export const slideUp: Variants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, delay: 0.15, ease: EASE_OUT },
-  },
-}
-
 /** Contentor com stagger de 100ms — o padrão para grelhas de cartões. */
 export const staggerContainer: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-  },
-}
-
-/** Contentor rápido (50ms) — revelação de título palavra a palavra. */
-export const wordContainer: Variants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.05 },
-  },
-}
-
-export const wordReveal: Variants = {
-  hidden: { opacity: 0, y: '0.4em' },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: EASE_OUT },
   },
 }
 

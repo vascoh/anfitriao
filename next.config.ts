@@ -51,7 +51,10 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://clerk.anfitrioes.pt https://*.clerk.accounts.dev",
+              // `'unsafe-eval'` só em desenvolvimento (o React usa eval para os
+              // erros e o HMR). Em produção nada o pede, e deixá-lo aberto
+              // transforma qualquer HTML injetado num `eval` arbitrário.
+              `script-src 'self'${process.env.NODE_ENV === 'production' ? '' : " 'unsafe-eval'"} 'unsafe-inline' https://clerk.anfitrioes.pt https://*.clerk.accounts.dev`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://img.clerk.com https://*.public.blob.vercel-storage.com",

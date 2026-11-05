@@ -4,7 +4,7 @@ import { Fragment } from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'motion/react'
 import { Sparkles, ArrowRight, PlayCircle } from 'lucide-react'
-import { wordContainer, wordReveal, slideUp, EASE_OUT } from '@/lib/landing-animations'
+import { EASE_OUT } from '@/lib/landing-animations'
 import { TRIAL_DIAS } from '@/lib/planos'
 import { HeroVisual } from './hero-visual'
 
@@ -40,10 +40,7 @@ export function Hero() {
             </motion.span>
           </motion.div>
 
-          <motion.h1
-            variants={wordContainer}
-            initial="hidden"
-            animate="visible"
+          <h1
             className="mt-6 text-4xl leading-[1.05] font-bold tracking-tight text-white sm:text-5xl lg:text-6xl"
           >
             {/* O espaço tem de ser um nó de texto entre os spans, não uma margem:
@@ -54,28 +51,26 @@ export function Hero() {
             {TITULO.map((palavra, i) => (
               <Fragment key={palavra}>
                 <span className="inline-block overflow-hidden align-bottom">
-                  <motion.span
-                    variants={wordReveal}
-                    className={`inline-block ${i >= 2 ? 'text-cyan-400' : ''}`}
+                  <span
+                    className={`word-up ${i >= 2 ? 'text-cyan-400' : ''}`}
+                    style={{ animationDelay: `${i * 50}ms` }}
                   >
                     {palavra}
-                  </motion.span>
+                  </span>
                 </span>
                 {i < TITULO.length - 1 ? ' ' : null}
               </Fragment>
             ))}
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            variants={slideUp}
-            initial="hidden"
-            animate="visible"
-            className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300 sm:text-xl"
+          <p
+            className="fade-up mt-6 max-w-xl text-lg leading-relaxed text-slate-300 sm:text-xl"
+            style={{ animationDelay: '150ms' }}
           >
             Os alojamentos, as reservas e os hóspedes num só lugar — com o
             check-in online feito e as obrigações legais portuguesas tratadas
             no mesmo sítio.
-          </motion.p>
+          </p>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}

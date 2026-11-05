@@ -137,6 +137,11 @@
   to   { opacity: 1; transform: none; }
 }
 
+@keyframes anf-word-up {
+  from { opacity: 0; transform: translateY(0.4em); }
+  to   { opacity: 1; transform: none; }
+}
+
 @layer utilities {
   /* Revelação ao entrar no viewport, sem JS nem IntersectionObserver.
      `animation-range` faz a animação completar-se logo que o elemento entra. */
@@ -146,6 +151,16 @@
       animation-timeline: view();
       animation-range: entry 0% cover 22%;
     }
+  }
+
+  /* Palavra a palavra, para o título da landing. Em CSS e não em JS: o título
+     é o elemento principal da página, e com a animação em JS ele vinha do
+     servidor com opacity:0 e só aparecia depois de o JavaScript arrancar —
+     o LCP ficava preso à hidratação e, sem JS, não aparecia de todo. O
+     atraso de cada palavra vai em `animation-delay` no próprio elemento. */
+  .word-up {
+    display: inline-block;
+    animation: anf-word-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   /* Entrada simples para elementos já visíveis no carregamento. */

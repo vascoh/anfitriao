@@ -6,6 +6,26 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-05] Título da landing visível sem JS e CSP sem `unsafe-eval`
+
+- 🟠 **O H1 da landing vinha do servidor com `opacity:0`** (animação palavra
+  a palavra em `motion`, `initial="hidden"`), tal como o subtítulo: o
+  elemento principal da página só aparecia depois de o JavaScript hidratar —
+  LCP preso à hidratação e, sem JS, título invisível. Contrariava a regra
+  escrita no próprio `globals.css` («nunca para conteúdo invisível»). Passa
+  a CSS (`.word-up` com `animation-delay` por palavra, `.fade-up` no
+  subtítulo), que arranca no primeiro desenho e respeita o
+  `prefers-reduced-motion` global. Removidas as variantes que ficaram sem
+  uso (`slideUp`, `wordContainer`, `wordReveal`).
+- 🟠 **CSP de produção permitia `'unsafe-eval'`.** Fica só em
+  desenvolvimento. Verificado com `next build && next start` local +
+  Chromium (Playwright): `/`, `/sign-in`, `/sign-up`, `/precos` sem nenhuma
+  violação de CSP nem erro de consola; widgets do Clerk renderizam.
+- Verificado sem ação: DNS de email (SPF/DKIM do Resend no subdomínio
+  `send`, DMARC `p=none` — subir para `quarantine` é uma alteração na Amen,
+  fica como recomendação); SEO base da landing (title, description,
+  canonical, og:image, `lang`, sem imagens sem `alt`).
+
 ### [2026-11-05] Reserva paga: corrida que reembolsava uma reserva confirmada
 
 - 🔴 **O webhook e a página de confirmação podiam reembolsar um pagamento
