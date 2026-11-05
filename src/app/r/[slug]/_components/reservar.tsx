@@ -209,7 +209,7 @@ export function Reservar({ prop, ocupadas, priceRules, tarifas, platformRates, m
       {preco && !curta && (
         <dl className="site-num flex flex-col gap-1.5 border-t border-border pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">{numNoites === 1 ? tr(lang, 'noite_x', { preco: fmtMoney(preco.preco_noite) }) : tr(lang, 'noites_x', { n: numNoites, preco: fmtMoney(preco.preco_noite) })}</dt>
+            <dt className="text-muted-foreground">{numNoites === 1 ? tr(lang, 'noite_x', { preco: fmtMoney(preco.preco_noite) }) : tr(lang, preco.preco_varia ? 'noites_media' : 'noites_x', { n: numNoites, preco: fmtMoney(preco.preco_noite) })}</dt>
             <dd>{fmtMoney(preco.subtotal_noites)}</dd>
           </div>
           {preco.ajuste_valor !== 0 && (

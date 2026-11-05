@@ -309,4 +309,14 @@ export interface PricingBreakdown {
   total: number
   regra_aplicada?: string
   tarifa_aplicada?: string
+  /** Preço de cada noite, pela regra desse dia. A soma é `subtotal_noites`. */
+  noites: NoitePreco[]
+  /** As noites não custam todas o mesmo: `preco_noite` é então a média. */
+  preco_varia: boolean
+}
+
+export interface NoitePreco {
+  data: string
+  preco: number
+  regra?: string
 }

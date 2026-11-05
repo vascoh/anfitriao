@@ -1,4 +1,4 @@
-import type { Booking, BookingStatus, BookingEvent, Property, PriceRule, Tarifa, PlatformRate, PricingBreakdown, BookingSource } from './types'
+import type { Booking, BookingStatus, BookingEvent, Property, PriceRule, Tarifa, PlatformRate, PricingBreakdown, BookingSource, NoitePreco } from './types'
 import { nights } from './utils'
 
 export function addDays(date: string, n: number): string {
@@ -299,7 +299,10 @@ export function calculatePriceWithRules(
   origem: BookingSource = 'direto',
 ): PricingBreakdown {
   const numNoites = nights(checkIn, checkOut)
-  const rule = findBestRule(rules.filter(r => r.property_id === property.id), checkIn, numNoites)
+  const regrasDaProp = rules.filter(r => r.property_id === property.id)
+  /* A regra da noite de entrada decide só a taxa de limpeza (é uma por
+   * estadia). O preço das noites é noite a noite — ver abaixo. */
+  const rule = findBestRule(regrasDaProp, checkIn, numNoites)
   const tarifa = findBestTarifa(tarifas.filter(t => t.property_id === property.id), origem, numNoites)
   const platformRate = platformRates.find(r => r.property_id === property.id && r.plataforma === origem && r.ativo)
 
@@ -313,20 +316,28 @@ export function calculatePriceWithRules(
    *
    * O limite fica aqui, no cálculo, além da validação na API: é o único sítio
    * por onde passam todos os caminhos de preço. */
-  // Base nightly rate
-  let precoNoite = rule?.preco_noite ?? property.preco_base
-
-  // Apply rule percentage adjustment
-  const descontoPct = rule?.desconto_pct ?? 0
-  if (descontoPct !== 0) {
-    precoNoite = precoNoite * (1 + descontoPct / 100)
+  /* Cada noite paga o preço da regra **desse dia** — o mesmo que o calendário
+   * mostra (`getPriceForDay`). Até 2026-11-05 a regra do dia de entrada
+   * valia para a estadia toda: entrada à quinta com regra de fim de semana,
+   * o calendário dizia 60 + 75 e cobrava-se 2 × 60 (decisão do Vasco nesse
+   * dia: soma noite a noite, como as plataformas). As restrições de duração
+   * (`min_noites`/`max_noites`) continuam a olhar para a estadia inteira. */
+  const noites: NoitePreco[] = []
+  for (let i = 0; i < numNoites; i++) {
+    const data = addDays(checkIn, i)
+    const r = findBestRule(regrasDaProp, data, numNoites)
+    let preco = r?.preco_noite ?? property.preco_base
+    if (r?.desconto_pct) preco = preco * (1 + r.desconto_pct / 100)
+    noites.push({ data, preco: Math.max(0, Math.round(preco * 100) / 100), regra: r?.nome })
   }
 
   // Cleaning fee
   const taxaLimpeza = rule?.taxa_limpeza ?? property.taxa_limpeza ?? 0
 
-  precoNoite = Math.max(0, precoNoite)
-  const subtotalNoites = precoNoite * numNoites
+  const subtotalNoites = noites.reduce((s, n) => s + n.preco, 0)
+  const precoNoite = numNoites > 0 ? subtotalNoites / numNoites : Math.max(0, property.preco_base)
+  const precoVaria = new Set(noites.map(n => n.preco)).size > 1
+  const nomesRegras = [...new Set(noites.map(n => n.regra).filter((x): x is string => !!x))]
 
   // Tariff adjustment
   const tarifaDescontoPct = tarifa?.desconto_pct ?? 0
@@ -350,8 +361,10 @@ export function calculatePriceWithRules(
     plataforma_multiplicador: multiplicador,
     plataforma_ajuste: Math.round(plataformaAjuste * 100) / 100,
     total,
-    regra_aplicada: rule?.nome,
+    regra_aplicada: nomesRegras.length ? nomesRegras.join(' + ') : undefined,
     tarifa_aplicada: tarifa?.nome,
+    noites,
+    preco_varia: precoVaria,
   }
 }
 

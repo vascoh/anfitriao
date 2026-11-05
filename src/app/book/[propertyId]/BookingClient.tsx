@@ -557,7 +557,9 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
             <div className="rounded-xl bg-muted/50 border border-border p-4 flex flex-col gap-2.5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {fmtMoney(pricing.preco_noite)} × {numNights} noite{numNights !== 1 ? 's' : ''}
+                  {pricing.preco_varia
+                    ? `${numNights} noites · média ${fmtMoney(pricing.preco_noite)}`
+                    : `${fmtMoney(pricing.preco_noite)} × ${numNights} noite${numNights !== 1 ? 's' : ''}`}
                   {pricing.regra_aplicada && (
                     <span className="ml-1.5 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
                       {pricing.regra_aplicada}

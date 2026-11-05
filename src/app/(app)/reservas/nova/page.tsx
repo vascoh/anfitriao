@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { ArrowLeft, ChevronRight, Check, Search, Plus } from 'lucide-react'
-import { uuid, today, addDays, fmtDate } from '@/lib/utils'
+import { uuid, today, addDays, fmtDate, fmtMoney } from '@/lib/utils'
 import { fetchGuests, fetchProperties, fetchBookings } from '@/lib/fetcher'
 import { detectConflict, calculatePriceWithRules, unidadesReservaveis } from '@/lib/reservations'
 import { quartosDaCasa, capacidadeTotal, disponibilidadeDosQuartos, sugerirQuartos } from '@/lib/grupos'
@@ -359,7 +359,9 @@ function NovaReservaInner() {
               return (
                 <div className="rounded-xl border border-border bg-card px-4 py-3.5 flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">{bd.num_noites} noite{bd.num_noites !== 1 ? 's' : ''} × €{bd.preco_noite}</span>
+                    <span className="text-sm text-muted-foreground">{bd.preco_varia
+                      ? `${bd.num_noites} noites · média ${fmtMoney(bd.preco_noite)}`
+                      : `${bd.num_noites} noite${bd.num_noites !== 1 ? 's' : ''} × ${fmtMoney(bd.preco_noite)}`}</span>
                     <span className="text-sm font-medium">€{bd.subtotal_noites}</span>
                   </div>
                   {bd.taxa_limpeza > 0 && (

@@ -36,6 +36,7 @@ const TEXTOS = {
   numero_hospedes: { pt: 'Hóspedes', en: 'Guests' },
   noites_x: { pt: '{n} noites × {preco}', en: '{n} nights × {preco}' },
   noite_x: { pt: '1 noite × {preco}', en: '1 night × {preco}' },
+  noites_media: { pt: '{n} noites · média {preco}', en: '{n} nights · avg {preco}' },
   limpeza: { pt: 'Limpeza', en: 'Cleaning' },
   ajuste: { pt: 'Ajuste da tarifa', en: 'Rate adjustment' },
   total: { pt: 'Total', en: 'Total' },

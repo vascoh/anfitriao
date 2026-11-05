@@ -181,7 +181,43 @@ describe('calculatePriceWithRules', () => {
     expect(r.preco_noite).toBe(100)
     const monday = [mkRule({ nome: 'Segunda', preco_noite: 80, dias_semana: [1] })]
     const r2 = calculatePriceWithRules(PROPERTY, '2026-08-10', '2026-08-12', monday)
-    expect(r2.preco_noite).toBe(80)
+    // Segunda a 80, terça ao preço base: cada noite pela regra do seu dia.
+    expect(r2.noites.map(n => n.preco)).toEqual([80, 100])
+    expect(r2.subtotal_noites).toBe(180)
+    expect(r2.preco_noite).toBe(90)
+    expect(r2.preco_varia).toBe(true)
+  })
+
+  /* O caso que motivou a mudança (decisão de 2026-11-05): entrada à quinta
+   * com regra de fim de semana. O calendário mostrava 100 + 200 e cobrava-se
+   * 2 × 100. Agora o total é a soma do que o calendário mostra. */
+  it('soma noite a noite: entrada à quinta com regra de fim de semana', () => {
+    // 2026-08-13 é quinta; 13 e 14 (sexta) são as noites.
+    const weekend = [mkRule({ nome: 'Fim de semana', preco_noite: 200, dias_semana: [5, 6] })]
+    const r = calculatePriceWithRules(PROPERTY, '2026-08-13', '2026-08-15', weekend)
+    expect(r.noites).toEqual([
+      { data: '2026-08-13', preco: 100, regra: undefined },
+      { data: '2026-08-14', preco: 200, regra: 'Fim de semana' },
+    ])
+    expect(r.subtotal_noites).toBe(300)
+    expect(r.regra_aplicada).toBe('Fim de semana')
+    for (const n of r.noites) {
+      expect(n.preco).toBe(getPriceForDay(PROPERTY, n.data, weekend).preco)
+    }
+  })
+
+  it('preço igual em todas as noites não varia', () => {
+    const r = calculatePriceWithRules(PROPERTY, '2026-08-10', '2026-08-13', [])
+    expect(r.preco_varia).toBe(false)
+    expect(r.noites).toHaveLength(3)
+    expect(r.subtotal_noites).toBe(300)
+  })
+
+  it('arredonda cada noite ao cêntimo, como o calendário', () => {
+    const rules = [mkRule({ nome: 'Desc', desconto_pct: -33.333 })]
+    const r = calculatePriceWithRules(PROPERTY, '2026-08-10', '2026-08-13', rules)
+    expect(r.noites.every(n => n.preco === 66.67)).toBe(true)
+    expect(r.subtotal_noites).toBe(200.01)
   })
 
   it('respects min/max nights on rules', () => {

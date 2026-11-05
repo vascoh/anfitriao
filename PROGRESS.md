@@ -6,6 +6,26 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-05] Preço noite a noite e segredo do cron externo rodado
+
+- 🔴 **O total cobrava a regra do dia de entrada para a estadia toda**
+  (decisão pendente desde 2026-10-28, fechada pelo Vasco hoje: soma noite a
+  noite). Entrada à quinta com regra de fim de semana: o calendário dizia
+  100 + 200 e cobrava-se 2 × 100. Agora `calculatePriceWithRules` soma cada
+  noite pela regra desse dia, arredondada ao cêntimo como `getPriceForDay` —
+  o total é a soma do que o calendário mostra. `min_noites`/`max_noites`
+  continuam a olhar para a estadia inteira; a taxa de limpeza continua a vir
+  da regra da noite de entrada (é uma por estadia). O resultado traz
+  `noites[]` e `preco_varia`; quando as noites não custam o mesmo, o site,
+  `/book` e `/reservas/nova` mostram «N noites · média X» em vez de um
+  «N × X» que não batia com o subtotal. O servidor (`booking-request`,
+  `bookings/grupo`) usa a mesma função, por isso valida o mesmo valor.
+  4 testes novos, incluindo a igualdade com o calendário noite a noite.
+- 🔑 **`CRON_SECRET_EXTERNO` rodado** (passara pelo chat a 2026-10-31):
+  valor novo gerado localmente, na Vercel (Production, sensível) e no Vault
+  (`anfitriao_cron_externo`) depois do deploy. O valor transitou pelas
+  chamadas de ferramenta desta sessão, não pelo chat.
+
 ### [2026-11-05] Falhas passageiras dos canais deixam de dar alarme; limites ao ritmo de 15 min
 
 - 🔴 **Um 429 do Amenitiz podia mandar push e email «Um canal parou de
