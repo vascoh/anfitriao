@@ -51,7 +51,20 @@ vi.mock('./supabase', () => ({
 }))
 
 let haConflito = false
-vi.mock('./booking-request', () => ({ hasConflict: async () => haConflito }))
+const conflitoPedido: unknown[][] = []
+vi.mock('./booking-request', () => ({
+  hasConflict: async (...args: unknown[]) => { conflitoPedido.push(args); return haConflito },
+}))
+
+/** Trinco simulado: corre a função, ou não a deixa correr. */
+let trincoOcupado = false
+const trincosPedidos: string[] = []
+vi.mock('./trinco', () => ({
+  comTrinco: async (chave: string, _s: number, fn: () => Promise<unknown>) => {
+    trincosPedidos.push(chave)
+    return trincoOcupado ? { obtido: false } : { obtido: true, valor: await fn() }
+  },
+}))
 
 const notificacoes: unknown[] = []
 vi.mock('./notify-booking', () => ({
@@ -97,6 +110,9 @@ beforeEach(() => {
   notificacoes.length = 0
   auditoria.length = 0
   haConflito = false
+  conflitoPedido.length = 0
+  trincoOcupado = false
+  trincosPedidos.length = 0
   reembolsoRebenta = false
   erroInsertBooking = null
   tabelas.bookings = []
@@ -210,5 +226,43 @@ describe('fulfillCheckoutSession', () => {
     notificacoes.length = 0
     const r = await fulfillCheckoutSession('acct_1', 'cs_1')
     expect(r.ok).toBe(true)
+  })
+
+  /* A corrida que reembolsava uma reserva confirmada: B via «ainda não
+   * existe», A inseria, e B encontrava a reserva de A como conflito. */
+  it('verifica e insere dentro do trinco do alojamento', async () => {
+    await fulfillCheckoutSession('acct_1', 'cs_1')
+    expect(trincosPedidos).toEqual(['reservar:p1'])
+  })
+
+  it('a reserva da própria sessão não conta como conflito', async () => {
+    await fulfillCheckoutSession('acct_1', 'cs_1')
+    expect(conflitoPedido[0]).toEqual(['p1', '2026-09-10', '2026-09-13', 'b1'])
+  })
+
+  it('se a outra chamada gravou enquanto se esperava pelo trinco, devolve-a sem reembolsar', async () => {
+    let lida = 0
+    const original = tabelas.bookings
+    // A primeira leitura (fora do trinco) não vê nada; a segunda (dentro) já vê.
+    Object.defineProperty(tabelas, 'bookings', {
+      configurable: true,
+      get: () => (lida++ === 0 ? [] : [{ id: 'b1', stripe_checkout_session_id: 'cs_1' }]),
+      set: () => {},
+    })
+    haConflito = true
+    const r = await fulfillCheckoutSession('acct_1', 'cs_1')
+    Object.defineProperty(tabelas, 'bookings', { configurable: true, writable: true, value: original })
+
+    expect(r).toMatchObject({ ok: true, bookingId: 'b1', alreadyFulfilled: true })
+    expect(reembolsos).toHaveLength(0)
+  })
+
+  it('sem trinco, falha para o Stripe repetir — nunca reembolsa', async () => {
+    trincoOcupado = true
+    haConflito = true
+    const r = await fulfillCheckoutSession('acct_1', 'cs_1')
+    expect(r).toEqual({ ok: false, reason: 'error' })
+    expect(reembolsos).toHaveLength(0)
+    expect(escritas).toHaveLength(0)
   })
 })

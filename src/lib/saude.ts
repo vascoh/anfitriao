@@ -2,7 +2,9 @@ import 'server-only'
 import { createAdminClient } from './supabase'
 import { diagnosticarEmail } from './email/config'
 import { estaConfigurada as encriptacaoConfigurada } from './crypto'
-import { today, addDays } from './utils'
+import { today } from './utils'
+import { estadoDoFeed, HORAS_ATE_DESATUALIZADO } from './canais'
+import type { IcalFeed } from './types'
 
 /**
  * Estado de saúde do sistema, numa página que se abre.
@@ -118,20 +120,22 @@ export async function verificarOperacao(): Promise<Verificacao[]> {
   const supabase = createAdminClient()
   const v: Verificacao[] = []
   const hoje = today()
-  const ontem = addDays(hoje, -1)
 
   // ── Feeds iCal com erro ─────────────────────────────────────────────────
   const { data: props } = await supabase
     .from('properties')
-    .select('nome, ical_feeds')
+    .select('nome, ical_feeds, ativo')
     .not('owner_id', 'is', null)
 
-  const feeds = (props ?? []).flatMap(p =>
-    ((p.ical_feeds as Array<{ nome?: string; error?: string; last_sync?: string }> | null) ?? [])
-      .map(f => ({ propriedade: p.nome as string, ...f })),
+  /* Mesma regra que `/canais`, `/hoje` e os alertas (`estadoDoFeed`): uma
+   * falha passageira logo a seguir a uma leitura boa não é erro, e os
+   * alojamentos inativos não são sincronizados — não contam. */
+  const feeds = (props ?? []).filter(p => p.ativo !== false).flatMap(p =>
+    ((p.ical_feeds as IcalFeed[] | null) ?? [])
+      .map(f => ({ propriedade: p.nome as string, ...f, estado: estadoDoFeed(f) })),
   )
-  const comErro = feeds.filter(f => f.error)
-  const desatualizados = feeds.filter(f => !f.error && (!f.last_sync || f.last_sync.slice(0, 10) < ontem))
+  const comErro = feeds.filter(f => f.estado === 'erro')
+  const desatualizados = feeds.filter(f => f.estado === 'desatualizado' || f.estado === 'por_sincronizar')
 
   if (feeds.length === 0) {
     v.push({ chave: 'ical', titulo: 'Calendários externos', nivel: 'aviso', detalhe: 'Nenhum feed iCal ligado.' })
@@ -143,7 +147,7 @@ export async function verificarOperacao(): Promise<Verificacao[]> {
   } else if (desatualizados.length > 0) {
     v.push({
       chave: 'ical', titulo: 'Calendários externos', nivel: 'aviso',
-      detalhe: `${desatualizados.length} feeds sem sincronizar desde ontem.`,
+      detalhe: `${desatualizados.length} feeds sem leitura com sucesso há mais de ${HORAS_ATE_DESATUALIZADO} h.`,
     })
   } else {
     v.push({ chave: 'ical', titulo: 'Calendários externos', nivel: 'ok', detalhe: `${feeds.length} feeds sincronizados.` })

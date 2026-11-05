@@ -6,6 +6,29 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-05] Reserva paga: corrida que reembolsava uma reserva confirmada
+
+- 🔴 **O webhook e a página de confirmação podiam reembolsar um pagamento
+  cuja reserva ficava confirmada.** Os dois chamam `fulfillCheckoutSession`
+  quase ao mesmo tempo (é o desenho). B lia «ainda não existe», ia buscar a
+  sessão à Stripe (centenas de ms) e, se A inserisse nesse intervalo, o
+  `hasConflict` de B encontrava a reserva de A — conflito, reembolso, e a
+  reserva de A confirmada sem dinheiro. E dois hóspedes a pagar as mesmas
+  noites ao mesmo tempo passavam ambos na verificação. Agora:
+  `hasConflict(..., excluirId)` ignora a própria reserva, e verificar +
+  inserir corre dentro de `comTrinco('reservar:<alojamento>')` com espera de
+  10 s, relendo a sessão já dentro do trinco. Sem trinco → `error`, que faz
+  o webhook falhar de propósito e o Stripe repetir; nunca reembolsa por isso.
+  Latente: 0 reservas pagas e 0 contas Connect hoje. 4 testes novos.
+- Verificado sem ação: a base não impede reservas sobrepostas (não há
+  restrição de exclusão — e não pode haver uma simples, porque os fechos dos
+  feeds sobrepõem-se a reservas por desenho). O pedido sem pagamento fica
+  protegido pela confirmação do anfitrião, que dá 409 a uma segunda
+  pendente sobreposta. Isolamento entre contas: todas as escritas por `id`
+  sem `owner_id` nas rotas confirmam a posse antes.
+- `/admin/saude` usava as regras antigas (erro por um 429 passageiro,
+  «desatualizado» desde ontem, inativos incluídos); passa por `estadoDoFeed`.
+
 ### [2026-11-05] Alerta de canais em ~1 h, teto no iCal público, ruído de inativos
 
 - 🟠 **Canal partido só era avisado às 06:00 do dia seguinte.** Com o sync de

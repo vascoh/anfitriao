@@ -348,16 +348,23 @@ export async function validateGroupBookingRequest(
  * causa de dez segundos de rede. A trava do caminho da reserva
  * (`disponibilidade-ao-vivo.ts`) é que fecha por omissão — esta não.
  */
-export async function hasConflict(propriedade_id: string, check_in: string, check_out: string): Promise<boolean> {
+export async function hasConflict(
+  propriedade_id: string,
+  check_in: string,
+  check_out: string,
+  /** A própria reserva, se já existir: não é conflito consigo mesma. */
+  excluirId?: string,
+): Promise<boolean> {
   const supabase = createAdminClient()
-  const { data } = await supabase
+  let q = supabase
     .from('bookings')
     .select('id')
     .eq('propriedade_id', propriedade_id)
     .not('estado', 'in', '("cancelada","no_show")')
     .lt('check_in', check_out)
     .gt('check_out', check_in)
-    .limit(1)
+  if (excluirId) q = q.neq('id', excluirId)
+  const { data } = await q.limit(1)
 
   if (data && data.length > 0) return true
 
