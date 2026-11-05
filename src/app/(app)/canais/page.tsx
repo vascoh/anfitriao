@@ -680,7 +680,7 @@ function CartaoAlojamento({
                     {ESTADO_CANAL[e].explicacao}
                   </p>
 
-                  {feed.error && (
+                  {feed.error && e === 'erro' && (
                     <p className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-[12px] text-red-700 leading-relaxed">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-px" aria-hidden />
                       <span>{erroAmigavel(feed.error)}</span>

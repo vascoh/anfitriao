@@ -14,9 +14,15 @@ const supabase = createAdminClient()
 /**
  * Cron: avisa o anfitrião quando um calendário deixou de ser lido.
  *
- * Corre às 06:00, duas horas depois da sincronização das 04:00 — o alerta é
- * sobre o que essa passagem não conseguiu ler, portanto tem de vir depois
- * dela e não antes.
+ * Corre de hora a hora entre as 07:30 e as 21:30 UTC pelo pg_cron do
+ * Supabase (migração 059) e às 06:00 pelo cron da Vercel, como rede. Com a
+ * sincronização de 15 em 15 minutos, esperar pelo dia seguinte deixava um
+ * canal partido até 24 h a recusar reservas diretas sem o anfitrião saber.
+ * Fora dessas horas não corre: um push às 03:00 acorda alguém por uma coisa
+ * que pode esperar pelas 07:30.
+ *
+ * Push e email saem **uma vez por dia** por anfitrião (`envio-unico`): com
+ * passagens de hora a hora, sem isso o mesmo aviso tocava 15 vezes.
  *
  * A razão de existir está em `lib/canais-alertas.ts`: o crachá em `/canais` já
  * dizia isto, mas ninguém abre `/canais`. E desde que a disponibilidade passou
@@ -68,7 +74,10 @@ export async function GET(req: NextRequest) {
 
   for (const [ownerId, doAnfitriao] of porAnfitriao) {
     // Push primeiro: é independente do Resend e chega ao telemóvel.
-    pushes += await sendPushToOwner(ownerId, { ...resumoParaPush(doAnfitriao), url: '/canais' })
+    const chavePush = chaveDeEnvio('canais-push', ownerId, hoje)
+    if (await reservarEnvio(chavePush)) {
+      pushes += await sendPushToOwner(ownerId, { ...resumoParaPush(doAnfitriao), url: '/canais' })
+    }
 
     const conta = porId.get(ownerId)
     if (!conta?.email) continue

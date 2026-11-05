@@ -6,6 +6,8 @@ import { generateIcal } from '@/lib/ical'
 import { eBloqueio } from '@/lib/reservations'
 import { carregarTudo } from '@/lib/supabase-tudo'
 import { today } from '@/lib/utils'
+import { verificarLimite } from '@/lib/rate-limit-persistente'
+import { getClientIp } from '@/lib/rate-limit'
 const supabase = createAdminClient()
 
 // UID estável mas não reversível: o id real da reserva não pode sair num feed
@@ -38,6 +40,19 @@ type Origem = 'todas' | 'diretas'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params
+
+  /* Teto por IP e alojamento. A cache da CDN (`s-maxage`, abaixo) é por URL
+   * completo: `?x=1`, `?x=2`… passam ao lado dela, e cada pedido desses é uma
+   * leitura paginada da agenda. Por alojamento e não só por IP porque o
+   * Airbnb e o Booking leem de endereços partilhados por todos os anfitriões
+   * — 60 leituras por hora do mesmo calendário é muito acima do que qualquer
+   * plataforma faz (de 30 min a algumas horas). Um 429 faz a plataforma
+   * manter a última leitura boa, que é o comportamento seguro. */
+  const rl = await verificarLimite(`ical-export:${getClientIp(req)}:${propertyId.slice(0, 64)}`, 60, 3_600_000)
+  if (!rl.allowed) {
+    return new NextResponse('Too many requests', { status: 429, headers: { 'Retry-After': '900' } })
+  }
+
   const origem: Origem = req.nextUrl.searchParams.get('origem') === 'diretas' ? 'diretas' : 'todas'
 
   const [{ data: prop }, { data: quartos }] = await Promise.all([

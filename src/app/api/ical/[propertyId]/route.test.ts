@@ -4,6 +4,11 @@ import { today, addDays } from '@/lib/utils'
 
 vi.mock('server-only', () => ({}))
 
+let limiteEsgotado = false
+vi.mock('@/lib/rate-limit-persistente', () => ({
+  verificarLimite: async () => ({ allowed: !limiteEsgotado, remaining: 0, resetAt: 0 }),
+}))
+
 /**
  * O calendário que as plataformas leem para saber o que não podem vender.
  *
@@ -98,6 +103,18 @@ beforeEach(() => {
   propriedades = [{ ...CASA, parent_id: null }]
   reservas = []
   erroNasReservas = null
+  limiteEsgotado = false
+})
+
+describe('GET /api/ical/[propertyId] — teto', () => {
+  /* `?x=1`, `?x=2`… fogem à cache da CDN; o teto é o que sobra. */
+  it('responde 429 com Retry-After quando o limite está esgotado, sem ler a base', async () => {
+    limiteEsgotado = true
+    erroNasReservas = { message: 'não devia ser lida' }
+    const r = await pedir('casa', '?x=1')
+    expect(r.status).toBe(429)
+    expect(r.headers.get('Retry-After')).toBe('900')
+  })
 })
 
 describe('GET /api/ical/[propertyId]', () => {

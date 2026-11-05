@@ -230,7 +230,9 @@ export default function HojePage() {
    */
   const feedsComProblema = useMemo(() => {
     const agora = new Date()
-    return props.flatMap(p =>
+    // Inativo não é sincronizado (o cron só lê `ativo`) nem aceita reservas:
+    // os feeds dele envelhecem sem que isso seja um problema.
+    return props.filter(p => p.ativo !== false).flatMap(p =>
       (p.ical_feeds ?? [])
         .filter(f => ['erro', 'por_sincronizar', 'desatualizado'].includes(estadoDoFeed(f, agora)))
         .map(f => ({

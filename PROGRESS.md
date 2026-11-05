@@ -6,6 +6,26 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-05] Alerta de canais em ~1 h, teto no iCal público, ruído de inativos
+
+- 🟠 **Canal partido só era avisado às 06:00 do dia seguinte.** Com o sync de
+  15 min e a verificação ao vivo a recusar reservas diretas quando um feed
+  falha, isso eram até 24 h de recusas sem o anfitrião saber. O
+  `canais-alertas` passa a correr também de hora a hora pelo pg_cron
+  (migração 059, 07:30–21:30 UTC — nada de push de madrugada). O push passou
+  a ter `envio-unico` por dia, como o email já tinha: sem isso, as passagens
+  horárias repetiam-no. Deploy antes da migração, pela mesma razão.
+- 🟠 **`/api/ical/[id]` era a única rota pública sem teto.** A cache da CDN é
+  por URL completo e `?x=1`, `?x=2`… fogem-lhe, com uma leitura paginada da
+  agenda por pedido. Agora `verificarLimite` por IP **e** alojamento (60/h —
+  as plataformas leem de IPs partilhados por todos os anfitriões, por isso
+  não só por IP), com `Retry-After`; um 429 faz a plataforma manter a última
+  leitura boa. Teste novo.
+- `/hoje` deixa de listar canais de alojamentos inativos como problema (o
+  cron não os sincroniza; com o limite de 6 h ficavam a «desatualizado» no
+  dia seguinte a desativar). `/canais` deixa de mostrar a caixa vermelha de
+  erro para uma falha passageira que o crachá já mostra como ligado.
+
 ### [2026-11-05] Preço noite a noite e segredo do cron externo rodado
 
 - 🔴 **O total cobrava a regra do dia de entrada para a estadia toda**
