@@ -67,8 +67,8 @@ export function TabCalendario({ props, rules }: { props: Property[]; rules: Pric
     if (!isCurrentMonth) return 'text-muted-foreground/30'
     if (priceMax === priceMin) return 'text-foreground'
     const ratio = (preco - priceMin) / (priceMax - priceMin)
-    if (ratio > 0.66) return 'text-emerald-600 font-semibold'
-    if (ratio > 0.33) return 'text-amber-600'
+    if (ratio > 0.66) return 'text-sucesso font-semibold'
+    if (ratio > 0.33) return 'text-aviso'
     return 'text-muted-foreground'
   }
 
@@ -116,8 +116,8 @@ export function TabCalendario({ props, rules }: { props: Property[]; rules: Pric
 
           {/* Legend */}
           <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Preço alto</span>
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-400" />Médio</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-sucesso" />Preço alto</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-aviso" />Médio</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground/40" />Baixo</span>
           </div>
 

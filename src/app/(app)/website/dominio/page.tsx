@@ -170,7 +170,7 @@ export default function DominioPage() {
                 {automaticas < MAX_AUTOMATICAS ? 'Verificamos sozinhos a cada 30 segundos' : 'Verificação automática em pausa'} · <UltimaVez quando={ultimaVerificacao} />
               </span>
             )}
-            <button onClick={remover} disabled={aTrabalhar} className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm text-red-600 hover:bg-red-500/5 disabled:opacity-50 sm:ml-auto">
+            <button onClick={remover} disabled={aTrabalhar} className="inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm text-erro hover:bg-erro/5 disabled:opacity-50 sm:ml-auto">
               <Trash2 className="h-4 w-4" /> Remover
             </button>
           </div>
@@ -235,13 +235,13 @@ function NovoDominio({ valor, setValor, ligar, aTrabalhar, integracaoConfigurada
             <input
               id="dominio" value={valor} onChange={e => setValor(e.target.value)} placeholder="casadomar.pt"
               autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="url" aria-invalid={!!problema} aria-describedby="dominio-ajuda"
-              className="flex-1 rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring aria-[invalid=true]:border-red-400"
+              className="flex-1 rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring aria-[invalid=true]:border-erro/30"
             />
             <button type="submit" disabled={aTrabalhar || !integracaoConfigurada || !alvo} className="inline-flex justify-center items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm font-semibold disabled:opacity-50">
               {aTrabalhar && <Loader2 className="h-4 w-4 animate-spin" />} Ligar domínio
             </button>
           </div>
-          <p id="dominio-ajuda" className={`text-xs ${problema ? 'text-red-600' : 'text-muted-foreground'}`}>
+          <p id="dominio-ajuda" className={`text-xs ${problema ? 'text-erro' : 'text-muted-foreground'}`}>
             {problema ?? (alvo
               ? raiz
                 ? <>Vamos ligar <strong className="font-mono">{alvo}</strong> e <strong className="font-mono">www.{alvo}</strong> (que reencaminha para o primeiro).</>
@@ -249,7 +249,7 @@ function NovoDominio({ valor, setValor, ligar, aTrabalhar, integracaoConfigurada
               : 'Podes colar o endereço completo; nós limpamos o https:// e as barras.')}
           </p>
         </form>
-        {!integracaoConfigurada && <p className="text-xs text-amber-700">A ativação automática está a ser preparada pelo administrador da plataforma.</p>}
+        {!integracaoConfigurada && <p className="text-xs text-aviso">A ativação automática está a ser preparada pelo administrador da plataforma.</p>}
       </section>
 
       <section className="rounded-xl border border-border bg-card p-5 flex flex-col sm:flex-row gap-4 sm:items-center">
@@ -286,7 +286,7 @@ function Progresso({ dominio, diagnostico }: { dominio: DominioProprio; diagnost
     <ol className="rounded-xl border border-border bg-card p-4 grid grid-cols-2 sm:grid-cols-4 gap-3" aria-label="Progresso da ligação">
       {passos.map((p, i) => (
         <li key={p.titulo} className="flex items-start gap-2.5" aria-current={i === atual ? 'step' : undefined}>
-          <span className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold ${p.feito ? 'bg-emerald-500 text-white' : i === atual ? 'bg-amber-500/15 text-amber-700 ring-2 ring-amber-500/40' : 'bg-muted text-muted-foreground'}`}>
+          <span className={`mt-0.5 h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold ${p.feito ? 'bg-sucesso text-sucesso-foreground' : i === atual ? 'bg-aviso/15 text-aviso ring-2 ring-aviso/40' : 'bg-muted text-muted-foreground'}`}>
             {p.feito ? <Check className="h-3.5 w-3.5" /> : i + 1}
           </span>
           <span className="min-w-0">
@@ -303,7 +303,7 @@ function Progresso({ dominio, diagnostico }: { dominio: DominioProprio; diagnost
 
 function Ativo({ dominio }: { dominio: DominioProprio }) {
   return (
-    <section className="rounded-xl bg-emerald-500/8 border border-emerald-500/20 p-4 text-sm text-emerald-800 dark:text-emerald-300 flex gap-3">
+    <section className="rounded-xl bg-sucesso/8 border border-sucesso/20 p-4 text-sm text-sucesso flex gap-3">
       <ShieldCheck className="h-5 w-5 shrink-0" />
       <div>
         <p className="font-medium">{dominio.dominio} está online, com certificado SSL</p>
@@ -316,9 +316,9 @@ function Ativo({ dominio }: { dominio: DominioProprio }) {
 /* ── A ligar: registos, um a um ──────────────────────────────────────────── */
 
 const ROTULO_ESTADO: Record<RegistoVerificado['estado'], { texto: string; classe: string; Icone: typeof Check }> = {
-  certo: { texto: 'Certo', classe: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300', Icone: Check },
-  'em-falta': { texto: 'Por criar', classe: 'bg-amber-500/10 text-amber-700 dark:text-amber-300', Icone: CircleDashed },
-  diferente: { texto: 'Valor diferente', classe: 'bg-red-500/10 text-red-700 dark:text-red-300', Icone: X },
+  certo: { texto: 'Certo', classe: 'bg-sucesso/10 text-sucesso', Icone: Check },
+  'em-falta': { texto: 'Por criar', classe: 'bg-aviso/10 text-aviso', Icone: CircleDashed },
+  diferente: { texto: 'Valor diferente', classe: 'bg-erro/10 text-erro', Icone: X },
 }
 
 function Ligacao({ dominio, diagnostico }: { dominio: DominioProprio; diagnostico: DiagnosticoDns | null }) {
@@ -340,7 +340,7 @@ function Ligacao({ dominio, diagnostico }: { dominio: DominioProprio; diagnostic
       </div>
 
       {fornecedor?.dica && (
-        <p className="rounded-lg bg-sky-500/8 border border-sky-500/20 p-3 text-xs text-sky-900 dark:text-sky-200 flex gap-2">
+        <p className="rounded-lg bg-info/8 border border-info/20 p-3 text-xs text-info flex gap-2">
           <Info className="h-4 w-4 shrink-0" /> <span><strong>{fornecedor.nome}:</strong> {fornecedor.dica}</span>
         </p>
       )}
@@ -350,7 +350,7 @@ function Ligacao({ dominio, diagnostico }: { dominio: DominioProprio; diagnostic
           const nome = r.nomeCurto ?? r.nome
           const estado = r.estado ? ROTULO_ESTADO[r.estado] : null
           return (
-            <li key={`${r.tipo}-${r.nome}-${i}`} className={`rounded-lg border p-3 flex flex-col gap-2 ${r.estado === 'certo' ? 'border-emerald-500/25 bg-emerald-500/[0.03]' : 'border-border'}`}>
+            <li key={`${r.tipo}-${r.nome}-${i}`} className={`rounded-lg border p-3 flex flex-col gap-2 ${r.estado === 'certo' ? 'border-sucesso/25 bg-sucesso/[0.03]' : 'border-border'}`}>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs text-muted-foreground">{r.motivo ?? 'Registo necessário'}</p>
                 {estado && (
@@ -368,7 +368,7 @@ function Ligacao({ dominio, diagnostico }: { dominio: DominioProprio; diagnostic
                 <dd className="col-span-2 sm:col-span-1"><Copiavel rotulo="Valor" texto={r.valor} copiado={copiado === `v${i}`} onCopiar={() => copiar(`v${i}`, r.valor)} /></dd>
               </dl>
               {r.estado === 'diferente' && r.encontrado && r.encontrado.length > 0 && (
-                <p className="text-xs text-red-700 dark:text-red-300">Hoje responde: <span className="font-mono break-all">{r.encontrado.join(', ')}</span></p>
+                <p className="text-xs text-erro">Hoje responde: <span className="font-mono break-all">{r.encontrado.join(', ')}</span></p>
               )}
             </li>
           )
@@ -376,8 +376,8 @@ function Ligacao({ dominio, diagnostico }: { dominio: DominioProprio; diagnostic
       </ul>
 
       {diagnostico && diagnostico.conflitos.length > 0 && (
-        <div className="rounded-lg border border-red-500/25 bg-red-500/[0.04] p-3 flex flex-col gap-2">
-          <p className="text-sm font-medium text-red-800 dark:text-red-300 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Apaga estes registos antigos</p>
+        <div className="rounded-lg border border-erro/25 bg-erro/[0.04] p-3 flex flex-col gap-2">
+          <p className="text-sm font-medium text-erro flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Apaga estes registos antigos</p>
           <ul className="flex flex-col gap-1.5">
             {diagnostico.conflitos.map((c, i) => (
               <li key={i} className="text-xs">
@@ -394,8 +394,8 @@ function Ligacao({ dominio, diagnostico }: { dominio: DominioProprio; diagnostic
         <p className="flex gap-2"><Info className="h-4 w-4 shrink-0" /> Se o painel acrescentar o domínio ao nome sozinho, escreve só o que aparece em «Nome» (ex.: <span className="font-mono">www</span>). A propagação demora minutos, às vezes até 48 h.</p>
       </div>
 
-      {diagnostico?.indisponivel && <p className="text-xs text-amber-700">Não conseguimos consultar o DNS agora; os registos acima continuam a ser os necessários.</p>}
-      {dominio.ultimo_erro && <p className="text-xs text-red-600">{dominio.ultimo_erro}</p>}
+      {diagnostico?.indisponivel && <p className="text-xs text-aviso">Não conseguimos consultar o DNS agora; os registos acima continuam a ser os necessários.</p>}
+      {dominio.ultimo_erro && <p className="text-xs text-erro">{dominio.ultimo_erro}</p>}
     </section>
   )
 }
@@ -411,7 +411,7 @@ function Copiavel({ rotulo, texto, copiado, onCopiar }: { rotulo: string; texto:
         <span className="block font-mono text-xs break-all">{texto}</span>
       </span>
       {copiado
-        ? <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+        ? <Check className="h-3.5 w-3.5 text-sucesso shrink-0" />
         : <Clipboard className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary shrink-0" />}
     </button>
   )

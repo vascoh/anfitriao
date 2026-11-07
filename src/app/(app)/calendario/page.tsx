@@ -536,7 +536,7 @@ function GridView({
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         {isCheckIn && (
-                          <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          <span className="flex items-center gap-1 text-[10px] font-semibold text-sucesso bg-sucesso/10 px-2 py-0.5 rounded-full">
                             <LogIn className="h-3 w-3" /> entrada
                           </span>
                         )}
@@ -692,9 +692,9 @@ export default function CalendarioPage() {
         {canaisComProblema.length > 0 && (
           <Link
             href="/canais"
-            className="flex items-start gap-2 px-4 py-2.5 border-t border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 transition-colors"
+            className="flex items-start gap-2 px-4 py-2.5 border-t border-aviso/30 bg-aviso/10 text-aviso hover:bg-aviso/10 transition-colors"
           >
-            <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" aria-hidden />
+            <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-aviso shrink-0" aria-hidden />
             <span className="text-xs leading-relaxed">
               <strong>
                 {canaisComProblema.length === 1

@@ -127,3 +127,18 @@ export function precoPorUnidade(plano: PlanoPago, anual = false): number {
   const preco = precoMensal(plano, anual)
   return Math.round((preco / PLAN_LIMITS[plano].propriedades_max) * 100) / 100
 }
+
+/**
+ * O plano pago mais barato que cabe `necessarias` unidades, acima do atual.
+ *
+ * É o que o aviso de limite propõe: quem enche o Starter vê o Pro, não uma
+ * lista de planos. `null` quando nem o Empresa chega, e aí fala-se connosco.
+ */
+export function proximoPlano(atual: AccountPlano, necessarias: number): PlanoPago | null {
+  const tetoAtual = PLAN_LIMITS[atual].propriedades_max
+  return (
+    PLANOS_PAGOS.find(
+      p => PLAN_LIMITS[p].propriedades_max > tetoAtual && PLAN_LIMITS[p].propriedades_max >= necessarias,
+    ) ?? null
+  )
+}

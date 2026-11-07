@@ -4,15 +4,15 @@ import { verificarConfiguracao, verificarOperacao, piorNivel, type Nivel, type V
 export const dynamic = 'force-dynamic'
 
 const CORES: Record<Nivel, string> = {
-  ok: 'border-emerald-500/30 bg-emerald-500/5',
-  aviso: 'border-amber-500/30 bg-amber-500/5',
-  erro: 'border-red-500/30 bg-red-500/5',
+  ok: 'border-sucesso/30 bg-sucesso/5',
+  aviso: 'border-aviso/30 bg-aviso/5',
+  erro: 'border-erro/30 bg-erro/5',
 }
 
 const PONTOS: Record<Nivel, string> = {
-  ok: 'bg-emerald-500',
-  aviso: 'bg-amber-500',
-  erro: 'bg-red-500',
+  ok: 'bg-sucesso',
+  aviso: 'bg-aviso',
+  erro: 'bg-erro',
 }
 
 const RESUMO: Record<Nivel, string> = {

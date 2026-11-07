@@ -125,7 +125,7 @@ function BookingRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
 
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STATUS_CLASS[b.estado]}`}>
-            {isActive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-1" />}
+            {isActive && <span className="h-1.5 w-1.5 rounded-full bg-sucesso mr-1" />}
             {STATUS_LABEL[b.estado]}
           </span>
           <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full ${SOURCE_BG[b.origem]}`}>

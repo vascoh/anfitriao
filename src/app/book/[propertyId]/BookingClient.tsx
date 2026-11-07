@@ -121,7 +121,7 @@ function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, r
     const isBooked = blocked.has(date)
 
     if (isCI || isCO) return 'bg-primary text-primary-foreground rounded-lg font-bold'
-    if (inR && isBooked) return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-none relative'
+    if (inR && isBooked) return 'bg-aviso/10 text-aviso rounded-none relative'
     if (inR) return 'bg-primary/10 text-primary rounded-none'
     if (disabled) {
       if (isBooked) return 'text-muted-foreground/20 cursor-not-allowed line-through'
@@ -129,7 +129,7 @@ function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, r
     }
     if (isBooked && selectingCheckOut) {
       // Booked dates are enabled as check-out but visually marked
-      return 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg cursor-pointer relative'
+      return 'text-aviso hover:bg-aviso/10 rounded-lg cursor-pointer relative'
     }
     return 'hover:bg-muted rounded-lg cursor-pointer text-foreground'
   }
@@ -200,7 +200,7 @@ function BookingCalendar({ blocked, sortedBlocked, minDate, checkIn, checkOut, r
               {dayNum}
               {/* Dot indicator for booked check-out dates */}
               {isBooked && !disabled && (
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500 dark:bg-amber-400" />
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-aviso" />
               )}
             </button>
           )
@@ -580,7 +580,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
                     {pricing.tarifa_aplicada ?? 'Ajuste'}
                     {pricing.ajuste_pct !== 0 && ` (${pricing.ajuste_pct > 0 ? '+' : ''}${pricing.ajuste_pct}%)`}
                   </span>
-                  <span className={`font-medium ${pricing.ajuste_valor < 0 ? 'text-emerald-600' : ''}`}>
+                  <span className={`font-medium ${pricing.ajuste_valor < 0 ? 'text-sucesso' : ''}`}>
                     {pricing.ajuste_valor < 0 ? '-' : '+'}{fmtMoney(Math.abs(pricing.ajuste_valor))}
                   </span>
                 </div>

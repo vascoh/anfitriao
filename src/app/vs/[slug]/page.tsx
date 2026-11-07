@@ -33,14 +33,14 @@ function Celula({ v }: { v: boolean | 'parcial' }) {
   if (v === 'parcial') {
     return (
       <>
-        <Minus className="mx-auto h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        <Minus className="mx-auto h-5 w-5 text-aviso" aria-hidden="true" />
         <span className="sr-only">Parcial</span>
       </>
     )
   }
   return v ? (
     <>
-      <Check className="mx-auto h-5 w-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+      <Check className="mx-auto h-5 w-5 text-sucesso" aria-hidden="true" />
       <span className="sr-only">Sim</span>
     </>
   ) : (
@@ -129,7 +129,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           <ul className="mt-6 space-y-3">
             {c.ondeElesGanham.map(t => (
               <li key={t} className="flex gap-3 rounded-xl border border-border bg-card p-4">
-                <Check className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                <Check className="mt-0.5 h-5 w-5 shrink-0 text-aviso" aria-hidden="true" />
                 <span className="text-sm leading-relaxed">{t}</span>
               </li>
             ))}
@@ -141,7 +141,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
           <ul className="mt-6 space-y-3">
             {c.ondeNosGanhamos.map(t => (
               <li key={t} className="flex gap-3 rounded-xl border border-border bg-card p-4">
-                <Check className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                <Check className="mt-0.5 h-5 w-5 shrink-0 text-sucesso" aria-hidden="true" />
                 <span className="text-sm leading-relaxed">{t}</span>
               </li>
             ))}
@@ -176,7 +176,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             </table>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            <Minus className="inline h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-hidden="true" /> significa
+            <Minus className="inline h-3.5 w-3.5 text-aviso" aria-hidden="true" /> significa
             parcial ou em desenvolvimento.
           </p>
         </section>
@@ -184,7 +184,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         <section className="mt-14 rounded-2xl border border-border bg-card p-6">
           <h2 className="text-xl font-bold">Veredito</h2>
           <p className="mt-3 leading-relaxed text-muted-foreground">{c.veredito}</p>
-          <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+          <div className="mt-6 rounded-xl border border-aviso/30 bg-aviso/5 p-4">
             <p className="text-sm font-semibold">Quando não deves escolher o Anfitrião</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.naoEscolhasNos}</p>
           </div>

@@ -328,7 +328,7 @@ export default function ReservaDetailPage() {
             {actions.includes('no_show') && (
               <button
                 onClick={() => applyTransition('no_show')}
-                className="w-full border border-amber-300/40 text-amber-600 rounded-xl py-2.5 text-sm font-medium hover:bg-amber-50 transition-colors"
+                className="w-full border border-aviso/40 text-aviso rounded-xl py-2.5 text-sm font-medium hover:bg-aviso/10 transition-colors"
               >
                 Marcar como no-show
               </button>
@@ -338,11 +338,11 @@ export default function ReservaDetailPage() {
 
         {/* Alert: saldo */}
         {saldo > 0 && booking.estado !== 'cancelada' && booking.estado !== 'no_show' && (
-          <div className="flex items-start gap-3 mx-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+          <div className="flex items-start gap-3 mx-4 rounded-xl border border-aviso/30 bg-aviso/10 px-4 py-3">
+            <AlertTriangle className="h-4 w-4 text-aviso mt-0.5 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-900">Pagamento pendente</p>
-              <p className="text-xs text-amber-700">{fmtMoney(saldo)} por receber</p>
+              <p className="text-sm font-semibold text-aviso">Pagamento pendente</p>
+              <p className="text-xs text-aviso">{fmtMoney(saldo)} por receber</p>
             </div>
             {guest?.email && (
               <ReminderButton bookingId={booking.id} />
@@ -357,7 +357,7 @@ export default function ReservaDetailPage() {
               preencher: o calendário do gestor de canais transporta datas
               ocupadas e mais nada. Dizer isso poupa a procura. */}
           {ambiguoDoBooking(booking) && (
-            <div className="px-4 py-3 border-b border-border last:border-0 bg-amber-500/5">
+            <div className="px-4 py-3 border-b border-border last:border-0 bg-aviso/5">
               <p className="text-sm font-medium">Reserva do Booking — ou um fecho teu?</p>
               <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
                 O calendário do Booking diz «CLOSED - Not available» em tudo: numa
@@ -423,14 +423,14 @@ export default function ReservaDetailPage() {
             </div>
           )}
           {booking.bloqueio_id && (
-            <div className={`px-4 py-3 border-b border-border last:border-0 ${aindaDentro(pai, booking) ? '' : 'bg-amber-500/5'}`}>
+            <div className={`px-4 py-3 border-b border-border last:border-0 ${aindaDentro(pai, booking) ? '' : 'bg-aviso/5'}`}>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 Registada dentro de um período bloqueado vindo de um calendário externo
                 {pai ? <> (<Link href={`/reservas/${pai.id}`} className="underline">{fmtDate(pai.check_in)} → {fmtDate(pai.check_out)}</Link>)</> : null}.
                 Não é exportada de volta para o gestor de canais — é a reserva que ele já tem.
               </p>
               {!aindaDentro(pai, booking) && (
-                <p className="mt-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                <p className="mt-1.5 text-xs font-medium text-aviso">
                   {pai && pai.estado !== 'cancelada'
                     ? 'O período mudou de datas do lado da plataforma e esta reserva já não cabe nele. Confirma lá as datas.'
                     : 'O período foi cancelado do lado da plataforma. Confirma lá se esta reserva ainda existe — se não, cancela-a aqui.'}
@@ -446,7 +446,7 @@ export default function ReservaDetailPage() {
             const siba = estadoSiba(booking)
             const atrasado = estaEmAtraso(booking, today())
             const cor = siba.tom === 'bom'
-              ? 'text-emerald-700 dark:text-emerald-400'
+              ? 'text-sucesso'
               : atrasado || siba.tom === 'mau'
                 ? 'text-destructive'
                 : 'text-muted-foreground'
@@ -474,8 +474,8 @@ export default function ReservaDetailPage() {
             </div>
           )}
           {!bloqueio && boletins && boletins.porRegistar > 0 && (
-            <div className="px-4 py-3 border-b border-border bg-amber-500/5">
-              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+            <div className="px-4 py-3 border-b border-border bg-aviso/5">
+              <p className="text-xs font-semibold text-aviso">
                 Faltam os dados de {boletins.porRegistar}{' '}
                 {boletins.porRegistar === 1 ? 'hóspede' : 'hóspedes'}
               </p>
@@ -526,8 +526,8 @@ export default function ReservaDetailPage() {
           {guest?.telefone && (
             <button onClick={openWhatsApp}
               className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40 w-full text-left transition-colors hover:bg-muted/30">
-              <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span className="text-sm text-emerald-700 font-medium">Enviar mensagem WhatsApp</span>
+              <MessageCircle className="h-4 w-4 text-sucesso shrink-0" />
+              <span className="text-sm text-sucesso font-medium">Enviar mensagem WhatsApp</span>
             </button>
           )}
           {!bloqueio && booking.estado !== 'cancelada' && booking.estado !== 'checkout' && (
@@ -559,7 +559,7 @@ export default function ReservaDetailPage() {
           {n > 0 && booking.preco_total > 0 && (
             <Row label="Por noite" value={<span className="text-muted-foreground">{fmtMoney(Math.round(booking.preco_total / n))}</span>} />
           )}
-          <Row label="Recebido" value={<span className={booking.preco_pago >= booking.preco_total ? 'text-emerald-600 font-semibold' : ''}>{fmtMoney(booking.preco_pago)}</span>} />
+          <Row label="Recebido" value={<span className={booking.preco_pago >= booking.preco_total ? 'text-sucesso font-semibold' : ''}>{fmtMoney(booking.preco_pago)}</span>} />
           {saldo > 0 && <Row label="Por receber" value={<span className="text-destructive font-semibold">{fmtMoney(saldo)}</span>} />}
           {saldo > 0 && booking.estado !== 'cancelada' && booking.estado !== 'no_show' && (
             <>
@@ -587,7 +587,7 @@ export default function ReservaDetailPage() {
                       onClick={registerPayment}
                       disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
                       className={`flex items-center gap-1.5 px-4 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 ${
-                        paymentSaved ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground'
+                        paymentSaved ? 'bg-sucesso text-sucesso-foreground' : 'bg-primary text-primary-foreground'
                       }`}
                     >
                       {paymentSaved ? <Check className="h-4 w-4" /> : 'Guardar'}
@@ -603,8 +603,8 @@ export default function ReservaDetailPage() {
           )}
           {booking.preco_pago >= booking.preco_total && booking.preco_total > 0 && (
             <div className="flex items-center gap-2 px-4 py-2.5 border-t border-border">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-              <span className="text-xs text-emerald-700 font-medium">Pagamento completo</span>
+              <CheckCircle2 className="h-4 w-4 text-sucesso shrink-0" />
+              <span className="text-xs text-sucesso font-medium">Pagamento completo</span>
             </div>
           )}
         </Section>

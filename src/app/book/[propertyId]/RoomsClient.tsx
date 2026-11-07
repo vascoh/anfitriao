@@ -190,7 +190,7 @@ export default function RoomsClient({ parent, rooms, settings, occupiedIds, casa
             </p>
           </div>
           {availableCount > 0 && (
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="h-2.5 w-2.5 rounded-full bg-sucesso animate-pulse" />
           )}
         </div>
 

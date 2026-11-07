@@ -15,6 +15,8 @@ import { estadoDoFeed } from '@/lib/canais'
 import { OnboardingCard } from '@/components/onboarding-card'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { IA_ATIVA } from '@/lib/ia'
+import { vibrar } from '@/lib/vibrar'
+import { PuxarParaAtualizar } from '@/components/puxar-para-atualizar'
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
@@ -70,11 +72,11 @@ function ArrivalCard({ b, guests, props, onTransition }: { b: Booking; guests: G
           {SOURCE_LABEL[b.origem]}
         </span>
         {sibaOk ? (
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-sucesso">
             <ShieldCheck className="h-3 w-3" /> SIBA
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-600">
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-aviso">
             <ShieldAlert className="h-3 w-3" /> SIBA
           </span>
         )}
@@ -118,14 +120,18 @@ export default function HojePage() {
   const [erro, setErro] = useState(false)
   const [mensagensPorLer, setMensagensPorLer] = useState(0)
 
-  useEffect(() => {
+  const carregar = useCallback(async () => {
     if (!ownerId) return
     /* Sem o modo estrito, um 401/500 dava zero alojamentos — e o ecrã inicial
      * respondia com «cria o teu primeiro alojamento» a quem já tem quatro,
      * e com «dia calmo» a quem tem chegadas. As definições ficam tolerantes:
      * só alimentam a lista de configuração. */
     const exigirSucesso = { exigirSucesso: true }
-    Promise.all([
+    const mensagens = fetch('/api/mensagens?resumo=1')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (typeof d?.porLer === 'number') setMensagensPorLer(d.porLer) })
+      .catch(() => {})
+    await Promise.all([
       fetchBookings(undefined, exigirSucesso),
       fetchGuests(exigirSucesso),
       fetchProperties(exigirSucesso),
@@ -134,11 +140,10 @@ export default function HojePage() {
       .then(([b, g, p, s]) => { setBookings(b); setGuests(g); setProps(p); if (s) setSettings(s); setErro(false) })
       .catch(() => setErro(true))
       .finally(() => setLoaded(true))
-    fetch('/api/mensagens?resumo=1')
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (typeof d?.porLer === 'number') setMensagensPorLer(d.porLer) })
-      .catch(() => {})
+    await mensagens
   }, [ownerId])
+
+  useEffect(() => { void carregar() }, [carregar])
 
   const TRANSITION_MSG: Partial<Record<BookingStatus, string>> = {
     confirmada: 'Reserva confirmada',
@@ -155,6 +160,7 @@ export default function HojePage() {
       const res = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) })
       if (!res.ok) throw new Error()
       toast.success(TRANSITION_MSG[to] ?? 'Estado atualizado')
+      vibrar('sucesso')
       if (to === 'confirmada') {
         /* Email de confirmação ao hóspede — mesmo comportamento da página da
          * reserva, incluindo o aviso. É disparado e esquecido, e a mensagem de
@@ -333,6 +339,7 @@ export default function HojePage() {
   }
 
   return (
+    <PuxarParaAtualizar onAtualizar={carregar}>
     <div className="flex flex-col min-h-full pb-6">
 
       {/* Header */}
@@ -350,8 +357,8 @@ export default function HojePage() {
             <span className="text-muted-foreground">em casa</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
-            <LogIn className="h-3.5 w-3.5 text-emerald-600" />
-            <span className="font-semibold text-emerald-700">{chegadas.length}</span>
+            <LogIn className="h-3.5 w-3.5 text-sucesso" />
+            <span className="font-semibold text-foreground">{chegadas.length}</span>
             <span className="text-muted-foreground">chegada{chegadas.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
@@ -367,7 +374,7 @@ export default function HojePage() {
           )}
           {receitaHoje > 0 && (
             <div className="flex items-center gap-2 px-4 py-2.5 shrink-0">
-              <span className="font-semibold text-emerald-600">{fmtMoney(receitaHoje)}</span>
+              <span className="font-semibold text-sucesso">{fmtMoney(receitaHoje)}</span>
               <span className="text-muted-foreground">a receber</span>
             </div>
           )}
@@ -404,33 +411,33 @@ export default function HojePage() {
         {/* Alertas */}
         {temAlertas && (
           <div className="flex flex-col gap-0 border-b border-border">
-            <div className="flex items-center justify-between px-4 lg:px-8 pt-5 pb-2 bg-amber-50/40">
+            <div className="flex items-center justify-between px-4 lg:px-8 pt-5 pb-2 bg-aviso/40">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-700" />
-                <p className="text-xs font-bold uppercase tracking-widest text-amber-900">
+                <AlertTriangle className="h-3.5 w-3.5 text-aviso" />
+                <p className="text-xs font-bold uppercase tracking-widest text-aviso">
                   Atenção
                 </p>
               </div>
-              <span className="text-[11px] font-semibold text-amber-700 tabular-nums">
+              <span className="text-[11px] font-semibold text-aviso tabular-nums">
                 {totalAlertas} item{totalAlertas !== 1 ? 's' : ''}
               </span>
             </div>
             {mensagensPorLer > 0 && (
               <Link href="/mensagens"
-                className="flex items-start gap-3 bg-amber-50 border-b border-amber-100 px-4 lg:px-8 py-3 active:bg-amber-100 transition-colors">
-                <MessagesSquare className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                className="flex items-start gap-3 bg-aviso/10 border-b border-aviso/30 px-4 lg:px-8 py-3 active:bg-aviso/10 transition-colors">
+                <MessagesSquare className="h-4 w-4 text-aviso mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-900">
+                  <p className="text-sm font-semibold text-aviso">
                     {mensagensPorLer} mensage{mensagensPorLer === 1 ? 'm' : 'ns'} de hóspedes por ler
                   </p>
-                  <p className="text-xs text-amber-700">A IA sugere a resposta na língua de cada um</p>
+                  <p className="text-xs text-aviso">A IA sugere a resposta na língua de cada um</p>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                <ArrowRight className="h-3.5 w-3.5 text-aviso mt-0.5 shrink-0" />
               </Link>
             )}
             {feedsComProblema.map(f => (
               <Link key={`feed-${f.propId}-${f.feedNome}`} href={`/propriedades/${f.propId}/editar`}
-                className="flex items-start gap-3 bg-red-50 border-b border-red-100 px-4 lg:px-8 py-3 active:bg-red-100 transition-colors">
+                className="flex items-start gap-3 bg-erro/10 border-b border-erro/30 px-4 lg:px-8 py-3 active:bg-erro/10 transition-colors">
                 <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-destructive">Calendário por sincronizar — risco de dupla reserva</p>
@@ -443,20 +450,20 @@ export default function HojePage() {
             ))}
             {pendentes.map(b => (
               <Link key={b.id} href={`/reservas/${b.id}`}
-                className="flex items-start gap-3 bg-amber-50 border-b border-amber-100 px-4 lg:px-8 py-3 active:bg-amber-100 transition-colors">
-                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                className="flex items-start gap-3 bg-aviso/10 border-b border-aviso/30 px-4 lg:px-8 py-3 active:bg-aviso/10 transition-colors">
+                <AlertTriangle className="h-4 w-4 text-aviso mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-900">Reserva pendente de confirmação</p>
-                  <p className="text-xs text-amber-700 truncate">
+                  <p className="text-sm font-semibold text-aviso">Reserva pendente de confirmação</p>
+                  <p className="text-xs text-aviso truncate">
                     {guestName(guests, b.hospede_id)} · {propName(props, b.propriedade_id)} · {fmtDate(b.check_in)}
                   </p>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+                <ArrowRight className="h-3.5 w-3.5 text-aviso mt-0.5 shrink-0" />
               </Link>
             ))}
             {pagamentosEmFalta.map(b => (
               <Link key={`pay-${b.id}`} href={`/reservas/${b.id}`}
-                className="flex items-start gap-3 bg-red-50 border-b border-red-100 px-4 lg:px-8 py-3 active:bg-red-100 transition-colors">
+                className="flex items-start gap-3 bg-erro/10 border-b border-erro/30 px-4 lg:px-8 py-3 active:bg-erro/10 transition-colors">
                 <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-destructive">Pagamento por receber</p>
@@ -482,7 +489,7 @@ export default function HojePage() {
             ))}
             {boletinsEmAtraso.map(b => (
               <Link key={`siba-${b.id}`} href="/documentos"
-                className="flex items-start gap-3 bg-red-50 border-b border-red-100 px-4 lg:px-8 py-3 active:bg-red-100 transition-colors">
+                className="flex items-start gap-3 bg-erro/10 border-b border-erro/30 px-4 lg:px-8 py-3 active:bg-erro/10 transition-colors">
                 <ShieldAlert className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-destructive">Boletim por comunicar ao SIBA</p>
@@ -500,7 +507,7 @@ export default function HojePage() {
         {chegadas.length > 0 && (
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
-              <LogIn className="h-3.5 w-3.5 text-emerald-600" />
+              <LogIn className="h-3.5 w-3.5 text-sucesso" />
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Chegadas hoje</h2>
             </div>
             <div className="divide-y divide-border">
@@ -529,7 +536,7 @@ export default function HojePage() {
         {emCasa.length > 0 && (
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
-              <Home className="h-3.5 w-3.5 text-blue-500" />
+              <Home className="h-3.5 w-3.5 text-info" />
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Em casa agora</h2>
             </div>
             <div className="divide-y divide-border">
@@ -563,8 +570,8 @@ export default function HojePage() {
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <p className="text-xs font-semibold text-primary">daqui a {daysUntil}d</p>
                       {checkinDone
-                        ? <span className="flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600"><ShieldCheck className="h-3 w-3" /> Check-in</span>
-                        : <span className="text-[10px] text-amber-600 font-medium">Sem check-in</span>
+                        ? <span className="flex items-center gap-0.5 text-[10px] font-semibold text-sucesso"><ShieldCheck className="h-3 w-3" /> Check-in</span>
+                        : <span className="text-[10px] text-aviso font-medium">Sem check-in</span>
                       }
                     </div>
                   </Link>
@@ -578,7 +585,7 @@ export default function HojePage() {
         {vagas.length > 0 && emCasa.length < totalUnidades && totalUnidades > 0 && (
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="h-2 w-2 rounded-full bg-sucesso shrink-0" />
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vagas agora</h2>
             </div>
             <div className="divide-y divide-border">
@@ -601,7 +608,7 @@ export default function HojePage() {
                           <p className="text-xs font-semibold text-primary">{fmtDate(nextBooking.check_in)}</p>
                         </>
                       ) : (
-                        <p className="text-xs text-emerald-600 font-medium">sem reservas</p>
+                        <p className="text-xs text-sucesso font-medium">sem reservas</p>
                       )}
                     </div>
                   </Link>
@@ -703,5 +710,6 @@ export default function HojePage() {
         )}
       </div>
     </div>
+    </PuxarParaAtualizar>
   )
 }

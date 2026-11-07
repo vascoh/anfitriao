@@ -101,9 +101,9 @@ export default function CasaInteiraClient({
 
   if (feito) {
     return (
-      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 text-center">
-        <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-emerald-500/10">
-          <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+      <div className="rounded-2xl border border-sucesso/30 bg-sucesso/5 p-6 text-center">
+        <div className="mx-auto grid size-12 place-items-center rounded-2xl bg-sucesso/10">
+          <Check className="h-6 w-6 text-sucesso" aria-hidden="true" />
         </div>
         <h3 className="mt-4 font-bold">Pedido enviado</h3>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -175,17 +175,17 @@ export default function CasaInteiraClient({
           {/* O que se sabe antes de pedir seja o que for ao hóspede. */}
           <div className="mt-4 space-y-2">
             {!cabe && (
-              <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+              <p className="rounded-lg border border-aviso/30 bg-aviso/5 px-3 py-2 text-sm text-aviso">
                 A casa leva {capacidade} {capacidade === 1 ? 'pessoa' : 'pessoas'}.
               </p>
             )}
             {datasValidas && !noitesSuficientes && (
-              <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+              <p className="rounded-lg border border-aviso/30 bg-aviso/5 px-3 py-2 text-sm text-aviso">
                 Estadia mínima de {minNoites} {minNoites === 1 ? 'noite' : 'noites'}.
               </p>
             )}
             {datasValidas && ocupados.length > 0 && (
-              <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+              <p className="rounded-lg border border-aviso/30 bg-aviso/5 px-3 py-2 text-sm text-aviso">
                 Nestas datas a casa não está toda livre — {ocupados.join(', ')} já {ocupados.length === 1 ? 'está reservado' : 'estão reservados'}.
                 Podes reservar os quartos livres em baixo.
               </p>

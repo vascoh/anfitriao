@@ -61,9 +61,9 @@ function Item({ l, u, hoje, onMarcar, mostrarMorada }: {
             {textoEntrada(l, hoje)}
           </p>
           {l.incerta && (
-            <p className="text-xs text-amber-700 mt-0.5">Fecho vindo do calendário: confirma se houve hóspede.</p>
+            <p className="text-xs text-aviso mt-0.5">Fecho vindo do calendário: confirma se houve hóspede.</p>
           )}
-          {atrasada && <p className="text-xs text-amber-700 mt-0.5">Ficou por marcar. Já está feita?</p>}
+          {atrasada && <p className="text-xs text-aviso mt-0.5">Ficou por marcar. Já está feita?</p>}
           {l.estado === 'problema' && l.nota && (
             <p className="text-xs text-destructive mt-1 flex items-start gap-1">
               <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" aria-hidden />
@@ -71,7 +71,7 @@ function Item({ l, u, hoje, onMarcar, mostrarMorada }: {
             </p>
           )}
           {l.estado === 'feita' && (
-            <p className="text-xs text-emerald-700 mt-0.5 flex items-center gap-1">
+            <p className="text-xs text-sucesso mt-0.5 flex items-center gap-1">
               <Check className="h-3 w-3" aria-hidden />Feita{l.por ? ` · ${l.por}` : ''}
             </p>
           )}

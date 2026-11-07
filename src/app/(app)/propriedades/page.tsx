@@ -138,7 +138,7 @@ function AssistenteAgrupar({ soltos, aoAgrupar }: {
       )}
 
       {escolhidos.size > 0 && (
-        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+        <p className="rounded-lg border border-aviso/30 bg-aviso/10 px-3 py-2.5 text-xs text-aviso leading-relaxed">
           <strong>{soltos.find(p => p.id === casaId)?.nome}</strong> deixa de se alugar por inteiro
           e passa a alugar-se quarto a quarto. O calendário dela passa a mostrar a ocupação de
           todos os quartos juntos — é esse o calendário que exportas para o Airbnb e o Booking.
@@ -196,11 +196,11 @@ function PropertyCard({ p, bookings, guests, isRoom = false }: {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {occ.pct > 0 && (
-              <span className={`text-xs font-bold tabular-nums ${occ.pct >= 80 ? 'text-emerald-600' : occ.pct >= 50 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+              <span className={`text-xs font-bold tabular-nums ${occ.pct >= 80 ? 'text-sucesso' : occ.pct >= 50 ? 'text-aviso' : 'text-muted-foreground'}`}>
                 {occ.pct}%
               </span>
             )}
-            <div className={`h-3 w-3 rounded-full ${p.ativo ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+            <div className={`h-3 w-3 rounded-full ${p.ativo ? 'bg-sucesso' : 'bg-gray-300'}`} />
           </div>
         </div>
 
@@ -220,7 +220,7 @@ function PropertyCard({ p, bookings, guests, isRoom = false }: {
               <div className="flex items-center gap-2">
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${occ.pct >= 80 ? 'bg-emerald-500' : occ.pct >= 50 ? 'bg-amber-400' : 'bg-primary/50'}`}
+                    className={`h-full rounded-full transition-all ${occ.pct >= 80 ? 'bg-sucesso' : occ.pct >= 50 ? 'bg-aviso' : 'bg-primary/50'}`}
                     style={{ width: `${occ.pct}%` }}
                   />
                 </div>
@@ -231,14 +231,14 @@ function PropertyCard({ p, bookings, guests, isRoom = false }: {
         )}
 
         {active ? (
-          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-            <span className="text-xs font-medium text-emerald-800 dark:text-emerald-400">Em casa: {activeGuest?.nome}</span>
+          <div className="flex items-center gap-2 rounded-lg bg-sucesso/10 border border-sucesso/30 px-3 py-2">
+            <div className="h-2 w-2 rounded-full bg-sucesso shrink-0" />
+            <span className="text-xs font-medium text-sucesso">Em casa: {activeGuest?.nome}</span>
           </div>
         ) : next ? (
-          <div className="flex items-center gap-2 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 px-3 py-2">
-            <div className="h-2 w-2 rounded-full bg-blue-500 shrink-0" />
-            <span className="text-xs font-medium text-blue-800 dark:text-blue-400">
+          <div className="flex items-center gap-2 rounded-lg bg-info/10 border border-info/30 px-3 py-2">
+            <div className="h-2 w-2 rounded-full bg-info shrink-0" />
+            <span className="text-xs font-medium text-info">
               Próxima: {nextGuest?.nome} · {new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(new Date(next.check_in + 'T00:00:00'))}
             </span>
           </div>
@@ -292,7 +292,7 @@ function ParentPropertyGroup({ parent, rooms, bookings, guests }: {
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <div className="text-right">
-                <p className="text-xs font-medium text-emerald-600">{freeRooms} livre{freeRooms !== 1 ? 's' : ''}</p>
+                <p className="text-xs font-medium text-sucesso">{freeRooms} livre{freeRooms !== 1 ? 's' : ''}</p>
                 {occupiedRooms > 0 && <p className="text-xs text-muted-foreground">{occupiedRooms} ocupado{occupiedRooms !== 1 ? 's' : ''}</p>}
               </div>
               <div className="flex gap-1">
@@ -325,7 +325,7 @@ function ParentPropertyGroup({ parent, rooms, bookings, guests }: {
               )
               return (
                 <div key={r.id} className="flex-1 flex flex-col items-center gap-1">
-                  <div className={`w-full h-2 rounded-full ${occupied ? 'bg-primary' : 'bg-emerald-400'}`} />
+                  <div className={`w-full h-2 rounded-full ${occupied ? 'bg-primary' : 'bg-sucesso'}`} />
                   <span className="text-[9px] text-muted-foreground truncate w-full text-center">
                     {r.nome.split(' ').pop()}
                   </span>

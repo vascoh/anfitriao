@@ -86,7 +86,7 @@ export function DashboardPreview() {
                       <div className="flex items-center gap-2">
                         <span
                           className={`size-2 shrink-0 rounded-full ${
-                            c.estado === 'ok' ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-amber-500 dark:bg-amber-400'
+                            c.estado === 'ok' ? 'bg-sucesso' : 'bg-aviso'
                           }`}
                         />
                         <span className="text-xs font-medium text-foreground">{c.titulo}</span>

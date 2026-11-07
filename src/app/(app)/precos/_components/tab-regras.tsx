@@ -311,7 +311,7 @@ export function TabRegras({
                     <span className="flex items-center gap-0.5"><Euro className="h-3 w-3" />{r.preco_noite}/noite</span>
                   )}
                   {r.desconto_pct != null && r.desconto_pct !== 0 && (
-                    <span className={`flex items-center gap-0.5 font-medium ${r.desconto_pct > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <span className={`flex items-center gap-0.5 font-medium ${r.desconto_pct > 0 ? 'text-sucesso' : 'text-erro'}`}>
                       <Percent className="h-3 w-3" />
                       {r.desconto_pct > 0 ? '+' : ''}{r.desconto_pct}%
                     </span>

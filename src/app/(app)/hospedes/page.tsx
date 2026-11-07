@@ -204,8 +204,8 @@ export default function HospedesPage() {
                     {g.email && <p className="text-xs text-muted-foreground truncate mt-0.5">{g.email}</p>}
                   </div>
                   {siba
-                    ? <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-                    : <ShieldAlert className="h-4 w-4 text-amber-400 shrink-0" />
+                    ? <ShieldCheck className="h-4 w-4 text-sucesso shrink-0" />
+                    : <ShieldAlert className="h-4 w-4 text-aviso shrink-0" />
                   }
                 </Link>
               )

@@ -8,7 +8,7 @@ import { Home, TriangleAlert } from 'lucide-react'
  */
 export function PorPreencher({ children }: { children: React.ReactNode }) {
   return (
-    <mark className="mx-0.5 rounded-md bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-800 ring-1 ring-amber-500/40 dark:text-amber-300">
+    <mark className="mx-0.5 rounded-md bg-aviso/15 px-1.5 py-0.5 font-semibold text-aviso ring-1 ring-aviso/40">
       [POR PREENCHER: {children}]
     </mark>
   )
@@ -16,8 +16,8 @@ export function PorPreencher({ children }: { children: React.ReactNode }) {
 
 export function AvisoRevisao() {
   return (
-    <aside className="not-prose mb-10 flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-5">
-      <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+    <aside className="not-prose mb-10 flex gap-3 rounded-xl border border-aviso/30 bg-aviso/10 p-5">
+      <TriangleAlert className="mt-0.5 size-5 shrink-0 text-aviso" aria-hidden />
       <p className="text-sm leading-relaxed text-foreground">
         <strong className="font-semibold">Rascunho por rever.</strong>{' '}
         Este texto foi redigido a partir do que a aplicação faz na realidade, mas

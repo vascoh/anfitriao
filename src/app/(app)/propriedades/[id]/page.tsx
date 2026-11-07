@@ -156,11 +156,11 @@ export default function PropriedadeDetailPage() {
               onClick={toggleActive}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                 prop.ativo
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  ? 'bg-sucesso/10 text-sucesso border-sucesso/30'
                   : 'bg-gray-100 text-gray-500 border-gray-200'
               }`}
             >
-              <div className={`h-2 w-2 rounded-full ${prop.ativo ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+              <div className={`h-2 w-2 rounded-full ${prop.ativo ? 'bg-sucesso' : 'bg-gray-300'}`} />
               {prop.ativo ? 'Ativa' : 'Inativa'}
             </button>
             <span className="text-xs text-muted-foreground">{PROPERTY_TYPE_LABEL[prop.tipo]}</span>
@@ -192,37 +192,37 @@ export default function PropriedadeDetailPage() {
 
         {/* Current status */}
         {activeBooking ? (
-          <div className="mx-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <p className="text-xs font-semibold text-emerald-800 mb-2">Em casa agora</p>
+          <div className="mx-4 rounded-xl border border-sucesso/30 bg-sucesso/10 p-4">
+            <p className="text-xs font-semibold text-sucesso mb-2">Em casa agora</p>
             {(() => {
               const g = guests.find(g => g.id === activeBooking.hospede_id)
               const n = nights(activeBooking.check_in, activeBooking.check_out)
               return (
                 <Link href={`/reservas/${activeBooking.id}`} className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-emerald-200 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-emerald-800">{g?.nome[0]}</span>
+                  <div className="h-9 w-9 rounded-full bg-sucesso/15 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-sucesso">{g?.nome[0]}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-emerald-900">{g?.nome}</p>
-                    <p className="text-xs text-emerald-700">Saída: {fmtDate(activeBooking.check_out)} · {n} noites</p>
+                    <p className="text-sm font-semibold text-sucesso">{g?.nome}</p>
+                    <p className="text-xs text-sucesso">Saída: {fmtDate(activeBooking.check_out)} · {n} noites</p>
                   </div>
                 </Link>
               )
             })()}
           </div>
         ) : nextBooking ? (
-          <div className="mx-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <p className="text-xs font-semibold text-blue-800 mb-2">Próxima reserva</p>
+          <div className="mx-4 rounded-xl border border-info/30 bg-info/10 p-4">
+            <p className="text-xs font-semibold text-info mb-2">Próxima reserva</p>
             {(() => {
               const g = guests.find(g => g.id === nextBooking.hospede_id)
               return (
                 <Link href={`/reservas/${nextBooking.id}`} className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-blue-200 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold text-blue-800">{g?.nome[0]}</span>
+                  <div className="h-9 w-9 rounded-full bg-info/15 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-bold text-info">{g?.nome[0]}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-blue-900">{g?.nome}</p>
-                    <p className="text-xs text-blue-700">Entrada: {fmtDate(nextBooking.check_in)}</p>
+                    <p className="text-sm font-semibold text-info">{g?.nome}</p>
+                    <p className="text-xs text-info">Entrada: {fmtDate(nextBooking.check_in)}</p>
                   </div>
                 </Link>
               )
@@ -375,8 +375,8 @@ export default function PropriedadeDetailPage() {
             onClick={handleDelete}
             className={`w-full rounded-xl py-3 text-sm font-medium border transition-colors ${
               confirmDelete
-                ? 'bg-red-500 text-white border-red-500'
-                : 'border-border text-red-500'
+                ? 'bg-erro text-erro-foreground border-erro'
+                : 'border-border text-erro'
             }`}
           >
             {confirmDelete ? 'Confirmar eliminação' : 'Eliminar propriedade'}

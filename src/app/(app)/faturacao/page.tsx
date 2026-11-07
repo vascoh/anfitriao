@@ -274,7 +274,7 @@ export default function FaturacaoPage() {
                   Continuas a poder emitir à mão a qualquer momento.
                 </span>
                 {!conta.emissao_automatica && (
-                  <span className="mt-2 block text-xs text-amber-700 dark:text-amber-400">
+                  <span className="mt-2 block text-xs text-aviso">
                     Se outro programa (o Amenitiz, por exemplo) ainda fatura estas reservas, não
                     emitas aqui — nem sozinho nem à mão. Cada estadia ficava com duas faturas na AT.
                   </span>
@@ -299,12 +299,12 @@ export default function FaturacaoPage() {
 
 function Kpi({ valor, rotulo, alerta }: { valor: string; rotulo: string; alerta?: 'ambar' | 'vermelho' }) {
   const cor =
-    alerta === 'vermelho' ? 'border-red-500/30 bg-red-500/5'
-    : alerta === 'ambar' ? 'border-amber-500/30 bg-amber-500/5'
+    alerta === 'vermelho' ? 'border-erro/30 bg-erro/5'
+    : alerta === 'ambar' ? 'border-aviso/30 bg-aviso/5'
     : 'border-border bg-card'
   const corTexto =
-    alerta === 'vermelho' ? 'text-red-600 dark:text-red-400'
-    : alerta === 'ambar' ? 'text-amber-600 dark:text-amber-400'
+    alerta === 'vermelho' ? 'text-erro'
+    : alerta === 'ambar' ? 'text-aviso'
     : ''
   return (
     <div className={`rounded-2xl border p-4 ${cor}`}>
@@ -485,8 +485,8 @@ function LigarExistente({ onLigada, onVoltar }: { onLigada: () => void; onVoltar
         </div>
       </div>
 
-      <div className="mt-4 flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+      <div className="mt-4 flex gap-3 rounded-xl border border-aviso/30 bg-aviso/5 p-4">
+        <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-aviso" aria-hidden="true" />
         <p className="text-xs leading-relaxed text-muted-foreground">
           <strong className="text-foreground">A emissão automática fica desligada.</strong> Se
           outro programa (o Amenitiz, por exemplo) já fatura estas reservas, emitir aqui também
@@ -600,10 +600,10 @@ function LigarAt({ conta, onLigada }: { conta: Conta; onLigada: () => void }) {
   }
 
   return (
-    <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
+    <section className="rounded-2xl border border-aviso/30 bg-aviso/5 p-6">
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-500/10">
-          <CircleAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-aviso/10">
+          <CircleAlert className="h-5 w-5 text-aviso" aria-hidden="true" />
         </span>
         <div>
           <h2 className="font-bold">Falta um passo: autorizar a comunicação à AT</h2>
@@ -618,7 +618,7 @@ function LigarAt({ conta, onLigada }: { conta: Conta; onLigada: () => void }) {
       </div>
 
       {conta.at_erro && (
-        <p className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-600 dark:text-red-400">
+        <p className="mt-4 rounded-lg border border-erro/20 bg-erro/5 px-3 py-2 text-xs text-erro">
           {conta.at_erro}
         </p>
       )}
@@ -799,7 +799,7 @@ function Lista({
                 )}
 
                 {r.fatura_erro && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{r.fatura_erro}</p>
+                  <p className="mt-1 text-xs text-erro">{r.fatura_erro}</p>
                 )}
 
                 {emissaoPresa(r) && (
@@ -808,7 +808,7 @@ function Lista({
                    * no fornecedor, emitir outra duplica um documento legal que
                    * depois só se anula por nota de crédito. Quem tem como
                    * verificar é o anfitrião, na conta dele. */
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-xs text-erro">
                     Esta emissão ficou a meio. Vê na tua conta de faturação se a fatura chegou a
                     sair: se saiu, avisa-nos para a ligarmos a esta reserva; se não saiu, podes
                     emitir outra vez daqui a pouco.
@@ -863,12 +863,12 @@ function Lista({
 
 function Estado({ estado }: { estado: LinhaReserva['fatura_estado'] | 'anulada' | 'presa' }) {
   const mapa = {
-    emitida: { texto: 'Emitida', classe: 'text-emerald-600 dark:text-emerald-400', Icon: ShieldCheck },
+    emitida: { texto: 'Emitida', classe: 'text-sucesso', Icon: ShieldCheck },
     anulada: { texto: 'Anulada', classe: 'text-muted-foreground', Icon: Ban },
-    falhou: { texto: 'Falhou', classe: 'text-red-600 dark:text-red-400', Icon: CircleAlert },
+    falhou: { texto: 'Falhou', classe: 'text-erro', Icon: CircleAlert },
     a_emitir: { texto: 'A emitir', classe: 'text-muted-foreground', Icon: Loader2 },
-    presa: { texto: 'Emissão a meio', classe: 'text-red-600 dark:text-red-400', Icon: CircleAlert },
-    nao_emitida: { texto: 'Por emitir', classe: 'text-amber-600 dark:text-amber-400', Icon: Receipt },
+    presa: { texto: 'Emissão a meio', classe: 'text-erro', Icon: CircleAlert },
+    nao_emitida: { texto: 'Por emitir', classe: 'text-aviso', Icon: Receipt },
   } as const
 
   const { texto, classe, Icon } = mapa[estado]

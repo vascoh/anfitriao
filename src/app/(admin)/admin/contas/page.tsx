@@ -14,9 +14,9 @@ const estadoLabel: Record<AccountEstado, string> = {
 }
 
 const estadoClasses: Record<AccountEstado, string> = {
-  trial:     'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  activo:    'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  suspenso:  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  trial:     'bg-info/10 text-info',
+  activo:    'bg-sucesso/10 text-sucesso',
+  suspenso:  'bg-erro/10 text-erro',
   cancelado: 'bg-muted text-muted-foreground',
 }
 
@@ -29,9 +29,9 @@ const planoLabel: Record<AccountPlano, string> = {
 
 const planoClasses: Record<AccountPlano, string> = {
   trial:   'text-muted-foreground',
-  starter: 'text-blue-600 dark:text-blue-400 font-medium',
+  starter: 'text-info font-medium',
   pro:     'text-primary font-semibold',
-  empresa: 'text-emerald-600 dark:text-emerald-400 font-semibold',
+  empresa: 'text-sucesso font-semibold',
 }
 
 function fmtDate(iso: string) {
@@ -66,9 +66,9 @@ export default async function ContasPage() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
         {[
           { label: 'Total', value: total,     color: 'text-foreground' },
-          { label: 'Trial',    value: emTrial,  color: 'text-blue-600 dark:text-blue-400' },
-          { label: 'Activos',  value: activos,  color: 'text-green-600 dark:text-green-400' },
-          { label: 'Suspensos',value: suspensos,color: 'text-red-600 dark:text-red-400' },
+          { label: 'Trial',    value: emTrial,  color: 'text-info' },
+          { label: 'Activos',  value: activos,  color: 'text-sucesso' },
+          { label: 'Suspensos',value: suspensos,color: 'text-erro' },
           { label: 'MRR',      value: `€${mrr}`,color: 'text-primary' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-card border border-border rounded-xl p-4">
@@ -133,7 +133,7 @@ export default async function ContasPage() {
                     {/* Trial restante */}
                     <td className="px-5 py-3.5 hidden lg:table-cell">
                       {conta.estado === 'trial' && daysLeft !== null ? (
-                        <span className={`text-xs ${trialExpired ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground'}`}>
+                        <span className={`text-xs ${trialExpired ? 'text-erro font-medium' : 'text-muted-foreground'}`}>
                           {trialExpired ? 'Expirado' : `${daysLeft}d`}
                         </span>
                       ) : (

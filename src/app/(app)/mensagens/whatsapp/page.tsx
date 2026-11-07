@@ -32,7 +32,7 @@ function Copiar({ valor, rotulo }: { valor: string; rotulo: string }) {
           aria-label={`Copiar ${rotulo}`}
           className="shrink-0 text-muted-foreground hover:text-foreground"
         >
-          {feito ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+          {feito ? <Check className="h-4 w-4 text-sucesso" /> : <Copy className="h-4 w-4" />}
         </button>
       </div>
     </div>
@@ -118,7 +118,7 @@ export default function LigacoesMensagensPage() {
           <section className="rounded-2xl border border-border bg-card p-4 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-2">
               <h2 className="flex items-center gap-2 font-semibold"><MessageCircle className="h-4 w-4" aria-hidden /> WhatsApp</h2>
-              {estado.ligado && <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-full px-2 py-0.5">Ligado{estado.numero_exibido ? ` · ${estado.numero_exibido}` : ''}</span>}
+              {estado.ligado && <span className="text-xs font-semibold text-sucesso bg-sucesso/10 rounded-full px-2 py-0.5">Ligado{estado.numero_exibido ? ` · ${estado.numero_exibido}` : ''}</span>}
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Sem ligar nada, «Enviar» abre o WhatsApp do teu telemóvel com a mensagem já escrita e guarda-a aqui.

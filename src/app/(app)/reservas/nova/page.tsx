@@ -373,7 +373,7 @@ function NovaReservaInner() {
                   {bd.ajuste_valor !== 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Ajuste {bd.tarifa_aplicada ?? ''}</span>
-                      <span className={`text-sm font-medium ${bd.ajuste_valor < 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      <span className={`text-sm font-medium ${bd.ajuste_valor < 0 ? 'text-sucesso' : 'text-aviso'}`}>
                         {bd.ajuste_valor > 0 ? '+' : ''}€{bd.ajuste_valor}
                       </span>
                     </div>
@@ -425,7 +425,7 @@ function NovaReservaInner() {
                 </div>
 
                 {sugestao && !sugestao.ok && sugestao.motivo === 'nao_cabe' && (
-                  <p className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  <p className="rounded-lg border border-aviso/30 bg-aviso/5 px-3 py-2 text-xs text-aviso">
                     <strong>Não cabem.</strong> {casaEscolhida.nome} leva{' '}
                     {sugestao.capacidadeDisponivel}{' '}
                     {sugestao.capacidadeDisponivel === 1 ? 'pessoa' : 'pessoas'} nestas datas, e são {numHospedes}.

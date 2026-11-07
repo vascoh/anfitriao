@@ -46,7 +46,7 @@ export default async function FunilPage() {
           Onde cada anfitrião fica parado, a partir do que está na base — sem tracking no browser.
           A tua conta aparece na lista mas não entra nos totais.
         </p>
-        {erro && <p className="mt-2 text-sm text-red-600">Leitura incompleta: {erro}</p>}
+        {erro && <p className="mt-2 text-sm text-erro">Leitura incompleta: {erro}</p>}
       </div>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -88,10 +88,10 @@ export default async function FunilPage() {
                 <td className="px-3 py-2 tabular-nums">{l.diasDesdeRegisto}</td>
                 <td className="px-3 py-2">
                   {l.paradoEm
-                    ? <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">
+                    ? <span className="rounded-full bg-aviso/10 px-2 py-0.5 text-xs text-aviso">
                         {PASSOS.find(p => p.chave === l.paradoEm)?.titulo}
                       </span>
-                    : <span className="text-xs text-emerald-600">completo</span>}
+                    : <span className="text-xs text-sucesso">completo</span>}
                 </td>
                 {PASSOS.slice(1).map(p => {
                   const v = l.passos[p.chave]

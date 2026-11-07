@@ -262,7 +262,7 @@ export function TabTarifas({
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                   {t.desconto_pct !== 0 && (
-                    <span className={`font-medium ${t.desconto_pct < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <span className={`font-medium ${t.desconto_pct < 0 ? 'text-erro' : 'text-sucesso'}`}>
                       {t.desconto_pct > 0 ? '+' : ''}{t.desconto_pct}%
                     </span>
                   )}

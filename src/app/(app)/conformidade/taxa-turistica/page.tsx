@@ -227,8 +227,8 @@ export default function TaxaTuristicaPage() {
       </div>
 
       {mapa.porConfigurar.length > 0 && (
-        <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+        <div className="flex gap-3 rounded-xl border border-aviso/30 bg-aviso/5 p-4">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-aviso" aria-hidden="true" />
           <div className="text-xs leading-relaxed">
             <p className="font-semibold text-foreground">
               {mapa.porConfigurar.length === 1 ? 'Concelho não configurado' : 'Concelhos não configurados'}

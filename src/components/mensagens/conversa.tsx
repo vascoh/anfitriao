@@ -451,7 +451,7 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
         )}
 
         {deIa && (
-          <div className="rounded-lg border border-amber-300/60 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-900 dark:text-amber-200 flex flex-col gap-1">
+          <div className="rounded-lg border border-aviso/60 bg-aviso/10 px-3 py-2 text-xs text-aviso flex flex-col gap-1">
             <p className="flex items-center gap-1 font-semibold"><Sparkles className="h-3.5 w-3.5" aria-hidden /> Sugestão da IA — revê antes de enviar.</p>
             {confirmar.length > 0 && (
               <ul className="list-disc pl-4 space-y-0.5">{confirmar.map((c, i) => <li key={i}>{c}</li>)}</ul>
@@ -473,7 +473,7 @@ export function ConversaView({ selecao, aoVoltar, aoMudar }: {
         </div>
         <p className="text-[11px] text-muted-foreground leading-snug">
           {temConfirmar
-            ? <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300"><AlertTriangle className="h-3 w-3" aria-hidden />Completa as partes [confirmar] antes de enviar.</span>
+            ? <span className="inline-flex items-center gap-1 text-aviso"><AlertTriangle className="h-3 w-3" aria-hidden />Completa as partes [confirmar] antes de enviar.</span>
             : canal === 'whatsapp'
               ? whatsappDireto
                 ? 'Sai pelo teu número WhatsApp Business.'

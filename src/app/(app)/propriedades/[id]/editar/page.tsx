@@ -435,7 +435,7 @@ export default function EditarPropriedadePage() {
               )}
 
               {parentId && !prop.parent_id && (
-                <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+                <p className="rounded-lg border border-aviso/30 bg-aviso/10 px-3 py-2.5 text-xs text-aviso leading-relaxed">
                   Ao guardar, este alojamento passa a ser um quarto de{' '}
                   <strong>{casasPossiveis.find(c => c.id === parentId)?.nome}</strong>.
                   A casa deixa de se alugar por inteiro — passa a alugar-se quarto a quarto,
@@ -445,7 +445,7 @@ export default function EditarPropriedadePage() {
               )}
 
               {!parentId && prop.parent_id && (
-                <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+                <p className="rounded-lg border border-aviso/30 bg-aviso/10 px-3 py-2.5 text-xs text-aviso leading-relaxed">
                   Ao guardar, este quarto deixa de pertencer à casa e passa a alugar-se sozinho.
                   Se a casa ficar sem quartos nenhuns, volta a alugar-se por inteiro.
                 </p>

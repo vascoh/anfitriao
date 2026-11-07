@@ -246,7 +246,7 @@ export function EditorAlojamento({ prop, casa, slug, aoGuardar }: {
                     )}
                   </div>
                   <button type="button" onClick={() => remover(f.chave)} aria-label="Remover fotografia"
-                    className="rounded-md bg-white/15 p-1.5 text-white hover:bg-red-500/80"><Trash2 className="h-3.5 w-3.5" /></button>
+                    className="rounded-md bg-white/15 p-1.5 text-white hover:bg-erro/80"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               )}
             </figure>

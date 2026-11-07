@@ -169,7 +169,7 @@ function Trend({ value, suffix = '%', inverse = false }: { value: number; suffix
   if (value === 0) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />
   const positive = inverse ? value < 0 : value > 0
   return (
-    <span className={`flex items-center gap-0.5 text-xs font-medium ${positive ? 'text-emerald-600' : 'text-destructive'}`}>
+    <span className={`flex items-center gap-0.5 text-xs font-medium ${positive ? 'text-sucesso' : 'text-destructive'}`}>
       {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
       {value > 0 ? '+' : ''}{value}{suffix}
     </span>
@@ -552,7 +552,7 @@ export default function RelatoriosPage() {
               </div>
               <div className="rounded-xl border border-border bg-card p-4">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Cobrança</p>
-                <p className={`text-xl font-bold ${collectionRate >= 90 ? 'text-emerald-600' : collectionRate >= 70 ? 'text-amber-600' : 'text-destructive'}`}>
+                <p className={`text-xl font-bold ${collectionRate >= 90 ? 'text-sucesso' : collectionRate >= 70 ? 'text-aviso' : 'text-destructive'}`}>
                   {collectionRate}%
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">pagamentos cobrados</p>
@@ -560,7 +560,7 @@ export default function RelatoriosPage() {
               {cancellationRate > 0 && (
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Cancelamentos</p>
-                  <p className={`text-xl font-bold ${cancellationRate <= 5 ? 'text-emerald-600' : cancellationRate <= 15 ? 'text-amber-600' : 'text-destructive'}`}>
+                  <p className={`text-xl font-bold ${cancellationRate <= 5 ? 'text-sucesso' : cancellationRate <= 15 ? 'text-aviso' : 'text-destructive'}`}>
                     {cancellationRate}%
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1">taxa de cancelamento</p>

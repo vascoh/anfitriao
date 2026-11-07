@@ -142,7 +142,7 @@ export function TabVisao({
                   {propPlatforms.map(pl => {
                     const diff = pl.multiplicador - 1
                     return (
-                      <span key={pl.plataforma} className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${diff > 0 ? 'bg-emerald-50 text-emerald-700' : diff < 0 ? 'bg-red-50 text-red-700' : 'bg-muted text-muted-foreground'}`}>
+                      <span key={pl.plataforma} className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${diff > 0 ? 'bg-sucesso/10 text-sucesso' : diff < 0 ? 'bg-erro/10 text-erro' : 'bg-muted text-muted-foreground'}`}>
                         {SOURCE_LABEL[pl.plataforma]}
                         {diff > 0 ? <TrendingUp className="h-2.5 w-2.5" /> : diff < 0 ? <TrendingDown className="h-2.5 w-2.5" /> : null}
                         {diff !== 0 ? `${diff > 0 ? '+' : ''}${Math.round(diff * 100)}%` : 'Base'}

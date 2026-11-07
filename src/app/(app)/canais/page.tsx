@@ -30,16 +30,16 @@ import {
  * não distingue as duas. Por isso cor **e** palavra, sempre. */
 
 const TOM_CLASSE: Record<string, string> = {
-  verde: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  ambar: 'bg-amber-50 text-amber-900 border-amber-200',
-  vermelho: 'bg-red-50 text-red-700 border-red-200',
+  verde: 'bg-sucesso/10 text-sucesso border-sucesso/30',
+  ambar: 'bg-aviso/10 text-aviso border-aviso/30',
+  vermelho: 'bg-erro/10 text-erro border-erro/30',
   neutro: 'bg-muted text-muted-foreground border-border',
 }
 
 const TOM_PONTO: Record<string, string> = {
-  verde: 'bg-emerald-500',
-  ambar: 'bg-amber-500',
-  vermelho: 'bg-red-500',
+  verde: 'bg-sucesso',
+  ambar: 'bg-aviso',
+  vermelho: 'bg-erro',
   neutro: 'bg-muted-foreground/40',
 }
 
@@ -89,7 +89,7 @@ function ComoFunciona() {
             <p><strong>1. Importar</strong> — trazes o calendário do Airbnb para cá. As reservas que recebes lá aparecem aqui e ocupam as datas.</p>
             <p><strong>2. Exportar</strong> — levas o calendário do Anfitrião para lá. As datas ocupadas aqui passam a estar bloqueadas no Airbnb.</p>
           </div>
-          <p className="mt-2.5 text-xs text-amber-800 leading-relaxed">
+          <p className="mt-2.5 text-xs text-aviso leading-relaxed">
             Só com os dois é que ficas protegido de vender a mesma noite duas vezes.
             Fazer só a importação é o erro mais comum — e só se dá por ele quando aparecem dois hóspedes à porta no mesmo dia.
           </p>
@@ -97,21 +97,21 @@ function ComoFunciona() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700 mb-1.5">O que é sincronizado</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-sucesso mb-1.5">O que é sincronizado</p>
             <ul className="flex flex-col gap-1">
               {O_QUE_SINCRONIZA.map(t => (
                 <li key={t} className="text-[13px] text-muted-foreground flex gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden />{t}
+                  <Check className="h-3.5 w-3.5 text-sucesso shrink-0 mt-0.5" aria-hidden />{t}
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-red-700 mb-1.5">O que NÃO é sincronizado</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-erro mb-1.5">O que NÃO é sincronizado</p>
             <ul className="flex flex-col gap-1">
               {O_QUE_NAO_SINCRONIZA.map(t => (
                 <li key={t} className="text-[13px] text-muted-foreground flex gap-1.5">
-                  <span className="text-red-500 shrink-0 mt-0.5 leading-none">✕</span>{t}
+                  <span className="text-erro shrink-0 mt-0.5 leading-none">✕</span>{t}
                 </li>
               ))}
             </ul>
@@ -245,7 +245,7 @@ function AssistenteLigar({
           </div>
 
           {avisoDuplicacao && (
-            <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-900 leading-relaxed">
+            <p className="rounded-lg border border-aviso/30 bg-aviso/10 px-3 py-2.5 text-xs text-aviso leading-relaxed">
               {AVISO_FONTE_DUPLICADA}
             </p>
           )}
@@ -272,7 +272,7 @@ function AssistenteLigar({
               Deve parecer-se com <code className="font-mono">{guia.exemploUrl}</code>
             </p>
             {guia.notas?.map(n => (
-              <p key={n} className="mt-1.5 text-[11px] text-amber-800 leading-relaxed">{n}</p>
+              <p key={n} className="mt-1.5 text-[11px] text-aviso leading-relaxed">{n}</p>
             ))}
           </div>
 
@@ -294,7 +294,7 @@ function AssistenteLigar({
           </div>
 
           {erro && (
-            <p className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 leading-relaxed">
+            <p className="flex items-start gap-2 rounded-lg border border-erro/30 bg-erro/10 px-3 py-2.5 text-xs text-erro leading-relaxed">
               <AlertCircle className="h-4 w-4 shrink-0 mt-px" aria-hidden />
               <span>{erro}</span>
             </p>
@@ -414,7 +414,7 @@ function PainelExportar({ prop }: { prop: Property }) {
             onClick={copiar}
             className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2.5 text-xs font-semibold hover:bg-muted transition-colors shrink-0"
           >
-            {copiado ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+            {copiado ? <Check className="h-3.5 w-3.5 text-sucesso" /> : <Copy className="h-3.5 w-3.5" />}
             {copiado ? 'Copiado' : 'Copiar'}
           </button>
         </div>
@@ -442,7 +442,7 @@ function PainelExportar({ prop }: { prop: Property }) {
               ))}
             </ol>
             {guia.notas?.map(n => (
-              <p key={n} className="mt-1.5 text-[11px] text-amber-800 leading-relaxed">{n}</p>
+              <p key={n} className="mt-1.5 text-[11px] text-aviso leading-relaxed">{n}</p>
             ))}
           </div>
         )}
@@ -476,8 +476,8 @@ function GuiaCasaComQuartos({ casa, quartos }: { casa: Property; quartos: Proper
         é diferente de um lado e do outro:
       </p>
 
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 px-3.5 py-3">
-        <p className="text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
+      <div className="rounded-xl border border-sucesso/30 bg-sucesso/50 px-3.5 py-3">
+        <p className="text-xs font-semibold text-sucesso flex items-center gap-1.5">
           <Check className="h-3.5 w-3.5 shrink-0" aria-hidden />
           No teu site de reservas — já está feito
         </p>
@@ -523,14 +523,14 @@ function GuiaCasaComQuartos({ casa, quartos }: { casa: Property; quartos: Proper
         </p>
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
-        <p className="text-xs font-semibold text-amber-900">Se também anuncias a casa inteira</p>
-        <p className="mt-1.5 text-[13px] text-amber-900/90 leading-relaxed">
+      <div className="rounded-xl border border-aviso/30 bg-aviso/10 px-3.5 py-3">
+        <p className="text-xs font-semibold text-aviso">Se também anuncias a casa inteira</p>
+        <p className="mt-1.5 text-[13px] text-aviso leading-relaxed">
           O endereço desta casa — em «Levar as tuas datas», aqui em baixo — junta
           a ocupação {n === 1 ? 'do quarto' : `dos ${n} quartos`} num só calendário.
           Cola-o no anúncio da casa inteira e um quarto vendido passa a bloquear a casa.
         </p>
-        <p className="mt-2 text-[13px] text-amber-900/90 leading-relaxed">
+        <p className="mt-2 text-[13px] text-aviso leading-relaxed">
           <strong>O contrário ainda não acontece:</strong> uma reserva da casa inteira
           feita numa plataforma não é trazida para aqui nem bloqueia os quartos — por
           isso é que este cartão não tem «Ligar uma plataforma». Enquanto for assim,
@@ -681,7 +681,7 @@ function CartaoAlojamento({
                   </p>
 
                   {feed.error && e === 'erro' && (
-                    <p className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-[12px] text-red-700 leading-relaxed">
+                    <p className="flex items-start gap-2 rounded-lg border border-erro/30 bg-erro/10 px-2.5 py-2 text-[12px] text-erro leading-relaxed">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-px" aria-hidden />
                       <span>{erroAmigavel(feed.error)}</span>
                     </p>
@@ -694,8 +694,8 @@ function CartaoAlojamento({
                   </p>
 
                   {confirmarRemover === feed.id && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 flex flex-col gap-2">
-                      <p className="text-[12px] text-amber-900 leading-relaxed">
+                    <div className="rounded-lg border border-aviso/30 bg-aviso/10 px-3 py-2.5 flex flex-col gap-2">
+                      <p className="text-[12px] text-aviso leading-relaxed">
                         Desligar deixa de trazer reservas novas deste calendário.
                         As reservas já importadas <strong>ficam</strong> — são reservas verdadeiras e algumas podem já ter fatura ou boletim.
                       </p>
@@ -703,7 +703,7 @@ function CartaoAlojamento({
                         <button
                           onClick={() => remover(feed.id)}
                           disabled={aRemover === feed.id}
-                          className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                          className="rounded-lg bg-erro px-3 py-1.5 text-xs font-semibold text-erro-foreground disabled:opacity-50"
                         >
                           {aRemover === feed.id ? 'A desligar…' : 'Desligar'}
                         </button>

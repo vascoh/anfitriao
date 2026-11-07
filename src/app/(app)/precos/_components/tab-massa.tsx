@@ -244,11 +244,11 @@ export function TabMassa({
               <span className="flex items-center gap-2">
                 <span className="text-muted-foreground">{fmtMoney(p.antes)}</span>
                 <span className="text-muted-foreground">→</span>
-                <span className={`font-semibold ${p.depois > p.antes ? 'text-emerald-600' : p.depois < p.antes ? 'text-red-600' : ''}`}>
+                <span className={`font-semibold ${p.depois > p.antes ? 'text-sucesso' : p.depois < p.antes ? 'text-erro' : ''}`}>
                   {fmtMoney(p.depois)}
                 </span>
                 {p.depois !== p.antes && (
-                  <span className={`text-[10px] font-medium ${p.depois > p.antes ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <span className={`text-[10px] font-medium ${p.depois > p.antes ? 'text-sucesso' : 'text-erro'}`}>
                     ({p.depois > p.antes ? '+' : ''}{Math.round(((p.depois - p.antes) / p.antes) * 100)}%)
                   </span>
                 )}
@@ -262,7 +262,7 @@ export function TabMassa({
         onClick={applyMassa}
         disabled={applying || selectedProps.length === 0 || !nome.trim() || !valor}
         className={`w-full rounded-xl py-3.5 font-semibold text-sm transition-colors disabled:opacity-40 ${
-          applied ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground'
+          applied ? 'bg-sucesso text-sucesso-foreground' : 'bg-primary text-primary-foreground'
         }`}
       >
         {applying ? 'A aplicar...' : applied ? 'Aplicado com sucesso!' : `Aplicar a ${selectedProps.length} propriedade${selectedProps.length !== 1 ? 's' : ''}`}

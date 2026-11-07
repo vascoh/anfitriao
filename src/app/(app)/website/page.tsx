@@ -199,9 +199,9 @@ export default function WebsitePage() {
                     aria-hidden="true"
                     className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] ${
                       item.feito
-                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                        ? 'border-sucesso bg-sucesso text-sucesso-foreground'
                         : item.essencial
-                          ? 'border-amber-500 text-amber-600'
+                          ? 'border-aviso text-aviso'
                           : 'border-border text-muted-foreground'
                     }`}
                   >
@@ -263,9 +263,9 @@ export default function WebsitePage() {
             <p className="text-xs text-muted-foreground">Receita direta</p>
             <p className="text-2xl font-bold mt-0.5">{fmtMoney(totalRevenue)}</p>
           </div>
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 col-span-2 sm:col-span-1">
+          <div className="rounded-xl border border-sucesso/20 bg-sucesso/5 px-4 py-3 col-span-2 sm:col-span-1">
             <p className="text-xs text-muted-foreground">Poupado em comissões</p>
-            <p className="text-2xl font-bold mt-0.5 text-emerald-600">{fmtMoney(commissionSaved)}</p>
+            <p className="text-2xl font-bold mt-0.5 text-sucesso">{fmtMoney(commissionSaved)}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">vs Airbnb 15%</p>
           </div>
         </div>
@@ -290,7 +290,7 @@ export default function WebsitePage() {
               />
             </div>
             {settings.slug && settings.slug.length >= 3 ? (
-              <p className="text-[11px] text-emerald-600 font-medium">✓ {origin}/r/{settings.slug}</p>
+              <p className="text-[11px] text-sucesso font-medium">✓ {origin}/r/{settings.slug}</p>
             ) : (
               <p className="text-[11px] text-muted-foreground">Mínimo 3 caracteres · só letras, números e hífens</p>
             )}
@@ -446,7 +446,7 @@ export default function WebsitePage() {
         <button onClick={save}
           className={`w-full rounded-xl py-3.5 font-semibold text-sm transition-colors ${
             saved
-              ? 'bg-emerald-500 text-white'
+              ? 'bg-sucesso text-sucesso-foreground'
               : 'bg-primary text-primary-foreground active:opacity-80'
           }`}>
           {saved ? '✓ Guardado' : 'Guardar configurações'}

@@ -14,6 +14,14 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-sucesso: var(--sucesso);
+  --color-sucesso-foreground: var(--sucesso-foreground);
+  --color-aviso: var(--aviso);
+  --color-aviso-foreground: var(--aviso-foreground);
+  --color-erro: var(--erro);
+  --color-erro-foreground: var(--erro-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -60,6 +68,19 @@
 
   --destructive: oklch(57% 0.245 27);
 
+  /* Estados (em dia / por tratar / falhou / informação). Substituem as
+     paletas soltas com `dark:` à mão em 50 ecrãs. Cada um passa AA (≥4.5:1)
+     como texto sobre o fundo, o card, o muted e a própria tinta a 10%, e o
+     *-foreground passa sobre o preenchimento sólido. */
+  --sucesso: oklch(47% 0.12 155);
+  --sucesso-foreground: oklch(98.5% 0.006 65);
+  --aviso: oklch(50% 0.12 60);
+  --aviso-foreground: oklch(98.5% 0.006 65);
+  --erro: oklch(52% 0.2 27);
+  --erro-foreground: oklch(98.5% 0.006 65);
+  --info: oklch(50% 0.13 250);
+  --info-foreground: oklch(98.5% 0.006 65);
+
   --border: oklch(89% 0.009 65);
   --input: oklch(89% 0.009 65);
   --ring: oklch(59% 0.155 38);
@@ -94,6 +115,15 @@
   --accent-foreground: oklch(85% 0.008 65);
 
   --destructive: oklch(60% 0.245 27);
+
+  --sucesso: oklch(78% 0.14 155);
+  --sucesso-foreground: oklch(16% 0.012 45);
+  --aviso: oklch(82% 0.14 80);
+  --aviso-foreground: oklch(16% 0.012 45);
+  --erro: oklch(77% 0.15 25);
+  --erro-foreground: oklch(16% 0.012 45);
+  --info: oklch(76% 0.11 250);
+  --info-foreground: oklch(16% 0.012 45);
 
   --border: oklch(25% 0.010 65);
   --input: oklch(25% 0.010 65);

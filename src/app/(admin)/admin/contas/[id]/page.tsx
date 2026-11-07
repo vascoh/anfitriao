@@ -15,9 +15,9 @@ const estadoLabel: Record<AccountEstado, string> = {
   trial: 'Trial', activo: 'Activo', suspenso: 'Suspenso', cancelado: 'Cancelado',
 }
 const estadoClasses: Record<AccountEstado, string> = {
-  trial:     'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  activo:    'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  suspenso:  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  trial:     'bg-info/10 text-info',
+  activo:    'bg-sucesso/10 text-sucesso',
+  suspenso:  'bg-erro/10 text-erro',
   cancelado: 'bg-muted text-muted-foreground',
 }
 // Derivado de lib/planos para o painel do admin não poder divergir do preço
@@ -115,7 +115,7 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
               {trial && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-0.5">Trial termina</p>
-                  <p className={`font-medium ${trial.daysLeft < 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+                  <p className={`font-medium ${trial.daysLeft < 0 ? 'text-erro' : ''}`}>
                     {trial.date} {trial.daysLeft >= 0 ? `(${trial.daysLeft}d)` : '(expirado)'}
                   </p>
                 </div>
@@ -148,7 +148,7 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       p.ativo
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+                        ? 'bg-sucesso/10 text-sucesso'
                         : 'bg-muted text-muted-foreground'
                     }`}>
                       {p.ativo ? 'Activa' : 'Inactiva'}

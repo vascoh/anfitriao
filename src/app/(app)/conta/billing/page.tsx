@@ -5,7 +5,7 @@ import { PLAN_PRICE_IDS } from '@/lib/stripe'
 import { PLAN_NOME, PLAN_PRICE_EUR, limiteDeUnidadesCapitalizado } from '@/lib/planos'
 import { UpgradeButton } from './UpgradeButton'
 import type { AccountEstado } from '@/lib/accounts'
-import { diasDeTrial } from '@/lib/planos'
+import { diasDeTrial, TRIAL_DIAS } from '@/lib/planos'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -18,13 +18,13 @@ const estadoBanner: Record<AccountEstado, { bg: string; text: string; msg: strin
   trial:    null,
   activo:   null,
   suspenso: {
-    bg: 'bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-800',
-    text: 'text-red-700 dark:text-red-300',
+    bg: 'bg-erro/10 border-erro/30',
+    text: 'text-erro',
     msg: 'O teu pagamento falhou. Actualiza o método de pagamento para continuar a usar o Anfitrião.',
   },
   cancelado: {
-    bg: 'bg-amber-50 border-amber-200 dark:bg-amber-950/40 dark:border-amber-800',
-    text: 'text-amber-700 dark:text-amber-300',
+    bg: 'bg-aviso/10 border-aviso/30',
+    text: 'text-aviso',
     msg: 'A tua subscrição foi cancelada. Escolhe um plano abaixo para reactivar.',
   },
 }
@@ -117,9 +117,9 @@ export default async function BillingPage({
 
       {/* Toast de sucesso/cancelamento */}
       {success && (
-        <div className="mb-6 rounded-xl bg-green-50 border border-green-200 dark:bg-green-950/40 dark:border-green-800 px-5 py-4">
-          <p className="text-sm font-semibold text-green-700 dark:text-green-300">🎉 Subscrição activada com sucesso!</p>
-          <p className="text-sm text-green-600 dark:text-green-400 mt-0.5">Bem-vindo ao Anfitrião {account.plano === 'pro' ? 'Pro' : 'Starter'}.</p>
+        <div className="mb-6 rounded-xl bg-sucesso/10 border border-sucesso/30 px-5 py-4">
+          <p className="text-sm font-semibold text-sucesso">🎉 Subscrição activada com sucesso!</p>
+          <p className="text-sm text-sucesso mt-0.5">Bem-vindo ao Anfitrião {PLAN_NOME[account.plano]}.</p>
         </div>
       )}
       {cancelled && (
@@ -150,15 +150,15 @@ export default async function BillingPage({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold capitalize">
-                {account.plano === 'trial' ? 'Trial gratuito' : account.plano === 'starter' ? 'Starter' : 'Pro'}
+                {account.plano === 'trial' ? 'Trial gratuito' : PLAN_NOME[account.plano]}
               </span>
               {isActivo && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-sucesso/10 text-sucesso">
                   Activo
                 </span>
               )}
               {isTrial && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-info/10 text-info">
                   Trial
                 </span>
               )}
@@ -189,10 +189,10 @@ export default async function BillingPage({
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${Math.round((daysLeft / 14) * 100)}%` }}
+                  style={{ width: `${Math.round((Math.max(0, daysLeft) / TRIAL_DIAS) * 100)}%` }}
                 />
               </div>
-              <p className="text-[10px] text-muted-foreground text-right mt-1">{daysLeft}/14 dias</p>
+              <p className="text-[10px] text-muted-foreground text-right mt-1">{Math.max(0, daysLeft)}/{TRIAL_DIAS} dias</p>
             </div>
           )}
         </div>
@@ -220,7 +220,8 @@ export default async function BillingPage({
               return (
                 <div
                   key={plano.key}
-                  className={`relative bg-card border rounded-xl p-5 flex flex-col gap-4 ${
+                  id={`plano-${plano.key}`}
+                  className={`relative scroll-mt-6 bg-card border rounded-xl p-5 flex flex-col gap-4 ${
                     plano.destaque
                       ? 'border-primary ring-1 ring-primary/30'
                       : 'border-border'
@@ -228,14 +229,14 @@ export default async function BillingPage({
                 >
                   {plano.destaque && (
                     <span className="absolute -top-2.5 left-4 px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide">
-                      Mais popular
+                      Recomendado
                     </span>
                   )}
 
                   <div>
                     <p className="font-bold text-base">{plano.nome}</p>
                     <p className="mt-1">
-                      <span className="text-2xl font-bold">€{plano.preco}</span>
+                      <span className="tabular text-2xl font-bold">{plano.preco} €</span>
                       <span className="text-sm text-muted-foreground">/mês</span>
                     </p>
                   </div>

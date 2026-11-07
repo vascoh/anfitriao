@@ -250,8 +250,8 @@ export default function MapaFiscalPage() {
             </p>
           )}
           {semModalidade.length > 0 && (
-            <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-3 text-sm flex gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+            <div className="rounded-xl border border-aviso/40 bg-aviso/5 p-3 text-sm flex gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-aviso" />
               <span>Falta a modalidade de {semModalidade.join(', ')} — sem ela não se sabe o coeficiente, e ficam fora da conta.</span>
             </div>
           )}

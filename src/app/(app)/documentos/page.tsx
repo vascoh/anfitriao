@@ -271,13 +271,13 @@ export default function DocumentosPage() {
           </div>
           {exportou && (
             <button onClick={marcarEntregue} disabled={sibaMarcando}
-              className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400 disabled:opacity-40 active:opacity-80 transition-opacity">
+              className="flex items-center justify-center gap-2 rounded-xl border border-sucesso/30 bg-sucesso/5 py-2.5 text-sm font-semibold text-sucesso disabled:opacity-40 active:opacity-80 transition-opacity">
               <Check className="h-4 w-4" />
               {sibaMarcando ? 'A marcar...' : 'Já carreguei no portal — marcar como comunicados'}
             </button>
           )}
           {sibaSubmitMsg && (
-            <p className={`text-xs rounded-lg px-3 py-2 ${sibaSubmitMsg.tipo === 'ok' ? 'text-emerald-700 bg-emerald-500/10 border border-emerald-500/20' : 'text-destructive bg-destructive/5 border border-destructive/20'}`}>
+            <p className={`text-xs rounded-lg px-3 py-2 ${sibaSubmitMsg.tipo === 'ok' ? 'text-sucesso bg-sucesso/10 border border-sucesso/20' : 'text-destructive bg-destructive/5 border border-destructive/20'}`}>
               {sibaSubmitMsg.texto}
             </p>
           )}
@@ -399,7 +399,7 @@ export default function DocumentosPage() {
                   onClick={applyToGuest}
                   disabled={!selectedGuestId || applying || applied}
                   className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold disabled:opacity-50 transition-colors ${
-                    applied ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    applied ? 'bg-sucesso text-sucesso-foreground' : 'bg-primary text-primary-foreground hover:bg-primary/90'
                   }`}
                 >
                   {applied

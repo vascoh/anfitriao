@@ -23,11 +23,11 @@ import type { Property } from '@/lib/types'
 const URL_LRE = 'https://www.livroreclamacoes.pt/inicio'
 
 const ESTILO: Record<EstadoItem, { Icon: typeof ShieldCheck; classe: string; rotulo: string }> = {
-  ok: { Icon: ShieldCheck, classe: 'text-emerald-600 dark:text-emerald-400', rotulo: 'Em dia' },
-  a_expirar: { Icon: Clock, classe: 'text-amber-600 dark:text-amber-400', rotulo: 'A expirar' },
-  expirado: { Icon: ShieldAlert, classe: 'text-red-600 dark:text-red-400', rotulo: 'Expirado' },
+  ok: { Icon: ShieldCheck, classe: 'text-sucesso', rotulo: 'Em dia' },
+  a_expirar: { Icon: Clock, classe: 'text-aviso', rotulo: 'A expirar' },
+  expirado: { Icon: ShieldAlert, classe: 'text-erro', rotulo: 'Expirado' },
   em_falta: { Icon: Circle, classe: 'text-muted-foreground', rotulo: 'Em falta' },
-  invalido: { Icon: ShieldAlert, classe: 'text-red-600 dark:text-red-400', rotulo: 'Inválido' },
+  invalido: { Icon: ShieldAlert, classe: 'text-erro', rotulo: 'Inválido' },
 }
 
 function Semaforo({ estado }: { estado: EstadoItem }) {
@@ -223,14 +223,14 @@ export default function ConformidadePage() {
             <div className="text-2xl font-bold">{propriedades.length}</div>
             <div className="mt-1 text-xs text-muted-foreground">Alojamentos</div>
           </div>
-          <div className={`rounded-2xl border p-4 ${totalCriticos > 0 ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card'}`}>
-            <div className={`text-2xl font-bold ${totalCriticos > 0 ? 'text-red-600 dark:text-red-400' : ''}`}>
+          <div className={`rounded-2xl border p-4 ${totalCriticos > 0 ? 'border-erro/30 bg-erro/5' : 'border-border bg-card'}`}>
+            <div className={`text-2xl font-bold ${totalCriticos > 0 ? 'text-erro' : ''}`}>
               {totalCriticos}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">Em falta ou expirados</div>
           </div>
-          <div className={`rounded-2xl border p-4 ${totalAExpirar > 0 ? 'border-amber-500/30 bg-amber-500/5' : 'border-border bg-card'}`}>
-            <div className={`text-2xl font-bold ${totalAExpirar > 0 ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+          <div className={`rounded-2xl border p-4 ${totalAExpirar > 0 ? 'border-aviso/30 bg-aviso/5' : 'border-border bg-card'}`}>
+            <div className={`text-2xl font-bold ${totalAExpirar > 0 ? 'text-aviso' : ''}`}>
               {totalAExpirar}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">A expirar em 30 dias</div>

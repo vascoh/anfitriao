@@ -317,8 +317,8 @@ export default function CheckinPage() {
   if (step === 'done') {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center gap-5 px-6 text-center bg-background">
-        <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
-          <Check className="h-8 w-8 text-emerald-600" />
+        <div className="h-16 w-16 rounded-full bg-sucesso/10 flex items-center justify-center">
+          <Check className="h-8 w-8 text-sucesso" />
         </div>
         <div className="flex flex-col gap-1.5">
           <p className="text-xl font-bold">{t.obrigado(form.nome.split(' ')[0])}</p>
@@ -456,7 +456,7 @@ export default function CheckinPage() {
             )}
 
             {extractError && (
-              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <p className="text-sm text-aviso bg-aviso/10 border border-aviso/30 rounded-lg px-3 py-2">
                 {extractError}
               </p>
             )}
@@ -580,7 +580,7 @@ export default function CheckinPage() {
                     </label>}
 
                     {erroAcompanhante[i] && (
-                      <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                      <p className="text-[11px] text-aviso bg-aviso/10 border border-aviso/30 rounded-lg px-2.5 py-1.5">
                         {erroAcompanhante[i]}
                       </p>
                     )}

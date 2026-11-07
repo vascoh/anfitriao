@@ -86,10 +86,10 @@ function ConfirmacaoInner() {
         <div className="w-full max-w-md flex flex-col items-center gap-6 text-center">
           {/* Success animation */}
           <div className="relative">
-            <div className="h-24 w-24 rounded-full bg-emerald-50 border-4 border-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+            <div className="h-24 w-24 rounded-full bg-sucesso/10 border-4 border-sucesso/30 flex items-center justify-center">
+              <CheckCircle2 className="h-12 w-12 text-sucesso" />
             </div>
-            <div className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping" />
+            <div className="absolute inset-0 rounded-full bg-sucesso/20 animate-ping" />
           </div>
 
           <div className="flex flex-col gap-2">

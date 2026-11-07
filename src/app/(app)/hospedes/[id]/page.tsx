@@ -379,8 +379,8 @@ export default function HospedeDetailPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-muted/40 transition-colors hover:bg-muted/30"
               >
-                <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span className="text-sm text-emerald-700 font-medium">WhatsApp</span>
+                <MessageCircle className="h-4 w-4 text-sucesso shrink-0" />
+                <span className="text-sm text-sucesso font-medium">WhatsApp</span>
               </a>
             )}
             {guest.nacionalidade && (

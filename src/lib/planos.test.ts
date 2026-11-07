@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   PLAN_LIMITS, PLAN_PRICE_EUR, PLAN_PRICE_EUR_ANUAL, PLANOS_PAGOS, PLAN_NOME,
   precoMensal, precoPorUnidade, limiteDeUnidades, limiteDeUnidadesCapitalizado,
-  diasDeTrial,
+  diasDeTrial, proximoPlano,
 } from './planos'
 import { contarUnidadesReservaveis } from './reservations'
 
@@ -184,5 +184,26 @@ describe('diasDeTrial', () => {
   it('arredonda para cima: umas horas ainda contam como um dia', () => {
     const agora = new Date('2026-08-20T06:00:00Z').getTime()
     expect(diasDeTrial(FIM, agora)).toBe(1)
+  })
+})
+
+describe('proximoPlano', () => {
+  it('propõe o plano seguinte que cabe a unidade a mais', () => {
+    expect(proximoPlano('trial', 2)).toBe('starter')
+    expect(proximoPlano('starter', 4)).toBe('pro')
+    expect(proximoPlano('pro', 11)).toBe('empresa')
+  })
+
+  it('salta planos que não chegam', () => {
+    expect(proximoPlano('trial', 5)).toBe('pro')
+  })
+
+  it('nunca propõe o mesmo plano nem um mais pequeno', () => {
+    expect(proximoPlano('pro', 2)).toBe('empresa')
+  })
+
+  it('devolve null acima do Empresa', () => {
+    expect(proximoPlano('empresa', 41)).toBeNull()
+    expect(proximoPlano('pro', 41)).toBeNull()
   })
 })

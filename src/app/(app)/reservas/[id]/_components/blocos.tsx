@@ -24,9 +24,9 @@ export function ReminderButton({ bookingId }: { bookingId: string }) {
       onClick={send}
       disabled={state === 'sending' || state === 'sent'}
       className={`shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors ${
-        state === 'sent' ? 'bg-emerald-100 text-emerald-700' :
-        state === 'error' ? 'bg-red-100 text-red-700' :
-        'bg-amber-100 text-amber-700 hover:bg-amber-200'
+        state === 'sent' ? 'bg-sucesso/10 text-sucesso' :
+        state === 'error' ? 'bg-erro/10 text-erro' :
+        'bg-aviso/10 text-aviso hover:bg-aviso/15'
       }`}
     >
       <Mail className="h-3 w-3" />

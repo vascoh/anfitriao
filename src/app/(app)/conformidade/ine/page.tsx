@@ -140,7 +140,7 @@ export default function IneePage() {
         <span
           className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
             emAtraso
-              ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+              ? 'bg-erro/10 text-erro'
               : 'bg-muted text-muted-foreground'
           }`}
         >
@@ -223,8 +223,8 @@ export default function IneePage() {
         </a>
       </div>
 
-      <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+      <div className="flex gap-3 rounded-xl border border-aviso/30 bg-aviso/5 p-4">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-aviso" aria-hidden="true" />
         <div className="text-xs leading-relaxed text-muted-foreground">
           <p className="font-semibold text-foreground">De onde vem o país desta tabela</p>
           <p className="mt-1">

@@ -9,6 +9,7 @@ import { uuid } from '@/lib/utils'
 import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
+import { AvisoLimitePlano, noLimite, type EstadoLimite } from '@/components/aviso-limite-plano'
 
 const PRESET_COLORS = [
   '#C2714F', '#E07B39', '#3D82F6', '#10B981', '#8B5CF6',
@@ -46,6 +47,21 @@ function NovaPropriedadeForm() {
     searchParams.get('parent'),
   )
   const [casas, setCasas] = useState<Property[]>([])
+
+  const [limite, setLimite] = useState<EstadoLimite | null>(null)
+  /* Sem o número, o servidor continua a travar no POST: falhar aqui é mudo. */
+  function carregarLimite() {
+    return fetch('/api/conta/limite')
+      .then(r => (r.ok ? (r.json() as Promise<EstadoLimite>) : null))
+      .then(e => { if (e) setLimite(e) })
+      .catch(() => {})
+  }
+  useEffect(() => {
+    fetch('/api/conta/limite')
+      .then(r => (r.ok ? (r.json() as Promise<EstadoLimite>) : null))
+      .then(e => { if (e) setLimite(e) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     fetchProperties()
@@ -132,10 +148,11 @@ function NovaPropriedadeForm() {
       if (!res.ok) {
         const err = await res.json() as { error?: string; code?: string }
         if (err.code === 'LIMIT_REACHED') {
-          toast.error(err.error ?? 'Limite de propriedades atingido.', {
-            action: { label: 'Fazer upgrade', onClick: () => router.push('/conta/billing') },
-            duration: 6000,
-          })
+          /* O aviso no topo diz que plano resolve e quanto custa; o toast
+           * só aponta para lá, em vez de ser a única explicação. */
+          await carregarLimite()
+          document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' })
+          toast.error('Chegaste ao limite do teu plano. Vê a proposta no topo.')
         } else {
           toast.error(err.error ?? 'Erro ao criar propriedade. Tenta novamente.')
         }
@@ -167,6 +184,8 @@ function NovaPropriedadeForm() {
       </header>
 
       <div className="flex flex-col gap-5 p-4 pb-8">
+        {limite && noLimite(limite) && <AvisoLimitePlano estado={limite} />}
+
         {/* A primeira pergunta, e a única que muda o resto. */}
         <div className="flex flex-col gap-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
@@ -230,7 +249,7 @@ function NovaPropriedadeForm() {
                     {casas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                   {!parentEscolhido && (
-                    <p className="text-xs text-amber-800 leading-relaxed">
+                    <p className="text-xs text-aviso leading-relaxed">
                       Escolhe a casa antes de continuar — sem isso, este quarto fica a alugar-se sozinho.
                     </p>
                   )}

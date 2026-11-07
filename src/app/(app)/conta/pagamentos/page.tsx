@@ -35,11 +35,11 @@ export default async function PagamentosPage() {
           </p>
 
           {status === 'ativo' && (
-            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-4">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center gap-3 rounded-xl border border-sucesso/30 bg-sucesso/10 p-4">
+              <CheckCircle2 className="h-5 w-5 text-sucesso shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Pagamentos ativos</p>
-                <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
+                <p className="text-sm font-semibold text-sucesso">Pagamentos ativos</p>
+                <p className="text-xs text-sucesso">
                   Os hóspedes já podem pagar a reserva com cartão no teu site.
                 </p>
               </div>
@@ -47,11 +47,11 @@ export default async function PagamentosPage() {
           )}
 
           {status === 'pendente' && (
-            <div className="flex items-center gap-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4">
-              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div className="flex items-center gap-3 rounded-xl border border-aviso/30 bg-aviso/10 p-4">
+              <Clock className="h-5 w-5 text-aviso shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">Falta completar o registo</p>
-                <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                <p className="text-sm font-semibold text-aviso">Falta completar o registo</p>
+                <p className="text-xs text-aviso">
                   A Stripe ainda precisa de alguns dados (identificação/conta bancária) para ativar os pagamentos.
                 </p>
               </div>

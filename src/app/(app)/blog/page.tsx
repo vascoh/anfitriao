@@ -88,7 +88,7 @@ export default function BlogPage() {
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm truncate">{p.titulo}</p>
                   <span className={`shrink-0 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                    p.publicado ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground'
+                    p.publicado ? 'bg-sucesso/10 text-sucesso' : 'bg-muted text-muted-foreground'
                   }`}>
                     {p.publicado ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                     {p.publicado ? 'Publicado' : 'Rascunho'}

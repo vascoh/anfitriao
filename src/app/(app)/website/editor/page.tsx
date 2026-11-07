@@ -384,7 +384,7 @@ export default function EditorDoSitePage() {
             <span className="hidden lg:inline">escolhe no mapa ou clica no site</span>
           </p>
         </div>
-        <span className={`hidden text-xs xl:inline ${porGuardar ? 'text-amber-600' : 'text-muted-foreground'}`} aria-live="polite">
+        <span className={`hidden text-xs xl:inline ${porGuardar ? 'text-aviso' : 'text-muted-foreground'}`} aria-live="polite">
           {porGuardar ? 'Alterações por guardar' : 'Tudo guardado'}
         </span>
         <button type="button" onClick={desfazer} disabled={historico.length === 0} title="Desfazer (Ctrl+Z)"

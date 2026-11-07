@@ -109,7 +109,7 @@ export function TabPlataformas({
                         />
                         <span className="absolute right-2 text-xs text-muted-foreground">%</span>
                       </div>
-                      <span className={`text-xs font-medium ${mult > 0 ? 'text-emerald-600' : mult < 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      <span className={`text-xs font-medium ${mult > 0 ? 'text-sucesso' : mult < 0 ? 'text-erro' : 'text-muted-foreground'}`}>
                         {mult > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : mult < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : null}
                       </span>
                     </div>
