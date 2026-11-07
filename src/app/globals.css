@@ -34,6 +34,17 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  /* Escala tipográfica da app (horizonte 2, ponto 2). Havia 17 combinações
+     para o título de um ecrã; ficam três degraus. O peso e o tracking vêm
+     com o tamanho, para não se poderem desencontrar. */
+  --text-titulo: 1.5rem;
+  --text-titulo--line-height: 2rem;
+  --text-titulo--letter-spacing: -0.02em;
+  --text-titulo--font-weight: 600;
+  --text-subtitulo: 1.125rem;
+  --text-subtitulo--line-height: 1.625rem;
+  --text-subtitulo--letter-spacing: -0.01em;
+  --text-subtitulo--font-weight: 600;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -131,6 +142,15 @@
 }
 
 @layer utilities {
+  /* Rótulo de secção em maiúsculas pequenas, por cima de um grupo. */
+  .antetitulo {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
   .no-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;

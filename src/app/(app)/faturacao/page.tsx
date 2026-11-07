@@ -204,7 +204,7 @@ export default function FaturacaoPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Faturação</h1>
+        <h1 className="text-titulo">Faturação</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Faturas-recibo certificadas, emitidas no teu nome e comunicadas à AT.
           Incluídas na tua subscrição.

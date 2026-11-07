@@ -80,7 +80,7 @@ export function Stepper({ estado }: { estado: string }) {
 export function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      {title && <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-4">{title}</h2>}
+      {title && <h2 className="antetitulo px-4">{title}</h2>}
       <div className="rounded-xl border border-border bg-card mx-4 overflow-hidden">{children}</div>
     </div>
   )

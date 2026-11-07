@@ -233,7 +233,7 @@ export default function DocumentosPage() {
   return (
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold tracking-tight">Documentos</h1>
+        <h1 className="text-titulo">Documentos</h1>
       </header>
 
       <div className="flex flex-col gap-4 p-4">
@@ -349,7 +349,7 @@ export default function DocumentosPage() {
         {data && !extracting && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <h2 className="antetitulo">
                 Dados extraídos
               </h2>
               <button

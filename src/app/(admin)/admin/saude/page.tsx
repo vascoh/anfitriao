@@ -50,7 +50,7 @@ export default async function SaudePage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Saúde do sistema</h1>
+        <h1 className="text-titulo">Saúde do sistema</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {RESUMO[nivel]} Esta página pergunta pelo que devia ter acontecido e não aconteceu —
           é assim que as falhas aqui se manifestam: por ausência, não por erro.
@@ -58,7 +58,7 @@ export default async function SaudePage() {
       </div>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="antetitulo">
           Configuração
         </h2>
         <ul className="flex flex-col gap-2">
@@ -67,7 +67,7 @@ export default async function SaudePage() {
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <h2 className="antetitulo">
           Operação (últimos dias)
         </h2>
         <ul className="flex flex-col gap-2">

@@ -169,7 +169,7 @@ export default function TaxaTuristicaPage() {
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Conformidade
         </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">Taxa turística</h1>
+        <h1 className="text-titulo mt-2">Taxa turística</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Mapa mensal por reserva, pronto para a declaração no portal do teu município.
         </p>

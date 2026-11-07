@@ -73,7 +73,7 @@ function Mensagens() {
       <section className={`${selecao ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-80 lg:w-96 shrink-0 border-r border-border min-h-0`}>
         <header className="px-4 py-4 border-b border-border flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Mensagens</h1>
+            <h1 className="text-titulo">Mensagens</h1>
             <div className="flex items-center gap-1">
               <Link href="/mensagens/whatsapp" className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted" aria-label="Ligar WhatsApp e email" title="Ligar WhatsApp e email">
                 <Settings2 className="h-4 w-4" />

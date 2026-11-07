@@ -178,7 +178,7 @@ export default function EditarPropriedadePage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="h-1 w-full bg-muted" />
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href={`/propriedades/${id}`} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href={`/propriedades/${id}`} aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="h-4 w-36 bg-muted rounded animate-pulse" />
@@ -201,7 +201,7 @@ export default function EditarPropriedadePage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="h-1 w-full" style={{ backgroundColor: cor }} />
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href={`/propriedades/${id}`} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href={`/propriedades/${id}`} aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="text-base font-semibold flex-1 truncate">Editar — {prop.nome}</h1>
@@ -211,7 +211,7 @@ export default function EditarPropriedadePage() {
       <div className="flex flex-col gap-5 p-4 pb-8">
         {/* Basic info */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Informação básica</p>
+          <p className="antetitulo">Informação básica</p>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Nome *</label>
             <input type="text" value={nome} onChange={e => setNome(e.target.value)}
@@ -307,7 +307,7 @@ export default function EditarPropriedadePage() {
 
         {/* Capacity */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Capacidade</p>
+          <p className="antetitulo">Capacidade</p>
           {[
             { label: 'Quartos', value: quartos, set: setQuartos, min: 0, max: 20 },
             { label: 'Casas de banho', value: casasBanho, set: setCasasBanho, min: 1, max: 10 },
@@ -332,7 +332,7 @@ export default function EditarPropriedadePage() {
 
         {/* Pricing */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Preço</p>
+          <p className="antetitulo">Preço</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground font-medium">Preço base por noite (€)</label>
@@ -349,7 +349,7 @@ export default function EditarPropriedadePage() {
 
         {/* Color */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Cor de identificação</p>
+          <p className="antetitulo">Cor de identificação</p>
           <div className="flex gap-2.5 flex-wrap">
             {PRESET_COLORS.map(c => (
               <button key={c} onClick={() => setCor(c)}
@@ -361,7 +361,7 @@ export default function EditarPropriedadePage() {
 
         {/* Amenities */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Comodidades</p>
+          <p className="antetitulo">Comodidades</p>
           <div className="flex flex-wrap gap-2">
             {AMENITIES.map(a => (
               <button key={a.id} onClick={() => toggleAmenity(a.id)}
@@ -378,7 +378,7 @@ export default function EditarPropriedadePage() {
 
         {/* Instructions */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Operacional</p>
+          <p className="antetitulo">Operacional</p>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Instruções de check-in</label>
             <textarea value={instrucoesCheckin} onChange={e => setInstrucoesCheckin(e.target.value)}
@@ -408,7 +408,7 @@ export default function EditarPropriedadePage() {
           * ordem natural ficava com tudo à solta e sem forma de o arrumar.
           * Este seletor é a forma de o corrigir depois do facto. */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Faz parte de uma casa?</p>
+          <p className="antetitulo">Faz parte de uma casa?</p>
           {temQuartos ? (
             <p className="text-xs text-muted-foreground leading-relaxed">
               Este alojamento é uma casa com {quartosFilhos.length} {quartosFilhos.length === 1 ? 'quarto' : 'quartos'}.
@@ -455,7 +455,7 @@ export default function EditarPropriedadePage() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Canais e calendários</p>
+          <p className="antetitulo">Canais e calendários</p>
           <Link
             href="/canais"
             className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 hover:border-primary/40 transition-colors"

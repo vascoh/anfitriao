@@ -91,7 +91,7 @@ export default function EditarReservaPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href={`/reservas/${id}`} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href={`/reservas/${id}`} aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="h-4 w-36 bg-muted rounded animate-pulse" />
@@ -104,10 +104,10 @@ export default function EditarReservaPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href={`/reservas/${id}`} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href={`/reservas/${id}`} aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-lg font-semibold">Editar reserva</h1>
+          <h1 className="text-subtitulo">Editar reserva</h1>
         </div>
       </header>
 

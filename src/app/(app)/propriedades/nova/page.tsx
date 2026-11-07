@@ -176,10 +176,10 @@ function NovaPropriedadeForm() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href={parentId ? `/propriedades/${parentId}` : '/propriedades'} className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href={parentId ? `/propriedades/${parentId}` : '/propriedades'} aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-lg font-semibold">{parentId ? 'Novo quarto' : 'Nova propriedade'}</h1>
+          <h1 className="text-subtitulo">{parentId ? 'Novo quarto' : 'Nova propriedade'}</h1>
         </div>
       </header>
 
@@ -188,7 +188,7 @@ function NovaPropriedadeForm() {
 
         {/* A primeira pergunta, e a única que muda o resto. */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+          <p className="antetitulo">
             O que estás a criar?
           </p>
 
@@ -260,7 +260,7 @@ function NovaPropriedadeForm() {
         </div>
         {/* Basic info */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Informação básica</p>
+          <p className="antetitulo">Informação básica</p>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Nome *</label>
             <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Apartamento Alfama"
@@ -316,7 +316,7 @@ function NovaPropriedadeForm() {
 
         {/* Capacity */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Capacidade</p>
+          <p className="antetitulo">Capacidade</p>
           {[
             { label: 'Quartos', value: quartos, set: setQuartos, min: 0, max: 20 },
             { label: 'Casas de banho', value: casasBanho, set: setCasasBanho, min: 1, max: 10 },
@@ -341,7 +341,7 @@ function NovaPropriedadeForm() {
 
         {/* Pricing */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Preço</p>
+          <p className="antetitulo">Preço</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground font-medium">Preço base por noite (€)</label>
@@ -358,7 +358,7 @@ function NovaPropriedadeForm() {
 
         {/* Color */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Cor de identificação</p>
+          <p className="antetitulo">Cor de identificação</p>
           <div className="flex gap-2.5 flex-wrap">
             {PRESET_COLORS.map(c => (
               <button key={c} onClick={() => setCor(c)}
@@ -370,7 +370,7 @@ function NovaPropriedadeForm() {
 
         {/* Amenities */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Comodidades</p>
+          <p className="antetitulo">Comodidades</p>
           <div className="flex flex-wrap gap-2">
             {AMENITIES.map(a => (
               <button key={a.id} onClick={() => toggleAmenity(a.id)}
@@ -387,7 +387,7 @@ function NovaPropriedadeForm() {
 
         {/* Check-in instructions */}
         <div className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Operacional</p>
+          <p className="antetitulo">Operacional</p>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Instruções de check-in</label>
             <textarea value={instrucoesCheckin} onChange={e => setInstrucoesCheckin(e.target.value)}

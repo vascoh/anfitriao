@@ -95,7 +95,7 @@ export default function EditarPostPage() {
     return (
       <div className="flex flex-col min-h-full">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-semibold tracking-tight">Editar post</h1>
+          <h1 className="text-titulo">Editar post</h1>
         </header>
         <div className="p-4 space-y-3 animate-pulse">
           {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-10 rounded-lg bg-muted" />)}
@@ -109,10 +109,10 @@ export default function EditarPostPage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Link href="/blog" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+            <Link href="/blog" aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h1 className="text-lg font-semibold">Editar post</h1>
+            <h1 className="text-subtitulo">Editar post</h1>
           </div>
           <button onClick={handleDelete} className="p-2 text-muted-foreground hover:text-destructive rounded-lg">
             <Trash2 className="h-4 w-4" />

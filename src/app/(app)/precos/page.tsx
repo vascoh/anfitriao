@@ -84,7 +84,7 @@ export default function PrecosPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 lg:px-8 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Preços</h1>
+          <h1 className="text-titulo">Preços</h1>
           {loading && <RefreshCw className="h-4 w-4 text-muted-foreground animate-spin" />}
         </div>
 

@@ -114,7 +114,7 @@ export default function WebsitePage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 lg:px-8 py-4 border-b border-border">
         <div className="flex items-center gap-3 max-w-3xl">
           <Globe className="h-5 w-5 text-primary shrink-0" />
-          <h1 className="text-2xl font-semibold tracking-tight flex-1">Website de reservas</h1>
+          <h1 className="text-titulo flex-1">Website de reservas</h1>
         </div>
       </header>
 
@@ -234,7 +234,7 @@ export default function WebsitePage() {
 
         {/* Public URL */}
         <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">URL do website</p>
+          <p className="antetitulo">URL do website</p>
           <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2.5">
             <span className="flex-1 text-sm font-mono text-foreground/70 truncate">{publicUrl}</span>
             <button onClick={copyUrl} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
@@ -272,7 +272,7 @@ export default function WebsitePage() {
 
         {/* Settings form */}
         <div className="flex flex-col gap-4">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">URL personalizado</p>
+          <p className="antetitulo">URL personalizado</p>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Slug do website</label>
@@ -296,7 +296,7 @@ export default function WebsitePage() {
             )}
           </div>
 
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Identidade</p>
+          <p className="antetitulo">Identidade</p>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Nome / Marca</label>
@@ -373,7 +373,7 @@ export default function WebsitePage() {
 
           {/* ── Aparência do site público ── */}
           <div className="flex flex-col gap-3 pt-2 border-t border-border">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest pt-3">Aparência do site</p>
+            <p className="antetitulo pt-3">Aparência do site</p>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-muted-foreground font-medium">Template</label>
@@ -459,7 +459,7 @@ export default function WebsitePage() {
           * nenhum dos dois se percebia o que a ligação faz — que é exatamente
           * a queixa que deu origem a esta sessão. Fica um ponteiro. */}
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Canais e calendários</p>
+          <p className="antetitulo">Canais e calendários</p>
           <Link
             href="/canais"
             className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 hover:border-primary/40 transition-colors"
@@ -478,7 +478,7 @@ export default function WebsitePage() {
         {/* Properties on the website */}
         {settings.enabled && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Propriedades publicadas</p>
+            <p className="antetitulo">Propriedades publicadas</p>
             {/* Esta lista mostrava **todos** os alojamentos ativos, quartos
               * incluídos, e contava-os todos como «visíveis». O site público
               * não faz isso: `/r/[slug]` filtra os que têm `parent_id` e
@@ -532,7 +532,7 @@ export default function WebsitePage() {
         {/* Recent direct bookings */}
         {directBookings.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Reservas recentes (diretas)</p>
+            <p className="antetitulo">Reservas recentes (diretas)</p>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               {directBookings.slice(0, 5).map(b => {
                 const g = guests.find(x => x.id === b.hospede_id)
@@ -559,7 +559,7 @@ export default function WebsitePage() {
             Sticky no ecrã grande: o formulário rola, o site fica à vista. */}
         <aside className="lg:sticky lg:top-24 lg:w-[460px] xl:w-[520px] shrink-0">
           <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            <p className="antetitulo">
               O teu site
             </p>
           </div>

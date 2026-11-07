@@ -12,7 +12,7 @@ export default function ContaSuspensaPage() {
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground mb-2">Conta suspensa</h1>
+        <h1 className="text-titulo text-foreground mb-2">Conta suspensa</h1>
         <p className="text-muted-foreground text-sm leading-relaxed mb-8">
           O teu último pagamento não foi processado com sucesso.
           Actualiza o método de pagamento para continuar a usar o Anfitrião.

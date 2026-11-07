@@ -341,7 +341,7 @@ export default function RelatoriosPage() {
       <div className="flex flex-col min-h-full pb-8">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
           <div className="flex items-center justify-between px-4 py-4">
-            <h1 className="text-2xl font-semibold tracking-tight">Relatórios</h1>
+            <h1 className="text-titulo">Relatórios</h1>
           </div>
         </header>
         <div className="flex flex-col items-center justify-center gap-5 text-center py-20 px-4">
@@ -371,7 +371,7 @@ export default function RelatoriosPage() {
 
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Relatórios</h1>
+          <h1 className="text-titulo">Relatórios</h1>
           <div className="flex items-center gap-2">
             {totalBookings > 0 && (
               <button
@@ -446,7 +446,7 @@ export default function RelatoriosPage() {
 
         {/* Revenue bar chart */}
         <section className="border-b border-border px-4 lg:px-8 py-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+          <p className="antetitulo mb-5">
             Receita mensal · {year}
           </p>
           {totalRevenue === 0 ? (
@@ -491,7 +491,7 @@ export default function RelatoriosPage() {
         {/* Occupancy bar chart */}
         {activeProps.length > 0 && (
           <section className="border-b border-border px-4 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+            <p className="antetitulo mb-5">
               Ocupação mensal · {year}
             </p>
             <div className="flex items-end gap-px sm:gap-1">
@@ -531,7 +531,7 @@ export default function RelatoriosPage() {
         {/* Advanced KPIs */}
         {totalBookings > 0 && (
           <section className="border-b border-border px-4 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+            <p className="antetitulo mb-5">
               KPIs · {year}
             </p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -582,7 +582,7 @@ export default function RelatoriosPage() {
 
           {/* Occupancy per property */}
           <section className="px-4 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+            <p className="antetitulo mb-5">
               Ocupação · {MONTHS_SHORT[occupancyMonth]}
             </p>
             {propOccupancy.length === 0 ? (
@@ -615,7 +615,7 @@ export default function RelatoriosPage() {
 
           {/* Revenue by source */}
           <section className="px-4 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+            <p className="antetitulo mb-5">
               Por origem · {year}
             </p>
             {bySource.length === 0 ? (
@@ -657,7 +657,7 @@ export default function RelatoriosPage() {
         {/* Revenue by property */}
         {byProperty.length > 1 && (
           <section className="border-b border-border px-4 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+            <p className="antetitulo mb-5">
               Receita por propriedade · {year}
             </p>
             <div className="flex flex-col gap-5">
@@ -693,7 +693,7 @@ export default function RelatoriosPage() {
         {/* Top guests */}
         {topGuestsList.length > 0 && (
           <section className="border-b border-border px-4 lg:px-8 py-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+            <p className="antetitulo mb-5">
               Top hóspedes · {year}
             </p>
             <div className="flex flex-col gap-1">

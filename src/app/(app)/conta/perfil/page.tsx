@@ -69,7 +69,7 @@ export default function PerfilPage() {
     return (
       <div className="flex flex-col min-h-full">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
+          <h1 className="text-titulo">Perfil</h1>
         </header>
         <div className="p-4 space-y-3 animate-pulse">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -83,14 +83,14 @@ export default function PerfilPage() {
   return (
     <div className="flex flex-col min-h-full pb-8">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold tracking-tight">Perfil</h1>
+        <h1 className="text-titulo">Perfil</h1>
       </header>
 
       <div className="max-w-xl flex flex-col gap-6 p-4">
 
         {/* Anfitrião */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Anfitrião</p>
+          <p className="antetitulo">Anfitrião</p>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Nome do anfitrião</label>
@@ -129,7 +129,7 @@ export default function PerfilPage() {
 
         {/* Site de reservas */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Site de reservas diretas</p>
+          <p className="antetitulo">Site de reservas diretas</p>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Nome do site</label>

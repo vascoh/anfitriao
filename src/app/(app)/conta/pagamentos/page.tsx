@@ -20,12 +20,12 @@ export default async function PagamentosPage() {
   return (
     <div className="flex flex-col min-h-full pb-8">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold tracking-tight">Pagamentos</h1>
+        <h1 className="text-titulo">Pagamentos</h1>
       </header>
 
       <div className="max-w-xl flex flex-col gap-6 p-4">
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+          <p className="antetitulo">
             Recebe pagamentos com cartão diretamente
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">

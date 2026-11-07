@@ -76,7 +76,7 @@ export function TabVisao({
                   <p className="text-xs text-muted-foreground">{p.cidade}</p>
                 </div>
                 {!isEdit && (
-                  <button onClick={() => startEdit(p)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  <button onClick={() => startEdit(p)} aria-label={`Editar preços de ${p.nome}`} className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                     <Edit2 className="h-4 w-4" />
                   </button>
                 )}

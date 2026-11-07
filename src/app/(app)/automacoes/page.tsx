@@ -75,7 +75,7 @@ export default function AutomacoesPage() {
     return (
       <div className="flex flex-col min-h-full">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-semibold tracking-tight">Automações</h1>
+          <h1 className="text-titulo">Automações</h1>
         </header>
         <div className="p-4 space-y-3 animate-pulse">
           {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 rounded-lg bg-muted" />)}
@@ -87,13 +87,13 @@ export default function AutomacoesPage() {
   return (
     <div className="flex flex-col min-h-full pb-8">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold tracking-tight">Automações</h1>
+        <h1 className="text-titulo">Automações</h1>
       </header>
 
       <div className="max-w-xl flex flex-col gap-6 p-4">
 
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+          <p className="antetitulo flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5" /> Nova automação
           </p>
 
@@ -150,7 +150,7 @@ export default function AutomacoesPage() {
         </section>
 
         <section className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Automações ativas</p>
+          <p className="antetitulo">Automações ativas</p>
           {automations.length === 0 ? (
             <div className="py-6 px-4 text-center text-sm text-muted-foreground leading-relaxed">
               <p>Ainda não criaste nenhuma automação.</p>

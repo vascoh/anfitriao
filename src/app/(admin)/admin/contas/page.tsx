@@ -58,7 +58,7 @@ export default async function ContasPage() {
 
       {/* Cabeçalho */}
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-foreground">Contas</h1>
+        <h1 className="text-titulo text-foreground">Contas</h1>
         <p className="text-sm text-muted-foreground mt-1">Todos os anfitriões registados na plataforma.</p>
       </div>
 

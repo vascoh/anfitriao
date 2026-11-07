@@ -141,7 +141,7 @@ export default function DominioPage() {
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0"><Globe2 className="h-5 w-5" /></div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Domínio próprio</h1>
+            <h1 className="text-titulo">Domínio próprio</h1>
             <p className="text-sm text-muted-foreground mt-1">O teu site num endereço independente, como casadomar.pt.</p>
           </div>
         </div>

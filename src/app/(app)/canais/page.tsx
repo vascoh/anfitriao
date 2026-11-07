@@ -82,7 +82,7 @@ function ComoFunciona() {
         </p>
 
         <div className="rounded-xl border border-border bg-muted/30 px-3.5 py-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+          <p className="antetitulo mb-2">
             São dois sentidos, e precisas dos dois
           </p>
           <div className="flex flex-col gap-2 text-[13px]">
@@ -630,7 +630,7 @@ function CartaoAlojamento({
         ) : (
           <>
             <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+              <p className="antetitulo flex items-center gap-1.5">
                 <Download className="h-3.5 w-3.5" aria-hidden />
                 Trazer reservas para cá
               </p>
@@ -807,7 +807,7 @@ export default function CanaisPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Canais</h1>
+          <h1 className="text-titulo">Canais</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Ligar o teu calendário ao Airbnb, ao Booking.com e a outras plataformas.
           </p>

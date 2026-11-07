@@ -96,10 +96,10 @@ export default function LigacoesMensagensPage() {
   return (
     <div className="flex flex-col min-h-full pb-10">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border flex items-center gap-3">
-        <Link href="/mensagens" aria-label="Voltar às mensagens" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+        <Link href="/mensagens" aria-label="Voltar às mensagens" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-xl font-semibold tracking-tight">Canais de mensagens</h1>
+        <h1 className="text-titulo">Canais de mensagens</h1>
       </header>
 
       {erro ? <ErroAoCarregar oQue="as ligações" aoTentar={carregar} /> : !estado ? (

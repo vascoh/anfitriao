@@ -106,7 +106,7 @@ export default function IneePage() {
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Conformidade
         </Link>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">Inquérito do INE</h1>
+        <h1 className="text-titulo mt-2">Inquérito do INE</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Hóspedes e dormidas por país, no formato do IPHH. A resposta é obrigatória até ao dia 10
           do mês seguinte, mesmo quando não houve movimento.

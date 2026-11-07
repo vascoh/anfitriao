@@ -40,7 +40,7 @@ export default async function CartazPage({
   return (
     <>
       <div className="mx-auto max-w-2xl print:hidden">
-        <h1 className="text-2xl font-bold tracking-tight">Aviso para afixar</h1>
+        <h1 className="text-titulo">Aviso para afixar</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Imprime e afixa em local bem visível no alojamento. Para guardar em PDF, escolhe
           &laquo;Guardar como PDF&raquo; no destino de impressão.

@@ -6,6 +6,33 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-07, tarde] Horizonte 2 do plano: estados, limite do plano, telemóvel
+
+- 🎨 **Cores de estado em tokens.** `sucesso`/`aviso`/`erro`/`info` (+
+  `-foreground`) em `globals.css`, medidos para AA sobre fundo, card, muted e
+  tinta a 10%, nos dois temas. 505 classes soltas (emerald/amber/red/blue com
+  `dark:` à mão, várias sem variante escura) em 50 ecrãs passam aos tokens.
+  Guarda: `lib/cores-de-estado.test.ts`. Sites públicos `/r` ficam de fora.
+- 💶 **Convite no limite do plano (U7).** `/propriedades/nova` mostra no topo
+  «Usaste 3 de 3 no Starter · o Pro dá até 10 por 39 €/mês» com botão para
+  `/conta/billing#plano-pro`. Novo `GET /api/conta/limite` (privado por
+  omissão) e `proximoPlano()` em `lib/planos` (com testes).
+- 📱 **Sensação de app (U5).** `/hoje` com puxar para atualizar
+  (`components/puxar-para-atualizar.tsx`, sem biblioteca) e vibração curta ao
+  confirmar check-in/check-out (`lib/vibrar.ts`, respeita reduced motion).
+  Setas de voltar 28→44 px com `aria-label`; botões de ícone do calendário e
+  preços com nome acessível.
+- 🔤 **Escala tipográfica (U6).** `text-titulo`, `text-subtitulo` (peso e
+  tracking incluídos) e `.antetitulo`; 53 títulos e 64 rótulos normalizados.
+- 🟠 Faturação: plano Empresa aparecia como «Pro»; `€39` → `39 €`; trial de 14
+  dias fixo → `TRIAL_DIAS`. `TrialBanner`: branco sobre âmbar (~2:1) → tokens;
+  expirado deixa de se poder fechar.
+- Validação: typecheck 0, lint 0, 1446 testes, build; axe a zero em `/`,
+  `/termos`, `/vs/smoobu`, `/em-construcao` (claro/escuro, 1440/390). Ecrãs
+  autenticados não verificados em browser (sem service role local): fazer
+  uma volta numa pré-visualização antes do deploy.
+- **Não publicado.**
+
 ### [2026-11-07] Marca unificada (TODO 2.3) e plano de evolução
 
 - 🎨 **Landing e páginas legais passam aos tokens da app.** Saem slate/ciano/

@@ -113,7 +113,7 @@ export default async function DossiePage({
   if (reservas.erro || submissoes.erro) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-bold tracking-tight">Dossiê de conformidade</h1>
+        <h1 className="text-titulo">Dossiê de conformidade</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Não foi possível ler os registos completos deste alojamento, e um dossiê a que
           faltem estadias não serve para o que existe. Tenta outra vez daqui a pouco.
@@ -135,7 +135,7 @@ export default async function DossiePage({
   return (
     <>
       <div className="mx-auto max-w-4xl print:hidden">
-        <h1 className="text-2xl font-bold tracking-tight">Dossiê de conformidade</h1>
+        <h1 className="text-titulo">Dossiê de conformidade</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Os teus registos deste alojamento, pela ordem por que costumam ser pedidos numa
           inspeção. Para guardar em PDF, escolhe &laquo;Guardar como PDF&raquo; no destino

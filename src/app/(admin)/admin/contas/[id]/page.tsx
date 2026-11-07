@@ -93,7 +93,7 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
           <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <h1 className="text-lg font-bold text-foreground">
+                <h1 className="text-subtitulo text-foreground">
                   {conta.nome ?? <span className="text-muted-foreground italic font-normal">Sem nome</span>}
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">{conta.email || '—'}</p>

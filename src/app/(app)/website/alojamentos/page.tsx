@@ -54,7 +54,7 @@ export default function FotosEQuartosPage() {
           <Link href="/website" className="mb-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-3.5 w-3.5" /> Site de reservas
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">Fotos e quartos</h1>
+          <h1 className="text-titulo">Fotos e quartos</h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">
             O que os hóspedes veem em cada alojamento do site. Fica tudo guardado à medida que mudas.
           </p>

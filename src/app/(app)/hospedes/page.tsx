@@ -92,7 +92,7 @@ export default function HospedesPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Hóspedes</h1>
+          <h1 className="text-titulo">Hóspedes</h1>
           <div className="flex items-center gap-2">
             {guests.length > 0 && (
               <button

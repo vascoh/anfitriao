@@ -5,7 +5,7 @@ import type { Booking } from '@/lib/types'
 export function Historico({ historico }: { historico: Booking['historico'] }) {
   return (
     <div className="flex flex-col gap-3 px-4">
-      <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Histórico</h2>
+      <h2 className="antetitulo">Histórico</h2>
       <div className="flex flex-col gap-0 relative">
         <div className="absolute left-3 top-3 bottom-3 w-px bg-border" />
         {[...historico].reverse().map((ev, i) => (

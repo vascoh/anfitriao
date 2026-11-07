@@ -269,14 +269,14 @@ export default function ReservaDetailPage() {
     <div className="flex flex-col min-h-full pb-6">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href="/reservas" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href="/reservas" aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {/* Um bloqueio não tem hóspede, e o título ficava **vazio**. Diz
                   agora o que o feed lhe chamou, como na lista e no calendário. */}
-              <h1 className="text-lg font-semibold tracking-tight truncate">
+              <h1 className="text-subtitulo truncate">
                 {bloqueio ? rotuloDeBloqueio(booking) : guest?.nome}
               </h1>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_CLASS[booking.estado]}`}>
@@ -287,11 +287,11 @@ export default function ReservaDetailPage() {
           </div>
           {!bloqueio && (
             <Link href={`/mensagens?reserva=${id}`} aria-label="Mensagens com o hóspede" title="Mensagens com o hóspede"
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+              className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <MessagesSquare className="h-4 w-4" />
             </Link>
           )}
-          <Link href={`/reservas/${id}/editar`} aria-label="Editar reserva" className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <Link href={`/reservas/${id}/editar`} aria-label="Editar reserva" className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
             <Edit2 className="h-4 w-4" />
           </Link>
         </div>

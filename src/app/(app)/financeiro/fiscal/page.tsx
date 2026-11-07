@@ -109,7 +109,7 @@ export default function MapaFiscalPage() {
         <Link href="/financeiro" aria-label="Voltar ao financeiro" className="text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-semibold tracking-tight truncate">Mapa fiscal {ano}</h1>
+        <h1 className="text-titulo truncate">Mapa fiscal {ano}</h1>
       </div>
       <button onClick={descarregarPacote} disabled={loading || erro}
         className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground border border-input rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
@@ -153,7 +153,7 @@ export default function MapaFiscalPage() {
 
         {/* Dados de cada estabelecimento */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Estabelecimentos</p>
+          <p className="antetitulo">Estabelecimentos</p>
           {casas.length === 0 && <p className="text-sm text-muted-foreground">Ainda não há alojamentos.</p>}
           {casas.map(p => {
             const r = resumo.alojamentos.find(a => a.id === p.id)
@@ -206,7 +206,7 @@ export default function MapaFiscalPage() {
 
         {/* Agregado */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">O teu agregado</p>
+          <p className="antetitulo">O teu agregado</p>
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <label className="flex flex-col gap-1 text-xs font-medium">
               Rendimento coletável sem o AL (€/ano)
@@ -241,7 +241,7 @@ export default function MapaFiscalPage() {
 
         {/* Resultado */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+          <p className="antetitulo flex items-center gap-1.5">
             <Scale className="h-3.5 w-3.5" /> Comparação
           </p>
           {!parametros && (

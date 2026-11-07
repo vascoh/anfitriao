@@ -303,7 +303,9 @@ function ParentPropertyGroup({ parent, rooms, bookings, guests }: {
                 </Link>
                 <button
                   onClick={() => setExpanded(e => !e)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-expanded={expanded}
+                  aria-label={expanded ? 'Esconder quartos' : 'Mostrar quartos'}
+                  className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   {expanded
                     ? <ChevronDown className="h-4 w-4" />
@@ -404,7 +406,7 @@ export default function PropriedadesPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Propriedades</h1>
+          <h1 className="text-titulo">Propriedades</h1>
           <Link href="/propriedades/nova"
             className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-medium active:opacity-80 transition-opacity">
             <Plus className="h-3.5 w-3.5" /> Nova

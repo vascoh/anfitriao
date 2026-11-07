@@ -194,7 +194,7 @@ export default function FinanceiroPage() {
     return (
       <div className="flex flex-col min-h-full">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-semibold tracking-tight">Financeiro</h1>
+          <h1 className="text-titulo">Financeiro</h1>
         </header>
         <ErroAoCarregar oQue="as contas" aviso="A receita e as despesas não são zero — são desconhecidas." />
       </div>
@@ -205,7 +205,7 @@ export default function FinanceiroPage() {
     return (
       <div className="flex flex-col min-h-full">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-          <h1 className="text-2xl font-semibold tracking-tight">Financeiro</h1>
+          <h1 className="text-titulo">Financeiro</h1>
         </header>
         <div className="p-4 space-y-3 animate-pulse">
           {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-16 rounded-lg bg-muted" />)}
@@ -217,7 +217,7 @@ export default function FinanceiroPage() {
   return (
     <div className="flex flex-col min-h-full pb-8">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Financeiro</h1>
+        <h1 className="text-titulo">Financeiro</h1>
         <div className="flex items-center gap-2">
         <Link href="/financeiro/fiscal"
           className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground border border-input rounded-lg px-3 py-1.5 transition-colors"
@@ -252,7 +252,7 @@ export default function FinanceiroPage() {
 
         {/* Comissões por plataforma */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Comissões por plataforma (estimado)</p>
+          <p className="antetitulo">Comissões por plataforma (estimado)</p>
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             {comissaoPorPlataforma.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -287,7 +287,7 @@ export default function FinanceiroPage() {
 
         {/* Nova despesa */}
         <section className="flex flex-col gap-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+          <p className="antetitulo flex items-center gap-1.5">
             <Wallet className="h-3.5 w-3.5" /> Registar despesa
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -340,7 +340,7 @@ export default function FinanceiroPage() {
 
         {/* Lista de despesas */}
         <section className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Despesas registadas</p>
+          <p className="antetitulo">Despesas registadas</p>
           {expenses.length === 0 ? (
             <div className="py-6 px-4 text-center text-sm text-muted-foreground leading-relaxed">
               <p>Ainda não há despesas registadas.</p>

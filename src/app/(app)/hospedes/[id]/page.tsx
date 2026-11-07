@@ -184,7 +184,7 @@ export default function HospedeDetailPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href="/hospedes" aria-label="Voltar aos hóspedes" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href="/hospedes" aria-label="Voltar aos hóspedes" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           {falha === 'inexistente'
@@ -200,11 +200,11 @@ export default function HospedeDetailPage() {
     <div className="flex flex-col min-h-full pb-6">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Link href="/hospedes" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href="/hospedes" aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-lg font-semibold flex-1 truncate">{guest.nome}</h1>
-          <button onClick={() => setEditing(v => !v)} aria-label={editing ? "Fechar edição" : "Editar hóspede"} aria-expanded={editing} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <h1 className="text-subtitulo flex-1 truncate">{guest.nome}</h1>
+          <button onClick={() => setEditing(v => !v)} aria-label={editing ? "Fechar edição" : "Editar hóspede"} aria-expanded={editing} className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
             <Edit2 className="h-4 w-4" />
           </button>
         </div>
@@ -280,7 +280,7 @@ export default function HospedeDetailPage() {
                 ))}
               </div>
             </div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest pt-1">Dados SIBA</p>
+            <p className="antetitulo pt-1">Dados SIBA</p>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-muted-foreground">Tipo de documento</label>
               <select value={tipoDocumento} onChange={e => setTipoDocumento(e.target.value)}
@@ -401,7 +401,7 @@ export default function HospedeDetailPage() {
         {(guest.numero_documento || guest.data_nascimento || guest.tipo_documento) && !editing && (
           <div className="mx-4 rounded-xl border border-border bg-card overflow-hidden">
             <div className="px-4 py-3 border-b border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Dados SIBA</p>
+              <p className="antetitulo">Dados SIBA</p>
             </div>
             {[
               { label: 'Tipo documento', value: guest.tipo_documento },
@@ -425,7 +425,7 @@ export default function HospedeDetailPage() {
         {/* Notes */}
         {guest.notas && !editing && (
           <div className="mx-4 rounded-xl border border-border bg-card px-4 py-3.5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Notas</p>
+            <p className="antetitulo mb-2">Notas</p>
             <p className="text-sm text-foreground/80 leading-relaxed">{guest.notas}</p>
           </div>
         )}
@@ -434,7 +434,7 @@ export default function HospedeDetailPage() {
         {!editing && (
           <div className="mx-4 rounded-xl border border-border bg-card px-4 py-3.5 flex flex-col gap-3">
             <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Dados e privacidade</p>
+              <p className="antetitulo mb-1.5">Dados e privacidade</p>
               {guest.anonimizado_em ? (
                 <p className="text-sm text-foreground/80 leading-relaxed">
                   Dados pessoais apagados em {fmtDate(guest.anonimizado_em.slice(0, 10), { day: 'numeric', month: 'long', year: 'numeric' })}.
@@ -477,7 +477,7 @@ export default function HospedeDetailPage() {
         {/* Booking history */}
         {bookings.length > 0 && (
           <div className="flex flex-col gap-2 px-4">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Historial de reservas</h2>
+            <h2 className="antetitulo">Historial de reservas</h2>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               {bookings.map(b => {
                 const p = props.find(x => x.id === b.propriedade_id)

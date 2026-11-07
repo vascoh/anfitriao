@@ -145,7 +145,7 @@ export function ListaLimpezas({ limpezas, unidades, hoje, onMarcar, mostrarMorad
         return (
           <section key={data} className="border-b border-border">
             <div className="flex items-center justify-between px-4 lg:px-8 pt-5 pb-2">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{rotuloDia(data, hoje)}</h2>
+              <h2 className="antetitulo">{rotuloDia(data, hoje)}</h2>
               <span className="text-[11px] text-muted-foreground tabular-nums">
                 {porFazer ? `${porFazer} por fazer` : 'Tudo feito'}
               </span>

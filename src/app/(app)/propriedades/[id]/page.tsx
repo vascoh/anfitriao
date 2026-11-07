@@ -104,7 +104,7 @@ export default function PropriedadeDetailPage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="h-1 w-full bg-muted" />
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/propriedades" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href="/propriedades" aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="h-4 w-36 bg-muted rounded animate-pulse" />
@@ -138,11 +138,11 @@ export default function PropriedadeDetailPage() {
         {/* Color bar */}
         <div className="h-1 w-full" style={{ backgroundColor: prop.cor }} />
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/propriedades" className="p-1 -ml-1 rounded-lg text-muted-foreground hover:text-foreground">
+          <Link href="/propriedades" aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="text-base font-semibold flex-1 truncate">{prop.nome}</h1>
-          <Link href={`/propriedades/${id}/editar`} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+          <Link href={`/propriedades/${id}/editar`} aria-label="Editar alojamento" className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
             <Edit2 className="h-4 w-4" />
           </Link>
         </div>
@@ -257,7 +257,7 @@ export default function PropriedadeDetailPage() {
         {/* Amenities */}
         {prop.comodidades.length > 0 && (
           <div className="px-4 flex flex-col gap-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Comodidades</p>
+            <p className="antetitulo">Comodidades</p>
             <div className="flex flex-wrap gap-2">
               {prop.comodidades.map(a => (
                 <span key={a} className="flex items-center gap-1 text-xs bg-muted/60 text-foreground/70 px-2.5 py-1 rounded-full">
@@ -310,7 +310,7 @@ export default function PropriedadeDetailPage() {
         {/* Booking history */}
         {bookings.length > 0 && (
           <div className="flex flex-col gap-2 px-4">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Reservas recentes</h2>
+            <h2 className="antetitulo">Reservas recentes</h2>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               {bookings.slice(0, 5).map(b => {
                 const g = guests.find(x => x.id === b.hospede_id)

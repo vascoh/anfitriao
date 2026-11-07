@@ -89,7 +89,7 @@ export default function LimpezasPage() {
     <div className="flex flex-col min-h-full pb-6">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 lg:px-8 py-4 max-w-5xl">
-          <h1 className="text-2xl font-semibold tracking-tight">Limpezas</h1>
+          <h1 className="text-titulo">Limpezas</h1>
           <p className="text-sm text-muted-foreground">Cada saída é um quarto por arrumar. Partilha a lista com quem limpa.</p>
         </div>
         {plano && (

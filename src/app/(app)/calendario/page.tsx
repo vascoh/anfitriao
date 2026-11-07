@@ -157,10 +157,10 @@ function TimelineView({
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Controls */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-        <button onClick={prevWindow} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <button onClick={prevWindow} aria-label="Semanas anteriores" className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <button onClick={nextWindow} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <button onClick={nextWindow} aria-label="Semanas seguintes" className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           <ChevronRight className="h-4 w-4" />
         </button>
         <span className="text-sm font-medium text-muted-foreground flex-1">
@@ -446,7 +446,7 @@ function GridView({
     <div className="flex flex-col flex-1">
       {/* Month nav */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <button onClick={prevMonth} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <button onClick={prevMonth} aria-label="Mês anterior" className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <div className="text-center">
@@ -455,7 +455,7 @@ function GridView({
             <p className="text-xs text-muted-foreground">{monthOccupancy}% ocupação média</p>
           )}
         </div>
-        <button onClick={nextMonth} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <button onClick={nextMonth} aria-label="Mês seguinte" className="-m-1 grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
@@ -560,7 +560,7 @@ function GridView({
 
         {activeProps.length > 0 && (
           <div className="pt-3 border-t border-border flex flex-col gap-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Ocupação em {MONTHS[month]}</p>
+            <p className="antetitulo">Ocupação em {MONTHS[month]}</p>
             {activeProps.map(p => {
               const { occupied, total, pct } = occupancyForMonth(bookings, p.id, year, month)
               return (
@@ -667,7 +667,7 @@ export default function CalendarioPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Calendário</h1>
+          <h1 className="text-titulo">Calendário</h1>
           <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
             <button
               onClick={() => setView('timeline')}

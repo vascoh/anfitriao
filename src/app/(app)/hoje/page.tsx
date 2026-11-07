@@ -331,7 +331,7 @@ export default function HojePage() {
     return (
       <div className="flex flex-col min-h-full">
         <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 lg:px-8 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Hoje</h1>
+          <h1 className="text-titulo">Hoje</h1>
         </header>
         <ErroAoCarregar oQue="o dia de hoje" aviso="Não assumas que não há chegadas nem saídas." />
       </div>
@@ -345,7 +345,7 @@ export default function HojePage() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 lg:px-8 py-4 flex items-baseline justify-between gap-2 max-w-5xl">
-          <h1 className="text-2xl font-semibold tracking-tight">Hoje</h1>
+          <h1 className="text-titulo">Hoje</h1>
           <span className="text-sm text-muted-foreground capitalize">{dateLabel}</span>
         </div>
 
@@ -508,7 +508,7 @@ export default function HojePage() {
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
               <LogIn className="h-3.5 w-3.5 text-sucesso" />
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Chegadas hoje</h2>
+              <h2 className="antetitulo">Chegadas hoje</h2>
             </div>
             <div className="divide-y divide-border">
               {chegadas.map(b => <ArrivalCard key={b.id} b={b} guests={guests} props={props} onTransition={applyTransition} />)}
@@ -521,7 +521,7 @@ export default function HojePage() {
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
               <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Saídas hoje</h2>
+              <h2 className="antetitulo">Saídas hoje</h2>
               <Link href="/limpezas" className="ml-auto text-xs font-medium text-primary flex items-center gap-1">
                 Limpezas <ArrowRight className="h-3 w-3" aria-hidden />
               </Link>
@@ -537,7 +537,7 @@ export default function HojePage() {
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
               <Home className="h-3.5 w-3.5 text-info" />
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Em casa agora</h2>
+              <h2 className="antetitulo">Em casa agora</h2>
             </div>
             <div className="divide-y divide-border">
               {emCasa.map(b => <InHouseRow key={b.id} b={b} guests={guests} props={props} onTransition={applyTransition} />)}
@@ -550,7 +550,7 @@ export default function HojePage() {
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Próximos 7 dias</h2>
+              <h2 className="antetitulo">Próximos 7 dias</h2>
             </div>
             <div className="divide-y divide-border">
               {proximasChegadas.map(b => {
@@ -586,7 +586,7 @@ export default function HojePage() {
           <section className="border-b border-border">
             <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-2">
               <span className="h-2 w-2 rounded-full bg-sucesso shrink-0" />
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Vagas agora</h2>
+              <h2 className="antetitulo">Vagas agora</h2>
             </div>
             <div className="divide-y divide-border">
               {vagas.map(p => {

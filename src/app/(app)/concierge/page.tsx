@@ -61,7 +61,7 @@ export default function ConciergePage() {
   if (!IA_ATIVA) {
     return (
       <div className="px-4 lg:px-8 py-10 max-w-xl">
-        <h1 className="text-xl font-semibold">Concierge IA</h1>
+        <h1 className="text-titulo">Concierge IA</h1>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
           As funcionalidades de IA estão desligadas. Para responder a hóspedes, usa a{' '}
           <Link href="/mensagens" className="text-primary underline underline-offset-2">caixa de entrada</Link>.
@@ -165,7 +165,7 @@ function ConciergeAtivo() {
   return (
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm px-4 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold tracking-tight">Concierge IA</h1>
+        <h1 className="text-titulo">Concierge IA</h1>
         <p className="text-xs text-muted-foreground mt-0.5">Responde às mensagens dos hóspedes em segundos</p>
       </header>
 
@@ -287,7 +287,7 @@ function ConciergeAtivo() {
         {(reply || loading) && !error && (
           <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              <span className="antetitulo">
                 {LANGS.find(l => l.code === targetLang)?.label} · {TONES.find(t => t.id === tone)?.label}
               </span>
               {reply && (

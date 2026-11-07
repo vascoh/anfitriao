@@ -203,7 +203,7 @@ export default function ReservasPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Reservas</h1>
+          <h1 className="text-titulo">Reservas</h1>
           <Link href="/reservas/nova"
             className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-semibold active:opacity-80 transition-opacity">
             <Plus className="h-3.5 w-3.5" />

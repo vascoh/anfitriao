@@ -41,7 +41,7 @@ export default async function FunilPage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Funil de ativação</h1>
+        <h1 className="text-titulo">Funil de ativação</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Onde cada anfitrião fica parado, a partir do que está na base — sem tracking no browser.
           A tua conta aparece na lista mas não entra nos totais.

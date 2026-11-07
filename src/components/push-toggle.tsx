@@ -88,7 +88,7 @@ export function PushToggle() {
 
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Notificações</p>
+      <p className="antetitulo">Notificações</p>
       <button
         type="button"
         onClick={toggle}
