@@ -31,7 +31,9 @@ _Iniciado: 2026-06-06_
   `/termos`, `/vs/smoobu`, `/em-construcao` (claro/escuro, 1440/390). Ecrãs
   autenticados não verificados em browser (sem service role local): fazer
   uma volta numa pré-visualização antes do deploy.
-- **Não publicado.**
+- **Publicado** a 2026-11-07 23:17 (`dpl_FhcnTt4wrDZS7aX1yjfgZkiEV1Rd`), com a
+  marca unificada da entrada abaixo. `vercel inspect https://anfitrioes.pt`
+  confirma o alias; axe a zero em produção em `/`, `/termos`, `/vs/smoobu`.
 
 ### [2026-11-07] Marca unificada (TODO 2.3) e plano de evolução
 
@@ -55,6 +57,7 @@ _Iniciado: 2026-06-06_
   zero em `/`, `/termos`, `/vs/smoobu` (claro/escuro, 1440/390), sem erros de
   consola, sem scroll horizontal. Única falha restante: selo «Development
   mode» da Clerk em `/sign-in` (sai com o Clerk de produção, 0.2).
+- Publicado a 2026-11-07 com a entrada acima.
 - `docs/PLANO-EVOLUCAO-2026-11.md`: base a 07/11 = 1 conta real, 4 alojamentos,
   18 reservas, 1 hóspede, 0 envios SIBA. Prioridade: uso real antes de
   funcionalidades novas.
