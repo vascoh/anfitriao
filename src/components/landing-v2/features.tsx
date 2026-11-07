@@ -1,19 +1,5 @@
-'use client'
-
-import { motion } from 'motion/react'
 import { Calendar, ShieldCheck, FileText, TrendingUp, type LucideIcon } from 'lucide-react'
-import type { Variants } from 'motion/react'
-import { staggerContainer, fadeInUp, VIEWPORT, EASE_OUT } from '@/lib/landing-animations'
-
-/** Hover do cartão propaga para o ícone via variantes com o mesmo nome. */
-const cardVariants: Variants = {
-  ...fadeInUp,
-  hover: { scale: 1.05, transition: { duration: 0.25, ease: EASE_OUT } },
-}
-
-const iconVariants: Variants = {
-  hover: { rotate: 360, transition: { duration: 0.7, ease: EASE_OUT } },
-}
+import { ANTETITULO, CARTAO, CONTENTOR, FAIXA, LEAD, SECCAO, TITULO_SECCAO } from './estilos'
 
 type Feature = {
   icon: LucideIcon
@@ -32,7 +18,7 @@ const FEATURES: Feature[] = [
   {
     icon: Calendar,
     titulo: 'Calendário unificado',
-    descricao: 'Airbnb, Booking e Vrbo no mesmo calendário, sincronizados todos os dias — ou à mão, quando não podes esperar.',
+    descricao: 'Airbnb, Booking e Vrbo no mesmo calendário, sincronizados de 15 em 15 minutos. Ou à mão, quando não podes esperar.',
   },
   {
     icon: ShieldCheck,
@@ -42,7 +28,7 @@ const FEATURES: Feature[] = [
   {
     icon: FileText,
     titulo: 'Check-in online',
-    descricao: 'O hóspede preenche os dados do documento antes de chegar. Chega com o boletim já feito.',
+    descricao: 'O hóspede preenche os dados do documento antes de chegar, em português ou inglês. Chega com o boletim já feito.',
   },
   {
     icon: TrendingUp,
@@ -53,51 +39,27 @@ const FEATURES: Feature[] = [
 
 export function Features() {
   return (
-    <section id="funcionalidades" className="relative py-20 sm:py-28">
-      <div className="mx-auto max-w-[1280px] px-5 sm:px-8">
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <p className="text-sm font-semibold tracking-[0.14em] text-cyan-400 uppercase">
-            Funcionalidades
-          </p>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            O essencial, sem a papelada
-          </h2>
-          <p className="mt-4 text-lg text-slate-400">
+    <section id="funcionalidades" className={`${SECCAO} ${FAIXA} scroll-mt-16`}>
+      <div className={CONTENTOR}>
+        <div className="reveal max-w-2xl">
+          <p className={ANTETITULO}>Funcionalidades</p>
+          <h2 className={`mt-3 ${TITULO_SECCAO}`}>O essencial, sem a papelada</h2>
+          <p className={`mt-4 ${LEAD}`}>
             Quatro ferramentas que substituem meia dúzia de separadores abertos.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.ul
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-        >
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, titulo, descricao }) => (
-            <motion.li
-              key={titulo}
-              variants={cardVariants}
-              whileHover="hover"
-              className="group rounded-xl border border-white/10 bg-slate-900/70 p-7 transition-colors hover:border-cyan-400/50 hover:shadow-xl hover:shadow-cyan-500/10"
-            >
-              <motion.span
-                variants={iconVariants}
-                className="grid size-12 place-items-center rounded-xl bg-cyan-500/10 ring-1 ring-cyan-500/25"
-              >
-                <Icon className="size-6 text-cyan-400" aria-hidden />
-              </motion.span>
-              <h3 className="mt-6 text-lg font-semibold text-white">{titulo}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">{descricao}</p>
-            </motion.li>
+            <li key={titulo} className={`reveal lift ${CARTAO} p-6`}>
+              <span className="grid size-11 place-items-center rounded-xl bg-primary/10">
+                <Icon className="size-5 text-primary" aria-hidden />
+              </span>
+              <h3 className="mt-5 text-base font-semibold text-foreground">{titulo}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{descricao}</p>
+            </li>
           ))}
-        </motion.ul>
+        </ul>
       </div>
     </section>
   )

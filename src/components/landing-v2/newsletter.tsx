@@ -42,10 +42,10 @@ export function Newsletter() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="max-w-sm">
-      <label htmlFor="newsletter-email" className="block text-sm font-semibold text-white">
+      <label htmlFor="newsletter-email" className="block text-sm font-semibold text-foreground">
         Novidades para anfitriões
       </label>
-      <p className="mt-1.5 text-sm text-slate-400">
+      <p className="mt-1.5 text-sm text-muted-foreground">
         Uma vez por mês. Sem ruído, sem spam.
       </p>
 
@@ -65,14 +65,14 @@ export function Newsletter() {
               message: 'Email inválido.',
             },
           })}
-          className={`h-11 min-w-0 flex-1 rounded-xl border bg-slate-950/60 px-4 text-sm text-white placeholder:text-slate-400 focus:outline-2 focus:outline-offset-1 focus:outline-cyan-400 ${
-            errors.email ? 'border-red-500/60' : 'border-white/15'
+          className={`h-11 min-w-0 flex-1 rounded-xl border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-2 focus:outline-offset-1 focus:outline-ring ${
+            errors.email ? 'border-red-500/60' : 'border-input'
           }`}
         />
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-cyan-500 px-4 text-sm font-semibold text-slate-950 transition-shadow hover:shadow-lg hover:shadow-cyan-500/30 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-400 disabled:opacity-60"
+          className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring disabled:opacity-60"
         >
           {enviado ? <Check className="size-4" aria-hidden /> : <Send className="size-4" aria-hidden />}
           <span className="sr-only sm:not-sr-only">{enviado ? 'Feito' : 'Subscrever'}</span>
@@ -81,15 +81,15 @@ export function Newsletter() {
 
       <p aria-live="polite" className="mt-2 min-h-5 text-xs">
         {errors.email && (
-          <span id="newsletter-erro" className="text-red-400">
+          <span id="newsletter-erro" className="text-destructive">
             {errors.email.message}
           </span>
         )}
         {falha && !errors.email && (
-          <span className="text-red-400">{falha}</span>
+          <span className="text-destructive">{falha}</span>
         )}
         {enviado && !errors.email && !falha && (
-          <span className="text-emerald-400">Obrigado — ficaste subscrito.</span>
+          <span className="text-primary">Obrigado — ficaste subscrito.</span>
         )}
       </p>
     </form>

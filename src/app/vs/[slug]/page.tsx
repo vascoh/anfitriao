@@ -150,7 +150,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
         <section className="mt-14">
           <h2 className="text-2xl font-bold">Lado a lado</h2>
-          <div className="mt-6 overflow-x-auto">
+          {/* tabIndex: no telemóvel a tabela desliza na horizontal e quem usa teclado tem de conseguir lá chegar (axe: scrollable-region-focusable). */}
+          <div className="mt-6 overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-ring" tabIndex={0} role="region" aria-label="Tabela de comparação, desliza para ver mais">
             <table className="w-full min-w-[34rem] border-collapse text-sm">
               <caption className="sr-only">Comparação de funcionalidades entre o Anfitrião e o {c.nome}</caption>
               <thead>

@@ -1,9 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 
-import { SmoothScroll } from '@/components/landing-v2/smooth-scroll'
 import { Header } from '@/components/landing-v2/header'
 import { Hero } from '@/components/landing-v2/hero'
 import { ProblemSolution } from '@/components/landing-v2/problem-solution'
@@ -17,12 +15,6 @@ import { PERGUNTAS } from '@/components/landing-v2/faq-data'
 import { APP_URL } from '@/lib/config'
 import { CTASection } from '@/components/landing-v2/cta-section'
 import { Footer } from '@/components/landing-v2/footer'
-
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
@@ -79,7 +71,7 @@ export default async function Home() {
   if (userId) redirect('/hoje')
 
   return (
-    <div className={`${inter.variable} landing-v2 min-h-dvh bg-slate-900 text-slate-100`}>
+    <div className="landing min-h-dvh bg-background text-foreground">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -89,11 +81,10 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(plataformaJsonLd) }}
       />
-      <SmoothScroll />
 
       <a
         href="#conteudo"
-        className="sr-only rounded-xl bg-cyan-500 px-4 py-2 font-semibold text-slate-950 focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100"
+        className="sr-only rounded-xl bg-primary px-4 py-2 font-semibold text-primary-foreground focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100"
       >
         Saltar para o conteúdo
       </a>

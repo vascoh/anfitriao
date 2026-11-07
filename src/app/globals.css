@@ -53,7 +53,7 @@
   --secondary-foreground: oklch(28% 0.012 258);
 
   --muted: oklch(93% 0.008 65);
-  --muted-foreground: oklch(52% 0.014 258);
+  --muted-foreground: oklch(50% 0.014 258); /* era 52%: 4.49:1 sobre --muted */
 
   --accent: oklch(93% 0.009 65);
   --accent-foreground: oklch(28% 0.012 258);
@@ -78,15 +78,17 @@
   --popover: oklch(17% 0.010 65);
   --popover-foreground: oklch(93% 0.008 65);
 
-  /* Terracotta — slightly brighter so it reads well on dark */
+  /* Terracota mais claro para se ler sobre o escuro. Texto sobre ele vai
+     escuro: branco sobre 64% dava ~3.3:1 e falhava o WCAG AA em todos os
+     botões da app (axe, 2026-11-07). */
   --primary: oklch(64% 0.155 38);
-  --primary-foreground: oklch(98% 0.005 65);
+  --primary-foreground: oklch(16% 0.012 45);
 
   --secondary: oklch(22% 0.012 65);
   --secondary-foreground: oklch(85% 0.008 65);
 
   --muted: oklch(21% 0.010 65);
-  --muted-foreground: oklch(56% 0.012 258);
+  --muted-foreground: oklch(70% 0.012 258); /* era 56%: ~4.1:1, abaixo de AA */
 
   --accent: oklch(22% 0.012 65);
   --accent-foreground: oklch(85% 0.008 65);
@@ -137,6 +139,11 @@
   to   { opacity: 1; transform: none; }
 }
 
+@keyframes anf-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
 @keyframes anf-word-up {
   from { opacity: 0; transform: translateY(0.4em); }
   to   { opacity: 1; transform: none; }
@@ -161,6 +168,12 @@
   .word-up {
     display: inline-block;
     animation: anf-word-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Flutuação lenta para a ilustração do hero. Desligada pelo bloco de
+     movimento reduzido abaixo. */
+  .float-lento {
+    animation: anf-float 7s ease-in-out infinite;
   }
 
   /* Entrada simples para elementos já visíveis no carregamento. */
@@ -195,7 +208,9 @@
     scroll-behavior: auto !important;
   }
   .reveal,
-  .fade-up {
+  .fade-up,
+  .word-up,
+  .float-lento {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -210,19 +225,17 @@
   }
 }
 
-/* ── Landing v2 (rota /nova) ─────────────────────────────────────────────
-   Escopo isolado: corpo em Inter, títulos em Geist Sans, sempre em escuro
-   independentemente do tema global guardado em `anf:theme`. */
-.landing-v2 {
-  font-family: var(--font-inter), var(--font-geist-sans), system-ui, sans-serif;
-  color-scheme: dark;
+/* ── Landing e páginas legais ─────────────────────────────────────────────
+   Os mesmos tokens e a mesma tipografia da app (TODO 2.3). Antes tinham
+   paleta própria, escura, em Inter: quem se inscrevia entrava noutro produto.
+   Aqui só fica o que é tipográfico. */
+.landing h1,
+.landing h2 {
+  text-wrap: balance;
 }
 
-.landing-v2 h1,
-.landing-v2 h2,
-.landing-v2 h3 {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
-  font-weight: 700;
+.landing ::selection {
+  background: color-mix(in oklch, var(--primary) 22%, transparent);
 }
 
 /* ── Site público do anfitrião (/r/[slug] e /book) ──────────────────────

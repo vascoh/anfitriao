@@ -100,7 +100,7 @@ export default async function EmConstrucaoPage() {
       </div>
 
       {/* Footer */}
-      <div className="absolute bottom-6 text-xs text-muted-foreground/50">
+      <div className="absolute bottom-6 text-xs text-muted-foreground">
         © {new Date().getFullYear()} Anfitrião · Feito em Portugal{' '}
         <span aria-label="bandeira de Portugal">🇵🇹</span>
       </div>

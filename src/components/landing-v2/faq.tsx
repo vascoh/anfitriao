@@ -1,84 +1,43 @@
-'use client'
-
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
-import { staggerContainer, fadeInUp, VIEWPORT, EASE_OUT } from '@/lib/landing-animations'
 import { PERGUNTAS } from './faq-data'
+import { CONTENTOR, FAIXA, SECCAO, TITULO_SECCAO } from './estilos'
 
+/**
+ * `<details>` nativo: abre e fecha sem JavaScript, é acessível por teclado
+ * e leitor de ecrã sem ARIA à mão, e o texto das respostas está no HTML para
+ * o Google (é o mesmo do FAQPage em JSON-LD).
+ */
 export function FAQ() {
-  const [aberto, setAberto] = useState<number | null>(0)
-
   return (
-    <section className="relative py-20 sm:py-28">
-      <div className="mx-auto max-w-3xl px-5 sm:px-8">
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="text-center"
-        >
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Perguntas frequentes
-          </h2>
-        </motion.div>
+    <section className={`${SECCAO} ${FAIXA}`}>
+      <div className={`${CONTENTOR} grid gap-10 lg:grid-cols-[1fr_1.6fr] lg:gap-16`}>
+        <div className="reveal">
+          <h2 className={TITULO_SECCAO}>Perguntas frequentes</h2>
+          <p className="mt-4 text-muted-foreground">
+            Outra dúvida?{' '}
+            <a
+              href="mailto:suporte@anfitrioes.pt"
+              className="font-semibold text-primary underline underline-offset-4"
+            >
+              suporte@anfitrioes.pt
+            </a>
+          </p>
+        </div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="mt-12 divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-slate-900/60"
-        >
-          {PERGUNTAS.map((item, i) => {
-            const expandido = aberto === i
-            return (
-              <motion.div key={item.pergunta} variants={fadeInUp}>
-                <h3>
-                  <button
-                    type="button"
-                    onClick={() => setAberto(expandido ? null : i)}
-                    aria-expanded={expandido}
-                    aria-controls={`faq-painel-${i}`}
-                    id={`faq-botao-${i}`}
-                    className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-white/[0.03] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cyan-400"
-                  >
-                    <span className="text-base font-medium text-white">{item.pergunta}</span>
-                    <motion.span
-                      animate={{ rotate: expandido ? 180 : 0 }}
-                      transition={{ duration: 0.3, ease: EASE_OUT }}
-                      className="shrink-0"
-                    >
-                      <ChevronDown
-                        className={`size-5 ${expandido ? 'text-cyan-400' : 'text-slate-400'}`}
-                        aria-hidden
-                      />
-                    </motion.span>
-                  </button>
-                </h3>
-                <AnimatePresence initial={false}>
-                  {expandido && (
-                    <motion.div
-                      id={`faq-painel-${i}`}
-                      role="region"
-                      aria-labelledby={`faq-botao-${i}`}
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: EASE_OUT }}
-                      className="overflow-hidden"
-                    >
-                      <p className="px-6 pb-6 text-sm leading-relaxed text-slate-400">
-                        {item.resposta}
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )
-          })}
-        </motion.div>
+        <div className="reveal divide-y divide-border overflow-hidden rounded-2xl border border-border bg-background">
+          {PERGUNTAS.map((item, i) => (
+            <details key={item.pergunta} open={i === 0} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+                <h3 className="text-base font-medium text-foreground">{item.pergunta}</h3>
+                <ChevronDown
+                  className="size-5 shrink-0 text-muted-foreground transition-transform duration-300 group-open:rotate-180 group-open:text-primary"
+                  aria-hidden
+                />
+              </summary>
+              <p className="px-6 pb-6 text-sm leading-relaxed text-muted-foreground">{item.resposta}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   )

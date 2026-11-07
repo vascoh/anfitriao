@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Home, Lock } from 'lucide-react'
+import { Lock } from 'lucide-react'
+import { Marca } from '@/components/marca'
 import { CONCORRENTES } from '@/lib/comparacoes'
 
 /**
@@ -42,21 +43,15 @@ const COLUNAS = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-slate-950">
-      <div className="mx-auto max-w-[1280px] px-5 py-16 sm:px-8">
+    <footer className="border-t border-border bg-card">
+      <div className="mx-auto max-w-[1200px] px-4 py-16 sm:px-8">
         <div className="grid gap-12 lg:grid-cols-[1.2fr_2fr]">
           <div>
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-lg font-bold tracking-tight text-white"
-            >
-              <span className="grid size-8 place-items-center rounded-xl bg-cyan-500/15 ring-1 ring-cyan-500/30">
-                <Home className="size-4 text-cyan-400" aria-hidden />
-              </span>
-              Anfitri<span className="-ml-[0.5ch] text-cyan-400">ão</span>
+            <Link href="/" aria-label="Anfitrião, início" className="inline-flex rounded-lg">
+              <Marca />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
-              Plataforma de anfitriões, para anfitriões.
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              Gestão de Alojamento Local feita em Portugal, para a lei portuguesa.
             </p>
             {/* Redes sociais removidas: apontavam para a homepage do LinkedIn
                 e do X, não para perfis do Anfitrião. Repor quando existirem
@@ -66,13 +61,13 @@ export function Footer() {
           <nav aria-label="Rodapé" className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             {COLUNAS.map((coluna) => (
               <div key={coluna.titulo}>
-                <h2 className="text-sm font-semibold text-white">{coluna.titulo}</h2>
+                <h2 className="text-sm font-semibold text-foreground">{coluna.titulo}</h2>
                 <ul className="mt-4 space-y-3">
                   {coluna.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-slate-400 transition-colors hover:text-cyan-400"
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                       </Link>
@@ -88,8 +83,8 @@ export function Footer() {
         </div>
 
         {/* Páginas de comparação — tráfego de alta intenção, herdadas da landing anterior */}
-        <nav aria-labelledby="footer-comparacoes" className="mt-14 border-t border-white/10 pt-8">
-          <h2 id="footer-comparacoes" className="text-sm font-semibold text-white">
+        <nav aria-labelledby="footer-comparacoes" className="mt-14 border-t border-border pt-8">
+          <h2 id="footer-comparacoes" className="text-sm font-semibold text-foreground">
             Anfitrião comparado
           </h2>
           <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
@@ -97,7 +92,7 @@ export function Footer() {
               <li key={c.slug}>
                 <Link
                   href={`/vs/${c.slug}`}
-                  className="text-sm text-slate-400 transition-colors hover:text-cyan-400"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Anfitrião vs {c.nome}
                 </Link>
@@ -106,13 +101,13 @@ export function Footer() {
           </ul>
         </nav>
 
-        <div className="mt-12 flex flex-col gap-5 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-400">
+        <div className="mt-12 flex flex-col gap-5 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} Anfitrião. Todos os direitos reservados.
           </p>
           <ul className="flex flex-wrap gap-4">
-            <li className="flex items-center gap-1.5 text-xs text-slate-400">
-              <Lock className="size-3.5 text-emerald-400" aria-hidden />
+            <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Lock className="size-3.5 text-primary" aria-hidden />
               Ligação encriptada
             </li>
           </ul>

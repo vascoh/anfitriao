@@ -2,10 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'motion/react'
-import type { Variants } from 'motion/react'
 import { Check } from 'lucide-react'
-import { staggerContainer, fadeInUp, VIEWPORT, EASE_OUT } from '@/lib/landing-animations'
 import {
   precoMensal,
   precoPorUnidade,
@@ -15,6 +12,7 @@ import {
   PLAN_LIMITS,
 } from '@/lib/planos'
 import { IA_ATIVA } from '@/lib/ia'
+import { ANTETITULO, BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CONTENTOR, FOCO, LEAD, SECCAO, TITULO_SECCAO } from './estilos'
 
 type Plano = {
   nome: string
@@ -44,7 +42,7 @@ const PLANOS: Plano[] = [
   },
   {
     nome: 'Starter',
-    preco: (anual) => `€${precoMensal('starter', anual)}`,
+    preco: (anual) => `${precoMensal('starter', anual)} €`,
     sufixo: '/mês',
     resumo: limiteDeUnidadesCapitalizado('starter'),
     destaque: true,
@@ -60,7 +58,7 @@ const PLANOS: Plano[] = [
   },
   {
     nome: 'Pro',
-    preco: (anual) => `€${precoMensal('pro', anual)}`,
+    preco: (anual) => `${precoMensal('pro', anual)} €`,
     sufixo: '/mês',
     resumo: limiteDeUnidadesCapitalizado('pro'),
     features: [
@@ -75,12 +73,12 @@ const PLANOS: Plano[] = [
   },
   {
     nome: 'Empresa',
-    preco: (anual) => `€${precoMensal('empresa', anual)}`,
+    preco: (anual) => `${precoMensal('empresa', anual)} €`,
     sufixo: '/mês',
     resumo: 'Guest houses, hostels e hotéis',
     features: [
       limiteDeUnidadesCapitalizado('empresa'),
-      `Menos de €${precoPorUnidade('empresa').toFixed(2).replace('.', ',')} por quarto`,
+      `Menos de ${precoPorUnidade('empresa').toFixed(2).replace('.', ',')} € por quarto`,
       'Tudo o do Pro',
       'Boletins do SIBA por estabelecimento',
       'Migração assistida',
@@ -90,38 +88,23 @@ const PLANOS: Plano[] = [
   },
 ]
 
-const cardVariants: Variants = {
-  ...fadeInUp,
-  hover: { scale: 1.04, transition: { duration: 0.25, ease: EASE_OUT } },
-}
-
 export function Pricing() {
   const [anual, setAnual] = useState(false)
 
   return (
-    <section id="precos" className="relative py-20 sm:py-28">
-      <div className="mx-auto max-w-[1280px] px-5 sm:px-8">
-        <motion.div
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="mx-auto max-w-2xl text-center"
-        >
-          <p className="text-sm font-semibold tracking-[0.14em] text-cyan-400 uppercase">
-            Preços
-          </p>
-          <h2 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Escolhe o plano à tua medida
-          </h2>
-          <p className="mt-4 text-lg text-slate-400">
+    <section id="precos" className={`${SECCAO} scroll-mt-16`}>
+      <div className={CONTENTOR}>
+        <div className="reveal mx-auto max-w-2xl text-center">
+          <p className={ANTETITULO}>Preços</p>
+          <h2 className={`mt-3 ${TITULO_SECCAO}`}>Escolhe o plano à tua medida</h2>
+          <p className={`mt-4 ${LEAD}`}>
             Começas grátis. Sem surpresas e sem comissões sobre as reservas.
           </p>
 
           <div
             role="group"
             aria-label="Periodicidade do pagamento"
-            className="mt-8 inline-flex items-center gap-1 rounded-xl border border-white/10 bg-slate-900/70 p-1"
+            className="mt-8 inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1"
           >
             {[
               { label: 'Mensal', valor: false },
@@ -132,65 +115,50 @@ export function Pricing() {
                 type="button"
                 onClick={() => setAnual(opcao.valor)}
                 aria-pressed={anual === opcao.valor}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-400 ${
+                className={`h-10 rounded-lg px-4 text-sm font-semibold transition-colors ${FOCO} ${
                   anual === opcao.valor
-                    ? 'bg-cyan-500 text-slate-950'
-                    : 'text-slate-300 hover:text-white'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {opcao.label}
               </button>
             ))}
           </div>
-        </motion.div>
+        </div>
 
-        <motion.ul
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="mt-14 grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-4"
-        >
+        <ul className="mt-12 grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PLANOS.map((plano) => (
-            <motion.li
+            <li
               key={plano.nome}
-              variants={cardVariants}
-              whileHover="hover"
-              className={`relative rounded-xl border p-8 transition-colors ${
+              className={`reveal relative flex flex-col rounded-2xl border p-7 ${
                 plano.destaque
-                  ? 'border-cyan-400/60 bg-slate-900 shadow-xl shadow-cyan-500/15 lg:-mt-4 lg:pb-12'
-                  : 'border-white/10 bg-slate-900/60 hover:border-cyan-400/50'
+                  ? 'border-primary bg-background shadow-[0_24px_60px_-30px_color-mix(in_oklch,var(--primary)_60%,transparent)]'
+                  : 'border-border bg-card'
               }`}
             >
               {plano.destaque && (
-                <motion.span
-                  animate={{ opacity: [1, 0.65, 1], scale: [1, 1.04, 1] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-cyan-500 px-3 py-1 text-[11px] font-bold tracking-[0.12em] text-slate-950 uppercase"
-                >
-                  Popular
-                </motion.span>
+                <span className="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                  Recomendado
+                </span>
               )}
 
-              <h3 className="text-lg font-semibold text-white">{plano.nome}</h3>
-              <p className="mt-1 text-sm text-slate-400">{plano.resumo}</p>
+              <h3 className="text-lg font-semibold text-foreground">{plano.nome}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{plano.resumo}</p>
 
               <p className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-bold tracking-tight text-white">
+                <span className="tabular text-4xl font-semibold tracking-tight text-foreground">
                   {plano.preco(anual)}
                 </span>
                 {plano.sufixo && (
-                  <span className="text-sm text-slate-400">{plano.sufixo}</span>
+                  <span className="text-sm text-muted-foreground">{plano.sufixo}</span>
                 )}
               </p>
 
-              <ul className="mt-7 space-y-3.5">
+              <ul className="mt-7 flex-1 space-y-3">
                 {plano.features.map((f) => (
-                  <li key={f} className="flex items-start gap-3 text-sm text-slate-300">
-                    <Check
-                      className={`mt-0.5 size-4 shrink-0 ${plano.destaque ? 'text-cyan-400' : 'text-emerald-400'}`}
-                      aria-hidden
-                    />
+                  <li key={f} className="flex items-start gap-3 text-sm text-foreground">
+                    <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
                     {f}
                   </li>
                 ))}
@@ -198,35 +166,25 @@ export function Pricing() {
 
               <Link
                 href={plano.href}
-                className={`mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl text-sm font-semibold transition-shadow focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-400 ${
-                  plano.destaque
-                    ? 'bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/25 hover:shadow-xl hover:shadow-cyan-500/50'
-                    : 'border border-white/20 text-white hover:border-cyan-400/60 hover:bg-cyan-500/10'
-                }`}
+                className={`${plano.destaque ? BOTAO_PRIMARIO : BOTAO_SECUNDARIO} mt-8 h-12 w-full text-sm`}
               >
                 {plano.cta}
               </Link>
-            </motion.li>
+            </li>
           ))}
-        </motion.ul>
+        </ul>
 
-        <motion.p
-          variants={fadeInUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          className="mt-10 text-center text-sm text-slate-400"
-        >
+        <p className="mt-10 text-center text-sm text-muted-foreground">
           Todos os planos incluem {TRIAL_DIAS} dias de teste. Mais de{' '}
-          {PLAN_LIMITS.pro.propriedades_max} propriedades?{' '}
+          {PLAN_LIMITS.empresa.propriedades_max} quartos?{' '}
           <a
             href="mailto:suporte@anfitrioes.pt"
-            className="font-semibold text-cyan-400 underline-offset-4 hover:underline"
+            className={`rounded-sm font-semibold text-primary underline underline-offset-4 ${FOCO}`}
           >
             Fala connosco
           </a>{' '}
-          sobre um plano Enterprise.
-        </motion.p>
+          sobre um plano à medida.
+        </p>
       </div>
     </section>
   )

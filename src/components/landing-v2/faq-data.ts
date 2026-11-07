@@ -25,7 +25,7 @@ export const PERGUNTAS = [
   {
     pergunta: 'E se eu tiver uma guest house ou um hotel pequeno?',
     resposta:
-      `Cabe. Contamos quartos alugáveis, não propriedades: o Starter cobre ${limiteDeUnidades('starter')}, o Pro ${limiteDeUnidades('pro')} e o Empresa ${limiteDeUnidades('empresa')} por €${PLAN_PRICE_EUR.empresa}/mês — menos de €2,50 por quarto, quando a concorrência cobra 10 a 20 € por unidade. Acima de ${PLAN_LIMITS.empresa.propriedades_max} quartos, escreve para suporte@anfitrioes.pt. Podes mudar de plano a qualquer momento, sem perder dados.`,
+      `Cabe. Contamos quartos alugáveis, não propriedades: o Starter cobre ${limiteDeUnidades('starter')}, o Pro ${limiteDeUnidades('pro')} e o Empresa ${limiteDeUnidades('empresa')} por ${PLAN_PRICE_EUR.empresa} €/mês, menos de 2,50 € por quarto, quando a concorrência cobra 10 a 20 € por unidade. Acima de ${PLAN_LIMITS.empresa.propriedades_max} quartos, escreve para suporte@anfitrioes.pt. Podes mudar de plano a qualquer momento, sem perder dados.`,
   },
   {
     pergunta: 'Que apoio está incluído?',

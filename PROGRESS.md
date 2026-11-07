@@ -6,6 +6,33 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-07] Marca unificada (TODO 2.3) e plano de evolução
+
+- 🎨 **Landing e páginas legais passam aos tokens da app.** Saem slate/ciano/
+  esmeralda/Inter (contrariavam o `PRODUCT.md`: «neon-on-dark», «generic SaaS»);
+  entram fundo quente, terracota como acento único, Geist e tema claro/escuro.
+  Hero com o ecrã «Hoje» em miniatura; FAQ em `<details>` nativo; secções
+  estáticas passam a componentes de servidor. Símbolo único `components/marca.tsx`
+  (também na barra lateral).
+- 🟠 **Secções invisíveis sem JS.** Todo o `motion` com `whileInView` servia o
+  conteúdo com `opacity:0`. Animações passam a CSS (`.reveal`, `.float-lento`);
+  `motion` e `lenis` removidos do `package.json` (npm 11.19.0).
+- 🟠 **Contraste do modo escuro na app inteira**: `--primary-foreground` escuro
+  (branco sobre terracota 64% dava ~3,3:1 em todos os botões) e
+  `--muted-foreground` 56%→70%. No claro, 52%→50% (4,49:1 sobre `--muted`).
+  `/vs/*`: tabela com scroll focável. `/em-construcao`: rodapé sem `/50`.
+- Copy: «Ver demonstração» (sem vídeo) → «Ver como funciona»; «Popular» →
+  «Recomendado»; «Enterprise acima de 10» → «à medida acima de 40 quartos»;
+  preços `19 €`; sem travessões.
+- Validação: typecheck 0, lint 0, 1437 testes, build; axe-core WCAG 2.1 AA a
+  zero em `/`, `/termos`, `/vs/smoobu` (claro/escuro, 1440/390), sem erros de
+  consola, sem scroll horizontal. Única falha restante: selo «Development
+  mode» da Clerk em `/sign-in` (sai com o Clerk de produção, 0.2).
+- `docs/PLANO-EVOLUCAO-2026-11.md`: base a 07/11 = 1 conta real, 4 alojamentos,
+  18 reservas, 1 hóspede, 0 envios SIBA. Prioridade: uso real antes de
+  funcionalidades novas.
+- **Não publicado** — à espera de aprovação visual do Vasco.
+
 ### [2026-11-05] Título da landing visível sem JS e CSP sem `unsafe-eval`
 
 - 🟠 **O H1 da landing vinha do servidor com `opacity:0`** (animação palavra

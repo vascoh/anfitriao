@@ -7,6 +7,7 @@ import { useClerk, useUser } from '@clerk/nextjs'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAlertsCount } from '@/hooks/use-alerts-count'
 import { useTheme } from '@/hooks/use-theme'
+import { Marca } from '@/components/marca'
 import { NAV, CONTA_NAV, ADMIN_NAV, rotaAtiva, seccaoDe, type NavSection } from '@/lib/navigation'
 
 /**
@@ -134,13 +135,7 @@ export function SideNav() {
     <aside className="hidden lg:flex flex-col w-56 shrink-0 h-dvh border-r border-border bg-card">
       {/* Brand */}
       <div className="px-5 h-16 flex items-center gap-3 border-b border-border shrink-0">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <svg className="h-4 w-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
-          </svg>
-        </div>
-        <span className="font-bold text-base tracking-tight">Anfitrião</span>
+        <Marca />
       </div>
 
       {/* Search trigger */}
