@@ -61,7 +61,7 @@ _Iniciado: 2026-06-06_
 - `docs/PLANO-EVOLUCAO-2026-11.md`: base a 07/11 = 1 conta real, 4 alojamentos,
   18 reservas, 1 hóspede, 0 envios SIBA. Prioridade: uso real antes de
   funcionalidades novas.
-- **Não publicado** — à espera de aprovação visual do Vasco.
+- **Publicado** a 2026-11-07 com as entradas acima.
 
 ### [2026-11-05] Título da landing visível sem JS e CSP sem `unsafe-eval`
 
