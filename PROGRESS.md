@@ -26,6 +26,8 @@ _Iniciado: 2026-06-06_
   `npm audit --omit=dev` mantém 10 vulnerabilidades baixas/moderadas nas
   ferramentas Sentry/shadcn; a correção total proposta faz downgrade destrutivo
   do shadcn para 1.0.0, por isso não foi aplicada.
+- **Publicado** a 2026-11-08 (`dpl_798tqkaBsKTPk2gBWYTGjW7Buvas`); alias
+  `anfitrioes.pt` confirmado no novo deployment e resposta pública HTTP 200.
 
 ### [2026-11-07, tarde] Horizonte 2 do plano: estados, limite do plano, telemóvel
 
