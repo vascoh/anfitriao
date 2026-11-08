@@ -6,6 +6,27 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-08] Base Supabase protegida e tooling sem deriva
+
+- 🔐 **O cliente privilegiado da base passa a ser `server-only`.** O módulo
+  `lib/supabase.ts` ainda exportava um cliente anon de browser que não tinha
+  consumidores, ao lado de `createAdminClient()`. O export morto saiu e o
+  módulo fica agora marcado para o Next recusar uma importação acidental num
+  Client Component antes de qualquer segredo chegar ao bundle.
+- 🟠 **Fallback da service role corrigido.** Uma
+  `SUPABASE_SERVICE_ROLE_KEY` presente mas vazia passava pelo `??` e criava o
+  cliente com uma chave vazia. Passa a cair na anon key como a mensagem dizia;
+  o aviso é emitido uma vez por processo, em vez de uma vez por cliente (cerca
+  de 80 linhas repetidas no build local). Dois testes novos cobrem ambos os
+  caminhos.
+- 🧰 `vitest.config.ts` → `.mts` e `import.meta.dirname`: a configuração
+  já funciona com o futuro config loader nativo do Vite, sem o aviso de
+  CommonJS. `eslint-config-next` 16.2.6 → 16.4.3, alinhado com o Next instalado.
+- Validação: 1448 testes, typecheck 0, lint 0 e build de produção OK. O
+  `npm audit --omit=dev` mantém 10 vulnerabilidades baixas/moderadas nas
+  ferramentas Sentry/shadcn; a correção total proposta faz downgrade destrutivo
+  do shadcn para 1.0.0, por isso não foi aplicada.
+
 ### [2026-11-07, tarde] Horizonte 2 do plano: estados, limite do plano, telemóvel
 
 - 🎨 **Cores de estado em tokens.** `sucesso`/`aviso`/`erro`/`info` (+

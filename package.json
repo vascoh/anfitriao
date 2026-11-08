@@ -49,7 +49,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "axe-core": "^4.12.1",
     "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "^16.4.3",
     "husky": "^9.1.7",
     "lint-staged": "^15.0.0",
     "tailwindcss": "^4",
