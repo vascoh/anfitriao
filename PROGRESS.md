@@ -20,6 +20,8 @@ _Iniciado: 2026-06-06_
 - Guarda estrutural em `components/global-search.test.ts` para preservar o
   comportamento mobile, a safe area e a gestão de foco.
 - Validação: 1451 testes, typecheck 0, lint 0 e build de produção OK.
+- **Publicado** a 2026-11-09 (`dpl_4Qb7SHjP4ir7uYgYuUN6F1368WQU`); alias
+  `anfitrioes.pt` confirmado no novo deployment e resposta pública HTTP 200.
 
 ### [2026-11-08] Base Supabase protegida e tooling sem deriva
 
