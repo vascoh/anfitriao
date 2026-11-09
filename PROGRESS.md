@@ -6,6 +6,21 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-09] Pesquisa como folha inferior e foco acessível
+
+- 📱 **Fechado o que faltava do U5 no Horizonte 2.** A pesquisa e as
+  ações rápidas (`⌘K`, `/` ou menu «Mais») passam a folha inferior no
+  telemóvel, com pega visual, altura limitada, scroll interno e respeito pela
+  safe area do iPhone. No desktop mantêm o diálogo centrado.
+- ♿️ **O modal deixa de perder o utilizador no conteúdo de fundo.** Enquanto
+  está aberto bloqueia o scroll da página e prende o Tab entre os seus
+  controlos; Escape, backdrop e um botão de 44 px fecham-no. Ao fechar, o foco
+  regressa ao controlo que o abriu. O nome do diálogo passa por
+  `aria-labelledby`.
+- Guarda estrutural em `components/global-search.test.ts` para preservar o
+  comportamento mobile, a safe area e a gestão de foco.
+- Validação: 1451 testes, typecheck 0, lint 0 e build de produção OK.
+
 ### [2026-11-08] Base Supabase protegida e tooling sem deriva
 
 - 🔐 **O cliente privilegiado da base passa a ser `server-only`.** O módulo

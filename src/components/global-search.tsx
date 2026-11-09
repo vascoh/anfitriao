@@ -122,6 +122,8 @@ export function GlobalSearch() {
   const [props, setProps] = useState<Property[]>([])
   const [cursor, setCursor] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const focoAnteriorRef = useRef<HTMLElement | null>(null)
   const router = useRouter()
   const { user } = useUser()
   const isAdmin = user?.id === process.env.NEXT_PUBLIC_ADMIN_USER_ID
@@ -156,11 +158,46 @@ export function GlobalSearch() {
   }, [])
 
   useEffect(() => {
-    if (open) {
-      const t = setTimeout(() => { inputRef.current?.focus(); setCursor(0) }, 50)
-      return () => clearTimeout(t)
+    if (!open) return
+
+    focoAnteriorRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    const overflowAnterior = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const t = setTimeout(() => { inputRef.current?.focus(); setCursor(0) }, 50)
+    function prenderFoco(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        close()
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const focaveis = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focaveis?.length) return
+      const primeiro = focaveis[0]
+      const ultimo = focaveis[focaveis.length - 1]
+      if (e.shiftKey && document.activeElement === primeiro) {
+        e.preventDefault()
+        ultimo.focus()
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault()
+        primeiro.focus()
+      }
     }
-  }, [open])
+    document.addEventListener('keydown', prenderFoco)
+
+    return () => {
+      clearTimeout(t)
+      document.removeEventListener('keydown', prenderFoco)
+      document.body.style.overflow = overflowAnterior
+      focoAnteriorRef.current?.focus()
+    }
+  }, [open, close])
 
   useEffect(() => { const t = setTimeout(() => setCursor(0), 0); return () => clearTimeout(t) }, [q])
 
@@ -175,10 +212,10 @@ export function GlobalSearch() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center pt-[10vh] px-4"
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-start sm:pt-[10vh] sm:px-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Pesquisa e ações rápidas"
+      aria-labelledby="pesquisa-global-titulo"
       onClick={close}
     >
       <div
@@ -186,11 +223,16 @@ export function GlobalSearch() {
         aria-hidden
       />
       <div
-        className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+        ref={dialogRef}
+        className="relative flex max-h-[85dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-2xl sm:max-h-[80vh] sm:rounded-2xl sm:pb-0"
         onClick={e => e.stopPropagation()}
       >
+        <div className="flex justify-center py-2 sm:hidden" aria-hidden="true">
+          <span className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+        </div>
+        <h2 id="pesquisa-global-titulo" className="sr-only">Pesquisa e ações rápidas</h2>
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2 sm:gap-3 sm:px-4 sm:py-3.5">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
             ref={inputRef}
@@ -201,17 +243,19 @@ export function GlobalSearch() {
             aria-label="Pesquisar reservas, hóspedes, alojamentos ou ações"
             className="flex-1 text-sm bg-transparent placeholder:text-muted-foreground/60 focus:outline-none"
           />
-          {q && (
-            <button onClick={() => setQ('')} aria-label="Limpar pesquisa" className="p-0.5 rounded text-muted-foreground hover:text-foreground">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <kbd className="hidden sm:flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-border text-[10px] text-muted-foreground font-mono">Esc</kbd>
+          <button
+            type="button"
+            onClick={() => q ? setQ('') : close()}
+            aria-label={q ? 'Limpar pesquisa' : 'Fechar pesquisa'}
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:min-h-8 sm:min-w-8"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="max-h-80 overflow-y-auto py-1.5">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1.5">
             {results.map((r, i) => {
               const Icon = TYPE_ICON[r.type]
               // Cabeçalho sempre que o grupo muda — dá estrutura sem precisar
@@ -263,7 +307,7 @@ export function GlobalSearch() {
 
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-border flex items-center gap-3 text-[10px] text-muted-foreground/60">
+        <div className="hidden items-center gap-3 border-t border-border px-4 py-2 text-[10px] text-muted-foreground/60 sm:flex">
           <span><kbd className="font-mono">↑↓</kbd> navegar</span>
           <span><kbd className="font-mono">↵</kbd> abrir</span>
           <span><kbd className="font-mono">Esc</kbd> fechar</span>

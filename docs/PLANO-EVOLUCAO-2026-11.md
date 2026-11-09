@@ -69,10 +69,9 @@ primeiro check-in online de um hóspede real da Casa de Vasco.**
 
 ## Horizonte 2 — semanas 3 a 6: design para quem usa no telemóvel
 
-> **Estado a 07/11 (tarde):** 1, 2, 3 e 4 feitos no código (commit seguinte a
-> `0c6ec4f`), por publicar. Falta do ponto 1 as folhas inferiores nas ações
-> rápidas (o menu «Mais» já é uma); falta o 5 (depende do horizonte 1) e o 6
-> (decisão).
+> **Estado a 09/11:** 1, 2, 3 e 4 publicados. A pesquisa/ações rápidas
+> passou também a folha inferior no telemóvel, fechando o ponto 1. Faltam o 5
+> (depende do horizonte 1) e o 6 (decisão).
 
 Por ordem de impacto no anfitrião com pouco tempo. Cada ponto está pronto a
 fazer sem decisões pendentes, exceto quando assinalado.
