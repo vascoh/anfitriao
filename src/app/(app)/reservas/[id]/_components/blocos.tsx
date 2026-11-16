@@ -63,7 +63,7 @@ export function Stepper({ estado }: { estado: string }) {
                   <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
                 )}
               </div>
-              <span className={`text-[10px] whitespace-nowrap ${active ? 'font-semibold text-primary' : done ? 'text-primary/70' : 'text-muted-foreground'}`}>
+              <span className={`text-[10px] whitespace-nowrap ${active ? 'font-semibold text-primary' : 'text-muted-foreground'}`}>
                 {step.label}
               </span>
             </div>
