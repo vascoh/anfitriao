@@ -172,8 +172,8 @@ function ConciergeAtivo() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 pb-8">
         {/* Property selector */}
         {properties.length > 0 && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Propriedade</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Propriedade</span>
             <div className="relative">
               <select
                 value={selectedPropId}
@@ -192,7 +192,7 @@ function ConciergeAtivo() {
                 A IA usará as instruções e regras desta propriedade no contexto da resposta.
               </p>
             )}
-          </div>
+          </label>
         )}
 
         {/* Templates */}

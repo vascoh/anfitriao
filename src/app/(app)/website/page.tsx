@@ -139,6 +139,7 @@ export default function WebsitePage() {
               }
               update('enabled', !settings.enabled)
             }}
+            type="button" role="switch" aria-checked={settings.enabled} aria-label="Website público"
             className={`shrink-0 transition-colors ${settings.enabled ? 'text-primary' : 'text-muted-foreground'}`}>
             {settings.enabled
               ? <ToggleRight className="h-8 w-8" />
@@ -237,7 +238,8 @@ export default function WebsitePage() {
           <p className="antetitulo">URL do website</p>
           <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2.5">
             <span className="flex-1 text-sm font-mono text-foreground/70 truncate">{publicUrl}</span>
-            <button onClick={copyUrl} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+            <button type="button" onClick={copyUrl} aria-label={copied ? 'Endereço copiado' : 'Copiar endereço do website'}
+              className="shrink-0 grid h-11 w-11 -my-2.5 -mr-2 place-items-center text-muted-foreground hover:text-foreground transition-colors">
               {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
@@ -274,8 +276,8 @@ export default function WebsitePage() {
         <div className="flex flex-col gap-4">
           <p className="antetitulo">URL personalizado</p>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Slug do website</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Slug do website</span>
             <div className="flex items-center rounded-lg border border-input bg-muted/40 overflow-hidden focus-within:ring-2 focus-within:ring-ring">
               <span className="px-3 py-2.5 text-sm text-muted-foreground shrink-0 border-r border-input">{origin}/r/</span>
               <input
@@ -294,82 +296,82 @@ export default function WebsitePage() {
             ) : (
               <p className="text-[11px] text-muted-foreground">Mínimo 3 caracteres · só letras, números e hífens</p>
             )}
-          </div>
+          </label>
 
           <p className="antetitulo">Identidade</p>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Nome / Marca</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Nome / Marca</span>
             <input type="text" value={settings.logo_texto ?? ''} onChange={e => update('logo_texto', e.target.value)}
               placeholder="Ex: Casa de Vasco"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Título do website</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Título do website</span>
             <input type="text" value={settings.nome} onChange={e => update('nome', e.target.value)}
               placeholder="Ex: Apartamentos Lisboa — Reserve Diretamente"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Descrição / slogan</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Descrição / slogan</span>
             <textarea value={settings.descricao} onChange={e => update('descricao', e.target.value)} rows={2}
               placeholder="Reserve diretamente connosco..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Nome do anfitrião</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Nome do anfitrião</span>
               <input type="text" value={settings.host_nome ?? ''} onChange={e => update('host_nome', e.target.value)}
                 placeholder="Ex: Vasco Henriques"
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Frase do anfitrião</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Frase do anfitrião</span>
               <input type="text" value={settings.host_bio ?? ''} onChange={e => update('host_bio', e.target.value)}
                 placeholder="Superhost desde 2018..."
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Email de contacto</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Email de contacto</span>
               <input type="email" value={settings.email} onChange={e => update('email', e.target.value)}
                 placeholder="host@exemplo.com"
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Telefone / WhatsApp</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Telefone / WhatsApp</span>
               <input type="tel" value={settings.telefone} onChange={e => update('telefone', e.target.value)}
                 placeholder="+351 912 345 678"
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
           </div>
 
           {/* ── Identidade dos emails ao hóspede ── */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Email de reservas (respostas dos hóspedes)</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Email de reservas (respostas dos hóspedes)</span>
               <input type="email" value={settings.email_reservas ?? ''} onChange={e => update('email_reservas', e.target.value)}
                 placeholder="Se vazio, usa o email de contacto"
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Cor principal (site e emails)</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Cor principal (site e emails)</span>
               <input type="color" value={settings.cor_primaria ?? '#C2714F'} onChange={e => update('cor_primaria', e.target.value)}
                 className="h-[42px] w-full rounded-lg border border-input bg-card px-2 py-1.5 cursor-pointer" />
-            </div>
+            </label>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Assinatura dos emails (opcional)</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Assinatura dos emails (opcional)</span>
             <textarea value={settings.assinatura_email ?? ''} onChange={e => update('assinatura_email', e.target.value)} rows={2}
               placeholder="Até já! — Vasco, Casa de Vasco"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
           {/* ── Aparência do site público ── */}
           <div className="flex flex-col gap-3 pt-2 border-t border-border">
@@ -395,25 +397,25 @@ export default function WebsitePage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Idioma do site</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Idioma do site</span>
               <select value={settings.idioma ?? 'pt'} onChange={e => update('idioma', e.target.value)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="pt">Português</option>
                 <option value="en">English</option>
               </select>
               <p className="text-[11px] text-muted-foreground">Aplica-se ao menu, rodapé e textos fixos do site. O teu texto (descrição, FAQ) mantém-se como escreveste.</p>
-            </div>
+            </label>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Tipo de letra</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Tipo de letra</span>
               <select value={settings.fonte ?? ''} onChange={e => update('fonte', e.target.value || null)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Default (Geist)</option>
                 <option value="serif">Elegante (serifada)</option>
                 <option value="arredondada">Arredondada (amigável)</option>
               </select>
-            </div>
+            </label>
 
             {/* O FAQ passou para o editor do site, junto das outras secções da
               * inicial — editar a mesma coisa em dois sítios acaba em dois
@@ -428,18 +430,18 @@ export default function WebsitePage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Mínimo de noites</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Mínimo de noites</span>
               <input type="number" min={1} max={30} value={settings.min_noites}
                 onChange={e => update('min_noites', Number(e.target.value))}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Antecedência mínima (dias)</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Antecedência mínima (dias)</span>
               <input type="number" min={0} max={60} value={settings.antecedencia_dias}
                 onChange={e => update('antecedencia_dias', Number(e.target.value))}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
           </div>
         </div>
 

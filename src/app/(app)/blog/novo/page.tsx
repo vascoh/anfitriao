@@ -91,29 +91,29 @@ export default function NovoPostPage() {
       </header>
 
       <div className="flex flex-col gap-4 p-4 pb-8 max-w-xl">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Título *</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Título *</span>
           <input type="text" value={titulo} onChange={e => handleTituloChange(e.target.value)}
             placeholder="Ex: Como preencher o SIBA em 5 minutos"
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        </label>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Slug (URL) *</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Slug (URL) *</span>
           <div className="flex items-center gap-1 rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus-within:ring-2 focus-within:ring-ring">
             <span className="text-muted-foreground shrink-0">/blog/</span>
             <input type="text" value={slug}
               onChange={e => { setSlugTouched(true); setSlug(slugify(e.target.value)) }}
               className="flex-1 bg-transparent focus:outline-none" />
           </div>
-        </div>
+        </label>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Resumo (opcional)</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Resumo (opcional)</span>
           <textarea value={resumo} onChange={e => setResumo(e.target.value)} rows={2}
             placeholder="Aparece na lista de posts. Se vazio, usa o início do conteúdo."
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        </label>
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">Imagem de capa</label>
@@ -133,12 +133,12 @@ export default function NovoPostPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Conteúdo *</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Conteúdo *</span>
           <textarea value={conteudo} onChange={e => setConteudo(e.target.value)} rows={12}
             placeholder="Texto simples. Deixa uma linha em branco entre parágrafos."
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-y font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        </label>
 
         <button type="button" onClick={() => setPublicado(v => !v)}
           className="flex items-center gap-3 rounded-lg border border-input bg-card px-3 py-3 text-left">

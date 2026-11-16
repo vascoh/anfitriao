@@ -127,23 +127,23 @@ export default function EditarReservaPage() {
         </div>
 
         <div className="flex gap-3">
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-xs text-muted-foreground font-medium">Check-in</label>
+          <label className="flex flex-col gap-1.5 flex-1">
+            <span className="text-xs text-muted-foreground font-medium">Check-in</span>
             <input type="date" value={checkIn} onChange={e => setCheckIn(e.target.value)}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-xs text-muted-foreground font-medium">Check-out</label>
+          </label>
+          <label className="flex flex-col gap-1.5 flex-1">
+            <span className="text-xs text-muted-foreground font-medium">Check-out</span>
             <input type="date" value={checkOut} min={checkIn} onChange={e => setCheckOut(e.target.value)}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Nº de hóspedes</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Nº de hóspedes</span>
           <input type="number" min={1} value={numHospedes} onChange={e => setNumHospedes(Number(e.target.value))}
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-28" />
-        </div>
+        </label>
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-muted-foreground font-medium">Origem</label>
@@ -160,24 +160,24 @@ export default function EditarReservaPage() {
         </div>
 
         <div className="flex gap-3">
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-xs text-muted-foreground font-medium">Total (€)</label>
+          <label className="flex flex-col gap-1.5 flex-1">
+            <span className="text-xs text-muted-foreground font-medium">Total (€)</span>
             <input type="number" min={0} value={precoTotal} onChange={e => setPrecoTotal(e.target.value)}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div className="flex flex-col gap-1.5 flex-1">
-            <label className="text-xs text-muted-foreground font-medium">Recebido (€)</label>
+          </label>
+          <label className="flex flex-col gap-1.5 flex-1">
+            <span className="text-xs text-muted-foreground font-medium">Recebido (€)</span>
             <input type="number" min={0} value={precoPago} onChange={e => setPrecoPago(e.target.value)}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Notas internas</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Notas internas</span>
           <textarea value={notas} onChange={e => setNotas(e.target.value)}
             placeholder="Notas sobre a reserva..."
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none min-h-24 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        </label>
 
         <button onClick={handleSave}
           className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm active:opacity-80 transition-opacity mt-2">

@@ -77,7 +77,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
       <main className="mx-auto max-w-4xl px-6 py-16">
         <nav aria-label="Migalhas" className="mb-6 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground">Início</Link>
+          <Link href="/" className="inline-flex min-h-6 items-center hover:text-foreground">Início</Link>
           <span className="mx-2" aria-hidden="true">/</span>
           <span className="text-foreground">Anfitrião vs {c.nome}</span>
         </nav>
@@ -151,7 +151,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
         <section className="mt-14">
           <h2 className="text-2xl font-bold">Lado a lado</h2>
           {/* tabIndex: no telemóvel a tabela desliza na horizontal e quem usa teclado tem de conseguir lá chegar (axe: scrollable-region-focusable). */}
-          <div className="mt-6 overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-ring" tabIndex={0} role="region" aria-label="Tabela de comparação, desliza para ver mais">
+          <div className="relative mt-6 overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-ring" tabIndex={0} role="region" aria-label="Tabela de comparação, desliza para ver mais">
             <table className="w-full min-w-[34rem] border-collapse text-sm">
               <caption className="sr-only">Comparação de funcionalidades entre o Anfitrião e o {c.nome}</caption>
               <thead>

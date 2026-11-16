@@ -39,10 +39,10 @@ export function EditAccountForm({ account }: { account: Account }) {
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
 
       {/* Estado */}
-      <div>
-        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+      <label className="block">
+        <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
           Estado
-        </label>
+        </span>
         <select
           name="estado"
           defaultValue={account.estado}
@@ -52,13 +52,13 @@ export function EditAccountForm({ account }: { account: Account }) {
             <option key={e.value} value={e.value}>{e.label}</option>
           ))}
         </select>
-      </div>
+      </label>
 
       {/* Plano */}
-      <div>
-        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+      <label className="block">
+        <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
           Plano
-        </label>
+        </span>
         <select
           name="plano"
           defaultValue={account.plano}
@@ -68,13 +68,13 @@ export function EditAccountForm({ account }: { account: Account }) {
             <option key={p.value} value={p.value}>{p.label}</option>
           ))}
         </select>
-      </div>
+      </label>
 
       {/* Limite de propriedades */}
-      <div>
-        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+      <label className="block">
+        <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
           Limite de propriedades
-        </label>
+        </span>
         <input
           type="number"
           name="propriedades_max"
@@ -83,13 +83,13 @@ export function EditAccountForm({ account }: { account: Account }) {
           max={100}
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
-      </div>
+      </label>
 
       {/* Notas internas */}
-      <div>
-        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+      <label className="block">
+        <span className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
           Notas internas
-        </label>
+        </span>
         <textarea
           name="notas_admin"
           defaultValue={account.notas_admin ?? ''}
@@ -97,7 +97,7 @@ export function EditAccountForm({ account }: { account: Account }) {
           placeholder="Notas visíveis apenas para o admin…"
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
         />
-      </div>
+      </label>
 
       <button
         type="submit"

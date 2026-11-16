@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 
 type Theme = 'light' | 'dark' | 'system'
 
 const STORAGE_KEY = 'anf:theme'
+const EVENTO = 'anf:theme-change'
+const MQ = '(prefers-color-scheme: dark)'
 
 function getSystemPreference(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light'
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  return window.matchMedia(MQ).matches ? 'dark' : 'light'
 }
 
 function applyTheme(theme: Theme) {
@@ -17,36 +18,65 @@ function applyTheme(theme: Theme) {
 }
 
 function readStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'system'
-  return (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? 'system'
+  try {
+    const t = localStorage.getItem(STORAGE_KEY)
+    return t === 'light' || t === 'dark' ? t : 'system'
+  } catch {
+    return 'system'
+  }
 }
 
+/**
+ * Tema escolhido + tema do sistema, como uma só loja externa.
+ *
+ * Com `useState(readStoredTheme)` o servidor desenhava sempre o botão de
+ * «Modo escuro» e o cliente, em modo escuro, o de «Modo claro»: erro de
+ * hidratação (React #418) em todos os ecrãs da app no tema escuro, medido em
+ * produção a 2026-11-16. O `useSyncExternalStore` hidrata com o valor do
+ * servidor e só depois passa ao do cliente, sem desfasamento.
+ */
+function subscribe(onChange: () => void) {
+  const mq = window.matchMedia(MQ)
+  mq.addEventListener('change', onChange)
+  window.addEventListener('storage', onChange)
+  window.addEventListener(EVENTO, onChange)
+  return () => {
+    mq.removeEventListener('change', onChange)
+    window.removeEventListener('storage', onChange)
+    window.removeEventListener(EVENTO, onChange)
+  }
+}
+
+// Snapshot primitivo: `<escolha>:<sistema>`, para o React comparar por valor.
+const snapshot = () => `${readStoredTheme()}:${getSystemPreference()}`
+const serverSnapshot = () => 'system:light'
+
 export function useTheme() {
-  // Lazy initialiser — reads localStorage once without needing an extra setState in an effect
-  const [theme, setThemeState] = useState<Theme>(readStoredTheme)
+  const [theme, sistema] = useSyncExternalStore(subscribe, snapshot, serverSnapshot).split(':') as [
+    Theme,
+    'light' | 'dark',
+  ]
 
-  // Apply theme to <html> whenever it changes (covers both initial mount and updates)
+  // O script inline do layout já aplica a classe antes da pintura; isto mantém-na
+  // certa quando a escolha ou a preferência do sistema mudam depois. Lê o
+  // armazenamento e não o estado: na primeira passagem o estado ainda é o do
+  // servidor («system») e aplicá-lo tirava o escuro a quem o escolheu (piscar).
   useEffect(() => {
-    applyTheme(theme)
-  }, [theme])
-
-  // Listen for system preference changes when theme is 'system'
-  useEffect(() => {
-    if (theme !== 'system') return
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    const handler = () => applyTheme('system')
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [theme])
+    applyTheme(readStoredTheme())
+  }, [theme, sistema])
 
   function setTheme(next: Theme) {
-    setThemeState(next)
-    localStorage.setItem(STORAGE_KEY, next)
+    try {
+      localStorage.setItem(STORAGE_KEY, next)
+    } catch {
+      // Sem armazenamento (navegação privada): o tema muda só nesta página.
+      applyTheme(next)
+      return
+    }
+    window.dispatchEvent(new Event(EVENTO))
   }
 
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' && typeof window !== 'undefined' && getSystemPreference() === 'dark')
+  const isDark = theme === 'dark' || (theme === 'system' && sistema === 'dark')
 
   return { theme, setTheme, isDark }
 }

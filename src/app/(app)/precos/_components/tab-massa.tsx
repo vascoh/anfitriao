@@ -134,7 +134,7 @@ export function TabMassa({
       {/* Step 1: Select properties */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold">1. Selecionar propriedades</label>
+          <p className="text-sm font-semibold">1. Selecionar propriedades</p>
           <button
             onClick={() => setSelectedProps(selectedProps.length === props.length ? [] : props.map(p => p.id))}
             className="text-xs text-primary font-medium"
@@ -159,16 +159,16 @@ export function TabMassa({
 
       {/* Step 2: Dates */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold">2. Período (opcional)</label>
+        <p className="text-sm font-semibold">2. Período (opcional)</p>
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>Data início</label>
+          <label className="flex flex-col gap-1">
+            <span className={labelCls}>Data início</span>
             <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className={inputCls} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>Data fim</label>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={labelCls}>Data fim</span>
             <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className={inputCls} />
-          </div>
+          </label>
         </div>
         <div className="flex flex-col gap-1.5">
           <label className={labelCls}>Dias da semana (vazio = todos)</label>
@@ -187,14 +187,14 @@ export function TabMassa({
 
       {/* Step 3: Operation */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold">3. Operação</label>
+        <p className="text-sm font-semibold">3. Operação</p>
         <div className="grid grid-cols-3 gap-2">
           {[
             { key: 'pct' as const, label: '% Percentagem', desc: 'Ex: +20% verão' },
             { key: 'fixo' as const, label: '€ Valor fixo', desc: 'Ex: +15€ feriados' },
             { key: 'novo' as const, label: '€ Novo preço', desc: 'Ex: 80€ promoção' },
           ].map(op => (
-            <button key={op.key} onClick={() => setOperacao(op.key)}
+            <button key={op.key} type="button" aria-pressed={operacao === op.key} onClick={() => setOperacao(op.key)}
               className={`rounded-xl border px-3 py-3 text-left transition-colors ${
                 operacao === op.key ? 'border-primary bg-primary/5' : 'border-border bg-card'
               }`}>
@@ -203,10 +203,10 @@ export function TabMassa({
             </button>
           ))}
         </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>
             {operacao === 'pct' ? 'Percentagem (ex: +20 ou -15)' : operacao === 'fixo' ? 'Valor em euros (+/-)' : 'Novo preço por noite (€)'}
-          </label>
+          </span>
           <input
             type="number"
             value={valor}
@@ -214,23 +214,23 @@ export function TabMassa({
             placeholder={operacao === 'pct' ? '+20' : operacao === 'fixo' ? '+15 ou -10' : '80'}
             className={inputCls}
           />
-        </div>
+        </label>
       </div>
 
       {/* Step 4: Name & type */}
       <div className="flex flex-col gap-2">
-        <label className="text-sm font-semibold">4. Nome e tipo da regra</label>
+        <p className="text-sm font-semibold">4. Nome e tipo da regra</p>
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>Nome da regra</label>
+          <label className="flex flex-col gap-1">
+            <span className={labelCls}>Nome da regra</span>
             <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Verão 2025" className={inputCls} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>Tipo</label>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={labelCls}>Tipo</span>
             <select value={tipo} onChange={e => setTipo(e.target.value as PriceRuleTipo)} className={inputCls}>
               {Object.entries(RULE_TIPO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-          </div>
+          </label>
         </div>
       </div>
 

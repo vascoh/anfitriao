@@ -15,7 +15,7 @@ import { join } from 'node:path'
  * pré-visualização): têm temas próprios escolhidos por quem os publica.
  */
 const PALETA_DE_ESTADO =
-  /(?<![\w-])(?:[a-z-]+:)*(?:bg|text|border|ring|from|via|to|fill|stroke|divide|outline)-(?:[trblxyse]-)?(?:emerald|green|amber|yellow|red|rose|blue|sky)-\d{2,3}\b/
+  /(?<![\w-])(?:[a-z-]+:)*(?:bg|text|border|ring|from|via|to|fill|stroke|divide|outline)-(?:[trblxyse]-)?(?:emerald|green|amber|yellow|orange|lime|teal|cyan|red|rose|pink|fuchsia|purple|violet|indigo|blue|sky)-\d{2,3}\b/
 
 const EXCLUIDOS = [/src\/app\/r\//, /src\/components\/site-editor\//, /website-preview\.tsx$/]
 

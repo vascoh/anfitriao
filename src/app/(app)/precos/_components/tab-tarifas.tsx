@@ -62,61 +62,61 @@ function TarifaForm({
       </div>
 
       {props.length > 1 && (
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Propriedade</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Propriedade</span>
           <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls}>
             {props.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
-        </div>
+        </label>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Nome</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Nome</span>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Não reembolsável" className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Tipo</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Tipo</span>
           <select value={tipo} onChange={e => setTipo(e.target.value as TarifaTipo)} className={inputCls}>
             {Object.entries(TARIFA_TIPO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-        </div>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Desconto/Suplemento %</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Desconto/Suplemento %</span>
           <input type="number" value={descontoPct} onChange={e => setDescontoPct(e.target.value)} placeholder="-10 ou +5" className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Suplemento fixo (€)</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Suplemento fixo (€)</span>
           <input type="number" min={0} value={suplemento} onChange={e => setSuplemento(e.target.value)} placeholder="0" className={inputCls} />
-        </div>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Mín. noites</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Mín. noites</span>
           <input type="number" min={1} value={minNoites} onChange={e => setMinNoites(e.target.value)} className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Máx. noites</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Máx. noites</span>
           <input type="number" min={1} value={maxNoites} onChange={e => setMaxNoites(e.target.value)} placeholder="Sem limite" className={inputCls} />
-        </div>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Cancelamento gratuito (horas)</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Cancelamento gratuito (horas)</span>
           <input type="number" min={0} value={cancelHoras} onChange={e => setCancelHoras(e.target.value)} placeholder="Ex: 48" className={inputCls} />
-        </div>
+        </label>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className={labelCls}>Política de cancelamento</label>
+      <label className="flex flex-col gap-1">
+        <span className={labelCls}>Política de cancelamento</span>
         <textarea value={politica} onChange={e => setPolitica(e.target.value)} placeholder="Descreve a política..." rows={2}
           className="rounded-lg border border-input bg-background px-3 py-2 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-      </div>
+      </label>
 
       <div className="flex flex-col gap-1.5">
         <label className={labelCls}>Plataformas (vazio = todas)</label>

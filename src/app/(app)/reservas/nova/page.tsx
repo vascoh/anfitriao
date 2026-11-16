@@ -328,8 +328,8 @@ function NovaReservaInner() {
           <StepHeader step={2} total={4} label="Datas da estadia" />
           <div className="flex flex-col gap-4 px-4">
             <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground font-medium">Check-in</label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">Check-in</span>
                 <input
                   type="date"
                   value={checkIn}
@@ -342,9 +342,9 @@ function NovaReservaInner() {
                   }}
                   className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground font-medium">Check-out</label>
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">Check-out</span>
                 <input
                   type="date"
                   value={checkOut}
@@ -352,7 +352,7 @@ function NovaReservaInner() {
                   onChange={e => setCheckOut(e.target.value)}
                   className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-              </div>
+              </label>
             </div>
             {selectedProp && checkIn && checkOut && checkIn < checkOut && (() => {
               const bd = calculatePriceWithRules(selectedProp, checkIn, checkOut, priceRules, priceTarifas, platformRates, origem)
@@ -413,8 +413,8 @@ function NovaReservaInner() {
                 responde a "levo um grupo de 8" antes de a reserva existir. */}
             {casaEscolhida && disponibilidade.length > 0 && (
               <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-xs text-muted-foreground font-medium">Quantas pessoas</label>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="text-xs text-muted-foreground font-medium">Quantas pessoas</span>
                   <input
                     type="number"
                     min={1}
@@ -422,7 +422,7 @@ function NovaReservaInner() {
                     onChange={e => setNumHospedes(Math.max(1, Number(e.target.value)))}
                     className="w-20 rounded-lg border border-input bg-background px-3 py-2 text-sm text-right tabular-nums"
                   />
-                </div>
+                </label>
 
                 {sugestao && !sugestao.ok && sugestao.motivo === 'nao_cabe' && (
                   <p className="rounded-lg border border-aviso/30 bg-aviso/5 px-3 py-2 text-xs text-aviso">
@@ -611,14 +611,14 @@ function NovaReservaInner() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground font-medium">Nº de hóspedes</label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">Nº de hóspedes</span>
                 <input type="number" min={1}
                   max={casaEscolhida ? capacidadeTotal(quartosDaCasaEscolhida) : selectedProp?.capacidade ?? 20}
                   value={numHospedes}
                   onChange={e => setNumHospedes(Number(e.target.value))}
                   className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-28" />
-              </div>
+              </label>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-muted-foreground font-medium">Origem</label>
@@ -635,28 +635,28 @@ function NovaReservaInner() {
               </div>
 
               <div className="flex gap-3">
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs text-muted-foreground font-medium">Total (€)</label>
+                <label className="flex flex-col gap-1.5 flex-1">
+                  <span className="text-xs text-muted-foreground font-medium">Total (€)</span>
                   <input type="number" min={0} value={precoTotal}
                     onChange={e => setPrecoTotal(e.target.value)}
                     placeholder="0"
                     className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <label className="text-xs text-muted-foreground font-medium">Recebido (€)</label>
+                </label>
+                <label className="flex flex-col gap-1.5 flex-1">
+                  <span className="text-xs text-muted-foreground font-medium">Recebido (€)</span>
                   <input type="number" min={0} value={precoPago}
                     onChange={e => setPrecoPago(e.target.value)}
                     placeholder="0"
                     className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-                </div>
+                </label>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-muted-foreground font-medium">Notas (opcional)</label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground font-medium">Notas (opcional)</span>
                 <textarea value={notas} onChange={e => setNotas(e.target.value)}
                   placeholder="Pedidos especiais, informações adicionais..."
                   className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none min-h-20 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
+              </label>
             </div>
 
             {submitError && (

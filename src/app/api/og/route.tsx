@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
+import { TRIAL_DIAS } from '@/lib/planos'
 
 /** Um título de cartão social; acima disto é abuso, não um nome de alojamento. */
 const MAX_TITULO = 120
@@ -138,7 +139,7 @@ export function GET(req: NextRequest) {
             letterSpacing: 0.2,
           }}
         >
-          14 dias grátis · Sem cartão de crédito
+          {`${TRIAL_DIAS} dias grátis · Sem cartão de crédito`}
         </div>
 
         {/* URL bottom-right */}

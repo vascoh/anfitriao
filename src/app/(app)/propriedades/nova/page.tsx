@@ -10,11 +10,8 @@ import { fetchProperties } from '@/lib/fetcher'
 import type { Property, PropertyType } from '@/lib/types'
 import { PROPERTY_TYPE_LABEL } from '@/lib/labels'
 import { AvisoLimitePlano, noLimite, type EstadoLimite } from '@/components/aviso-limite-plano'
+import { CORES_ALOJAMENTO, PRESET_COLORS } from '@/lib/cores-alojamento'
 
-const PRESET_COLORS = [
-  '#C2714F', '#E07B39', '#3D82F6', '#10B981', '#8B5CF6',
-  '#F59E0B', '#EF4444', '#6366F1', '#14B8A6', '#F97316',
-]
 
 const AMENITIES = [
   { id: 'wifi', label: 'Wi-Fi' },
@@ -261,11 +258,11 @@ function NovaPropriedadeForm() {
         {/* Basic info */}
         <div className="flex flex-col gap-3">
           <p className="antetitulo">Informação básica</p>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Nome *</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Nome *</span>
             <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Apartamento Alfama"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Tipo</label>
             <div className="grid grid-cols-2 gap-2">
@@ -279,22 +276,22 @@ function NovaPropriedadeForm() {
               ))}
             </div>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Morada</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Morada</span>
             <input type="text" value={endereco} onChange={e => setEndereco(e.target.value)} placeholder="Rua, número..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Cidade *</label>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Cidade *</span>
             <input type="text" value={cidade} onChange={e => setCidade(e.target.value)} placeholder="Ex: Lisboa"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Descrição pública</label>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Descrição pública</span>
             <textarea value={descricao} onChange={e => setDescricao(e.target.value)} rows={3}
               placeholder="Breve descrição para o website de reservas..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground font-medium">Foto principal</label>
             <div className="flex items-center gap-2">
@@ -343,16 +340,16 @@ function NovaPropriedadeForm() {
         <div className="flex flex-col gap-3">
           <p className="antetitulo">Preço</p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Preço base por noite (€)</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Preço base por noite (€)</span>
               <input type="number" value={precoBase} onChange={e => setPrecoBase(Number(e.target.value))} min={1}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Taxa de limpeza (€)</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Taxa de limpeza (€)</span>
               <input type="number" value={taxaLimpeza} onChange={e => setTaxaLimpeza(Number(e.target.value))} min={0}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
           </div>
         </div>
 
@@ -360,8 +357,9 @@ function NovaPropriedadeForm() {
         <div className="flex flex-col gap-3">
           <p className="antetitulo">Cor de identificação</p>
           <div className="flex gap-2.5 flex-wrap">
-            {PRESET_COLORS.map(c => (
-              <button key={c} onClick={() => setCor(c)}
+            {CORES_ALOJAMENTO.map(({ hex: c, nome }) => (
+              <button key={c} type="button" onClick={() => setCor(c)}
+                aria-label={nome} aria-pressed={cor === c}
                 className={`h-8 w-8 rounded-full transition-transform ${cor === c ? 'scale-125 ring-2 ring-offset-2 ring-primary' : ''}`}
                 style={{ backgroundColor: c }} />
             ))}
@@ -388,18 +386,18 @@ function NovaPropriedadeForm() {
         {/* Check-in instructions */}
         <div className="flex flex-col gap-3">
           <p className="antetitulo">Operacional</p>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Instruções de check-in</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Instruções de check-in</span>
             <textarea value={instrucoesCheckin} onChange={e => setInstrucoesCheckin(e.target.value)}
               placeholder="Código da fechadura, localização das chaves, instruções especiais..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none min-h-28 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Regras da casa</label>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Regras da casa</span>
             <textarea value={regrasCasa} onChange={e => setRegrasCasa(e.target.value)}
               placeholder="Sem festas, sem animais, silêncio após 23h..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none min-h-24 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
         </div>
 
         <button onClick={handleSave} disabled={!canSave || saving}

@@ -291,36 +291,36 @@ export default function FinanceiroPage() {
             <Wallet className="h-3.5 w-3.5" /> Registar despesa
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Categoria</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Categoria</span>
               <select value={categoria} onChange={e => setCategoria(e.target.value as ExpenseCategoria)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 {(Object.keys(CATEGORIA_LABEL) as ExpenseCategoria[]).map(c => (
                   <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>
                 ))}
               </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Data</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Data</span>
               <input type="date" value={data} onChange={e => setData(e.target.value)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Descrição</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Descrição</span>
             <input type="text" value={descricao} onChange={e => setDescricao(e.target.value)}
               placeholder="Ex: Produtos de limpeza"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Valor (€)</label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Valor (€)</span>
               <input type="number" min={0} step={0.01} value={valor} onChange={e => setValor(e.target.value)}
                 placeholder="0.00"
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-muted-foreground font-medium">Propriedade (opcional)</label>
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs text-muted-foreground font-medium">Propriedade (opcional)</span>
               <select value={propriedadeId} onChange={e => setPropriedadeId(e.target.value)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Todas / geral</option>
@@ -330,7 +330,7 @@ export default function FinanceiroPage() {
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
           </div>
           <button onClick={handleAdd} disabled={saving}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity flex items-center justify-center gap-2">

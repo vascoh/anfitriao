@@ -476,15 +476,15 @@ export default function HojePage() {
             ))}
             {esquecidosCheckin.map(b => (
               <Link key={`late-${b.id}`} href={`/reservas/${b.id}`}
-                className="flex items-start gap-3 bg-orange-50 border-b border-orange-100 px-4 lg:px-8 py-3 active:bg-orange-100 transition-colors">
-                <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                className="flex items-start gap-3 bg-aviso/10 border-b border-aviso/30 px-4 lg:px-8 py-3 active:bg-aviso/15 transition-colors">
+                <AlertTriangle className="h-4 w-4 text-aviso mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-orange-900">Check-in em atraso</p>
-                  <p className="text-xs text-orange-700 truncate">
+                  <p className="text-sm font-semibold text-aviso">Check-in em atraso</p>
+                  <p className="text-xs text-aviso truncate">
                     {guestName(guests, b.hospede_id)} · {propName(props, b.propriedade_id)} · entrou {fmtDate(b.check_in)}
                   </p>
                 </div>
-                <ArrowRight className="h-3.5 w-3.5 text-orange-600 mt-0.5 shrink-0" />
+                <ArrowRight className="h-3.5 w-3.5 text-aviso mt-0.5 shrink-0" />
               </Link>
             ))}
             {boletinsEmAtraso.map(b => (
@@ -649,7 +649,7 @@ export default function HojePage() {
         {!semPropriedades && diaVazio && loaded && (
           <div className="flex flex-col items-center justify-center gap-2 text-center py-16 px-4">
             <Clock className="h-8 w-8 text-muted-foreground/30 stroke-[1]" />
-            <p className="text-base font-medium text-foreground/60">Dia tranquilo</p>
+            <p className="text-base font-medium text-muted-foreground">Dia tranquilo</p>
             <p className="text-sm text-muted-foreground">Sem chegadas, saídas ou alertas hoje.</p>
           </div>
         )}

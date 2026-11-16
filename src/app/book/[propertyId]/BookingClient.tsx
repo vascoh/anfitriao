@@ -527,10 +527,10 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
                 { label: 'Email', req: true, value: email, set: setEmail, type: 'email', placeholder: 'joao@exemplo.com' },
                 { label: 'Telefone / WhatsApp', req: false, value: telefone, set: setTelefone, type: 'tel', placeholder: '+351 912 345 678' },
               ].map(f => (
-                <div key={f.label} className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">
+                <label key={f.label} className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {f.label}{f.req ? <span className="text-primary ml-0.5">*</span> : ''}
-                  </label>
+                  </span>
                   <input
                     type={f.type}
                     value={f.value}
@@ -538,10 +538,10 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
                     placeholder={f.placeholder}
                     className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                </div>
+                </label>
               ))}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Notas / pedidos especiais</label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Notas / pedidos especiais</span>
                 <textarea
                   value={notas}
                   onChange={e => setNotas(e.target.value)}
@@ -549,7 +549,7 @@ export default function BookingClient({ prop, settings, blocked: blockedArr, pri
                   placeholder="Hora de chegada prevista, pedidos especiais..."
                   className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-              </div>
+              </label>
             </div>
           </div>
 

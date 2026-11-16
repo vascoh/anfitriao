@@ -252,17 +252,17 @@ export default function HospedeDetailPage() {
               { label: 'Email', value: email, set: setEmail, type: 'email', placeholder: 'email@exemplo.com' },
               { label: 'Telefone', value: telefone, set: setTelefone, type: 'tel', placeholder: '+351 912 345 678' },
             ].map(f => (
-              <div key={f.label} className="flex flex-col gap-1">
-                <label className="text-xs text-muted-foreground">{f.label}</label>
+              <label key={f.label} className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">{f.label}</span>
                 <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
                   className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
+              </label>
             ))}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Notas</label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Notas</span>
               <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Preferências, observações..."
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm resize-none min-h-20 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
             <div className="flex flex-col gap-2">
               <label className="text-xs text-muted-foreground">Etiquetas</label>
               <div className="flex flex-wrap gap-2">
@@ -281,8 +281,8 @@ export default function HospedeDetailPage() {
               </div>
             </div>
             <p className="antetitulo pt-1">Dados SIBA</p>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Tipo de documento</label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Tipo de documento</span>
               <select value={tipoDocumento} onChange={e => setTipoDocumento(e.target.value)}
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Seleccionar</option>
@@ -292,33 +292,33 @@ export default function HospedeDetailPage() {
                 <option value="Título de Residência">Título de Residência</option>
                 <option value="Outro">Outro</option>
               </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Nº documento</label>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Nº documento</span>
               <input type="text" value={numeroDocumento} onChange={e => setNumeroDocumento(e.target.value)} placeholder="Ex: AB123456"
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1">
+            </label>
+            <label className="flex flex-col gap-1">
               {/* Campo à parte do documento: o Cartão de Cidadão não é o NIF, e
                   é este valor que vai para a fatura comunicada à AT. */}
-              <label className="text-xs text-muted-foreground">NIF (para a fatura)</label>
+              <span className="text-xs text-muted-foreground">NIF (para a fatura)</span>
               <input type="text" inputMode="numeric" value={nif} onChange={e => setNif(e.target.value)} placeholder="Só se o hóspede pedir fatura em nome dele"
                 className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
             <div className="flex gap-2">
-              <div className="flex flex-col gap-1 flex-1">
-                <label className="text-xs text-muted-foreground">Data de nascimento</label>
+              <label className="flex flex-col gap-1 flex-1">
+                <span className="text-xs text-muted-foreground">Data de nascimento</span>
                 <input type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)}
                   className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
-              <div className="flex flex-col gap-1 flex-1">
-                <label className="text-xs text-muted-foreground">Validade doc.</label>
+              </label>
+              <label className="flex flex-col gap-1 flex-1">
+                <span className="text-xs text-muted-foreground">Validade doc.</span>
                 <input type="date" value={dataValidadeDoc} onChange={e => setDataValidadeDoc(e.target.value)}
                   className="rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-              </div>
+              </label>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Sexo</label>
+            <fieldset className="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
+              <legend className="mb-1 p-0 text-xs text-muted-foreground">Sexo</legend>
               <div className="flex gap-4 pt-1">
                 {(['M', 'F'] as const).map(opt => (
                   <label key={opt} className="flex items-center gap-2 cursor-pointer">
@@ -328,7 +328,7 @@ export default function HospedeDetailPage() {
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
             {/* Países por seletor: «Alemã» ou «Germany» escritos à mão não davam
                 código no boletim. O de residência é obrigatório no boletim e
                 não havia onde o completar fora do check-in. */}

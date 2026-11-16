@@ -70,36 +70,36 @@ function RuleForm({
       </div>
 
       {props.length > 1 && (
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Propriedade</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Propriedade</span>
           <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls}>
             {props.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
-        </div>
+        </label>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Nome</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Nome</span>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Verão 2025" className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Tipo</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Tipo</span>
           <select value={tipo} onChange={e => setTipo(e.target.value as PriceRuleTipo)} className={inputCls}>
             {Object.entries(RULE_TIPO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-        </div>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Data início</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Data início</span>
           <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Data fim</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Data fim</span>
           <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className={inputCls} />
-        </div>
+        </label>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -120,33 +120,33 @@ function RuleForm({
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Preço/noite (€)</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Preço/noite (€)</span>
           <input type="number" min={0} value={precoNoite} onChange={e => setPrecoNoite(e.target.value)} placeholder="= base" className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Limpeza (€)</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Limpeza (€)</span>
           <input type="number" min={0} value={taxaLimpeza} onChange={e => setTaxaLimpeza(e.target.value)} placeholder="= prop." className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Ajuste % (+/-)</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Ajuste % (+/-)</span>
           <input type="number" value={descontoPct} onChange={e => setDescontoPct(e.target.value)} placeholder="Ex: -10 ou +20" className={inputCls} />
-        </div>
+        </label>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Mín. noites</label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Mín. noites</span>
           <input type="number" min={1} value={minNoites} onChange={e => setMinNoites(e.target.value)} placeholder="Nenhum" className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Máx. noites</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Máx. noites</span>
           <input type="number" min={1} value={maxNoites} onChange={e => setMaxNoites(e.target.value)} placeholder="Nenhum" className={inputCls} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>Prioridade</label>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={labelCls}>Prioridade</span>
           <input type="number" value={prioridade} onChange={e => setPrioridade(e.target.value)} placeholder="0" className={inputCls} />
-        </div>
+        </label>
       </div>
 
       <div className="flex items-center gap-2">

@@ -92,34 +92,34 @@ export default function PerfilPage() {
         <section className="flex flex-col gap-3">
           <p className="antetitulo">Anfitrião</p>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Nome do anfitrião</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Nome do anfitrião</span>
             <input type="text" value={hostNome} onChange={e => setHostNome(e.target.value)}
               placeholder="O teu nome (aparece no site de reservas)"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Bio</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Bio</span>
             <textarea value={hostBio} onChange={e => setHostBio(e.target.value)} rows={3}
               placeholder="Breve apresentação para os teus hóspedes..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Email de contacto</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Email de contacto</span>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="reservas@exemplo.pt"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Telefone / WhatsApp</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Telefone / WhatsApp</span>
             <input type="tel" value={telefone} onChange={e => setTelefone(e.target.value)}
               placeholder="+351 9XX XXX XXX"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
             <p className="text-[10px] text-muted-foreground">Aparece como botão WhatsApp no teu site de reservas.</p>
-          </div>
+          </label>
         </section>
 
         <div className="flex flex-col gap-3">
@@ -131,25 +131,25 @@ export default function PerfilPage() {
         <section className="flex flex-col gap-3">
           <p className="antetitulo">Site de reservas diretas</p>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Nome do site</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Nome do site</span>
             <input type="text" value={siteNome} onChange={e => setSiteNome(e.target.value)}
               placeholder="Ex: Casas da Vinha"
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Descrição</label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">Descrição</span>
             <textarea value={siteDescricao} onChange={e => setSiteDescricao(e.target.value)} rows={2}
               placeholder="Breve descrição para os visitantes do site..."
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">URL do site</label>
+            <label htmlFor="perfil-slug" className="text-xs text-muted-foreground font-medium">URL do site</label>
             <div className="flex items-center rounded-lg border border-input bg-card overflow-hidden">
               <span className="px-3 py-2.5 text-sm text-muted-foreground bg-muted border-r border-input shrink-0">anfitrioes.pt/r/</span>
-              <input type="text" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+              <input id="perfil-slug" type="text" value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 placeholder="o-teu-nome"
                 className="flex-1 px-3 py-2.5 text-sm bg-transparent placeholder:text-muted-foreground focus:outline-none" />
             </div>

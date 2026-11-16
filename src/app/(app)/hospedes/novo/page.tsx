@@ -60,22 +60,22 @@ export default function NovoHospedePage() {
           { label: 'Email', value: email, set: setEmail, type: 'email', placeholder: 'email@exemplo.com' },
           { label: 'Telefone', value: telefone, set: setTelefone, type: 'tel', placeholder: '+49 151 2345 6789' },
         ].map(f => (
-          <div key={f.label} className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">{f.label}</label>
+          <label key={f.label} className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium">{f.label}</span>
             <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-          </div>
+          </label>
         ))}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="novo-nacionalidade" className="text-xs text-muted-foreground font-medium">Nacionalidade</label>
           <CampoPais id="novo-nacionalidade" valor={nacionalidade} aoMudar={setNacionalidade}
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-muted-foreground font-medium">Notas</label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Notas</span>
           <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Preferências, observações..."
             className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm resize-none min-h-24 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-        </div>
+        </label>
         <button onClick={handleSave} disabled={!nome.trim() || saving}
           className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2">
           {saving ? 'A criar...' : 'Criar hóspede'}

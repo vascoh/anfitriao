@@ -62,12 +62,12 @@ export function Footer() {
             {COLUNAS.map((coluna) => (
               <div key={coluna.titulo}>
                 <h2 className="text-sm font-semibold text-foreground">{coluna.titulo}</h2>
-                <ul className="mt-4 space-y-3">
+                <ul className="mt-3 space-y-1.5">
                   {coluna.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        className="inline-flex min-h-6 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                       >
                         {link.label}
                       </Link>
@@ -87,12 +87,12 @@ export function Footer() {
           <h2 id="footer-comparacoes" className="text-sm font-semibold text-foreground">
             Anfitrião comparado
           </h2>
-          <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+          <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5">
             {CONCORRENTES.map((c) => (
               <li key={c.slug}>
                 <Link
                   href={`/vs/${c.slug}`}
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex min-h-6 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Anfitrião vs {c.nome}
                 </Link>

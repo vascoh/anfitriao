@@ -85,23 +85,23 @@ export function TabVisao({
               {isEdit ? (
                 <div className="flex flex-col gap-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs text-muted-foreground font-medium">Preço/noite (€)</label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs text-muted-foreground font-medium">Preço/noite (€)</span>
                       <input
                         type="number" min={0} step={1} value={newPreco}
                         onChange={e => setNewPreco(e.target.value)}
                         className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         autoFocus
                       />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs text-muted-foreground font-medium">Taxa limpeza (€)</label>
+                    </label>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs text-muted-foreground font-medium">Taxa limpeza (€)</span>
                       <input
                         type="number" min={0} step={1} value={newLimpeza}
                         onChange={e => setNewLimpeza(e.target.value)}
                         className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
-                    </div>
+                    </label>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => save(p)} disabled={saving}

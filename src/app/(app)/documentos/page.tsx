@@ -246,16 +246,16 @@ export default function DocumentosPage() {
           </div>
           <p className="text-xs text-muted-foreground">Exporta os dados dos hóspedes no formato CSV para submissão no portal SIBA.</p>
           <div className="flex gap-2 flex-wrap">
-            <div className="flex flex-col gap-1 flex-1 min-w-28">
-              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">De</label>
+            <label className="flex flex-col gap-1 flex-1 min-w-28">
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">De</span>
               <input type="date" value={sibaFrom} onChange={e => setSibaFrom(e.target.value)}
                 className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
-            <div className="flex flex-col gap-1 flex-1 min-w-28">
-              <label className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Até</label>
+            </label>
+            <label className="flex flex-col gap-1 flex-1 min-w-28">
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Até</span>
               <input type="date" value={sibaTo} onChange={e => setSibaTo(e.target.value)}
                 className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            </label>
           </div>
           <div className="flex gap-2">
             <button onClick={exportSIBA} disabled={sibaExporting || !sibaFrom || !sibaTo}
