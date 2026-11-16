@@ -108,7 +108,7 @@ Depende de decisões, não de código:
 
 | Decisão | Opções | Recomendação |
 |---|---|---|
-| **Posicionamento** (bloqueia preços e copy) | «Tudo por conta» vs «A tua conformidade, com prova» | **Conformidade com prova.** O preço por conta caiu com o TalkGuest (13,50 €/conta); o dossiê ASAE com hash de cada envio é a única vantagem que resistiu a duas verificações de mercado. A landing nova já tem o lugar para isso (cartão «Boletim SIBA entregue · Comprovativo guardado») |
+| **Posicionamento** ✅ **decidido a 16/11: «A tua conformidade, com prova»** (landing v3 publicada) | «Tudo por conta» vs «A tua conformidade, com prova» | **Conformidade com prova.** O preço por conta caiu com o TalkGuest (13,50 €/conta); o dossiê ASAE com hash de cada envio é a única vantagem que resistiu a duas verificações de mercado. A landing nova já tem o lugar para isso (cartão «Boletim SIBA entregue · Comprovativo guardado») |
 | **Licenciamento Vercel** (0.7) | Hobby (uso não comercial) vs Pro | Pro antes do primeiro cliente pagante, não antes |
 | **Domínio** (H5) | `anfitrioes.pt` vs `anfitriao.pt` | Manter `anfitrioes.pt`: tem email, DNS e SEO acumulados |
 | **Revisão jurídica** (H6) | Termos, privacidade, garantia de coima | Obrigatória antes de cobrar. As páginas legais estão escondidas do rodapé até lá |
@@ -118,8 +118,9 @@ Depois disso:
   `/admin/funil` como métrica: conta → alojamento → calendário a sincronizar
   → 1.ª reserva → 1.º check-in → 1.º boletim.
 - **Trial de 30 dias e grandfathering** (2.1) só depois do posicionamento.
-- **Landing v3** centrada na prova: secção com o dossiê ASAE real e a
-  frase de posicionamento no H1.
+- ~~**Landing v3** centrada na prova~~ **Feito a 16/11**: H1 com a frase,
+  secção `#prova` com miniatura do dossiê (dados fictícios assinalados até
+  haver envios reais, H2.5), FAQ «Isto serve numa inspeção?».
 
 ## O que fica de fora de propósito
 

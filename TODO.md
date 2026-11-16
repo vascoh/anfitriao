@@ -137,7 +137,7 @@ Cada uma desliga **em silêncio** funcionalidade que já está escrita e deploya
 - [x] ~~🔴 **H3 · API do Amenitiz**~~ — **cancelado a 2026-09-08, decisão do utilizador**: não há contacto com o Amenitiz. O caminho é o corte, não a integração. Deixa de haver aqui uma dependência externa; o que a substitui é a checklist de `docs/MIGRACAO-AMENITIZ.md` § «O que tem de ser verdade no dia do corte», que é toda nossa
 - [ ] **H4 · Orçamento** — Upstash → Vercel Pro → Supabase Pro
 - [ ] **H5 · Marca** — `anfitriao.pt` vs `anfitrioes.pt`
-- [ ] **Posicionamento (novo, 2026-08-17)** — decidir se a venda passa a ser "conformidade com prova" em vez de "tudo por conta". Bloqueia 2.1 (preços), 2.3 (marca) e 2.4 (calculadora)
+- [x] **Posicionamento (novo, 2026-08-17)** — ✅ **decidido a 2026-11-16: «A tua conformidade, com prova»**; landing v3 publicada. Desbloqueia 2.1 (trial/grandfathering). — decidir se a venda passa a ser "conformidade com prova" em vez de "tudo por conta". Bloqueia 2.1 (preços), 2.3 (marca) e 2.4 (calculadora)
 - [ ] **H6 · Revisão jurídica** — T&C, RGPD e a garantia de coima (I2), antes da Fase 4
 - [ ] **H7 · 5 anfitriões beta reais** fora do círculo próximo, após a Fase 0
 

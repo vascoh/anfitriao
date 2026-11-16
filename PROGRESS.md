@@ -6,6 +6,31 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-16] Horizonte 1 sem bloqueio estrutural + landing v3
+
+- 🔎 **Diagnóstico do «1 hóspede em 18 reservas».** As 26 reservas vêm todas
+  do feed do Amenitiz («Quarto indisponível»): a app trata-as como bloqueios
+  (certo) e o `/hoje` escondia-as, por isso nunca se pedia ao anfitrião quem
+  chega. Sem hóspede não há check-in online, SIBA nem fatura.
+- 🙋 **`/hoje` → «Quem chega?»**: bloqueios importados dos próximos 7 dias sem
+  reserva registada dentro, com «Registar hóspede» (fluxo reserva-no-bloqueio
+  existente) e «É só um bloqueio» (neste aparelho). `entradasPorIdentificar`
+  em `lib/reserva-no-bloqueio.ts`, com testes. «Próximos 7 dias» deixa de
+  mostrar bloqueios como chegadas «—».
+- 📤 **Enviar o link de check-in** pela partilha nativa do telemóvel (chega à
+  app do Airbnb/Booking, onde está a conversa); sem partilha, copia a
+  mensagem. Depois de criar uma reserva, o topo pede esse passo (`?novo=1`).
+  Texto em `lib/mensagem-checkin.ts`.
+- 🧭 **Posicionamento decidido pelo Vasco: «A tua conformidade, com prova».**
+  Landing v3: H1, metadados/OG, secção `#prova` com miniatura do dossiê
+  (dados fictícios assinalados), FAQ da inspeção, «Dossiê» no menu.
+- Também: preços em formato pt-PT na app (guarda `formato-precos.test.ts`),
+  stepper da reserva com contraste AA.
+- Validação: E2E em produção com utilizador e dados TESTE-E2E (apagados):
+  «Quem chega?» → registo → aviso «Falta o check-in online» → mensagem copiada;
+  landing com axe a zero a 390/1366 px nos dois temas.
+- Commits `5d76aa8`, `420d84a`, `4a3a6cf`, `61f5b51`, `19e99ab`.
+
 ### [2026-11-16] Auditoria em produção: hidratação, rótulos, contraste
 
 Claude passa a dono do código (ver `COORDENACAO-IA.md`). O plano de evolução
