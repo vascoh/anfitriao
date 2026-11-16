@@ -117,7 +117,8 @@ Depois disso:
 - **5 anfitriões beta** fora do círculo próximo (H7), com o funil de
   `/admin/funil` como métrica: conta → alojamento → calendário a sincronizar
   → 1.ª reserva → 1.º check-in → 1.º boletim.
-- **Trial de 30 dias e grandfathering** (2.1) só depois do posicionamento.
+- ~~**Trial de 30 dias e grandfathering** (2.1)~~ **Feito a 16/11**: 30 dias
+  e preço garantido enquanto a subscrição do plano estiver ativa.
 - ~~**Landing v3** centrada na prova~~ **Feito a 16/11**: H1 com a frase,
   secção `#prova` com miniatura do dossiê (dados fictícios assinalados até
   haver envios reais, H2.5), FAQ «Isto serve numa inspeção?».

@@ -6,6 +6,20 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-16] Trial de 30 dias e garantia de preço (TODO 2.1)
+
+- Decisões do Vasco: trial 14 → **30 dias**; quem subscreve **mantém o preço**
+  enquanto a subscrição desse plano estiver ativa.
+- O fim do trial vinha do default da coluna (`now() + 14 days`), não de
+  `TRIAL_DIAS`: duas fontes de verdade. `ensureAccount` grava agora
+  `trial_ends_at` com `fimDoTrial()`; migração 060 (aplicada) alinha o default
+  e um teste compara-os.
+- Garantia nos termos (§4), na página de preços e na FAQ. Não exigiu código no
+  Stripe: um `Price` é imutável e as subscrições ativas ficam no antigo; a
+  regra «nunca migrar subscrições ativas» está em `GARANTIA_PRECO`.
+- Contas existentes não mudam. Publicado (`4c9c5df`,
+  `dpl_44N3w9NbamTtFWqpKsHdesC8L5sj`); confirmado em `/` e `/termos`.
+
 ### [2026-11-16] Horizonte 1 sem bloqueio estrutural + landing v3
 
 - 🔎 **Diagnóstico do «1 hóspede em 18 reservas».** As 26 reservas vêm todas
