@@ -36,6 +36,9 @@ decisão), por isso a sessão foi uma auditoria a produção com sessão iniciad
   confirmado com `vercel inspect`. Push para `origin/main` (levou também 9
   commits do Codex que não estavam no GitHub). Utilizador Clerk e linha
   `accounts` de teste apagados.
+- 🧹 **Conta de teste `user_3KTcP…` apagada** (H1 #3, confirmado pelo Vasco):
+  linha em `accounts`, o hóspede `teste-e2e-g3` (sem reservas) e o utilizador
+  Clerk. O funil em `/admin/funil` fica só com a Casa de Vasco.
 
 ### [2026-11-09] Pesquisa como folha inferior e foco acessível
 

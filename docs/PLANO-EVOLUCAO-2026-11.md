@@ -60,7 +60,7 @@ primeiro check-in online de um hóspede real da Casa de Vasco.**
 |---|---|---|---|
 | 1 | Credenciais SIBA no portal, modo «Web Service» (H1) | Vasco | 1 a 3 dias úteis de espera, por isso arranca hoje. Validar primeiro em `/bawsdev/` via `SIBA_WS_URL` |
 | 2 | Clerk em instância de produção + MFA (0.2, 0.6) | Vasco (painel) + Claude (env) | Tira também o selo «Development mode» do `/sign-in`, a única falha de contraste que resta |
-| 3 | Apagar a conta de teste `user_3KTcP…` (linha em `accounts` + utilizador Clerk) | Claude, com confirmação | Polui o funil em `/admin/funil` |
+| 3 | ~~Apagar a conta de teste `user_3KTcP…`~~ **Feito a 16/11** | Claude, com confirmação | Polui o funil em `/admin/funil` |
 | 4 | Check-in online enviado a cada reserva real do mês | Vasco | Sem fichas não há SIBA, INE nem fatura. É o elo que falta (1 hóspede em 18 reservas) |
 | 5 | `SENTRY_DSN` (0.4) | Vasco | Com uso real os erros passam a ter vítimas |
 | 6 | Registar tudo o que irrita em `MES-DE-USO-REAL.md` | Vasco | É a fonte do horizonte 2 |
