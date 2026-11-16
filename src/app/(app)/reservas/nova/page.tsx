@@ -239,7 +239,7 @@ function NovaReservaInner() {
         const msg = (await res.json().catch(() => null))?.error
         throw new Error(typeof msg === 'string' ? msg : 'Erro ao criar reserva. Tenta novamente.')
       }
-      router.push(`/reservas/${booking.id}`)
+      router.push(`/reservas/${booking.id}?novo=1`)
     } catch (e) {
       setSubmitting(false)
       setSubmitError(e instanceof Error ? e.message : 'Erro ao criar reserva. Tenta novamente.')

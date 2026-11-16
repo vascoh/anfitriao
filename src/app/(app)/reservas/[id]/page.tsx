@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Phone, Mail, Edit2, CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink, MessageCircle, MessagesSquare, CreditCard, Check, Link2, ShieldCheck } from 'lucide-react'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Phone, Mail, Edit2, CheckCircle2, AlertTriangle, Trash2, Plus, ExternalLink, MessageCircle, MessagesSquare, CreditCard, Check, Link2, ShieldCheck, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { fmtDate, fmtMoney, nights, uuid, today } from '@/lib/utils'
 import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
@@ -12,6 +12,7 @@ import { guardar, eliminar } from '@/lib/guardar'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio, ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING } from '@/lib/reservations'
 import { aindaDentro } from '@/lib/reserva-no-bloqueio'
+import { mensagemDeCheckin } from '@/lib/mensagem-checkin'
 import type { Booking, BookingStatus, Guest, Property } from '@/lib/types'
 import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, TAG_LABEL, TAG_CLASS } from '@/lib/labels'
 import { ReminderButton, Stepper, Section, Row } from './_components/blocos'
@@ -22,6 +23,8 @@ import { Historico } from './_components/historico'
 export default function ReservaDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  // `?novo=1`: acabada de criar em /reservas/nova — o passo seguinte é o check-in.
+  const acabadaDeCriar = useSearchParams().get('novo') === '1'
   const [booking, setBooking] = useState<Booking | null>(null)
   const [erro, setErro] = useState(false)
   const [guest, setGuest] = useState<Guest | null>(null)
@@ -201,15 +204,43 @@ export default function ReservaDetailPage() {
     setTimeout(() => { setPaymentSaved(false); setShowPayment(false) }, 1500)
   }
 
+  function mensagemCheckin(): string {
+    return mensagemDeCheckin({
+      nome: guest?.nome,
+      alojamento: prop?.nome ?? 'o alojamento',
+      checkIn: booking!.check_in,
+      checkOut: booking!.check_out,
+      instrucoes: prop?.instrucoes_checkin,
+      link: `${window.location.origin}/checkin/${booking!.id}`,
+    })
+  }
+
   function openWhatsApp() {
     if (!guest?.telefone || !prop) return
-    const n = nights(booking!.check_in, booking!.check_out)
-    const checkinDate = fmtDate(booking!.check_in, { weekday: 'long', day: 'numeric', month: 'long' })
-    const instrucoes = prop.instrucoes_checkin ? `\n\n${prop.instrucoes_checkin}` : ''
-    const checkinLink = `${window.location.origin}/checkin/${booking!.id}`
-    const msg = `Olá ${guest.nome}! A sua reserva em ${prop.nome} está confirmada para ${checkinDate} (${n} noite${n !== 1 ? 's' : ''}).${instrucoes}\n\nPor favor, faça o seu check-in online antes da chegada (1 minuto): ${checkinLink}\n\nBem-vindo/a!`
     const phone = guest.telefone.replace(/[^0-9+]/g, '')
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(mensagemCheckin())}`, '_blank')
+  }
+
+  /* A partilha nativa do telemóvel chega a qualquer app — incluindo a do
+   * Airbnb ou do Booking, que é por onde se fala com quem reservou lá e cujo
+   * telefone o anfitrião normalmente não tem. Sem partilha (desktop), copia a
+   * mensagem inteira para colar na conversa. */
+  async function enviarCheckin() {
+    const text = mensagemCheckin()
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ text })
+        return
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('Mensagem copiada. Cola-a na conversa com o hóspede.')
+    } catch {
+      toast.error('Não foi possível copiar. Usa «Copiar link de check-in online».')
+    }
   }
 
   async function handleDelete() {
@@ -246,6 +277,7 @@ export default function ReservaDetailPage() {
    * na mesma «Registar check-in» — uma ação que, se carregada, punha o
    * bloqueio em «Em casa» e a pessoa inexistente a aparecer em `/hoje`. */
   const bloqueio = eBloqueio(booking)
+  const checkinFeito = booking.historico.some(e => e.tipo === 'checkin_online')
   const { feed: textoPlataforma, anfitriao: notaAnfitriao } = partesDasNotas(booking)
   /* De onde veio o bloqueio, para a explicação dizer um nome em vez de «um
    * calendário externo». O feed guarda-o em `ical_feeds`; se não se encontrar,
@@ -300,6 +332,21 @@ export default function ReservaDetailPage() {
       <div className="flex flex-col gap-5 py-4">
         {/* Casa inteira — esta reserva é um quarto de uma reserva maior */}
         {grupo && <CasaInteira booking={booking} grupo={grupo} />}
+
+        {/* Acabada de criar: o passo que falta é o check-in online. Era aqui
+            que o fluxo parava (1 ficha em 26 reservas a 2026-11-16). */}
+        {acabadaDeCriar && !bloqueio && !checkinFeito && (booking.estado === 'confirmada' || booking.estado === 'pendente') && (
+          <div className="mx-4 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3">
+            <p className="text-sm font-semibold">Reserva registada. Falta o check-in online.</p>
+            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+              O hóspede preenche os dados em 1 minuto e ficam prontos para o boletim SIBA e a fatura.
+            </p>
+            <button type="button" onClick={enviarCheckin}
+              className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground active:opacity-90">
+              <Send className="h-4 w-4" aria-hidden /> Enviar link de check-in
+            </button>
+          </div>
+        )}
 
         {/* Stepper */}
         {booking.estado !== 'cancelada' && booking.estado !== 'no_show' && (
@@ -528,6 +575,13 @@ export default function ReservaDetailPage() {
               className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40 w-full text-left transition-colors hover:bg-muted/30">
               <MessageCircle className="h-4 w-4 text-sucesso shrink-0" />
               <span className="text-sm text-sucesso font-medium">Enviar mensagem WhatsApp</span>
+            </button>
+          )}
+          {!bloqueio && !checkinFeito && booking.estado !== 'cancelada' && booking.estado !== 'checkout' && (
+            <button type="button" onClick={enviarCheckin}
+              className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40 w-full text-left transition-colors hover:bg-muted/30">
+              <Send className="h-4 w-4 text-primary shrink-0" aria-hidden />
+              <span className="text-sm text-primary font-medium">Enviar link de check-in</span>
             </button>
           )}
           {!bloqueio && booking.estado !== 'cancelada' && booking.estado !== 'checkout' && (
