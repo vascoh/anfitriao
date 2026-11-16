@@ -70,6 +70,13 @@ export default function TermosPage() {
         automaticamente no fim de cada período, até ser cancelada. O pagamento é
         processado pela Stripe.
       </p>
+      <p>
+        <strong>Garantia de preço.</strong> O preço em vigor no momento em que
+        subscreves um plano mantém-se enquanto essa subscrição estiver ativa,
+        mesmo que os preços publicados aumentem. A garantia deixa de se aplicar
+        se cancelares a subscrição ou mudares de plano; nesse caso aplica-se o
+        preço em vigor na data da nova subscrição.
+      </p>
 
       <h2>5. Cancelamento e reembolso</h2>
       <p>

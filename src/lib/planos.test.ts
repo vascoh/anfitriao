@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   PLAN_LIMITS, PLAN_PRICE_EUR, PLAN_PRICE_EUR_ANUAL, PLANOS_PAGOS, PLAN_NOME,
   precoMensal, precoPorUnidade, limiteDeUnidades, limiteDeUnidadesCapitalizado,
-  diasDeTrial, proximoPlano,
+  diasDeTrial, proximoPlano, fimDoTrial, TRIAL_DIAS,
 } from './planos'
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { contarUnidadesReservaveis } from './reservations'
 
 describe('escada de planos', () => {
@@ -205,5 +207,23 @@ describe('proximoPlano', () => {
   it('devolve null acima do Empresa', () => {
     expect(proximoPlano('empresa', 41)).toBeNull()
     expect(proximoPlano('pro', 41)).toBeNull()
+  })
+})
+
+describe('trial', () => {
+  it('fimDoTrial soma TRIAL_DIAS dias', () => {
+    const agora = Date.UTC(2026, 10, 16, 12)
+    expect(new Date(fimDoTrial(agora)).getTime() - agora).toBe(TRIAL_DIAS * 86_400_000)
+  })
+
+  it('o default da coluna na última migração bate com TRIAL_DIAS', () => {
+    const dir = 'supabase/migrations'
+    const comDefault = readdirSync(dir)
+      .filter((f) => f.endsWith('.sql'))
+      .sort()
+      .map((f) => readFileSync(join(dir, f), 'utf8'))
+      .filter((sql) => /trial_ends_at[\s\S]*?INTERVAL '\d+ days'/i.test(sql))
+    const ultima = comDefault.at(-1) ?? ''
+    expect(ultima).toMatch(new RegExp(`INTERVAL '${TRIAL_DIAS} days'`, 'i'))
   })
 })

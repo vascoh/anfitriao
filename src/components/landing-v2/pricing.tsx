@@ -9,6 +9,7 @@ import {
   limiteDeUnidadesCapitalizado,
   DESCONTO_ANUAL_LABEL,
   TRIAL_DIAS,
+  GARANTIA_PRECO,
   PLAN_LIMITS,
 } from '@/lib/planos'
 import { IA_ATIVA } from '@/lib/ia'
@@ -175,6 +176,9 @@ export function Pricing() {
         </ul>
 
         <p className="mt-10 text-center text-sm text-muted-foreground">
+          {GARANTIA_PRECO}
+        </p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
           Todos os planos incluem {TRIAL_DIAS} dias de teste. Mais de{' '}
           {PLAN_LIMITS.empresa.propriedades_max} quartos?{' '}
           <a

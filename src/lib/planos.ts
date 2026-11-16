@@ -60,8 +60,32 @@ export const PLAN_PRICE_EUR_ANUAL: Record<PlanoPago, number> = {
 /** Rótulo do desconto anual mostrado no alternador de periodicidade. */
 export const DESCONTO_ANUAL_LABEL = '−20%'
 
-/** Duração do período experimental, em dias. */
-export const TRIAL_DIAS = 14
+/**
+ * Duração do período experimental, em dias. **Fonte única**: é daqui que
+ * `ensureAccount` calcula o `trial_ends_at` (o default da coluna só serve de
+ * rede, migração 060). 30 dias desde 2026-11-16, decisão do Vasco: dá tempo
+ * para atravessar uma chegada real, um boletim e um fecho de mês, que é onde
+ * a prova se vê. Eram 14.
+ */
+export const TRIAL_DIAS = 30
+
+/** Fim do período experimental para uma conta criada agora. */
+export function fimDoTrial(agora: number = Date.now()): string {
+  return new Date(agora + TRIAL_DIAS * 86_400_000).toISOString()
+}
+
+/**
+ * Garantia de preço (decisão do Vasco, 2026-11-16): quem subscreve mantém o
+ * preço enquanto a subscrição desse plano estiver ativa.
+ *
+ * Tecnicamente isto já é o comportamento do Stripe: um `Price` é imutável, e
+ * mudar a tabela é criar preços novos e trocar os `STRIPE_*_PRICE_ID`. As
+ * subscrições existentes ficam no preço antigo. **Nunca** migrar subscrições
+ * ativas para o preço novo (`subscriptions.update` com outro `price`) — isso
+ * quebraria uma promessa publicada nos termos e na página de preços.
+ */
+export const GARANTIA_PRECO =
+  'O preço com que subscreves fica teu enquanto mantiveres a subscrição desse plano, mesmo que a tabela suba.'
 
 /**
  * Dias que faltam até ao fim do período experimental. **Negativo quando já

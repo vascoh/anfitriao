@@ -1,4 +1,4 @@
-import { limiteDeUnidades, PLAN_LIMITS, PLAN_PRICE_EUR, TRIAL_DIAS } from '@/lib/planos'
+import { GARANTIA_PRECO, limiteDeUnidades, PLAN_LIMITS, PLAN_PRICE_EUR, TRIAL_DIAS } from '@/lib/planos'
 
 /**
  * Fonte única das perguntas frequentes: alimenta o acordeão e o
@@ -41,6 +41,10 @@ export const PERGUNTAS = [
     pergunta: 'Existe período experimental?',
     resposta:
       `Sim — ${TRIAL_DIAS} dias grátis com acesso a todas as funcionalidades do plano escolhido. Não pedimos cartão de crédito para começar.`,
+  },
+  {
+    pergunta: 'O preço pode subir depois de eu assinar?',
+    resposta: `Não para ti. ${GARANTIA_PRECO} Se mudares de plano ou cancelares e voltares, aplica-se o preço em vigor nessa altura.`,
   },
   {
     // Recuperado da landing anterior: é um compromisso comercial já publicado.

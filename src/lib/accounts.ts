@@ -1,5 +1,6 @@
 import { createAdminClient } from './supabase'
 import { logAudit } from './audit'
+import { fimDoTrial } from './planos'
 
 // All account operations run server-side (API routes, server components, layout.tsx).
 // Use admin client so service_role bypasses RLS — accounts are never exposed to the browser.
@@ -69,7 +70,7 @@ export async function ensureAccount(
 ): Promise<void> {
   const { data, error } = await getClient()
     .from('accounts')
-    .insert({ clerk_user_id: clerkUserId, email, nome, propriedades_max: 1 })
+    .insert({ clerk_user_id: clerkUserId, email, nome, propriedades_max: 1, trial_ends_at: fimDoTrial() })
     .select('id, trial_ends_at')
     .single()
 
