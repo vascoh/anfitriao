@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trash2, Edit2, X } from 'lucide-react'
-import { uuid } from '@/lib/utils'
+import { uuid, fmtMoney } from '@/lib/utils'
 import type { Property, Tarifa, TarifaTipo, BookingSource } from '@/lib/types'
 import { SOURCE_LABEL } from '@/lib/labels'
 import { guardar, eliminar } from '@/lib/guardar'
@@ -266,7 +266,7 @@ export function TabTarifas({
                       {t.desconto_pct > 0 ? '+' : ''}{t.desconto_pct}%
                     </span>
                   )}
-                  {t.suplemento_valor > 0 && <span>+€{t.suplemento_valor} suplemento</span>}
+                  {t.suplemento_valor > 0 && <span>+{fmtMoney(t.suplemento_valor)} suplemento</span>}
                   <span>Mín. {t.min_noites}n{t.max_noites ? ` · Máx. ${t.max_noites}n` : ''}</span>
                   {t.cancelamento_horas != null && <span>Cancel. grátis até {t.cancelamento_horas}h</span>}
                   {t.plataformas && t.plataformas.length > 0 && (

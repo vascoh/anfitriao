@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Trash2, Edit2, Percent, Euro, Calendar, X } from 'lucide-react'
-import { uuid } from '@/lib/utils'
+import { uuid, fmtMoney } from '@/lib/utils'
 import type { Property, PriceRule, PriceRuleTipo } from '@/lib/types'
 import { guardar, eliminar } from '@/lib/guardar'
 import { RULE_TIPO_LABEL, RULE_TIPO_COLOR, DIAS_SEMANA } from './constantes'
@@ -318,7 +318,7 @@ export function TabRegras({
                   )}
                   {r.min_noites && <span>Mín. {r.min_noites}n</span>}
                   {r.max_noites && <span>Máx. {r.max_noites}n</span>}
-                  {r.taxa_limpeza != null && <span>Limpeza: €{r.taxa_limpeza}</span>}
+                  {r.taxa_limpeza != null && <span>Limpeza: {fmtMoney(r.taxa_limpeza)}</span>}
                   <span className="text-muted-foreground/60">Prio. {r.prioridade}</span>
                 </div>
               </div>

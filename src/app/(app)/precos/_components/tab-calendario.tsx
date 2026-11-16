@@ -145,7 +145,7 @@ export function TabCalendario({ props, rules }: { props: Property[]; rules: Pric
                   </span>
                   {isCurrentMonth && (
                     <span className={`text-[10px] leading-tight ${priceColor(preco, isCurrentMonth)}`}>
-                      €{preco}
+                      {fmtMoney(preco)}
                     </span>
                   )}
                   {regra && isCurrentMonth && (

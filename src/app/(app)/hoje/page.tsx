@@ -578,13 +578,13 @@ export default function HojePage() {
                 return (
                   <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 lg:px-8 py-3">
                     <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} aria-hidden />
-                    <Link href={`/reservas/${b.id}`} className="flex-1 min-w-0">
+                    <Link href={`/reservas/${b.id}`} className="flex-1 min-w-[12rem]">
                       <p className="text-sm font-medium truncate">{prop?.nome ?? '—'}</p>
                       <p className="text-xs text-muted-foreground truncate tabular-nums">
                         {quandoEntra(t, b.check_in)} · {n} noite{n !== 1 ? 's' : ''} · até {fmtDate(b.check_out, { day: 'numeric', month: 'short' })}
                       </p>
                     </Link>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:shrink-0">
                       <button
                         type="button"
                         onClick={() => ignorarBloqueio(b.id)}

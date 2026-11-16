@@ -307,7 +307,7 @@ function NovaReservaInner() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{p.nome}</p>
-                  <p className="text-xs text-muted-foreground">{p.cidade} · max {p.capacidade} pax · €{p.preco_base}/noite</p>
+                  <p className="text-xs text-muted-foreground">{p.cidade} · max {p.capacidade} pax · {fmtMoney(p.preco_base)}/noite</p>
                 </div>
                 {propId === p.id && <Check className="h-4 w-4 text-primary shrink-0" />}
               </button>
@@ -362,25 +362,25 @@ function NovaReservaInner() {
                     <span className="text-sm text-muted-foreground">{bd.preco_varia
                       ? `${bd.num_noites} noites · média ${fmtMoney(bd.preco_noite)}`
                       : `${bd.num_noites} noite${bd.num_noites !== 1 ? 's' : ''} × ${fmtMoney(bd.preco_noite)}`}</span>
-                    <span className="text-sm font-medium">€{bd.subtotal_noites}</span>
+                    <span className="text-sm font-medium">{fmtMoney(bd.subtotal_noites)}</span>
                   </div>
                   {bd.taxa_limpeza > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Taxa de limpeza</span>
-                      <span className="text-sm font-medium">€{bd.taxa_limpeza}</span>
+                      <span className="text-sm font-medium">{fmtMoney(bd.taxa_limpeza)}</span>
                     </div>
                   )}
                   {bd.ajuste_valor !== 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Ajuste {bd.tarifa_aplicada ?? ''}</span>
                       <span className={`text-sm font-medium ${bd.ajuste_valor < 0 ? 'text-sucesso' : 'text-aviso'}`}>
-                        {bd.ajuste_valor > 0 ? '+' : ''}€{bd.ajuste_valor}
+                        {bd.ajuste_valor > 0 ? '+' : ''}{fmtMoney(bd.ajuste_valor)}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center justify-between border-t border-border pt-1.5">
                     <span className="text-sm font-semibold">Total estimado</span>
-                    <span className="font-bold text-base">€{bd.total}</span>
+                    <span className="font-bold text-base">{fmtMoney(bd.total)}</span>
                   </div>
                   {bd.regra_aplicada && (
                     <p className="text-[10px] text-primary font-medium">Regra aplicada: {bd.regra_aplicada}</p>
