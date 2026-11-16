@@ -8,6 +8,11 @@ import { limiteDeUnidades, PLAN_LIMITS, PLAN_PRICE_EUR, TRIAL_DIAS } from '@/lib
  */
 export const PERGUNTAS = [
   {
+    pergunta: 'Isto serve numa inspeção?',
+    resposta:
+      'Serve para mostrares o que fizeste. O dossiê de conformidade junta, por alojamento, o estado de cada obrigação com a base legal e o registo de cada envio ao SIBA: número do ficheiro, resposta do serviço e o resumo SHA-256 do que foi enviado. É gerado por ti a partir dos teus registos e não é emitido nem validado por nenhuma entidade oficial. Também diz o que está por fazer, em vez de o esconder.',
+  },
+  {
     pergunta: 'Preciso de ter todas as plataformas integradas?',
     resposta:
       'Não. Podes começar com uma só — o Airbnb, por exemplo — e ligas as restantes quando quiseres. A sincronização é feita por iCal, o formato que todas as grandes plataformas suportam.',

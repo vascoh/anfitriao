@@ -46,14 +46,14 @@ export const metadata: Metadata = {
     locale: 'pt_PT',
     url: APP_URL,
     siteName: 'Anfitrião',
-    title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
-    description: 'Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada. Feito para anfitriões portugueses.',
+    title: 'Anfitrião: a tua conformidade de Alojamento Local, com prova',
+    description: 'SIBA, taxa turística e INE feitos a partir das tuas reservas, com o registo de cada envio guardado. Check-in online e Airbnb e Booking.com num só calendário. Feito para anfitriões portugueses.',
     images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Anfitrião — Gestão de Alojamento Local' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
-    description: 'Airbnb e Booking.com num só calendário, check-in online e boletim SIBA pronto antes da chegada. Feito para anfitriões portugueses.',
+    title: 'Anfitrião: a tua conformidade de Alojamento Local, com prova',
+    description: 'SIBA, taxa turística e INE feitos a partir das tuas reservas, com o registo de cada envio guardado. Check-in online e Airbnb e Booking.com num só calendário. Feito para anfitriões portugueses.',
     images: [OG_IMAGE],
   },
   robots: {

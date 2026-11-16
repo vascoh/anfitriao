@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import { Header } from '@/components/landing-v2/header'
 import { Hero } from '@/components/landing-v2/hero'
 import { ProblemSolution } from '@/components/landing-v2/problem-solution'
+import { Prova } from '@/components/landing-v2/prova'
 import { Features } from '@/components/landing-v2/features'
 import { DashboardPreview } from '@/components/landing-v2/dashboard-preview'
 import { Calculadora } from '@/components/landing-v2/calculadora'
@@ -13,13 +14,14 @@ import { Testimonials } from '@/components/landing-v2/testimonials'
 import { FAQ } from '@/components/landing-v2/faq'
 import { PERGUNTAS } from '@/components/landing-v2/faq-data'
 import { APP_URL } from '@/lib/config'
+import { TRIAL_DIAS } from '@/lib/planos'
 import { CTASection } from '@/components/landing-v2/cta-section'
 import { Footer } from '@/components/landing-v2/footer'
 
 export const metadata: Metadata = {
-  title: 'Anfitrião — Gestão de Alojamento Local sem papelada',
+  title: 'Anfitrião: a tua conformidade de Alojamento Local, com prova',
   description:
-    'Airbnb e Booking.com num só calendário. Propriedades, reservas e hóspedes num único lugar, com check-in online e o boletim do SIBA pronto antes da chegada. Feito em Portugal, para a lei portuguesa.',
+    'SIBA, taxa turística e INE feitos a partir das tuas reservas, com o registo de cada envio guardado para mostrar numa inspeção. Airbnb e Booking.com num só calendário e check-in online. Feito em Portugal, para a lei portuguesa.',
   alternates: {
     canonical: '/',
   },
@@ -42,7 +44,7 @@ const plataformaJsonLd = {
   operatingSystem: 'Web',
   inLanguage: 'pt-PT',
   offers: [
-    { '@type': 'Offer', name: 'Trial', price: '0', priceCurrency: 'EUR', description: '14 dias grátis, sem cartão de crédito' },
+    { '@type': 'Offer', name: 'Trial', price: '0', priceCurrency: 'EUR', description: `${TRIAL_DIAS} dias grátis, sem cartão de crédito` },
     { '@type': 'Offer', name: 'Starter', price: '19', priceCurrency: 'EUR', description: 'Até 3 propriedades, reservas ilimitadas' },
     { '@type': 'Offer', name: 'Pro', price: '39', priceCurrency: 'EUR', description: 'Até 10 propriedades, relatórios avançados' },
   ],
@@ -93,6 +95,7 @@ export default async function Home() {
       <main id="conteudo">
         <Hero />
         <ProblemSolution />
+        <Prova />
         <Features />
         <DashboardPreview />
         <Calculadora />

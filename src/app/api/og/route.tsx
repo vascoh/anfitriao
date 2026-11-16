@@ -25,7 +25,7 @@ const MAX_TITULO = 120
  */
 export function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
-  const title = (searchParams.get('title') ?? 'Gestão de Alojamento Local sem papelada')
+  const title = (searchParams.get('title') ?? 'A tua conformidade, com prova')
     .slice(0, MAX_TITULO)
 
   return new ImageResponse(

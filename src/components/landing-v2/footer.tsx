@@ -24,6 +24,7 @@ const COLUNAS = [
     titulo: 'Produto',
     links: [
       { label: 'Plataforma', href: '/#plataforma' },
+      { label: 'Dossiê de conformidade', href: '/#prova' },
       { label: 'Funcionalidades', href: '/#funcionalidades' },
       { label: 'Preços', href: '/#precos' },
     ],

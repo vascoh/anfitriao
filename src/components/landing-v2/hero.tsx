@@ -5,7 +5,10 @@ import { TRIAL_DIAS } from '@/lib/planos'
 import { HeroVisual } from './hero-visual'
 import { BOTAO_PRIMARIO, BOTAO_SECUNDARIO, CONTENTOR } from './estilos'
 
-const TITULO = ['Centraliza', 'tudo.', 'Hospeda', 'melhor.']
+// Posicionamento decidido a 2026-11-16: «a tua conformidade, com prova».
+const TITULO = ['A', 'tua', 'conformidade,', 'com', 'prova.']
+/** Depois desta palavra muda de linha; daí para a frente vai a terracota. */
+const QUEBRA = 2
 
 /**
  * Componente de servidor: o título, o texto e os botões chegam no HTML e
@@ -31,20 +34,20 @@ export function Hero() {
           <h1 className="mt-6 text-[2.75rem] leading-[1.02] font-semibold tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
             {/* O espaço tem de ser um nó de texto entre os spans, não uma margem:
                 com margem o H1 fica visualmente certo mas o textContent é
-                "Centralizatudo.Hospedamelhor." para o Google e para os leitores
+                "Atuaconformidade,comprova." para o Google e para os leitores
                 de ecrã. Dentro do inline-block seria descartado, por isso vai
                 fora dele. */}
             {TITULO.map((palavra, i) => (
               <Fragment key={palavra}>
                 <span className="inline-block overflow-hidden align-bottom pb-[0.06em]">
                   <span
-                    className={`word-up ${i >= 2 ? 'text-primary' : ''}`}
+                    className={`word-up ${i > QUEBRA ? 'text-primary' : ''}`}
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     {palavra}
                   </span>
                 </span>
-                {i === 1 ? <br /> : i < TITULO.length - 1 ? ' ' : null}
+                {i === QUEBRA ? <br /> : i < TITULO.length - 1 ? ' ' : null}
               </Fragment>
             ))}
           </h1>
@@ -53,9 +56,9 @@ export function Hero() {
             className="fade-up mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground sm:text-xl"
             style={{ animationDelay: '150ms' }}
           >
-            Os alojamentos, as reservas e os hóspedes num só lugar. O check-in
-            online fica feito e as obrigações legais portuguesas tratadas no
-            mesmo sítio.
+            SIBA, taxa turística e INE feitos a partir das tuas reservas. Cada
+            boletim enviado fica registado com a resposta do serviço, pronto a
+            mostrar numa inspeção.
           </p>
 
           <div
@@ -66,8 +69,8 @@ export function Hero() {
               Testar grátis {TRIAL_DIAS} dias
               <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
             </Link>
-            <Link href="#plataforma" className={`${BOTAO_SECUNDARIO} h-13 px-7 text-base`}>
-              Ver como funciona
+            <Link href="#prova" className={`${BOTAO_SECUNDARIO} h-13 px-7 text-base`}>
+              Ver o dossiê
             </Link>
           </div>
 

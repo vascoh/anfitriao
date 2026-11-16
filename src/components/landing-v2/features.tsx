@@ -16,14 +16,14 @@ type Feature = {
  */
 const FEATURES: Feature[] = [
   {
-    icon: Calendar,
-    titulo: 'Calendário unificado',
-    descricao: 'Airbnb, Booking e Vrbo no mesmo calendário, sincronizados de 15 em 15 minutos. Ou à mão, quando não podes esperar.',
-  },
-  {
     icon: ShieldCheck,
     titulo: 'Conformidade portuguesa',
     descricao: 'Boletins do SIBA prontos a entregar, taxa turística calculada por concelho, mapa do INE e alertas de seguro e RNAL.',
+  },
+  {
+    icon: Calendar,
+    titulo: 'Calendário unificado',
+    descricao: 'Airbnb, Booking e Vrbo no mesmo calendário, sincronizados de 15 em 15 minutos. Ou à mão, quando não podes esperar.',
   },
   {
     icon: FileText,

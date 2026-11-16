@@ -8,8 +8,9 @@ import { BOTAO_PRIMARIO, FOCO } from './estilos'
 
 const NAV = [
   { label: 'Plataforma', href: '#plataforma' },
+  // O posicionamento (2026-11-16) é a prova; a calculadora fica na página, fora do menu.
+  { label: 'Dossiê', href: '#prova' },
   { label: 'Funcionalidades', href: '#funcionalidades' },
-  { label: 'Calculadora', href: '#calculadora' },
   { label: 'Preços', href: '#precos' },
   // 'Blog' sai enquanto /blog não existir — a rota manda o visitante para o login.
 ]
