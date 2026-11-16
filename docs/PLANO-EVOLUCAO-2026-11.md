@@ -72,6 +72,10 @@ primeiro check-in online de um hóspede real da Casa de Vasco.**
 > **Estado a 09/11:** 1, 2, 3 e 4 publicados. A pesquisa/ações rápidas
 > passou também a folha inferior no telemóvel, fechando o ponto 1. Faltam o 5
 > (depende do horizonte 1) e o 6 (decisão).
+>
+> **16/11:** auditoria a produção com sessão iniciada fechou o que o 3 deixara
+> (barra lateral, aviso de check-in em atraso) e corrigiu hidratação no tema
+> escuro e 112 rótulos de formulário. Ver `PROGRESS.md`.
 
 Por ordem de impacto no anfitrião com pouco tempo. Cada ponto está pronto a
 fazer sem decisões pendentes, exceto quando assinalado.

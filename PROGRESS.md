@@ -6,6 +6,37 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-16] Auditoria em produção: hidratação, rótulos, contraste
+
+Claude passa a dono do código (ver `COORDENACAO-IA.md`). O plano de evolução
+não tinha mais código desbloqueado (H2.5 espera por dados reais, H2.6 por
+decisão), por isso a sessão foi uma auditoria a produção com sessão iniciada:
+20 ecrãs da app + páginas públicas, 390/1366 px, claro/escuro, axe.
+
+- 🐛 **Erro de hidratação (React #418) em todos os ecrãs da app no tema
+  escuro.** `useTheme` lia o `localStorage` no `useState`: o servidor desenhava
+  «Modo escuro» e o cliente «Modo claro». Passou a `useSyncExternalStore`.
+- ♿️ **112 `<label>` sem ligação ao campo** (axe crítico em `/financeiro`,
+  `/documentos`, `/propriedades/nova`, `/automacoes`, `/website`). Passam a
+  envolver o campo; guarda em `lib/rotulos-de-campos.test.ts`. Amostras de
+  cor com nome (`lib/cores-alojamento.ts`, antes duplicadas), interruptor do
+  website com `role="switch"`, grupo «Sexo» em `fieldset`.
+- 🎨 Barra lateral a 2:1 (`text-foreground/55`) → `muted-foreground`.
+  «Check-in em atraso» do `/hoje` em laranja sem modo escuro → tokens de
+  aviso; a guarda `cores-de-estado` passa a cobrir todas as paletas.
+- 📱 `/vs/*`: 122 px de scroll horizontal no telemóvel (os `sr-only` da tabela
+  escapavam ao contentor de scroll).
+- `<main>` no sign-in/up; links do rodapé com 24 px; `TRIAL_DIAS` no sign-up e
+  na imagem OG.
+- Validação: 1453 testes, typecheck 0, lint 0, build OK; reauditoria em
+  produção sem #418, sem violações axe críticas/graves na app e sem scroll
+  horizontal (sobra um falso positivo: título da landing medido a meio da
+  animação de scroll).
+- **Publicado** (`aa98034`, `dpl_3GxPVmg78wz3NKtxxsjpx71BXPYz`), alias
+  confirmado com `vercel inspect`. Push para `origin/main` (levou também 9
+  commits do Codex que não estavam no GitHub). Utilizador Clerk e linha
+  `accounts` de teste apagados.
+
 ### [2026-11-09] Pesquisa como folha inferior e foco acessível
 
 - 📱 **Fechado o que faltava do U5 no Horizonte 2.** A pesquisa e as
