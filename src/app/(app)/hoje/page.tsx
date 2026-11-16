@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { ArrowRight, AlertTriangle, MessagesSquare, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle } from 'lucide-react'
+import { ArrowRight, AlertTriangle, MessagesSquare, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle, UserPlus, HelpCircle } from 'lucide-react'
 import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
 import { transitionBooking, canTransition, unidadesReservaveis, geraObrigacoesDeHospede } from '@/lib/reservations'
@@ -17,6 +17,54 @@ import { ErroAoCarregar } from '@/components/erro-ao-carregar'
 import { IA_ATIVA } from '@/lib/ia'
 import { vibrar } from '@/lib/vibrar'
 import { PuxarParaAtualizar } from '@/components/puxar-para-atualizar'
+import { entradasPorIdentificar } from '@/lib/reserva-no-bloqueio'
+
+/* Bloqueios que o anfitrião disse serem só datas fechadas. Fica neste aparelho:
+ * é uma conveniência para limpar o ecrã, não um dado do alojamento. */
+const CHAVE_IGNORADOS = 'anf:hoje:bloqueios-ignorados'
+const EVENTO_IGNORADOS = 'anf:hoje:ignorados'
+// Sem armazenamento (navegação privada) a escolha vale só nesta visita.
+let ignoradosEmMemoria = '[]'
+
+function lerIgnoradosRaw(): string {
+  try {
+    return localStorage.getItem(CHAVE_IGNORADOS) ?? ignoradosEmMemoria
+  } catch {
+    return ignoradosEmMemoria
+  }
+}
+
+function subscreverIgnorados(onChange: () => void) {
+  window.addEventListener(EVENTO_IGNORADOS, onChange)
+  window.addEventListener('storage', onChange)
+  return () => {
+    window.removeEventListener(EVENTO_IGNORADOS, onChange)
+    window.removeEventListener('storage', onChange)
+  }
+}
+
+function paraConjunto(raw: string): Set<string> {
+  try {
+    const v: unknown = JSON.parse(raw)
+    return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function ignorarBloqueio(id: string) {
+  const novo = JSON.stringify([...paraConjunto(lerIgnoradosRaw()).add(id)].slice(-200))
+  ignoradosEmMemoria = novo
+  try { localStorage.setItem(CHAVE_IGNORADOS, novo) } catch { /* fica em memória */ }
+  window.dispatchEvent(new Event(EVENTO_IGNORADOS))
+}
+
+function quandoEntra(t: string, checkIn: string): string {
+  if (checkIn < t) return 'já começou'
+  if (checkIn === t) return 'entra hoje'
+  if (checkIn === addDays(t, 1)) return 'entra amanhã'
+  return `entra ${fmtDate(checkIn, { weekday: 'short', day: 'numeric', month: 'short' })}`
+}
 
 function useTodayLabel() {
   return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
@@ -254,11 +302,20 @@ export default function HojePage() {
     )
   }, [props])
 
+  // O servidor não tem localStorage: hidrata com «nenhum» e só depois lê.
+  const ignoradosRaw = useSyncExternalStore(subscreverIgnorados, lerIgnoradosRaw, () => '[]')
+  const ignorados = useMemo(() => paraConjunto(ignoradosRaw), [ignoradosRaw])
+  const porIdentificar = useMemo(
+    () => entradasPorIdentificar(bookings, t, addDays(t, 7)).filter(b => !ignorados.has(b.id)),
+    [bookings, t, ignorados],
+  )
+
   const proximasChegadas = useMemo(() => {
     const tomorrowStr = addDays(t, 1)
     const horizonStr = addDays(t, 7)
     return bookings
-      .filter(b => b.check_in >= tomorrowStr && b.check_in <= horizonStr && b.estado !== 'cancelada' && b.estado !== 'no_show')
+      // Os bloqueios têm secção própria («Quem chega?»); aqui apareciam como «—».
+      .filter(b => b.check_in >= tomorrowStr && b.check_in <= horizonStr && b.estado !== 'cancelada' && b.estado !== 'no_show' && geraObrigacoesDeHospede(b))
       .sort((a, b) => a.check_in.localeCompare(b.check_in))
   }, [bookings, t])
 
@@ -307,7 +364,7 @@ export default function HojePage() {
 
   const totalAlertas = (mensagensPorLer > 0 ? 1 : 0) + pendentes.length + pagamentosEmFalta.length + esquecidosCheckin.length + feedsComProblema.length
   const temAlertas = mensagensPorLer > 0 || pendentes.length > 0 || pagamentosEmFalta.length > 0 || esquecidosCheckin.length > 0 || feedsComProblema.length > 0 || boletinsEmAtraso.length > 0
-  const diaVazio = chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
+  const diaVazio = porIdentificar.length === 0 && chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
   const semPropriedades = loaded && !erro && props.length === 0
 
   // Setup checklist — shown when properties exist but config is incomplete
@@ -501,6 +558,52 @@ export default function HojePage() {
               </Link>
             ))}
           </div>
+        )}
+
+        {/* Quem chega? — entradas que vieram do calendário externo sem nome */}
+        {porIdentificar.length > 0 && (
+          <section className="border-b border-border" aria-labelledby="hoje-por-identificar">
+            <div className="flex items-center gap-2 px-4 lg:px-8 pt-5 pb-1">
+              <HelpCircle className="h-3.5 w-3.5 text-primary" aria-hidden />
+              <h2 id="hoje-por-identificar" className="antetitulo">Quem chega?</h2>
+            </div>
+            <p className="px-4 lg:px-8 pb-2 text-xs text-muted-foreground leading-relaxed">
+              Estas datas vieram fechadas do calendário externo, sem nome. Se forem
+              reservas, regista o hóspede para lhe enviares o check-in online.
+            </p>
+            <ul className="divide-y divide-border">
+              {porIdentificar.map(b => {
+                const prop = props.find(p => p.id === b.propriedade_id)
+                const n = nights(b.check_in, b.check_out)
+                return (
+                  <li key={b.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 lg:px-8 py-3">
+                    <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} aria-hidden />
+                    <Link href={`/reservas/${b.id}`} className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{prop?.nome ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground truncate tabular-nums">
+                        {quandoEntra(t, b.check_in)} · {n} noite{n !== 1 ? 's' : ''} · até {fmtDate(b.check_out, { day: 'numeric', month: 'short' })}
+                      </p>
+                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => ignorarBloqueio(b.id)}
+                        className="min-h-11 rounded-lg px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      >
+                        É só um bloqueio
+                      </button>
+                      <Link
+                        href={`/reservas/nova?propriedade=${b.propriedade_id}&checkin=${b.check_in}&checkout=${b.check_out}&bloqueio=${b.id}`}
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground active:opacity-90"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" aria-hidden /> Registar hóspede
+                      </Link>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
         )}
 
         {/* Chegadas */}

@@ -70,3 +70,42 @@ export function aindaDentro(
   if (!bloqueio || bloqueio.estado === 'cancelada' || bloqueio.estado === 'no_show') return false
   return reserva.check_in >= bloqueio.check_in && reserva.check_out <= bloqueio.check_out
 }
+
+/**
+ * Bloqueios importados que começam em breve e ainda não têm reserva lá dentro.
+ *
+ * É o elo que faltava para o primeiro check-in online (horizonte 1 do plano):
+ * com o Amenitiz no meio, todas as entradas chegam como «Quarto indisponível»,
+ * o `/hoje` filtra-as (e bem — podem ser só datas fechadas) e o anfitrião
+ * nunca é levado a dizer quem chega. Sem hóspede não há link de check-in,
+ * boletim SIBA nem fatura. Medido a 2026-11-16: 8 entradas, 0 hóspedes.
+ *
+ * Entra aqui o bloqueio que:
+ *  - veio de um calendário externo (`uid_externo`) — os criados à mão são
+ *    fechos que o próprio anfitrião fez e sabe o que são;
+ *  - não está cancelado e ainda não acabou;
+ *  - começa até `dias` depois de hoje (inclui os que já começaram);
+ *  - não tem nenhuma reserva ativa registada dentro (`bloqueio_id`).
+ */
+export function entradasPorIdentificar<
+  B extends Pick<Booking, 'id' | 'check_in' | 'check_out' | 'estado' | 'hospede_id' | 'uid_externo' | 'notas' | 'origem' | 'bloqueio_id'>,
+>(bookings: B[], hoje: string, limite: string): B[] {
+  const comReserva = new Set(
+    bookings
+      .filter((b) => b.bloqueio_id && b.estado !== 'cancelada' && b.estado !== 'no_show')
+      .map((b) => b.bloqueio_id as string),
+  )
+  return bookings
+    .filter(
+      (b) =>
+        !!b.uid_externo &&
+        !b.bloqueio_id &&
+        eBloqueio(b) &&
+        b.estado !== 'cancelada' &&
+        b.estado !== 'no_show' &&
+        b.check_out > hoje &&
+        b.check_in <= limite &&
+        !comReserva.has(b.id),
+    )
+    .sort((a, b) => a.check_in.localeCompare(b.check_in))
+}
