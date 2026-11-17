@@ -35,6 +35,10 @@ describe('passosOnboarding', () => {
     expect(com.href).toBe('/propriedades')
   })
 
+  it('o passo dos calendários leva ao assistente de canais', () => {
+    expect(passosOnboarding(vazio).find((p) => p.chave === 'ical')?.href).toBe('/canais')
+  })
+
   it('não usa brasileirismos na copy', () => {
     // CLAUDE.md: conecta→liga, planilha→folha de cálculo, sync→sincronizar
     const texto = passosOnboarding(vazio)

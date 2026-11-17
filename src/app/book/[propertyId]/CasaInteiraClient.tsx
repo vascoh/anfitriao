@@ -201,7 +201,7 @@ export default function CasaInteiraClient({
                       <Users className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                       {q.nome}
                     </span>
-                    <span className="text-xs text-muted-foreground tabular-nums">{q.capacidade} pax</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">até {q.capacidade} {q.capacidade === 1 ? 'pessoa' : 'pessoas'}</span>
                   </li>
                 ))}
               </ul>

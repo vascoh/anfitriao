@@ -111,7 +111,9 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     property: propRes.data
       ? { nome: propRes.data.nome, cidade: propRes.data.cidade, imagem_url: propRes.data.imagem_url }
       : null,
-    host_nome: settingsRes.data?.host_nome ?? settingsRes.data?.logo_texto ?? 'O seu anfitrião',
+    // null quando o anfitrião ainda não deu nome: a página põe «o teu anfitrião»
+    // na língua do hóspede, em vez de português fixo.
+    host_nome: settingsRes.data?.host_nome || settingsRes.data?.logo_texto || null,
     // O hóspede é o titular destes dados: vê-os em claro para poder
     // corrigi-los — enquanto a janela estiver aberta.
     guest: janela.mostraDados ? revelarCampos(guestRes.data ?? null) : null,

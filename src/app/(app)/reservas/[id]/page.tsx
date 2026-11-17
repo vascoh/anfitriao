@@ -45,6 +45,11 @@ export default function ReservaDetailPage() {
    * um ecrã limpo onde havia hóspedes por registar. É a mesma classe de engano
    * dos alertas falsos em `/hoje`, ao contrário: aqui a falha esconde. */
   const [boletinsErro, setBoletinsErro] = useState(false)
+  /** As outras pessoas da reserva (o titular é `guest`). Cada uma tem boletim
+   * próprio; sem esta lista o anfitrião não via quem tinha feito o check-in
+   * com o titular, nem o que faltava a cada ficha. */
+  const [faltamTitular, setFaltamTitular] = useState<string[]>([])
+  const [acompanhantes, setAcompanhantes] = useState<Array<{ id: string; nome: string; nacionalidade: string | null; faltam: string[] }>>([])
   /** As reservas irmãs, quando esta faz parte de uma casa alugada por inteiro. */
   const [grupo, setGrupo] = useState<{ reservas: Booking[]; props: Property[] } | null>(null)
   /** Num bloqueio importado: as reservas reais registadas dentro dele. */
@@ -55,7 +60,12 @@ export default function ReservaDetailPage() {
   async function load() {
     fetch(`/api/reservas/${id}/hospedes`)
       .then(r => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then(d => { setBoletins(d.estado); setBoletinsErro(false) })
+      .then(d => {
+        setBoletins(d.estado); setBoletinsErro(false)
+        const lista = (d.hospedes ?? []) as Array<{ id: string; nome: string; nacionalidade: string | null; principal: boolean; faltam: string[] }>
+        setFaltamTitular(lista.find(h => h.principal)?.faltam ?? [])
+        setAcompanhantes(lista.filter(h => !h.principal))
+      })
       .catch(() => { setBoletins(null); setBoletinsErro(true) })
 
     /* Uma falha não é «reserva não encontrada»: quem a lê conclui que a
@@ -547,6 +557,9 @@ export default function ReservaDetailPage() {
                     </span>
                   ))}
                 </div>
+                {faltamTitular.length > 0 && (
+                  <p className="text-xs text-aviso mt-0.5">Falta: {faltamTitular.join(', ')}</p>
+                )}
               </div>
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             </Link>
@@ -558,6 +571,22 @@ export default function ReservaDetailPage() {
               <p className="text-sm text-muted-foreground">Hóspede sem perfil</p>
             </div>
           )}
+          {!bloqueio && acompanhantes.map(a => (
+            <Link key={a.id} href={`/hospedes/${a.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-muted/40 transition-colors border-b border-border last:border-0">
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 ml-1">
+                <span className="text-sm font-semibold text-muted-foreground">{a.nome?.[0] ?? '?'}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{a.nome}</p>
+                <p className={`text-xs mt-0.5 ${a.faltam.length > 0 ? 'text-aviso' : 'text-muted-foreground'}`}>
+                  {a.faltam.length > 0
+                    ? `Falta: ${a.faltam.join(', ')}`
+                    : ['Acompanhante', a.nacionalidade].filter(Boolean).join(' · ')}
+                </p>
+              </div>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            </Link>
+          ))}
           {guest?.email && (
             <a href={`mailto:${guest.email}`} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 active:bg-muted/40">
               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />

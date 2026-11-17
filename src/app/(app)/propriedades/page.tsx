@@ -206,7 +206,7 @@ function PropertyCard({ p, bookings, guests, isRoom = false }: {
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1"><BedDouble className="h-3.5 w-3.5" />{p.quartos} quarto{p.quartos !== 1 ? 's' : ''}</span>
-          <span>max {p.capacidade} pax</span>
+          <span>até {p.capacidade} hóspedes</span>
           <span className="font-medium text-foreground">{fmtMoney(p.preco_base)}/noite</span>
         </div>
 

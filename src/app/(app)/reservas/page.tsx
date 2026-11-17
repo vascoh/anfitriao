@@ -78,7 +78,7 @@ function GrupoRow({ grupo, guests, props }: { grupo: ResumoGrupo; guests: Guest[
             {STATUS_LABEL[grupo.estado]}
           </span>
           <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border text-muted-foreground">
-            {grupo.reservas.length} quartos · {grupo.numHospedes} pax
+            {grupo.reservas.length} quartos · {grupo.numHospedes} {grupo.numHospedes === 1 ? 'hóspede' : 'hóspedes'}
           </span>
           <span className="text-[11px] text-muted-foreground">
             {fmtDate(grupo.checkIn)} → {fmtDate(grupo.checkOut)} · {n} {n === 1 ? 'noite' : 'noites'}

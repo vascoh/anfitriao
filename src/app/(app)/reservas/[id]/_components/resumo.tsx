@@ -32,7 +32,7 @@ export function CartaoPropriedade({ prop }: { prop: Property | null }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm">{prop?.nome}</p>
-          <p className="text-xs text-muted-foreground">{prop?.cidade} · {prop?.capacidade} pax</p>
+          <p className="text-xs text-muted-foreground">{prop?.cidade} · até {prop?.capacidade} hóspedes</p>
         </div>
         <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
       </Link>

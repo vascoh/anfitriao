@@ -18,7 +18,7 @@ interface CheckinData {
   num_hospedes: number
   estado: string
   property: { nome: string; cidade: string; imagem_url?: string } | null
-  host_nome: string
+  host_nome: string | null
   guest: Record<string, string> | null
   acompanhantes?: Array<Record<string, string>>
   /** Falso num quarto de grupo onde quem reservou não dorme. */
@@ -322,7 +322,7 @@ export default function CheckinPage() {
         </div>
         <div className="flex flex-col gap-1.5">
           <p className="text-xl font-bold">{t.obrigado(form.nome.split(' ')[0])}</p>
-          <p className="text-sm text-muted-foreground">{t.enviados(data?.host_nome ?? '')}</p>
+          <p className="text-sm text-muted-foreground">{t.enviados(data?.host_nome ?? t.oTeuAnfitriao)}</p>
         </div>
         {data && (
           <div className="w-full max-w-sm rounded-2xl border border-border bg-card px-5 py-4 text-left flex flex-col gap-1">
@@ -374,9 +374,11 @@ export default function CheckinPage() {
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {IA_ATIVA ? t.introIA : t.introManual}
               </p>
-              <p className="text-xs text-muted-foreground">
-                {t.anfitriao}: <span className="font-medium text-foreground">{data?.host_nome}</span>
-              </p>
+              {data?.host_nome && (
+                <p className="text-xs text-muted-foreground">
+                  {t.anfitriao}: <span className="font-medium text-foreground">{data.host_nome}</span>
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-3">

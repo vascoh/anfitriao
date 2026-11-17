@@ -307,7 +307,7 @@ function NovaReservaInner() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{p.nome}</p>
-                  <p className="text-xs text-muted-foreground">{p.cidade} · max {p.capacidade} pax · {fmtMoney(p.preco_base)}/noite</p>
+                  <p className="text-xs text-muted-foreground">{p.cidade} · até {p.capacidade} hóspedes · {fmtMoney(p.preco_base)}/noite</p>
                 </div>
                 {propId === p.id && <Check className="h-4 w-4 text-primary shrink-0" />}
               </button>
@@ -444,7 +444,7 @@ function NovaReservaInner() {
                     return (
                       <li key={quarto.id} className="flex items-center justify-between gap-2 text-xs">
                         <span className={livre ? '' : 'text-muted-foreground line-through'}>
-                          {quarto.nome} · {quarto.capacidade} pax
+                          {quarto.nome} · até {quarto.capacidade} hóspedes
                         </span>
                         <span className={
                           !livre ? 'text-muted-foreground'

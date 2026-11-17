@@ -19,6 +19,7 @@ export function linguaDoBrowser(): Lingua {
 const pt = {
   outraLingua: 'English',
   cabecalho: 'Check-in online',
+  oTeuAnfitriao: 'o teu anfitrião',
   noitesCurto: (n: number) => `${n} ${n === 1 ? 'noite' : 'noites'}`,
   erroTitulo: 'Reserva não encontrada',
   erroTexto: 'Verifica o link enviado pelo teu anfitrião.',
@@ -86,6 +87,7 @@ export type Textos = typeof pt
 const en: Textos = {
   outraLingua: 'Português',
   cabecalho: 'Online check-in',
+  oTeuAnfitriao: 'your host',
   noitesCurto: n => `${n} ${n === 1 ? 'night' : 'nights'}`,
   erroTitulo: 'Booking not found',
   erroTexto: 'Please check the link your host sent you.',

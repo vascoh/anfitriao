@@ -44,7 +44,7 @@ export function passosOnboarding(e: EstadoConta): PassoOnboarding[] {
       titulo: 'Liga o Airbnb e o Booking.com',
       descricao: 'Cola o link iCal de cada plataforma e as reservas entram sozinhas.',
       cta: 'Ligar calendários',
-      href: '/propriedades',
+      href: '/canais',
       feito: e.temIcal,
       opcional: false,
     },

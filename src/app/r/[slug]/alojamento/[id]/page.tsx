@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import {
-  ArrowLeft, Car, Check, MapPin, Tv, Trees, UtensilsCrossed, Waves, WashingMachine, Wifi, Wind,
+  ArrowLeft, Car, Check, MapPin, Tv, Trees, CookingPot, Waves, WashingMachine, Wifi, Wind,
 } from 'lucide-react'
 import { fmtMoney } from '@/lib/utils'
 import {
@@ -32,7 +32,7 @@ const ICONE: Record<string, ReactNode> = {
   ar_condicionado: <Wind className="h-4 w-4" />,
   estacionamento: <Car className="h-4 w-4" />,
   piscina: <Waves className="h-4 w-4" />,
-  cozinha: <UtensilsCrossed className="h-4 w-4" />,
+  cozinha: <CookingPot className="h-4 w-4" />,
   maquina_lavar: <WashingMachine className="h-4 w-4" />,
   tv: <Tv className="h-4 w-4" />,
   jardim: <Trees className="h-4 w-4" />,

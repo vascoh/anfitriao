@@ -65,9 +65,9 @@ function dataLegivel(iso?: string): string | null {
 
 /* ── O que é isto, afinal ─────────────────────────────────────────────────── */
 
-function ComoFunciona() {
+function ComoFunciona({ aberto }: { aberto: boolean }) {
   return (
-    <details className="rounded-2xl border border-border bg-card px-4 py-3.5" open>
+    <details className="rounded-2xl border border-border bg-card px-4 py-3.5" open={aberto}>
       <summary className="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none">
         <Info className="h-4 w-4 text-primary shrink-0" />
         Como funciona a ligação aos canais
@@ -233,7 +233,7 @@ function AssistenteLigar({
             {CANAIS_IMPORTAVEIS.map(c => (
               <button
                 key={c}
-                onClick={() => setFonte(c)}
+                type="button" aria-pressed={fonte === c} onClick={() => setFonte(c)}
                 className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors text-left ${
                   fonte === c ? 'border-primary bg-primary/5 text-foreground' : 'border-border bg-card text-muted-foreground hover:border-primary/40'
                 }`}
@@ -387,7 +387,7 @@ function PainelExportar({ prop }: { prop: Property }) {
             {(Object.keys(DESTINOS) as Array<keyof typeof DESTINOS>).map(d => (
               <button
                 key={d}
-                onClick={() => setDestino(d)}
+                type="button" aria-pressed={destino === d} onClick={() => setDestino(d)}
                 className={`rounded-lg border px-3 py-2 text-left transition-colors ${
                   destino === d ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40'
                 }`}
@@ -423,7 +423,7 @@ function PainelExportar({ prop }: { prop: Property }) {
           {CANAIS_IMPORTAVEIS.map(c => (
             <button
               key={c}
-              onClick={() => setPlataforma(c)}
+              type="button" aria-pressed={plataforma === c} onClick={() => setPlataforma(c)}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                 plataforma === c ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground hover:text-foreground'
               }`}
@@ -815,8 +815,6 @@ export default function CanaisPage() {
       </header>
 
       <div className="flex flex-col gap-4 px-4 py-5 pb-24">
-        <ComoFunciona />
-
         {aCarregar && (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -862,6 +860,13 @@ export default function CanaisPage() {
             recarregar={carregar}
           />
         ))}
+
+        {/* A explicação vem depois dos alojamentos: quem chega aqui pela
+            checklist quer ligar já, e o assistente de cada cartão explica o
+            essencial. Aberta só enquanto nada está ligado. */}
+        {!aCarregar && !erro && (
+          <ComoFunciona aberto={!ativos.some(p => (p.ical_feeds?.length ?? 0) > 0)} />
+        )}
       </div>
     </div>
   )

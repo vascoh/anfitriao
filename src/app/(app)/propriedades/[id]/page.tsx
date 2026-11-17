@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { useUser } from '@clerk/nextjs'
-import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees, Key, BookOpen, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag } from 'lucide-react'
+import { ArrowLeft, Edit2, BedDouble, Bath, Users, MapPin, Wifi, Wind, Car, Waves, CookingPot, WashingMachine, Tv, Trees, Key, BookOpen, ChevronDown, ChevronUp, ExternalLink, Rss, Check, Tag, ArrowRight } from 'lucide-react'
 import { fmtDate, fmtMoney, nights, today } from '@/lib/utils'
 import { fetchProperties, fetchBookings, fetchGuests, fetchSettings } from '@/lib/fetcher'
 import type { Property, Booking, Guest } from '@/lib/types'
@@ -31,7 +31,7 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   ar_condicionado: <Wind className="h-3 w-3" />,
   estacionamento:  <Car className="h-3 w-3" />,
   piscina:         <Waves className="h-3 w-3" />,
-  cozinha:         <UtensilsCrossed className="h-3 w-3" />,
+  cozinha:         <CookingPot className="h-3 w-3" />,
   maquina_lavar:   <WashingMachine className="h-3 w-3" />,
   secador:         <Wind className="h-3 w-3" />,
   tv:              <Tv className="h-3 w-3" />,
@@ -161,14 +161,14 @@ export default function PropriedadeDetailPage() {
               }`}
             >
               <div className={`h-2 w-2 rounded-full ${prop.ativo ? 'bg-sucesso' : 'bg-gray-300'}`} />
-              {prop.ativo ? 'Ativa' : 'Inativa'}
+              {prop.ativo ? 'Ativo' : 'Inativo'}
             </button>
             <span className="text-xs text-muted-foreground">{PROPERTY_TYPE_LABEL[prop.tipo]}</span>
           </div>
 
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span>{prop.endereco}, {prop.cidade}</span>
+            <span>{[prop.endereco, prop.cidade].filter(Boolean).join(', ')}</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -337,6 +337,17 @@ export default function PropriedadeDetailPage() {
 
         {/* Actions */}
         <div className="px-4 flex flex-col gap-2 pt-2">
+          {(prop.ical_feeds?.length ?? 0) === 0 && (
+            <Link href="/canais"
+              className="flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3.5 active:opacity-80 transition-opacity">
+              <Rss className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">Liga o Airbnb e o Booking.com</span>
+                <span className="block text-xs text-muted-foreground">As reservas das plataformas entram sozinhas.</span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            </Link>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <Link href={`/reservas/nova?propriedade=${id}`}
               className="bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm text-center active:opacity-80 transition-opacity">

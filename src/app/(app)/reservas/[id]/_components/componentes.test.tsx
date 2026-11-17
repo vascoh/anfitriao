@@ -52,7 +52,7 @@ describe('detalhe da reserva — blocos extraídos', () => {
     expect(det).toContain('Direto')
     const prop = renderToStaticMarkup(<CartaoPropriedade prop={q1} />)
     expect(prop).toContain('href="/propriedades/q1"')
-    expect(prop).toContain('Lisboa · 2 pax')
+    expect(prop).toContain('Lisboa · até 2 hóspedes')
   })
 
   it('Histórico lista do mais recente para o mais antigo', () => {

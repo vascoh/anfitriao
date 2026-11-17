@@ -7,7 +7,7 @@ import Image from 'next/image'
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
   BedDouble, Bath, Users, MapPin,
-  Wifi, Wind, Car, Waves, UtensilsCrossed, WashingMachine, Tv, Trees,
+  Wifi, Wind, Car, Waves, CookingPot, WashingMachine, Tv, Trees,
   CheckCircle2, MousePointerClick, CreditCard,
 } from 'lucide-react'
 import { uuid, fmtMoney, nights as calcNights, today as localToday } from '@/lib/utils'
@@ -22,7 +22,7 @@ const AMENITY_ICON: Record<string, React.ReactNode> = {
   ar_condicionado: <Wind className="h-4 w-4" />,
   estacionamento:  <Car className="h-4 w-4" />,
   piscina:         <Waves className="h-4 w-4" />,
-  cozinha:         <UtensilsCrossed className="h-4 w-4" />,
+  cozinha:         <CookingPot className="h-4 w-4" />,
   maquina_lavar:   <WashingMachine className="h-4 w-4" />,
   tv:              <Tv className="h-4 w-4" />,
   jardim:          <Trees className="h-4 w-4" />,
