@@ -27,7 +27,7 @@ function isActive(b: Booking) {
 }
 
 function buildRevenueCsv(bookings: Booking[], properties: Property[], guests: Guest[], year: number): string {
-  const cols = ['Check-in', 'Check-out', 'Noites', 'Hóspedes', 'Nome', 'Propriedade', 'Origem', 'Total (€)', 'Pago (€)', 'Em falta (€)', 'Estado']
+  const cols = ['Check-in', 'Check-out', 'Noites', 'Hóspedes', 'Nome', 'Alojamento', 'Origem', 'Total (€)', 'Pago (€)', 'Em falta (€)', 'Estado']
   const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`
   const rows = bookings
     .filter(b => b.check_in.startsWith(String(year)))
@@ -586,7 +586,7 @@ export default function RelatoriosPage() {
               Ocupação · {MONTHS_SHORT[occupancyMonth]}
             </p>
             {propOccupancy.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sem propriedades ativas</p>
+              <p className="text-sm text-muted-foreground">Sem alojamentos ativos</p>
             ) : (
               <div className="flex flex-col gap-5">
                 {propOccupancy.map(p => (

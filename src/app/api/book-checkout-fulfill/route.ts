@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   const { data: prop } = await supabase.from('properties').select('owner_id').eq('id', propriedadeId).maybeSingle()
   const ownerId = prop?.owner_id as string | undefined
-  if (!ownerId) return NextResponse.json({ error: 'Propriedade não encontrada.' }, { status: 404 })
+  if (!ownerId) return NextResponse.json({ error: 'Alojamento não encontrado.' }, { status: 404 })
 
   const account = await getAccountByClerkId(ownerId)
   if (!account?.stripe_connect_account_id) {

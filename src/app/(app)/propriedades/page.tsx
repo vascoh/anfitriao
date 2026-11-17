@@ -406,7 +406,7 @@ export default function PropriedadesPage() {
     <div className="flex flex-col min-h-full">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-titulo">Propriedades</h1>
+          <h1 className="text-titulo">Alojamentos</h1>
           <Link href="/propriedades/nova"
             className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-medium active:opacity-80 transition-opacity">
             <Plus className="h-3.5 w-3.5" /> Nova
@@ -445,7 +445,7 @@ export default function PropriedadesPage() {
               <BedDouble className="h-8 w-8 text-primary" />
             </div>
             <div className="flex flex-col gap-1.5 max-w-xs">
-              <p className="text-lg font-semibold">Nenhuma propriedade</p>
+              <p className="text-lg font-semibold">Nenhum alojamento</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Cria a tua primeira propriedade para começar a receber reservas, gerir preços e organizar hóspedes.
               </p>

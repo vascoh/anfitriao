@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     : { data: null }
 
   if (existing && existing.owner_id !== null && existing.owner_id !== userId) {
-    return NextResponse.json({ error: 'Sem permissão para alterar esta propriedade.' }, { status: 403 })
+    return NextResponse.json({ error: 'Sem permissão para alterar este alojamento.' }, { status: 403 })
   }
 
   /* Limite do plano, em unidades alugáveis.
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.from('properties').upsert(row)
   if (error) {
     console.error('[POST /api/properties]', error.message)
-    return NextResponse.json({ error: 'Erro ao guardar propriedade.' }, { status: 500 })
+    return NextResponse.json({ error: 'Não foi possível guardar o alojamento.' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })

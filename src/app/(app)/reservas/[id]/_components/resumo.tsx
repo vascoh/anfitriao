@@ -25,7 +25,7 @@ export function DetalhesReserva({ booking, noites: n }: { booking: Booking; noit
 
 export function CartaoPropriedade({ prop }: { prop: Property | null }) {
   return (
-    <Section title="Propriedade">
+    <Section title="Alojamento">
       <Link href={`/propriedades/${prop?.id}`} className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/40 transition-colors">
         <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: prop?.cor + '20' }}>
           <MapPin className="h-4.5 w-4.5" style={{ color: prop?.cor }} />

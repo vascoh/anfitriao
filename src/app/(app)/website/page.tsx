@@ -480,7 +480,7 @@ export default function WebsitePage() {
         {/* Properties on the website */}
         {settings.enabled && (
           <div className="flex flex-col gap-2">
-            <p className="antetitulo">Propriedades publicadas</p>
+            <p className="antetitulo">Alojamentos publicados</p>
             {/* Esta lista mostrava **todos** os alojamentos ativos, quartos
               * incluídos, e contava-os todos como «visíveis». O site público
               * não faz isso: `/r/[slug]` filtra os que têm `parent_id` e

@@ -41,7 +41,7 @@ function buildFinanceCsv(
 ): string {
   const esc = (v: string) => `"${String(v).replace(/"/g, '""')}"`
   const propName = (id?: string | null) => properties.find(p => p.id === id)?.nome ?? ''
-  const cols = ['Data', 'Categoria', 'Descrição', 'Propriedade', 'Valor (€)']
+  const cols = ['Data', 'Categoria', 'Descrição', 'Alojamento', 'Valor (€)']
   const rows = expenses
     .filter(e => e.data.startsWith(String(year)))
     .sort((a, b) => a.data.localeCompare(b.data))
@@ -320,7 +320,7 @@ export default function FinanceiroPage() {
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs text-muted-foreground font-medium">Propriedade (opcional)</span>
+              <span className="text-xs text-muted-foreground font-medium">Alojamento (opcional)</span>
               <select value={propriedadeId} onChange={e => setPropriedadeId(e.target.value)}
                 className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                 <option value="">Todas / geral</option>

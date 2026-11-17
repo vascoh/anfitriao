@@ -5,8 +5,9 @@ import { boletimDaLinha, type LinhaBoletim } from './siba-mapping'
 /**
  * Hóspedes de uma reserva — a lógica pura por trás de "um boletim por pessoa".
  *
- * O boletim de alojamento é individual (Lei 23/2007, art. 198.º). Uma reserva
- * de 8 pessoas precisa de 8 boletins, e a coima é por boletim em falta. Este
+ * O boletim de alojamento é individual (Lei 23/2007, art. 16.º). Uma reserva
+ * de 8 pessoas precisa de 8 boletins, e a coima (art. 198.º) é por boletim em
+ * falta. Este
  * módulo é o que permite saber, a qualquer momento, quantos faltam e o que
  * falta a cada um.
  */

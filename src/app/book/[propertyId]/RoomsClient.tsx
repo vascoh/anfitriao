@@ -51,7 +51,7 @@ function RoomCard({ room, isOccupied }: RoomCardProps) {
       <div className="p-4 flex flex-col gap-3">
         <div>
           <h3 className="font-bold text-base">{room.nome}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 capitalize">
+          <p className="text-xs text-muted-foreground mt-0.5 first-letter:uppercase">
             {PROPERTY_TYPE_LABEL[room.tipo]}
           </p>
         </div>

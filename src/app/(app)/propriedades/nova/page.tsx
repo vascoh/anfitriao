@@ -151,16 +151,16 @@ function NovaPropriedadeForm() {
           document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' })
           toast.error('Chegaste ao limite do teu plano. Vê a proposta no topo.')
         } else {
-          toast.error(err.error ?? 'Erro ao criar propriedade. Tenta novamente.')
+          toast.error(err.error ?? 'Não foi possível criar o alojamento. Tenta novamente.')
         }
         setSaving(false)
         return
       }
 
-      toast.success(parentId ? 'Quarto adicionado com sucesso' : 'Propriedade criada com sucesso')
+      toast.success(parentId ? 'Quarto adicionado com sucesso' : 'Alojamento criado')
       router.push(parentId ? `/propriedades/${parentId}` : `/propriedades/${p.id}`)
     } catch {
-      toast.error('Erro ao criar propriedade. Tenta novamente.')
+      toast.error('Não foi possível criar o alojamento. Tenta novamente.')
       setSaving(false)
     }
   }
@@ -176,7 +176,7 @@ function NovaPropriedadeForm() {
           <Link href={parentId ? `/propriedades/${parentId}` : '/propriedades'} aria-label="Voltar" className="-my-2 -ml-3 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <h1 className="text-subtitulo">{parentId ? 'Novo quarto' : 'Nova propriedade'}</h1>
+          <h1 className="text-subtitulo">{parentId ? 'Novo quarto' : 'Novo alojamento'}</h1>
         </div>
       </header>
 
@@ -264,10 +264,10 @@ function NovaPropriedadeForm() {
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </label>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Tipo</label>
+            <p className="text-xs text-muted-foreground font-medium">Tipo</p>
             <div className="grid grid-cols-2 gap-2">
               {TYPES.map(t => (
-                <button key={t} onClick={() => setTipo(t)}
+                <button key={t} type="button" aria-pressed={tipo === t} onClick={() => setTipo(t)}
                   className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
                     tipo === t ? 'border-primary bg-primary/5 text-primary' : 'border-input bg-card text-foreground/70'
                   }`}>
@@ -322,13 +322,13 @@ function NovaPropriedadeForm() {
             <div key={f.label} className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
               <span className="text-sm font-medium">{f.label}</span>
               <div className="flex items-center gap-4">
-                <button onClick={() => f.set(Math.max(f.min, f.value - 1))}
-                  className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
+                <button type="button" aria-label={`Menos: ${f.label}`} onClick={() => f.set(Math.max(f.min, f.value - 1))}
+                  className="size-11 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
                   −
                 </button>
-                <span className="text-sm font-semibold w-5 text-center">{f.value}</span>
-                <button onClick={() => f.set(Math.min(f.max, f.value + 1))}
-                  className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
+                <span className="text-sm font-semibold w-5 text-center tabular-nums" aria-live="polite">{f.value}</span>
+                <button type="button" aria-label={`Mais: ${f.label}`} onClick={() => f.set(Math.min(f.max, f.value + 1))}
+                  className="size-11 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
                   +
                 </button>
               </div>
@@ -371,7 +371,7 @@ function NovaPropriedadeForm() {
           <p className="antetitulo">Comodidades</p>
           <div className="flex flex-wrap gap-2">
             {AMENITIES.map(a => (
-              <button key={a.id} onClick={() => toggleAmenity(a.id)}
+              <button key={a.id} type="button" aria-pressed={comodidades.includes(a.id)} onClick={() => toggleAmenity(a.id)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   comodidades.includes(a.id)
                     ? 'bg-primary text-primary-foreground border-primary'
@@ -402,7 +402,7 @@ function NovaPropriedadeForm() {
 
         <button onClick={handleSave} disabled={!canSave || saving}
           className="w-full bg-primary text-primary-foreground rounded-xl py-3.5 font-semibold text-sm disabled:opacity-40 active:opacity-80 transition-opacity mt-2">
-          {saving ? 'A criar...' : parentId ? 'Criar quarto' : 'Criar propriedade'}
+          {saving ? 'A criar...' : parentId ? 'Criar quarto' : 'Criar alojamento'}
         </button>
       </div>
     </div>

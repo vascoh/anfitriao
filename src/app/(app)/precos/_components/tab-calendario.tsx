@@ -98,7 +98,7 @@ export function TabCalendario({ props, rules }: { props: Property[]; rules: Pric
       )}
 
       {!prop && (
-        <div className="text-center py-16 text-muted-foreground text-sm">Sem propriedades configuradas.</div>
+        <div className="text-center py-16 text-muted-foreground text-sm">Sem alojamentos configurados.</div>
       )}
 
       {prop && (
@@ -108,7 +108,7 @@ export function TabCalendario({ props, rules }: { props: Property[]; rules: Pric
             <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-muted transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <h2 className="text-base font-semibold capitalize">{monthLabel}</h2>
+            <h2 className="text-base font-semibold first-letter:uppercase">{monthLabel}</h2>
             <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-muted transition-colors">
               <ChevronRight className="h-5 w-5" />
             </button>

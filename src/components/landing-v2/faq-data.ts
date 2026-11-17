@@ -25,7 +25,7 @@ export const PERGUNTAS = [
   {
     pergunta: 'Quanto tempo poupo por mês?',
     resposta:
-      'Depende do número de propriedades e do volume de reservas. O tempo sai sobretudo de três sítios: deixar de saltar entre os extranets das plataformas, o hóspede preencher sozinho os dados do check-in, e as obrigações legais — boletins, taxa turística, INE — deixarem de ser feitas de memória.',
+      'Depende do número de alojamentos e do volume de reservas. O tempo sai sobretudo de três sítios: deixar de saltar entre os extranets das plataformas, o hóspede preencher sozinho os dados do check-in, e as obrigações legais — boletins, taxa turística, INE — deixarem de ser feitas de memória.',
   },
   {
     pergunta: 'E se eu tiver uma guest house ou um hotel pequeno?',

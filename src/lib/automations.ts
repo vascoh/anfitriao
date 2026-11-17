@@ -73,7 +73,7 @@ export function envioPorGrupo<T extends { id: string; reserva_grupo_id?: string 
 
 export const PREVIEW_VARS: Record<string, string> = {
   nome: 'Maria Silva',
-  propriedade: 'a tua propriedade',
+  propriedade: 'o teu alojamento',
   checkin: '10 ago.',
   checkout: '13 ago.',
 }

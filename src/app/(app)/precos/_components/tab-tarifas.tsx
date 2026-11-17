@@ -63,7 +63,7 @@ function TarifaForm({
 
       {props.length > 1 && (
         <label className="flex flex-col gap-1">
-          <span className={labelCls}>Propriedade</span>
+          <span className={labelCls}>Alojamento</span>
           <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls}>
             {props.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>

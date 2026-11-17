@@ -173,14 +173,14 @@ function ConciergeAtivo() {
         {/* Property selector */}
         {properties.length > 0 && (
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-muted-foreground font-medium">Propriedade</span>
+            <span className="text-xs text-muted-foreground font-medium">Alojamento</span>
             <div className="relative">
               <select
                 value={selectedPropId}
                 onChange={e => setSelectedPropId(e.target.value)}
                 className="w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-ring pr-8"
               >
-                <option value="">Sem contexto de propriedade</option>
+                <option value="">Sem contexto de alojamento</option>
                 {properties.map(p => (
                   <option key={p.id} value={p.id}>{p.nome}</option>
                 ))}

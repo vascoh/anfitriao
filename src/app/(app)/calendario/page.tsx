@@ -217,14 +217,14 @@ function TimelineView({
                 <LayoutGrid className="h-8 w-8 text-primary" />
               </div>
               <div className="flex flex-col gap-1.5 max-w-xs">
-                <p className="text-lg font-semibold">Sem propriedades ativas</p>
+                <p className="text-lg font-semibold">Sem alojamentos ativos</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   Cria ou ativa uma propriedade para veres as reservas no calendário.
                 </p>
               </div>
               <Link href="/propriedades/nova"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
-                <Plus className="h-4 w-4" /> Criar propriedade
+                <Plus className="h-4 w-4" /> Criar alojamento
               </Link>
               <Link href="/propriedades" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                 Gerir propriedades existentes →
@@ -494,7 +494,7 @@ function GridView({
         {selected && (
           <div className="flex flex-col gap-3 pt-3 border-t border-border">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold capitalize">
+              <h2 className="text-sm font-semibold first-letter:uppercase">
                 {new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(selected + 'T00:00:00'))}
               </h2>
               <Link href={`/reservas/nova?checkin=${selected}`}
@@ -602,7 +602,7 @@ export default function CalendarioPage() {
    *
    * O estado de carregamento não existia, e a diferença entre "ainda não
    * chegou" e "não há nada" é a diferença entre um calendário vazio por um
-   * segundo e um "Sem propriedades ativas" a mentir a quem tem seis. Pior: as
+   * segundo e um "Sem alojamentos ativos" a mentir a quem tem seis. Pior: as
    * três promessas não tinham `catch`, portanto uma falha de rede deixava o
    * calendário vazio para sempre, sem um erro em lado nenhum. */
   useEffect(() => {

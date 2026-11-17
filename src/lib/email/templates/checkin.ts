@@ -15,7 +15,7 @@ export function checkinCompleteEmail(p: {
 }): string {
   const theme = themeFromIdentity(p.identity)
   const rows = [
-    `<tr><td style="padding:3px 0;color:#6b5c4e;width:40%;">Propriedade</td><td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(p.propertyName)}</td></tr>`,
+    `<tr><td style="padding:3px 0;color:#6b5c4e;width:40%;">Alojamento</td><td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(p.propertyName)}</td></tr>`,
     `<tr><td style="padding:3px 0;color:#6b5c4e;">Check-in</td><td style="padding:3px 0;font-weight:600;color:#1a1209;">${fmtDate(p.checkIn)}</td></tr>`,
     `<tr><td style="padding:3px 0;color:#6b5c4e;">Hóspedes</td><td style="padding:3px 0;font-weight:600;color:#1a1209;">${p.numHospedes}</td></tr>`,
     p.documento ? `<tr><td style="padding:3px 0;color:#6b5c4e;">Documento</td><td style="padding:3px 0;font-weight:600;color:#1a1209;">${escHtml(p.documento)}</td></tr>` : '',

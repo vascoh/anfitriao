@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       guestName: nome,
       guestEmail: email,
       guestPhone: telefone ?? null,
-      propertyName: prop.nome ?? 'Propriedade',
+      propertyName: prop.nome ?? 'Alojamento',
       checkIn: check_in,
       checkOut: check_out,
       numHospedes: num_hospedes,

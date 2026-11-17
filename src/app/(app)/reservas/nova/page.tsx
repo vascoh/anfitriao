@@ -259,7 +259,7 @@ function NovaReservaInner() {
       {/* Step: Propriedade */}
       {step === 'propriedade' && (
         <div className="flex flex-col flex-1">
-          <StepHeader step={1} total={4} label="Qual a propriedade?" />
+          <StepHeader step={1} total={4} label="Qual o alojamento?" />
           <div className="flex flex-col gap-2 px-4">
             {casas.length > 0 && (
               <>
@@ -314,8 +314,8 @@ function NovaReservaInner() {
             ))}
             {properties.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-sm text-muted-foreground">Sem propriedades ativas.</p>
-                <Link href="/propriedades/nova" className="text-primary text-sm font-medium mt-2 inline-block">Adicionar propriedade</Link>
+                <p className="text-sm text-muted-foreground">Sem alojamentos ativos.</p>
+                <Link href="/propriedades/nova" className="text-primary text-sm font-medium mt-2 inline-block">Adicionar alojamento</Link>
               </div>
             )}
           </div>
@@ -586,7 +586,7 @@ function NovaReservaInner() {
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="px-4 py-3 border-b border-border">
                 <p className="text-xs text-muted-foreground">
-                  {casaEscolhida ? 'Casa inteira' : 'Propriedade'}
+                  {casaEscolhida ? 'Casa inteira' : 'Alojamento'}
                 </p>
                 <p className="text-sm font-semibold mt-0.5">
                   {casaEscolhida?.nome ?? selectedProp?.nome}

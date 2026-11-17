@@ -181,7 +181,7 @@ export default function TaxaTuristicaPage() {
             type="button" onClick={() => mudarMes(-1)} aria-label="Mês anterior"
             className="min-h-11 px-4 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >←</button>
-          <span className="min-w-[10rem] px-2 text-center text-sm font-semibold capitalize">
+          <span className="min-w-[10rem] px-2 text-center text-sm font-semibold inline-block first-letter:uppercase">
             {nomeMes(mes)} {ano}
           </span>
           <button

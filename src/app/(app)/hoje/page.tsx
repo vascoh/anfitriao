@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 
 import Link from 'next/link'
 import { useUser } from '@clerk/nextjs'
 import { toast } from 'sonner'
-import { ArrowRight, AlertTriangle, MessagesSquare, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, Circle, UserPlus, HelpCircle } from 'lucide-react'
+import { ArrowRight, AlertTriangle, MessagesSquare, Plus, Sparkles, LogIn, LogOut, Home, Clock, ShieldCheck, ShieldAlert, Check, UserPlus, HelpCircle } from 'lucide-react'
 import { today, addDays, fmtDate, fmtMoney, nights } from '@/lib/utils'
 import { fetchGuests, fetchBookings, fetchProperties, fetchSettings } from '@/lib/fetcher'
 import { transitionBooking, canTransition, unidadesReservaveis, geraObrigacoesDeHospede } from '@/lib/reservations'
@@ -367,21 +367,6 @@ export default function HojePage() {
   const diaVazio = porIdentificar.length === 0 && chegadas.length === 0 && saidas.length === 0 && emCasa.length === 0 && !temAlertas && proximasChegadas.length === 0 && vagas.length === 0
   const semPropriedades = loaded && !erro && props.length === 0
 
-  // Setup checklist — shown when properties exist but config is incomplete
-  const setupSteps = useMemo(() => {
-    if (!loaded || !settings || props.length === 0) return null
-    const hasIcal = props.some(p => p.ical_feeds && p.ical_feeds.length > 0)
-    const hasEmail = !!settings.email
-    const websiteReady = settings.enabled && hasEmail
-    const steps = [
-      { done: true, label: 'Propriedade criada', href: '/propriedades' },
-      { done: hasEmail, label: 'Email de notificações', href: '/website' },
-      { done: websiteReady, label: 'Website público ativo', href: '/website' },
-      { done: hasIcal, label: 'Sincronizar Airbnb/Booking (iCal)', href: '/propriedades' },
-    ]
-    const allDone = steps.every(s => s.done)
-    return allDone ? null : steps
-  }, [loaded, settings, props])
 
 
   if (erro) {
@@ -403,7 +388,7 @@ export default function HojePage() {
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="px-4 lg:px-8 py-4 flex items-baseline justify-between gap-2 max-w-5xl">
           <h1 className="text-titulo">Hoje</h1>
-          <span className="text-sm text-muted-foreground capitalize">{dateLabel}</span>
+          <span className="text-sm text-muted-foreground inline-block first-letter:uppercase">{dateLabel}</span>
         </div>
 
         {/* Status strip */}
@@ -453,7 +438,7 @@ export default function HojePage() {
       <div className="flex flex-col gap-0 max-w-5xl w-full">
 
         {/* Ativação — desaparece sozinho quando a conta está configurada */}
-        <div className="px-4 lg:px-8 pt-5 empty:hidden">
+        {loaded && !erro && <div className="px-4 lg:px-8 pt-5 empty:hidden">
           <OnboardingCard
             estado={{
               temPropriedade: props.length > 0,
@@ -463,7 +448,7 @@ export default function HojePage() {
               siteAtivo: Boolean(settings?.enabled && settings?.slug),
             }}
           />
-        </div>
+        </div>}
 
         {/* Alertas */}
         {temAlertas && (
@@ -721,33 +706,6 @@ export default function HojePage() {
           </section>
         )}
 
-        {/* First-time onboarding */}
-        {semPropriedades && (
-          <div className="mx-4 lg:mx-8 my-8 rounded-2xl border border-border bg-card p-6 lg:p-8 flex flex-col gap-5">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Home className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex flex-col gap-1 min-w-0">
-                <h2 className="text-lg font-bold tracking-tight">Bem-vindo ao Anfitrião</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Para começar a gerir reservas, cria a tua primeira propriedade.
-                  Demora menos de um minuto.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 pl-13">
-              <Link href="/propriedades/nova"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-3 text-sm font-semibold active:opacity-80 transition-opacity">
-                <Plus className="h-4 w-4" /> Criar primeira propriedade
-              </Link>
-              <Link href="/website" className="text-xs text-muted-foreground hover:text-foreground text-center transition-colors">
-                Ou configura primeiro o website público →
-              </Link>
-            </div>
-          </div>
-        )}
-
         {/* Empty day (tranquil — has properties but no activity) */}
         {!semPropriedades && diaVazio && loaded && (
           <div className="flex flex-col items-center justify-center gap-2 text-center py-16 px-4">
@@ -758,40 +716,6 @@ export default function HojePage() {
         )}
 
         {/* Setup checklist */}
-        {setupSteps && (
-          <div className="mx-4 lg:mx-8 my-6 rounded-2xl border border-border bg-card p-5 flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col">
-                <p className="text-sm font-semibold">Próximos passos</p>
-                <p className="text-xs text-muted-foreground">
-                  {setupSteps.filter(s => s.done).length} de {setupSteps.length} concluídos
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {setupSteps.map((s, i) => (
-                  <div key={i} className={`h-1.5 w-6 rounded-full transition-colors ${s.done ? 'bg-primary' : 'bg-muted'}`} />
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              {setupSteps.map((s, i) => (
-                <Link key={i} href={s.href}
-                  className={`flex items-center gap-3 -mx-2 px-2 py-2 rounded-lg active:bg-muted/40 transition-colors ${s.done ? 'opacity-50' : ''}`}>
-                  <div className={`h-5 w-5 rounded-full flex items-center justify-center shrink-0 ${
-                    s.done ? 'bg-primary text-primary-foreground' : 'border-2 border-border bg-card'
-                  }`}>
-                    {s.done ? <Check className="h-3 w-3 stroke-[3]" /> : <Circle className="h-2 w-2 opacity-0" />}
-                  </div>
-                  <span className={`text-sm flex-1 ${s.done ? 'line-through text-muted-foreground' : 'font-medium'}`}>
-                    {s.label}
-                  </span>
-                  {!s.done && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Quick actions (skip when onboarding) */}
         {!semPropriedades && (
           <div className={`px-4 lg:px-8 pt-6 pb-2 grid gap-2.5 ${IA_ATIVA ? 'grid-cols-2' : 'grid-cols-1'}`}>

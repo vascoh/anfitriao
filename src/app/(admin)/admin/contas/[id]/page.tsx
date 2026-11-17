@@ -109,7 +109,7 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
                 <p className="font-medium">{planoLabel[conta.plano]}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Propriedades</p>
+                <p className="text-xs text-muted-foreground mb-0.5">Alojamentos</p>
                 <p className="font-medium">{propriedades?.length ?? 0} / {conta.propriedades_max}</p>
               </div>
               {trial && (
@@ -134,10 +134,10 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
           {/* Propriedades */}
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
-              <h2 className="text-sm font-semibold">Propriedades</h2>
+              <h2 className="text-sm font-semibold">Alojamentos</h2>
             </div>
             {!propriedades?.length ? (
-              <p className="px-5 py-6 text-sm text-muted-foreground">Nenhuma propriedade.</p>
+              <p className="px-5 py-6 text-sm text-muted-foreground">Nenhum alojamento.</p>
             ) : (
               <ul className="divide-y divide-border">
                 {propriedades.map(p => (
@@ -176,7 +176,7 @@ export default async function ContaDetailPage({ params }: { params: Promise<{ id
                         {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(r.preco_total)}
                       </p>
                     </div>
-                    <span className="text-xs text-muted-foreground capitalize">{r.estado}</span>
+                    <span className="text-xs text-muted-foreground inline-block first-letter:uppercase">{r.estado}</span>
                   </li>
                 ))}
               </ul>

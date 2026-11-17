@@ -379,7 +379,7 @@ export default function PropriedadeDetailPage() {
                 : 'border-border text-erro'
             }`}
           >
-            {confirmDelete ? 'Confirmar eliminação' : 'Eliminar propriedade'}
+            {confirmDelete ? 'Confirmar eliminação' : 'Eliminar alojamento'}
           </button>
           {confirmDelete && (
             <button onClick={() => setConfirmDelete(false)} className="text-xs text-muted-foreground text-center">

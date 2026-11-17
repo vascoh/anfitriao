@@ -124,7 +124,7 @@ export default function IneePage() {
           >
             ←
           </button>
-          <span className="min-w-[10rem] px-2 text-center text-sm font-semibold capitalize">
+          <span className="min-w-[10rem] px-2 text-center text-sm font-semibold inline-block first-letter:uppercase">
             {nomeMes(mes)} {ano}
           </span>
           <button

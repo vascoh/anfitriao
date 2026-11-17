@@ -54,10 +54,10 @@ export function TabVisao({
 
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-8">
-      <p className="text-sm text-muted-foreground">Preços base de cada propriedade. Ajusta rapidamente ou usa as outras abas para regras avançadas.</p>
+      <p className="text-sm text-muted-foreground">Preços base de cada alojamento. Ajusta rapidamente ou usa as outras abas para regras avançadas.</p>
 
       {props.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground text-sm">Sem propriedades. Adiciona uma propriedade primeiro.</div>
+        <div className="text-center py-16 text-muted-foreground text-sm">Sem alojamentos. Adiciona um alojamento primeiro.</div>
       )}
 
       {props.map(p => {

@@ -163,7 +163,7 @@ export default function EditarPropriedadePage() {
        * ao guardar. Tenta novamente.", que manda a pessoa repetir uma coisa
        * que vai falhar exatamente da mesma maneira. */
       if (!await guardar('/api/properties', updated)) return
-      toast.success('Propriedade atualizada')
+      toast.success('Alojamento atualizado')
       router.push(`/propriedades/${id}`)
     } catch {
       toast.error('Erro ao guardar. Tenta novamente.')
@@ -215,10 +215,10 @@ export default function EditarPropriedadePage() {
               className="rounded-lg border border-input bg-card px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
           </label>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground font-medium">Tipo</label>
+            <p className="text-xs text-muted-foreground font-medium">Tipo</p>
             <div className="grid grid-cols-2 gap-2">
               {TYPES.map(t => (
-                <button key={t} onClick={() => setTipo(t)}
+                <button key={t} type="button" aria-pressed={tipo === t} onClick={() => setTipo(t)}
                   className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
                     tipo === t ? 'border-primary bg-primary/5 text-primary' : 'border-input bg-card text-foreground/70'
                   }`}>
@@ -313,13 +313,13 @@ export default function EditarPropriedadePage() {
             <div key={f.label} className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
               <span className="text-sm font-medium">{f.label}</span>
               <div className="flex items-center gap-4">
-                <button onClick={() => f.set(Math.max(f.min, f.value - 1))}
-                  className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
+                <button type="button" aria-label={`Menos: ${f.label}`} onClick={() => f.set(Math.max(f.min, f.value - 1))}
+                  className="size-11 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
                   −
                 </button>
-                <span className="text-sm font-semibold w-5 text-center">{f.value}</span>
-                <button onClick={() => f.set(Math.min(f.max, f.value + 1))}
-                  className="h-8 w-8 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
+                <span className="text-sm font-semibold w-5 text-center tabular-nums" aria-live="polite">{f.value}</span>
+                <button type="button" aria-label={`Mais: ${f.label}`} onClick={() => f.set(Math.min(f.max, f.value + 1))}
+                  className="size-11 rounded-full border border-border flex items-center justify-center text-lg font-medium text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors">
                   +
                 </button>
               </div>
@@ -362,7 +362,7 @@ export default function EditarPropriedadePage() {
           <p className="antetitulo">Comodidades</p>
           <div className="flex flex-wrap gap-2">
             {AMENITIES.map(a => (
-              <button key={a.id} onClick={() => toggleAmenity(a.id)}
+              <button key={a.id} type="button" aria-pressed={comodidades.includes(a.id)} onClick={() => toggleAmenity(a.id)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   comodidades.includes(a.id)
                     ? 'bg-primary text-primary-foreground border-primary'

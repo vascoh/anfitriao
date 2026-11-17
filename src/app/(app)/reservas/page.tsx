@@ -219,7 +219,7 @@ export default function ReservasPage() {
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Pesquisar hóspede ou propriedade..."
+              placeholder="Pesquisar hóspede ou alojamento…"
               className="flex-1 text-sm bg-transparent placeholder:text-muted-foreground focus:outline-none"
             />
           </div>

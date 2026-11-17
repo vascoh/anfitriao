@@ -40,7 +40,10 @@ export function OnboardingCard({ estado }: { estado: EstadoConta }) {
   const dispensado = useSyncExternalStore(subscrever, lerDispensado, lerDispensadoNoServidor)
   const progresso = progressoOnboarding(estado)
 
-  if (dispensado || progresso.completo) return null
+  // Sem nenhum alojamento a conta não serve para nada, e este cartão é o único
+  // caminho para criar o primeiro. Só se pode dispensar depois disso.
+  const dispensavel = estado.temPropriedade
+  if ((dispensado && dispensavel) || progresso.completo) return null
 
   function dispensar() {
     localStorage.setItem(CHAVE_DISPENSADO, '1')
@@ -56,14 +59,14 @@ export function OnboardingCard({ estado }: { estado: EstadoConta }) {
             {progresso.feitos} de {progresso.total} passos concluídos
           </p>
         </div>
-        <button
+        {dispensavel && <button
           type="button"
           onClick={dispensar}
           aria-label="Dispensar configuração"
           className="-m-2 grid h-11 w-11 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:text-foreground"
         >
           <X className="h-4 w-4" />
-        </button>
+        </button>}
       </div>
 
       {/* Barra de progresso */}
@@ -123,7 +126,7 @@ export function OnboardingCard({ estado }: { estado: EstadoConta }) {
 
                 {proximo && (
                   <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
-                    {passo.cta}
+                    <span className="hidden sm:inline">{passo.cta}</span>
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </span>
                 )}

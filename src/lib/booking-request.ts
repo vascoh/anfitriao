@@ -94,7 +94,7 @@ export async function validateBookingRequest(
     .single()
 
   if (propErr || !prop || prop.ativo === false) {
-    return { ok: false, error: 'Propriedade não encontrada', status: 404 }
+    return { ok: false, error: 'Alojamento não encontrado', status: 404 }
   }
 
   const owner_id = prop.owner_id as string | null

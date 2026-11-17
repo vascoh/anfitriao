@@ -71,7 +71,7 @@ function RuleForm({
 
       {props.length > 1 && (
         <label className="flex flex-col gap-1">
-          <span className={labelCls}>Propriedade</span>
+          <span className={labelCls}>Alojamento</span>
           <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls}>
             {props.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
@@ -222,7 +222,7 @@ export function TabRegras({
   return (
     <div className="flex flex-col gap-4 p-4 lg:p-8">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Regras sobrepõem o preço base da propriedade por datas ou dias da semana.</p>
+        <p className="text-sm text-muted-foreground">Regras sobrepõem o preço base do alojamento por datas ou dias da semana.</p>
         <button onClick={() => { setEditRule(null); setShowForm(true) }}
           className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-sm font-medium">
           <Plus className="h-3.5 w-3.5" /> Nova

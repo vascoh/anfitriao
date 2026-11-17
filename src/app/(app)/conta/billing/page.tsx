@@ -149,7 +149,7 @@ export default async function BillingPage({
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold capitalize">
+              <span className="text-lg font-bold inline-block first-letter:uppercase">
                 {account.plano === 'trial' ? 'Trial gratuito' : PLAN_NOME[account.plano]}
               </span>
               {isActivo && (

@@ -134,7 +134,7 @@ export function TabMassa({
       {/* Step 1: Select properties */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold">1. Selecionar propriedades</p>
+          <p className="text-sm font-semibold">1. Selecionar alojamentos</p>
           <button
             onClick={() => setSelectedProps(selectedProps.length === props.length ? [] : props.map(p => p.id))}
             className="text-xs text-primary font-medium"
@@ -265,7 +265,7 @@ export function TabMassa({
           applied ? 'bg-sucesso text-sucesso-foreground' : 'bg-primary text-primary-foreground'
         }`}
       >
-        {applying ? 'A aplicar...' : applied ? 'Aplicado com sucesso!' : `Aplicar a ${selectedProps.length} propriedade${selectedProps.length !== 1 ? 's' : ''}`}
+        {applying ? 'A aplicar...' : applied ? 'Aplicado com sucesso!' : `Aplicar a ${selectedProps.length} alojamento${selectedProps.length !== 1 ? 's' : ''}`}
       </button>
     </div>
   )

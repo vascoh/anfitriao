@@ -47,9 +47,9 @@ export default async function BemVindoPage({
     {
       n: '1',
       done: hasProperty,
-      title: 'Adiciona a tua primeira propriedade',
+      title: 'Adiciona o teu primeiro alojamento',
       desc: 'Nome, descrição e localização. Leva menos de 2 minutos.',
-      cta: hasProperty ? 'Ver propriedades' : 'Adicionar propriedade',
+      cta: hasProperty ? 'Ver alojamentos' : 'Adicionar alojamento',
       href: hasProperty ? '/propriedades' : '/propriedades/nova',
     },
     {

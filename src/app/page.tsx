@@ -45,8 +45,8 @@ const plataformaJsonLd = {
   inLanguage: 'pt-PT',
   offers: [
     { '@type': 'Offer', name: 'Trial', price: '0', priceCurrency: 'EUR', description: `${TRIAL_DIAS} dias grátis, sem cartão de crédito` },
-    { '@type': 'Offer', name: 'Starter', price: '19', priceCurrency: 'EUR', description: 'Até 3 propriedades, reservas ilimitadas' },
-    { '@type': 'Offer', name: 'Pro', price: '39', priceCurrency: 'EUR', description: 'Até 10 propriedades, relatórios avançados' },
+    { '@type': 'Offer', name: 'Starter', price: '19', priceCurrency: 'EUR', description: 'Até 3 quartos ou alojamentos, reservas ilimitadas' },
+    { '@type': 'Offer', name: 'Pro', price: '39', priceCurrency: 'EUR', description: 'Até 10 quartos ou alojamentos, relatórios avançados' },
   ],
   provider: {
     '@type': 'Organization',
