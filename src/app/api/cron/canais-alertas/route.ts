@@ -5,7 +5,11 @@ import { emailService } from '@/lib/email'
 import { reservarEnvio, libertarEnvio, chaveDeEnvio } from '@/lib/envio-unico'
 import { sendPushToOwner } from '@/lib/push'
 import { today } from '@/lib/utils'
-import { canaisEmRisco, agruparPorAnfitriao, resumoParaPush } from '@/lib/canais-alertas'
+import {
+  canaisEmRisco, agruparPorAnfitriao, resumoParaPush,
+  leitoresParados, agruparParadosPorAnfitriao, resumoParadosParaPush,
+} from '@/lib/canais-alertas'
+import type { LeituraIcal } from '@/lib/ical-leitores'
 import { carregarTudo } from '@/lib/supabase-tudo'
 import type { AlojamentoComFeeds } from '@/lib/canais-alertas'
 
@@ -42,10 +46,10 @@ export async function GET(req: NextRequest) {
    * perdia aqui não era uma vista incompleta — era o anfitrião do alojamento
    * 1001 a nunca saber que o calendário dele deixou de ser lido, e portanto
    * que as reservas diretas estão a ser recusadas. O cron responderia `ok`. */
-  const { linhas: propriedades, erro } = await carregarTudo<AlojamentoComFeeds>(() =>
+  const { linhas: propriedades, erro } = await carregarTudo<AlojamentoComFeeds & { id: string }>(() =>
     supabase
       .from('properties')
-      .select('nome, owner_id, ativo, ical_feeds')
+      .select('id, nome, owner_id, ativo, ical_feeds')
       .not('owner_id', 'is', null)
       .order('id', { ascending: true }))
 
@@ -57,14 +61,28 @@ export async function GET(req: NextRequest) {
   const riscos = canaisEmRisco(propriedades)
   const porAnfitriao = agruparPorAnfitriao(riscos)
 
-  if (porAnfitriao.size === 0) {
+  /* O outro sentido: plataformas que liam o nosso calendário e pararam. Uma
+   * falha a ler isto não pode calar o aviso dos feeds importados — segue sem. */
+  const { linhas: leituras, erro: erroLeituras } = await carregarTudo<LeituraIcal>(() =>
+    supabase
+      .from('ical_leituras')
+      .select('propriedade_id, leitor, origem, ultima_leitura')
+      .order('propriedade_id', { ascending: true })
+      .order('leitor', { ascending: true })
+      .order('origem', { ascending: true }))
+  if (erroLeituras) console.error('[canais-alertas] leituras', erroLeituras)
+  const paradosPorAnfitriao = agruparParadosPorAnfitriao(
+    erroLeituras ? [] : leitoresParados(propriedades, leituras),
+  )
+
+  if (porAnfitriao.size === 0 && paradosPorAnfitriao.size === 0) {
     return NextResponse.json({ ok: true, notificados: 0 })
   }
 
   const { data: contas } = await supabase
     .from('accounts')
     .select('clerk_user_id, email, nome')
-    .in('clerk_user_id', [...porAnfitriao.keys()])
+    .in('clerk_user_id', [...new Set([...porAnfitriao.keys(), ...paradosPorAnfitriao.keys()])])
 
   const porId = new Map((contas ?? []).map(c => [c.clerk_user_id, c]))
   const hoje = today()
@@ -98,5 +116,33 @@ export async function GET(req: NextRequest) {
     else await libertarEnvio(chave)
   }
 
-  return NextResponse.json({ ok: true, notificados: porAnfitriao.size, emails, pushes })
+  /* Avisos à parte, com chave própria: a consequência é outra (dupla reserva
+   * do lado da plataforma, não reservas diretas recusadas) e um não pode
+   * gastar o envio do dia do outro. */
+  for (const [ownerId, parados] of paradosPorAnfitriao) {
+    const chavePush = chaveDeEnvio('canais-leitores-push', ownerId, hoje)
+    if (await reservarEnvio(chavePush)) {
+      pushes += await sendPushToOwner(ownerId, { ...resumoParadosParaPush(parados), url: '/canais' })
+    }
+
+    const conta = porId.get(ownerId)
+    if (!conta?.email) continue
+    const chave = chaveDeEnvio('canais-leitores', ownerId, hoje)
+    if (!await reservarEnvio(chave)) continue
+
+    const res = await emailService.sendLeitoresParados({
+      to: conta.email,
+      firstName: conta.nome?.split(' ')[0] ?? 'Olá',
+      linhas: parados.map(p => [p.onde, p.porque] as [string, string]),
+    })
+    if (res.ok) emails++
+    else await libertarEnvio(chave)
+  }
+
+  return NextResponse.json({
+    ok: true,
+    notificados: new Set([...porAnfitriao.keys(), ...paradosPorAnfitriao.keys()]).size,
+    emails,
+    pushes,
+  })
 }

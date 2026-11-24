@@ -14,6 +14,7 @@ import { paymentReminderEmail } from './templates/payment'
 import {
   trialEndingEmail, trialExpiredEmail, complianceAlertEmail, noitesOrfasEmail, relatorioMensalEmail,
   canaisEmRiscoEmail,
+  leitoresParadosEmail,
 } from './templates/platform'
 import { automationMessageEmail } from './templates/automation'
 import { assuntos, linguaDoEmail } from './templates/lingua'
@@ -289,6 +290,19 @@ class EmailService {
         ? '⚠️ Um canal parou de responder — podes estar a perder reservas'
         : '🔄 Um canal está sem leituras há mais de 6 horas',
       canaisEmRiscoEmail({ ...p, baseUrl: APP_URL }),
+    )
+  }
+
+  /** Anfitrião: uma plataforma deixou de ler o calendário que exportamos. */
+  async sendLeitoresParados(p: {
+    to: string
+    firstName: string
+    linhas: Array<[string, string]>
+  }): Promise<SendResult> {
+    return this.sendAsPlatform(
+      p.to,
+      '⚠️ Uma plataforma deixou de ler as tuas datas — risco de dupla reserva',
+      leitoresParadosEmail({ ...p, baseUrl: APP_URL }),
     )
   }
 }

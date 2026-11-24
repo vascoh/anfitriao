@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { canaisEmRisco, agruparPorAnfitriao, resumoParaPush } from './canais-alertas'
+import {
+  canaisEmRisco, agruparPorAnfitriao, resumoParaPush,
+  leitoresParados, agruparParadosPorAnfitriao, resumoParadosParaPush,
+} from './canais-alertas'
 import type { IcalFeed } from './types'
 
 const AGORA = new Date('2026-09-10T12:00:00Z')
@@ -116,5 +119,47 @@ describe('canaisEmRisco — falhas passageiras', () => {
   it('um 429 logo a seguir a uma leitura boa não gera aviso', () => {
     const r = canaisEmRisco([alojamento('Quarto', [feed({ error: 'Upstream devolveu 429' })])], AGORA)
     expect(r).toEqual([])
+  })
+})
+
+describe('leitoresParados', () => {
+  const agora = new Date('2026-11-24T18:00:00Z')
+  const alojamentos = [
+    { id: 'q1', nome: 'Quarto de Casal', owner_id: 'u1', ativo: true },
+    { id: 'q2', nome: 'Quarto Familiar', owner_id: 'u1', ativo: false },
+  ]
+  const l = (propriedade_id: string, leitor: 'airbnb' | 'booking' | 'google' | 'amenitiz', ultima_leitura: string, origem: 'todas' | 'diretas' = 'todas') =>
+    ({ propriedade_id, leitor, origem, ultima_leitura })
+
+  it('avisa quando uma plataforma deixou de ler há mais de um dia', () => {
+    const r = leitoresParados(alojamentos, [l('q1', 'airbnb', '2026-11-22T10:00:00Z')], agora)
+    expect(r).toHaveLength(1)
+    expect(r[0].onde).toBe('Quarto de Casal · Airbnb')
+    expect(r[0].porque).toContain('há 2 dias')
+  })
+
+  it('não avisa de leituras recentes, de calendários pessoais nem de alojamentos desativados', () => {
+    expect(leitoresParados(alojamentos, [
+      l('q1', 'booking', '2026-11-24T12:00:00Z'),
+      l('q1', 'google', '2026-11-20T12:00:00Z'),
+      l('q2', 'airbnb', '2026-11-20T12:00:00Z'),
+    ], agora)).toEqual([])
+  })
+
+  it('conta a leitura mais recente de qualquer dos dois feeds', () => {
+    expect(leitoresParados(alojamentos, [
+      l('q1', 'amenitiz', '2026-11-20T12:00:00Z', 'todas'),
+      l('q1', 'amenitiz', '2026-11-24T17:00:00Z', 'diretas'),
+    ], agora)).toEqual([])
+  })
+
+  it('cala-se ao fim de uma semana: já foi avisado, e o anúncio pode ter sido desligado de propósito', () => {
+    expect(leitoresParados(alojamentos, [l('q1', 'airbnb', '2026-11-10T12:00:00Z')], agora)).toEqual([])
+  })
+
+  it('agrupa por anfitrião e resume para o telemóvel', () => {
+    const r = leitoresParados(alojamentos, [l('q1', 'airbnb', '2026-11-22T10:00:00Z'), l('q1', 'booking', '2026-11-22T10:00:00Z')], agora)
+    expect(agruparParadosPorAnfitriao(r).get('u1')).toHaveLength(2)
+    expect(resumoParadosParaPush(r).body).toContain('2 calendários')
   })
 })

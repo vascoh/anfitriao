@@ -133,3 +133,26 @@ export function canaisEmRiscoEmail(p: {
     ${paragraph('Quase sempre resolve-se copiando o endereço atual na plataforma e substituindo o que está guardado.')}
   `)
 }
+
+/** Uma plataforma deixou de ler o calendário que exportamos. Ver `leitoresParados`. */
+export function leitoresParadosEmail(p: {
+  firstName: string
+  linhas: Array<[string, string]>
+  baseUrl: string
+}): string {
+  const theme = platformTheme()
+  return renderEmail(theme, `
+    ${kicker('Ação necessária', theme)}
+    ${heading(p.linhas.length === 1 ? 'Uma plataforma deixou de ler as tuas datas' : 'Plataformas deixaram de ler as tuas datas')}
+    ${paragraph(`Olá ${escHtml(p.firstName)}, ${p.linhas.length === 1
+      ? 'uma plataforma que lia o teu calendário parou de o fazer.'
+      : `${p.linhas.length} plataformas que liam os teus calendários pararam de o fazer.`}`)}
+    ${detailsTable(p.linhas, theme, { title: 'O que precisa de atenção' })}
+    ${noteBox(
+      'O que isto está a custar',
+      'É por este calendário que cada plataforma fica a saber o que vendeste nas outras e no teu site. Enquanto ela não o ler, essas noites continuam à venda lá — é assim que acontece uma dupla reserva.',
+      theme,
+    )}
+    ${ctaButton('Ver os canais →', `${p.baseUrl}/canais`, theme)}
+  `)
+}

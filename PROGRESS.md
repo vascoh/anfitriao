@@ -6,6 +6,20 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-24] Aviso quando uma plataforma deixa de ler as nossas datas
+
+- 🔔 O cron `canais-alertas` (de hora a hora, 07:30–21:30 UTC) passa a ver
+  também o sentido inverso: uma plataforma que vende noites (Airbnb, Booking,
+  Vrbo, Amenitiz) e que lia o calendário exportado, mas não o lê há mais de
+  24 h, dá push e email ao anfitrião, uma vez por dia, com chave de envio
+  própria (`canais-leitores`). A consequência é dita: as noites vendidas
+  noutros canais continuam à venda lá.
+- 🤫 Cala-se ao fim de 7 dias (o anúncio pode ter sido desligado de
+  propósito) e ignora calendários pessoais (Google, Apple) e alojamentos
+  desativados. Lógica em `leitoresParados` (`lib/canais-alertas.ts`), testes;
+  email `leitoresParadosEmail`.
+- Uma falha a ler `ical_leituras` não cala o aviso dos feeds importados.
+
 ### [2026-11-24] Quem lê o calendário exportado
 
 - 🎯 Ponto cego do corte do Amenitiz: depois de colar `/api/ical/[id]` no

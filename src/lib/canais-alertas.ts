@@ -1,5 +1,6 @@
 import { estadoDoFeed, erroAmigavel, type EstadoCanal } from './canais'
 import type { IcalFeed } from './types'
+import { NOME_DO_LEITOR, HORAS_SEM_LEITURA_PREOCUPANTE, type LeituraIcal, type Leitor } from './ical-leitores'
 
 /**
  * Que canais é que estão partidos, e o que é que isso está a custar agora.
@@ -103,5 +104,86 @@ export function resumoParaPush(riscos: CanalEmRisco[]): { title: string; body: s
     body: riscos.length === 1
       ? `${riscos[0].onde} — enquanto assim estiver, as reservas diretas nessas datas são recusadas.`
       : `${riscos.length} calendários precisam de atenção. Enquanto assim estiverem, as reservas diretas são recusadas.`,
+  }
+}
+
+/* ── O outro sentido: plataformas que deixaram de ler o nosso calendário ──── */
+
+
+/**
+ * Só as plataformas que vendem noites. Um Google Calendar ou um serviço
+ * desconhecido que deixe de ler não põe ninguém a dormir na rua.
+ */
+const LEITORES_QUE_VENDEM: Leitor[] = ['airbnb', 'booking', 'vrbo', 'amenitiz']
+
+/**
+ * Passado isto sem leitura deixa de se avisar: o anfitrião já foi avisado
+ * vários dias seguidos, e o mais provável é ter desligado o anúncio de
+ * propósito. Um aviso que nunca se cala ensina a ignorar todos.
+ */
+export const DIAS_ATE_DESISTIR_DO_AVISO = 7
+
+export interface LeitorParado {
+  ownerId: string
+  /** «Quarto de Casal · Airbnb». */
+  onde: string
+  porque: string
+}
+
+/**
+ * Uma plataforma que lia o calendário exportado e parou.
+ *
+ * É o sentido que o alerta dos feeds importados não vê: se o Airbnb deixa de
+ * ler as nossas datas (endereço trocado, anúncio recriado, sincronização
+ * desligada do lado dele), o que se vende no Booking ou no site deixa de lhe
+ * chegar e ele vende a mesma noite. Sem o Amenitiz no meio, é a dupla reserva
+ * clássica — e nada a assinala até ao dia em que acontece.
+ */
+export function leitoresParados(
+  alojamentos: Array<AlojamentoComFeeds & { id: string }>,
+  leituras: LeituraIcal[],
+  agora: Date = new Date(),
+): LeitorParado[] {
+  const porId = new Map(alojamentos.map(a => [a.id, a]))
+  /* Por alojamento e leitor, a leitura mais recente de qualquer dos feeds: o
+   * Amenitiz pode ler o «diretas» e o Airbnb o completo do mesmo alojamento. */
+  const ultima = new Map<string, LeituraIcal>()
+  for (const l of leituras) {
+    const k = `${l.propriedade_id}\u0000${l.leitor}`
+    const atual = ultima.get(k)
+    if (!atual || l.ultima_leitura > atual.ultima_leitura) ultima.set(k, l)
+  }
+
+  const parados: LeitorParado[] = []
+  for (const l of ultima.values()) {
+    if (!LEITORES_QUE_VENDEM.includes(l.leitor)) continue
+    const a = porId.get(l.propriedade_id)
+    if (!a?.owner_id || a.ativo === false) continue
+    const horas = (agora.getTime() - new Date(l.ultima_leitura).getTime()) / 3_600_000
+    if (horas <= HORAS_SEM_LEITURA_PREOCUPANTE || horas > DIAS_ATE_DESISTIR_DO_AVISO * 24) continue
+
+    const nome = NOME_DO_LEITOR[l.leitor]
+    const dias = Math.floor(horas / 24)
+    parados.push({
+      ownerId: a.owner_id,
+      onde: `${a.nome} · ${nome}`,
+      porque: `O ${nome} não lê as tuas datas há ${dias === 1 ? '1 dia' : `${dias} dias`}. O que vendes noutros canais pode não estar bloqueado lá. Confirma no ${nome} que o endereço do Anfitrião continua importado — se mudou, cola o atual (Canais → Levar as tuas datas).`,
+    })
+  }
+  return parados.sort((a, b) => a.onde.localeCompare(b.onde, 'pt'))
+}
+
+export function agruparParadosPorAnfitriao(parados: LeitorParado[]): Map<string, LeitorParado[]> {
+  const m = new Map<string, LeitorParado[]>()
+  for (const p of parados) m.set(p.ownerId, [...(m.get(p.ownerId) ?? []), p])
+  return m
+}
+
+export function resumoParadosParaPush(parados: LeitorParado[]): { title: string; body: string } {
+  return {
+    title: 'Uma plataforma deixou de ler as tuas datas',
+    body: parados.length === 1
+      ? `${parados[0].onde} — pode vender noites que já vendeste noutro lado.`
+      : `${parados.length} calendários deixaram de ser lidos. Podem vender noites que já vendeste noutro lado.`,
   }
 }
