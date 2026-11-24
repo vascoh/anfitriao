@@ -6,6 +6,20 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-24] /canais: gestor de canais sem ler as reservas diretas
+
+- 🧭 Verificação de saúde (7 dias): 1 erro de runtime (handshake do Clerk de
+  desenvolvimento, pendente 0.2); avisos do Supabase sem nada a corrigir no
+  anfitrião (RLS sem políticas é intencional, `pg_net` em `public` fica por
+  causa do pg_cron, os SECURITY DEFINER são do cryptobot).
+- ⚠️ Depois do deploy das leituras, **nenhuma leitura** do feed exportado —
+  sinal de que o feed das reservas diretas não está importado no Amenitiz.
+- 🟧 `/canais` passa a dizê-lo no próprio alojamento: com um gestor de canais
+  importado e nenhuma leitura de `?origem=diretas`, um aviso explica o risco
+  (uma reserva do site não fecha a noite nas plataformas) e copia o endereço
+  certo. Diz «ainda não lê», não «não está ligado». `gestorSemLerAsDiretas`
+  em `lib/ical-leitores.ts`, testes.
+
 ### [2026-11-24] Aviso quando uma plataforma deixa de ler as nossas datas
 
 - 🔔 O cron `canais-alertas` (de hora a hora, 07:30–21:30 UTC) passa a ver

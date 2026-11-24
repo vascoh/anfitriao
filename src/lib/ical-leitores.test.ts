@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { leitorDoPedido, userAgentParaGuardar, haQuantoTempo, leituraAtrasada, leiturasDoAlojamento, type LeituraIcal } from './ical-leitores'
+import { eGestorDeCanais } from './ical-guias'
+import { gestorSemLerAsDiretas, leitorDoPedido, userAgentParaGuardar, haQuantoTempo, leituraAtrasada, leiturasDoAlojamento, type LeituraIcal } from './ical-leitores'
 
 describe('leitorDoPedido', () => {
   it('reconhece as plataformas pelo user-agent', () => {
@@ -55,5 +56,22 @@ describe('leiturasDoAlojamento', () => {
     const r = leiturasDoAlojamento(l, 'a')
     expect(r.map(x => x.leitor)).toEqual(['booking', 'airbnb'])
     expect(r[1].origem).toBe('diretas')
+  })
+})
+
+describe('gestorSemLerAsDiretas', () => {
+  const amenitiz = 'https://casa.amenitiz.io/ical/abc.ics'
+  const airbnb = 'https://www.airbnb.pt/calendar/ical/1.ics?s=x'
+
+  it('avisa quando o Amenitiz está ligado e ninguém lê as diretas', () => {
+    expect(gestorSemLerAsDiretas([amenitiz], [], eGestorDeCanais)).toBe(true)
+    expect(gestorSemLerAsDiretas([amenitiz], [{ origem: 'todas' }], eGestorDeCanais)).toBe(true)
+  })
+  it('cala-se quando alguém lê o feed das diretas', () => {
+    expect(gestorSemLerAsDiretas([amenitiz], [{ origem: 'diretas' }], eGestorDeCanais)).toBe(false)
+  })
+  it('sem gestor de canais não se aplica', () => {
+    expect(gestorSemLerAsDiretas([airbnb], [], eGestorDeCanais)).toBe(false)
+    expect(gestorSemLerAsDiretas([], [], eGestorDeCanais)).toBe(false)
   })
 })

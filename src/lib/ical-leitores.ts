@@ -85,3 +85,26 @@ export function leiturasDoAlojamento(todas: LeituraIcal[], propriedadeId: string
   }
   return [...porLeitor.values()].sort((a, b) => b.ultima_leitura.localeCompare(a.ultima_leitura))
 }
+
+/**
+ * Um gestor de canais importa os nossos calendários, mas ninguém lê o feed
+ * das reservas diretas deste alojamento.
+ *
+ * Com o Amenitiz ligado, a topologia certa tem dois sentidos: ele manda-nos as
+ * reservas das plataformas (feed importado) e lê-nos as do site
+ * (`?origem=diretas`). Só o primeiro é visível — está em `ical_feeds`. O
+ * segundo fica do lado dele, e quando falta ninguém dá por isso: o site aceita
+ * uma reserva e o Amenitiz continua a vender a mesma noite no Airbnb.
+ *
+ * Diz-se «ainda não vimos ler», nunca «não está ligado»: só sabemos o que
+ * chegou cá, e a primeira leitura de um endereço acabado de colar pode
+ * demorar horas.
+ */
+export function gestorSemLerAsDiretas(
+  urlsImportadas: string[],
+  leiturasDoAlojamento: Pick<LeituraIcal, 'origem'>[],
+  eGestor: (url: string) => boolean,
+): boolean {
+  if (!urlsImportadas.some(eGestor)) return false
+  return !leiturasDoAlojamento.some(l => l.origem === 'diretas')
+}

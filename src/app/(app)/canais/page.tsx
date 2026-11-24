@@ -22,7 +22,7 @@ import {
   type EstadoCanal,
 } from '@/lib/canais'
 import {
-  NOME_DO_LEITOR, haQuantoTempo, leituraAtrasada, leiturasDoAlojamento,
+  NOME_DO_LEITOR, haQuantoTempo, leituraAtrasada, leiturasDoAlojamento, gestorSemLerAsDiretas,
   type LeituraIcal,
 } from '@/lib/ical-leitores'
 
@@ -395,6 +395,46 @@ function QuemLe({ leituras }: { leituras: LeituraIcal[] | null }) {
           )
         })}
       </ul>
+    </div>
+  )
+}
+
+/**
+ * O sentido que falta com um gestor de canais: ele traz-nos as reservas das
+ * plataformas, mas as do teu site só lhe chegam se ele ler o nosso feed das
+ * diretas. Ver `gestorSemLerAsDiretas`.
+ */
+function AvisoGestorSemDiretas({ prop }: { prop: Property }) {
+  const [copiado, setCopiado] = useState(false)
+  const url = typeof window === 'undefined' ? '' : `${window.location.origin}/api/ical/${prop.id}?origem=diretas`
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch {
+      toast.error('O browser não deixou copiar. Abre «Levar as tuas datas para as plataformas» e copia de lá.')
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-aviso/40 bg-aviso/5 px-3.5 py-3">
+      <p className="text-sm font-semibold">O teu gestor de canais ainda não lê as reservas do teu site</p>
+      <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
+        Ele traz para cá as reservas do Airbnb e do Booking, mas o caminho inverso é outro endereço,
+        colado do lado dele. Até lá, uma reserva feita no teu site não fecha essa noite nas plataformas,
+        e elas podem vendê-la outra vez.
+      </p>
+      <p className="mt-1 text-[12px] text-muted-foreground leading-relaxed">
+        Copia o endereço abaixo e importa-o no gestor de canais, no calendário deste alojamento.
+        Se já o fizeste há pouco, espera umas horas: o aviso desaparece com a primeira leitura.
+      </p>
+      <button type="button" onClick={copiar}
+        className="mt-2.5 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-input bg-card px-3 text-xs font-semibold hover:bg-muted transition-colors">
+        {copiado ? <Check className="h-3.5 w-3.5 text-sucesso" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
+        {copiado ? 'Copiado' : 'Copiar o endereço das reservas diretas'}
+      </button>
     </div>
   )
 }
@@ -784,6 +824,10 @@ function CartaoAlojamento({
                 Não ligues também essas plataformas diretamente ou as reservas ficam duplicadas.
               </p>
             )}
+
+            {leituras !== null && gestorSemLerAsDiretas(
+              feeds.map(f => f.url), leituras.filter(l => l.propriedade_id === prop.id), eGestorDeCanais,
+            ) && <AvisoGestorSemDiretas prop={prop} />}
 
             <AssistenteLigar prop={prop} feeds={feeds} aoLigar={recarregar} />
           </>
