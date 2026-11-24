@@ -19,6 +19,7 @@ _Iniciado: 2026-06-06_
   (uma reserva do site não fecha a noite nas plataformas) e copia o endereço
   certo. Diz «ainda não lê», não «não está ligado». `gestorSemLerAsDiretas`
   em `lib/ical-leitores.ts`, testes.
+- 🚀 Publicado: `dba191c`, `dpl_DjMMGqi8jsiX71yCSZrnujDuFQXZ`. Ecrã não verificado com sessão.
 
 ### [2026-11-24] Aviso quando uma plataforma deixa de ler as nossas datas
 
