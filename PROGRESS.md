@@ -19,6 +19,8 @@ _Iniciado: 2026-06-06_
   desativados. Lógica em `leitoresParados` (`lib/canais-alertas.ts`), testes;
   email `leitoresParadosEmail`.
 - Uma falha a ler `ical_leituras` não cala o aviso dos feeds importados.
+- 🚀 Publicado: `4aa3c04`, `dpl_FFQVtmoCugGqNKAUHfmeNTeWriSF`. Cron corrido à mão em produção
+  (`vercel crons run`): sem avisos nem erros nos logs; nada a notificar (0 leituras ainda).
 
 ### [2026-11-24] Quem lê o calendário exportado
 
