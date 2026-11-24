@@ -86,6 +86,8 @@ export interface ReservaImportada {
   notas?: string | null
   /** Eventos da reserva; a sincronização acrescenta o que muda. */
   historico?: unknown
+  /** Código da reserva na plataforma; a sincronização preenche-o. Ver `lib/ical-referencias.ts`. */
+  referencia_externa?: string | null
 }
 
 export interface EventoDoFeed {

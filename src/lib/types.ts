@@ -204,6 +204,11 @@ export interface Booking {
   preco_pago: number
   notas?: string
   uid_externo?: string
+  /**
+   * Código da reserva na plataforma (o «HM…» do Airbnb), tirado do feed iCal
+   * direto. Migração 061; ver `lib/ical-referencias.ts`.
+   */
+  referencia_externa?: string | null
   criado_em: string
   historico: BookingEvent[]
   owner_id?: string

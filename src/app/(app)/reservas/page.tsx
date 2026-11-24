@@ -11,6 +11,7 @@ import { STATUS_LABEL, STATUS_CLASS, SOURCE_LABEL, SOURCE_BG } from '@/lib/label
 import { agruparReservas, type ResumoGrupo } from '@/lib/grupos'
 import { useUser } from '@clerk/nextjs'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
+import { rotuloSemHospede } from '@/lib/ical-referencias'
 
 type Filter = 'todas' | 'ativas' | 'proximas' | 'pendentes' | 'passadas'
 
@@ -60,7 +61,7 @@ function GrupoRow({ grupo, guests, props }: { grupo: ResumoGrupo; guests: Guest[
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p className="font-semibold text-sm truncate">{guest?.nome ?? '—'}</p>
+          <p className="font-semibold text-sm truncate">{guest?.nome ?? rotuloSemHospede(primeira)}</p>
           <div className="flex flex-col items-end gap-1 shrink-0">
             <span className="text-sm font-semibold">{fmtMoney(grupo.precoTotal)}</span>
             {saldo > 0 && (
@@ -111,7 +112,7 @@ function BookingRow({ b, guests, props }: { b: Booking; guests: Guest[]; props: 
           {/* Um traço era indistinguível de uma reserva sem ficha de hóspede.
               Um bloqueio diz o que é, com as palavras do feed. */}
           <p className="font-semibold text-sm truncate">
-            {bloqueio ? rotuloDeBloqueio(b) : guest?.nome ?? '—'}
+            {bloqueio ? rotuloDeBloqueio(b) : guest?.nome ?? rotuloSemHospede(b)}
           </p>
           <div className="flex flex-col items-end gap-1 shrink-0">
             <span className="text-sm font-semibold">{fmtMoney(b.preco_total)}</span>

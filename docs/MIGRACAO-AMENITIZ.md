@@ -160,8 +160,13 @@ pode ser dado pessoal (ANF-1.8).
 
 Com os feeds do Amenitiz isto é 0 e vai continuar a ser. No dia em que se ligar
 um feed direto, deixa de ser — e o número diz se há informação a ir buscar
-antes de escrever código a extraí-la. **Nada consome o campo ainda, de
-propósito**: não se constrói extração sobre um formato que não se viu.
+antes de escrever código a extraí-la.
+
+**2026-11-24:** do feed do Airbnb extrai-se agora **só** o código da reserva
+(`HM…`), a partir do URL de reservas — formato público e estável há anos, e a
+extração é conservadora: se não casar, não se extrai nada
+(`lib/ical-referencias.ts`). Serve para o «Abrir no Airbnb». O resto do
+`DESCRIPTION` continua a não se guardar.
 
 ### 4 · A ordem no dia
 

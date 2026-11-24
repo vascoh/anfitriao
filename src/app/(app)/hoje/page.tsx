@@ -14,10 +14,12 @@ import { estaEmAtraso } from '@/lib/estado-siba'
 import { estadoDoFeed } from '@/lib/canais'
 import { OnboardingCard } from '@/components/onboarding-card'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
+import { AbrirNaPlataforma } from '@/components/abrir-na-plataforma'
 import { IA_ATIVA } from '@/lib/ia'
 import { vibrar } from '@/lib/vibrar'
 import { PuxarParaAtualizar } from '@/components/puxar-para-atualizar'
 import { entradasPorIdentificar } from '@/lib/reserva-no-bloqueio'
+import { rotuloSemHospede } from '@/lib/ical-referencias'
 
 /* Bloqueios que o anfitrião disse serem só datas fechadas. Fica neste aparelho:
  * é uma conveniência para limpar o ecrã, não um dado do alojamento. */
@@ -112,7 +114,7 @@ function ArrivalCard({ b, guests, props, onTransition }: { b: Booking; guests: G
       className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/50 transition-colors">
       <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate">{guest?.nome ?? '—'}</p>
+        <p className="font-semibold text-sm truncate">{guest?.nome ?? rotuloSemHospede(b)}</p>
         <p className="text-xs text-muted-foreground truncate">{prop?.nome} · {n} noite{n !== 1 ? 's' : ''}</p>
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0">
@@ -569,7 +571,8 @@ export default function HojePage() {
                         {quandoEntra(t, b.check_in)} · {n} noite{n !== 1 ? 's' : ''} · até {fmtDate(b.check_out, { day: 'numeric', month: 'short' })}
                       </p>
                     </Link>
-                    <div className="flex w-full items-center justify-end gap-2 sm:w-auto sm:shrink-0">
+                    <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:shrink-0">
+                      <AbrirNaPlataforma referencia={b.referencia_externa} />
                       <button
                         type="button"
                         onClick={() => ignorarBloqueio(b.id)}
@@ -652,7 +655,7 @@ export default function HojePage() {
                     className="flex items-center gap-3 px-4 py-3 active:bg-muted/50 transition-colors">
                     <div className="h-8 w-1 rounded-full shrink-0" style={{ backgroundColor: prop?.cor ?? 'var(--primary)' }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{guest?.nome ?? '—'}</p>
+                      <p className="text-sm font-medium truncate">{guest?.nome ?? rotuloSemHospede(b)}</p>
                       <p className="text-xs text-muted-foreground truncate">{prop?.nome} · {n} noite{n !== 1 ? 's' : ''}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">

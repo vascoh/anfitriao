@@ -6,6 +6,24 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-24] Airbnb direto: código da reserva e «Abrir no Airbnb»
+
+- 🔎 Ponto de situação do calendário: importação iCal de 15 em 15 min
+  (pg_cron), reconciliação de alterações/cancelamentos, exportação do nosso
+  calendário e guias por plataforma já existiam. Sem parceria não há API de
+  reservas do Airbnb nem do Booking; o que sobrava era informação que o feed
+  direto do Airbnb traz e se deitava fora.
+- 🔗 `lib/ical-referencias.ts`: tira o código `HM…` do `DESCRIPTION` do feed do
+  Airbnb (só de um URL de reservas num domínio airbnb.*; o resto, incluindo os
+  4 dígitos do telefone, não se guarda). Coluna `bookings.referencia_externa`
+  (migração 061, aplicada). A sincronização preenche-a nas reservas novas e nas
+  já importadas.
+- 📱 «Abrir no Airbnb» em `/reservas/[id]` e em «Quem chega?»; nas listas, uma
+  reserva importada sem hóspede mostra «Airbnb · HM…» em vez de «—».
+- ℹ️ Com o Amenitiz (feed de disponibilidade) e o Booking (`CLOSED - Not
+  available`) não há código: nada muda. Ganha-se ao ligar o feed direto do
+  Airbnb (passo 2 de `docs/MIGRACAO-AMENITIZ.md`).
+
 ### [2026-11-16] Trial de 30 dias e garantia de preço (TODO 2.1)
 
 - Decisões do Vasco: trial 14 → **30 dias**; quem subscreve **mantém o preço**

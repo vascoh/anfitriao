@@ -10,6 +10,7 @@ import { estadoSiba, estaEmAtraso } from '@/lib/estado-siba'
 import { fetchBookings, fetchGuests, fetchProperties } from '@/lib/fetcher'
 import { guardar, eliminar } from '@/lib/guardar'
 import { ErroAoCarregar } from '@/components/erro-ao-carregar'
+import { AbrirNaPlataforma } from '@/components/abrir-na-plataforma'
 import { transitionBooking, canTransition, availableActions, eBloqueio, rotuloDeBloqueio, ambiguoDoBooking, partesDasNotas, juntarNotas, MARCA_FECHO_BOOKING } from '@/lib/reservations'
 import { aindaDentro } from '@/lib/reserva-no-bloqueio'
 import { mensagemDeCheckin } from '@/lib/mensagem-checkin'
@@ -19,6 +20,7 @@ import { ReminderButton, Stepper, Section, Row } from './_components/blocos'
 import { CasaInteira } from './_components/casa-inteira'
 import { DetalhesReserva, CartaoPropriedade } from './_components/resumo'
 import { Historico } from './_components/historico'
+import { rotuloSemHospede } from '@/lib/ical-referencias'
 
 export default function ReservaDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -319,7 +321,7 @@ export default function ReservaDetailPage() {
               {/* Um bloqueio não tem hóspede, e o título ficava **vazio**. Diz
                   agora o que o feed lhe chamou, como na lista e no calendário. */}
               <h1 className="text-subtitulo truncate">
-                {bloqueio ? rotuloDeBloqueio(booking) : guest?.nome}
+                {bloqueio ? rotuloDeBloqueio(booking) : guest?.nome ?? rotuloSemHospede(booking)}
               </h1>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_CLASS[booking.estado]}`}>
                 {STATUS_LABEL[booking.estado]}
@@ -340,6 +342,13 @@ export default function ReservaDetailPage() {
       </header>
 
       <div className="flex flex-col gap-5 py-4">
+        {/* Reserva vinda do feed direto do Airbnb: o nome e a conversa estão lá */}
+        {booking.referencia_externa && (
+          <div className="mx-4">
+            <AbrirNaPlataforma referencia={booking.referencia_externa} />
+          </div>
+        )}
+
         {/* Casa inteira — esta reserva é um quarto de uma reserva maior */}
         {grupo && <CasaInteira booking={booking} grupo={grupo} />}
 

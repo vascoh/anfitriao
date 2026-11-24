@@ -12,6 +12,7 @@ import {
   type ReservaImportada, type EventoDoFeed,
 } from '@/lib/ical-reconciliacao'
 import { today } from '@/lib/utils'
+import { referenciaDoAirbnb } from '@/lib/ical-referencias'
 import { carregarTudo } from '@/lib/supabase-tudo'
 import { comTrinco } from '@/lib/trinco'
 const supabase = createAdminClient()
@@ -78,7 +79,7 @@ async function sincronizarPropriedade(
   const { linhas: importadas, erro: erroImportadas } = await carregarTudo<ReservaImportada>(() =>
     supabase
       .from('bookings')
-      .select('id, uid_externo, check_in, check_out, estado, notas, historico')
+      .select('id, uid_externo, check_in, check_out, estado, notas, historico, referencia_externa')
       .eq('propriedade_id', propertyId)
       .not('uid_externo', 'is', null)
       .order('id', { ascending: true }),
@@ -106,6 +107,8 @@ async function sincronizarPropriedade(
   const hoje = today()
 
   const eventosDaPropriedade: EventoDoFeed[] = []
+  /* UID de origem → código da reserva na plataforma (só o Airbnb o publica). */
+  const referencias = new Map<string, string>()
   /* Linhas prontas a inserir, retidas até a reconciliação decidir se alguma
    * delas é, afinal, uma reserva local que mudou de UID. */
   const candidatos: Array<{ feedNome: string; uid: string; linha: Record<string, unknown> }> = []
@@ -139,6 +142,8 @@ async function sincronizarPropriedade(
         if (!ev.dtstart || !ev.dtend || ev.dtstart >= ev.dtend) { skipped++; continue }
 
         eventosDaPropriedade.push({ uid: ev.uid, dtstart: ev.dtstart, dtend: ev.dtend, summary: ev.summary })
+        const referencia = referenciaDoAirbnb(ev.description)
+        if (referencia) referencias.set(ev.uid, referencia)
 
         if (uidsConhecidos.has(ev.uid)) { skipped++; continue }
 
@@ -164,6 +169,7 @@ async function sincronizarPropriedade(
             preco_pago: 0,
             notas: ev.summary || `Importado de ${feed.nome}`,
             uid_externo: `${feed.id}::${ev.uid}`,
+            referencia_externa: referencias.get(ev.uid) ?? null,
             criado_em: new Date().toISOString(),
             historico: [],
           },
@@ -244,6 +250,18 @@ async function sincronizarPropriedade(
         console.warn('[ical-sync] inseridas', total, 'de', porInserir.length)
       }
     }
+  }
+
+  /* Reservas importadas antes de haver extração (ou cujo código mudou do outro
+   * lado) ganham o código na passagem seguinte. Só se escreve quando difere:
+   * de 15 em 15 minutos, um update por reserva seria ruído. */
+  for (const r of importadas) {
+    const ref = referencias.get(uidDeOrigem(r.uid_externo))
+    if (!ref || ref === r.referencia_externa) continue
+    const { error } = await supabase
+      .from('bookings').update({ referencia_externa: ref })
+      .eq('id', r.id).eq('owner_id', ownerId)
+    if (error) console.error('[ical-sync] referência', r.id, error.message)
   }
 
   /* O que a sincronização muda fica escrito no histórico da reserva, e as
