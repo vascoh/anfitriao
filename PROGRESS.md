@@ -21,6 +21,9 @@ _Iniciado: 2026-06-06_
   leu ainda» com o que fazer.
 - ⚠️ Limites: só conta o que passa a cache da CDN (5 min); o user-agent
   pode ser imitado, por isso isto informa e não decide nada.
+- 🚀 Publicado: `3c5093c`, `dpl_nfhgdeu92QiZPd1sp1d65577Khgi`. Verificado em produção: leitura com
+  user-agent de servidor registada com dono; leitura de navegador não; linha
+  de teste apagada; `/api/canais/leituras` sem sessão recusado.
 
 ### [2026-11-24] Airbnb direto: código da reserva e «Abrir no Airbnb»
 
