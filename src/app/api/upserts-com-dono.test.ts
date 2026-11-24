@@ -29,6 +29,10 @@ const EXCECOES: Record<string, string> = {
     + 'primeira subscrição manda e as seguintes não tocam na linha, portanto '
     + 'não há nada para sobrepor. A tabela tem RLS sem políticas: nem anon nem '
     + 'authenticated a leem.',
+  'ical/[propertyId]/route.ts':
+    'feed público lido pelas plataformas: regista quem leu. O alojamento do URL '
+    + 'tem de existir (404 antes) e o owner_id vem da linha do alojamento, nunca '
+    + 'do pedido; a tabela só guarda a hora e o leitor, e não alimenta nenhuma decisão',
   'mensagens/whatsapp/route.ts':
     'a chave de conflito é o owner_id da sessão, nunca um id do cliente; o '
     + 'phone_number_id é único, e tentar o de outra conta dá 409 em vez de sobrepor',

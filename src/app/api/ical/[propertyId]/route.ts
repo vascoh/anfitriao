@@ -1,5 +1,5 @@
 import type { BookingSource } from '@/lib/types'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createHash } from 'node:crypto'
 import { createAdminClient } from '@/lib/supabase'
 import { generateIcal } from '@/lib/ical'
@@ -8,6 +8,7 @@ import { carregarTudo } from '@/lib/supabase-tudo'
 import { today } from '@/lib/utils'
 import { verificarLimite } from '@/lib/rate-limit-persistente'
 import { getClientIp } from '@/lib/rate-limit'
+import { leitorDoPedido, userAgentParaGuardar } from '@/lib/ical-leitores'
 const supabase = createAdminClient()
 
 // UID estável mas não reversível: o id real da reserva não pode sair num feed
@@ -37,6 +38,33 @@ function publicUid(bookingId: string): string {
  * — o endereço que se cola no Amenitiz diz, ao ser lido, o que faz.
  */
 type Origem = 'todas' | 'diretas'
+
+/**
+ * Regista quem leu, depois de a resposta sair — o feed não espera pela escrita
+ * e uma falha aqui nunca o parte. Só conta o que passou a cache da CDN (5 min),
+ * o que chega: as plataformas leem de meia em meia hora ou mais devagar.
+ * Ver `lib/ical-leitores.ts`.
+ */
+function registarLeitura(req: NextRequest, propertyId: string, ownerId: string | null, origem: Origem) {
+  const leitor = leitorDoPedido(req.headers.get('user-agent'), req.headers.get('accept-language'))
+  if (!leitor) return
+  const userAgent = userAgentParaGuardar(req.headers.get('user-agent'))
+  try {
+    after(async () => {
+      const { error } = await supabase.from('ical_leituras').upsert({
+        propriedade_id: propertyId,
+        leitor,
+        origem,
+        owner_id: ownerId,
+        user_agent: userAgent,
+        ultima_leitura: new Date().toISOString(),
+      }, { onConflict: 'propriedade_id,leitor,origem' })
+      if (error) console.warn('[ical export] leitura não registada', propertyId, error.message)
+    })
+  } catch {
+    /* Fora de um pedido (testes) não há `after`: não se regista e o feed segue. */
+  }
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ propertyId: string }> }) {
   const { propertyId } = await params
@@ -150,6 +178,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prop
     : (prop.nome as string)
 
   const ics = generateIcal(events, nome)
+
+  registarLeitura(req, propertyId, (prop.owner_id as string | null) ?? null, origem)
 
   return new NextResponse(ics, {
     headers: {

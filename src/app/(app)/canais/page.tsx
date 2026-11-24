@@ -21,6 +21,10 @@ import {
   O_QUE_SINCRONIZA, O_QUE_NAO_SINCRONIZA, CANAIS_IMPORTAVEIS,
   type EstadoCanal,
 } from '@/lib/canais'
+import {
+  NOME_DO_LEITOR, haQuantoTempo, leituraAtrasada, leiturasDoAlojamento,
+  type LeituraIcal,
+} from '@/lib/ical-leitores'
 
 /* ── Crachá de estado ──────────────────────────────────────────────────────
  *
@@ -349,7 +353,53 @@ const DESTINOS = {
   },
 } as const
 
-function PainelExportar({ prop }: { prop: Property }) {
+/**
+ * Quem está a ler o endereço que o anfitrião colou nas plataformas. Sem isto,
+ * colar o endereço no Airbnb era um ato de fé: nada confirmava que tinha
+ * resultado até ao dia em que uma plataforma vendesse por cima de outra.
+ */
+function QuemLe({ leituras }: { leituras: LeituraIcal[] | null }) {
+  /* A hora de agora é estado e não `Date.now()` no render — o mesmo valor no
+   * servidor e no cliente, e o texto «há 12 min» não muda a meio da página. */
+  const [agora, setAgora] = useState<Date | null>(null)
+  useEffect(() => {
+    const id = setTimeout(() => setAgora(new Date()), 0)
+    return () => clearTimeout(id)
+  }, [])
+  if (leituras === null || agora === null) return null
+
+  if (leituras.length === 0) {
+    return (
+      <p className="text-[12px] text-muted-foreground leading-relaxed">
+        <strong className="font-semibold text-foreground">Nenhuma plataforma leu ainda as tuas datas.</strong>{' '}
+        Se já colaste o endereço, a primeira leitura pode levar algumas horas. Se passar um dia, confirma que o endereço ficou bem colado.
+      </p>
+    )
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-muted-foreground mb-1">Quem lê as tuas datas</p>
+      <ul className="flex flex-col gap-0.5">
+        {leituras.map(l => {
+          const atrasada = leituraAtrasada(l.ultima_leitura, agora)
+          return (
+            <li key={`${l.leitor}:${l.origem}`} className="flex items-center gap-2 text-[13px]">
+              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${atrasada ? 'bg-aviso' : 'bg-sucesso'}`} aria-hidden />
+              <span className="font-medium">{NOME_DO_LEITOR[l.leitor] ?? l.leitor}</span>
+              <span className={`tabular-nums ${atrasada ? 'text-aviso' : 'text-muted-foreground'}`}>
+                leu {haQuantoTempo(l.ultima_leitura, agora)}
+                {atrasada ? ' · deixou de ler?' : ''}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+function PainelExportar({ prop, leituras }: { prop: Property; leituras: LeituraIcal[] | null }) {
   const [copiado, setCopiado] = useState(false)
   const [plataforma, setPlataforma] = useState<BookingSource>('airbnb')
   const [destino, setDestino] = useState<keyof typeof DESTINOS>('plataforma')
@@ -369,7 +419,8 @@ function PainelExportar({ prop }: { prop: Property }) {
   }
 
   return (
-    <details className="rounded-xl border border-border bg-card px-3.5 py-3">
+    <div className="rounded-xl border border-border bg-card px-3.5 py-3">
+    <details>
       <summary className="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none">
         <Upload className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden />
         Levar as tuas datas para as plataformas
@@ -448,6 +499,11 @@ function PainelExportar({ prop }: { prop: Property }) {
         )}
       </div>
     </details>
+      {/* Fora do que abre e fecha: é a resposta a «resultou?», e vê-se sempre. */}
+      <div className="mt-2.5 border-t border-border pt-2.5">
+        <QuemLe leituras={leituras} />
+      </div>
+    </div>
   )
 }
 
@@ -544,9 +600,11 @@ function GuiaCasaComQuartos({ casa, quartos }: { casa: Property; quartos: Proper
 /* ── Cartão de um alojamento ──────────────────────────────────────────────── */
 
 function CartaoAlojamento({
-  prop, eContentor, quartos, recarregar,
+  prop, eContentor, quartos, recarregar, leituras,
 }: {
   prop: Property
+  /** Quem leu os calendários exportados; `null` enquanto carrega ou se falhou. */
+  leituras: LeituraIcal[] | null
   /** Casa cujas reservas vivem nos quartos — não leva feeds próprios. */
   eContentor: boolean
   /** Os quartos desta casa, quando é contentor. */
@@ -731,7 +789,7 @@ function CartaoAlojamento({
           </>
         )}
 
-        <PainelExportar prop={prop} />
+        <PainelExportar prop={prop} leituras={leituras ? leiturasDoAlojamento(leituras, prop.id) : null} />
       </div>
     </div>
   )
@@ -745,6 +803,18 @@ export default function CanaisPage() {
   const [props, setProps] = useState<Property[]>([])
   const [aCarregar, setACarregar] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
+  const [leituras, setLeituras] = useState<LeituraIcal[] | null>(null)
+
+  /* Secundário: se falhar, o cartão simplesmente não mostra quem lê. */
+  useEffect(() => {
+    if (!ownerId) return
+    let vivo = true
+    fetch('/api/canais/leituras')
+      .then(r => (r.ok ? r.json() : null))
+      .then(j => { if (vivo && j && Array.isArray(j.leituras)) setLeituras(j.leituras) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [ownerId])
 
   const carregar = useCallback(async () => {
     try {
@@ -858,6 +928,7 @@ export default function CanaisPage() {
             eContentor={contentores.has(p.id)}
             quartos={quartosPorCasa.get(p.id) ?? []}
             recarregar={carregar}
+            leituras={leituras}
           />
         ))}
 

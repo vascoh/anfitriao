@@ -6,6 +6,22 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-24] Quem lê o calendário exportado
+
+- 🎯 Ponto cego do corte do Amenitiz: depois de colar `/api/ical/[id]` no
+  Airbnb ou no Booking, nada confirmava que eles o liam — e sem o Amenitiz é
+  esse feed que impede uma plataforma de vender por cima de outra.
+- 📥 Cada leitura do feed exportado regista (com `after`, sem atrasar a
+  resposta) o leitor reconhecido pelo user-agent, o tipo de feed e a hora, em
+  `ical_leituras` (migração 062, aplicada, RLS só leitura do dono). Guarda-se o
+  user-agent truncado para afinar o reconhecimento; o IP nunca. Navegadores
+  (o anfitrião a abrir o endereço) não contam. `lib/ical-leitores.ts`, testes.
+- 📱 `/canais`, em cada alojamento: «Quem lê as tuas datas — Airbnb leu há
+  12 min», com aviso «deixou de ler?» passadas 24 h, ou «nenhuma plataforma
+  leu ainda» com o que fazer.
+- ⚠️ Limites: só conta o que passa a cache da CDN (5 min); o user-agent
+  pode ser imitado, por isso isto informa e não decide nada.
+
 ### [2026-11-24] Airbnb direto: código da reserva e «Abrir no Airbnb»
 
 - 🔎 Ponto de situação do calendário: importação iCal de 15 em 15 min
