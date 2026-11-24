@@ -23,6 +23,7 @@ _Iniciado: 2026-06-06_
 - ℹ️ Com o Amenitiz (feed de disponibilidade) e o Booking (`CLOSED - Not
   available`) não há código: nada muda. Ganha-se ao ligar o feed direto do
   Airbnb (passo 2 de `docs/MIGRACAO-AMENITIZ.md`).
+- 🚀 Publicado: `8de9430`, `dpl_H2zgNX5ihh4tG6q8xTvZuVP6m9SK` (confirmado com `vercel inspect`).
 
 ### [2026-11-16] Trial de 30 dias e garantia de preço (TODO 2.1)
 
