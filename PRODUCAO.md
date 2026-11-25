@@ -1,5 +1,7 @@
 # Anfitrião — Plano de Produção
 
+> ⚠️ **Documento histórico (maio 2026).** URLs, preços e estado já não são os atuais: a produção é https://anfitrioes.pt. O estado vivo está em `docs/HANDOFF.md`.
+
 _Documento gerado em 2026-05-26_
 
 ---

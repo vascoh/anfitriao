@@ -8,7 +8,7 @@ PMS para Alojamento Local português. Produção: https://anfitrioes.pt (multi-t
 
 - `npm test` — Vitest; correr sempre antes de deploy. A suite tem de passar em qualquer timezone.
 - `npm run typecheck && npm run lint` — ambos a zero.
-- Deploy: `npx vercel deploy --prod` (auto-deploy GitHub→Vercel está partido; nunca esperar por ele).
+- Deploy: `npx vercel deploy --prod --scope vascotelo-7402s-projects` (sem o `--scope` pode falhar com «Not authorized»; auto-deploy GitHub→Vercel está partido; nunca esperar por ele).
   - ⚠️ O deploy demora mais de 5 minutos e **não** promove o alias de forma fiável. Confirmar sempre com
     `npx vercel inspect https://anfitrioes.pt` que a data de criação é a de agora.
   - ⚠️ `npx vercel promote <url>` só serve para promover um deploy **acabado de criar**. Promover um URL
