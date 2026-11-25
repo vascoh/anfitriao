@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   // Lockfile perdido em ~/ fazia o Next inferir a raiz errada do workspace
   outputFileTracingRoot: __dirname,
 
+  // Não anunciar a framework em cada resposta
+  poweredByHeader: false,
+
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },
