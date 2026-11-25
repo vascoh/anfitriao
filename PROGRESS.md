@@ -6,6 +6,34 @@ _Iniciado: 2026-06-06_
 
 ## Tarefas Concluídas
 
+### [2026-11-25] Revisão geral: dependências seguras e documentação ao dia
+
+Resposta à revisão do Codex de hoje (`COORDENACAO-IA.md`).
+
+- 🔒 **Bloqueante resolvido:** o `next build` terminava em `SecurityFatalError`
+  (Next 16.4.3, 7 avisos). `next` e `eslint-config-next` passam a 16.4.6,
+  `@sentry/nextjs` a 10.78 e `shadcn` a 4.23.1. Os restantes avisos eram a cadeia
+  `glob`/`minimatch` do plugin de build do Sentry: override `glob ^14.0.6` em
+  `@sentry/bundler-plugins` (usa só `glob.glob` com `absolute`/`nodir`, compatível),
+  sem saltar para o Sentry 11. **`npm audit`: 0 vulnerabilidades** (prod e dev).
+- 🧾 `docs/HANDOFF.md` reescrito: estava em julho (trial 14 dias, sync diário,
+  JWT do Clerk como bloqueante). Agora: trial 30 dias, pg_cron, sem RLS
+  client-side, IA desligada, env em falta e porquê, pendentes humanos e o
+  procedimento de deploy. `PRODUCAO.md` marcado como histórico; `CLAUDE.md` com
+  `--scope` no comando de deploy.
+- 🙈 `poweredByHeader: false`: deixa de anunciar `x-powered-by: Next.js`.
+- 🔍 **Saúde (7 dias):** 1 erro de runtime (handshake do Clerk de
+  desenvolvimento, 0.2). Crons em 2 dias: `ical-sync` 192/192, `canais-alertas`
+  30/30, `net._http_response` 102× 200. Advisors sem nada novo do anfitrião.
+- ♿ **Produção verificada** (Playwright, 7 páginas públicas × 390/1366 ×
+  claro/escuro): HTTP 200, sem erros de JS nem scroll horizontal, axe a zero em
+  tudo exceto `/sign-in`. Lá o único nó é o «Secured by» sobre a **faixa laranja
+  `#f36b16` do modo de desenvolvimento do Clerk**: desaparece com o 0.2. Um
+  override de cor testado localmente piorava o contraste nessa faixa e foi
+  revertido.
+- ✅ Validação: typecheck e lint a zero, 1488 testes, build com 115 páginas.
+- 🚀 Publicado: `5a70969` → `dpl_8V7sZwKVT9riRBtAsadcPXxxq8Nn`; `b58a505` → `dpl_CWNjJf2BNX2nkpciwosoDo93cMFP` (alias confirmado com `vercel inspect`).
+
 ### [2026-11-24] /canais: gestor de canais sem ler as reservas diretas
 
 - 🧭 Verificação de saúde (7 dias): 1 erro de runtime (handshake do Clerk de
